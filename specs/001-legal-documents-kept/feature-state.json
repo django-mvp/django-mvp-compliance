@@ -268,43 +268,118 @@
       "tasks": [
         {
           "id": "T050",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_published_history_comes_back_in_order_with_drafts_absent",
+              "tests/test_models.py::TestRetrieval::test_a_superseded_version_keeps_its_original_wording_and_html",
+              "tests/test_models.py::TestRetrieval::test_the_version_in_force_is_the_one_most_recently_published"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval -x"
+            ]
+          }
         },
         {
           "id": "T051",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "mvp_compliance/models.py:56",
+              "mvp_compliance/models.py:82",
+              "mvp_compliance/models.py:94"
+            ],
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_published_history_comes_back_in_order_with_drafts_absent",
+              "tests/test_models.py::TestRetrieval::test_the_version_in_force_is_the_one_most_recently_published"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval",
+              "poetry run mypy mvp_compliance"
+            ]
+          }
         },
         {
           "id": "T052",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_a_document_with_nothing_published_reports_no_version_in_force"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval"
+            ]
+          }
         },
         {
           "id": "T053",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_one_version_by_its_number"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval"
+            ]
+          }
         },
         {
           "id": "T054",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_four_documents_do_not_interfere"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval"
+            ]
+          }
         },
         {
           "id": "T055",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "README.md:29",
+              "docs/models.md:130"
+            ],
+            "commands": [
+              "poetry run pre-commit run --files README.md docs/models.md"
+            ]
+          }
         },
         {
           "id": "T056",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "CHANGELOG.md:10"
+            ],
+            "commands": [
+              "poetry run pre-commit run --files CHANGELOG.md"
+            ]
+          }
         },
         {
           "id": "T057",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_it_ships_no_admin_forms_views_or_urls",
+              "tests/test_app.py::TestPackagedApp::test_it_registers_nothing_in_the_admin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py"
+            ]
+          }
         }
       ]
     }
