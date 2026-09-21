@@ -182,15 +182,20 @@ class Version(models.Model):
             ),
             models.CheckConstraint(
                 # A nested Meta class cannot see names bound in Version's own class
-                # body, so this matches Status.DRAFT's value directly rather than
+                # body, so these match the Status values directly rather than
                 # referencing the enum.
+                #
+                # The published branch names its two standings rather than
+                # saying "not draft": status is the one field the queryset
+                # guard lets through on a published row, so what it may become
+                # is the database's to say.
                 condition=models.Q(status="draft", published_at__isnull=True, html="")
                 | (
-                    ~models.Q(status="draft")
+                    models.Q(status__in=["current", "superseded"])
                     & models.Q(published_at__isnull=False)
                     & ~models.Q(html="")
                 ),
-                name="version_status_agrees_with_published_at",
+                name="version_status_agrees_with_its_publication",
             ),
         ]
 

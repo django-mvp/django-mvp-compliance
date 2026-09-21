@@ -254,6 +254,30 @@ class TestPublishing:
         second.publish()
         assert document.versions.filter(status=Version.Status.CURRENT).count() == 1
 
+    def test_a_status_outside_the_three_standings_is_refused_by_the_database(
+        self, published_version
+    ):
+        """Superseding is a change of standing, not a free text field (FR-013).
+
+        The queryset guard lets ``status`` through on purpose, because that is
+        how publishing supersedes. What it may become is the database's to
+        say.
+        """
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=published_version.pk).update(
+                status="bogus-standing"
+            )
+
+        published_version.refresh_from_db()
+        assert published_version.status == Version.Status.CURRENT
+
+    def test_a_draft_cannot_be_given_a_status_outside_the_three_standings(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(status="bogus-standing")
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.DRAFT
+
     def test_no_reverse_operation_exists(self):
         forbidden = {"unpublish", "revert", "rollback", "make_current", "restore"}
 
