@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>django-mvp-compliance — demo</title>
+    <link rel="stylesheet" href="{% static 'css/django-mvp.css' %}">
+  </head>
+  <body class="bg-base-100 text-base-content">
+    <main class="mx-auto max-w-3xl px-6 py-16">
+      <h1 class="text-4xl font-bold">django-mvp-compliance</h1>
+      <p class="mt-4 text-lg opacity-75">
+        Legal documents, consent records and cookie consent. This page is where they get
+        looked at while they are being built.
+      </p>
+
+      <div class="card bg-base-200 mt-10 p-6">
+        <h2 class="text-xl font-semibold">Nothing to see yet</h2>
+        <p class="mt-2 opacity-75">
+          The package is scaffolded and the test harness is green. No models, pages or
+          components have been written. Each one gets rendered here as it lands.
+        </p>
+      </div>
+
+      <div class="card bg-base-200 mt-6 p-6">
+        <h2 class="text-xl font-semibold">What will appear here first</h2>
+        <p class="mt-2 opacity-75">
+          A published policy page, rendered from Markdown held in the database, and the flow
+          that asks a signed-in user to accept a version they have not seen. The demo carries
+          seeded documents so every state — draft, published, superseded, accepted and not yet
+          accepted — is reachable without setting one up by hand.
+        </p>
+      </div>
+    </main>
+  </body>
+</html>
