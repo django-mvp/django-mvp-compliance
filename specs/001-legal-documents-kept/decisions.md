@@ -22,6 +22,8 @@ One consequence worth naming: `CONTEXT.md` has no word for a document that is no
 and both *archived* and *retired* sit on the avoid list under **Superseded**. Whoever specifies
 retirement picks the word then.
 
+**ADR:** none — scope, not architecture. `spec.md` already carries the absence as a requirement, and adding retirement later adds a state to the document rather than overturning anything here.
+
 ## D2 — The package assigns version order, and there is no author-supplied label
 
 **Ambiguous**: whether an author names a version ("v2.1", "January 2026 revision") and whether that
@@ -35,6 +37,8 @@ nothing and can disagree with reality. Two sources of truth for ordering is the 
 worth avoiding. A human-readable label was raised and left out because it has no consumer yet.
 Support staff and complaint responses need one, so it is likely to arrive with R10, where the
 people needing it appear.
+
+**ADR:** none — scope. That the package assigns version order is a requirement in `spec.md`, and the absence of an author-supplied label is a decision not to build something rather than a shape others inherit.
 
 ## D3 — Publication takes effect immediately
 
@@ -50,6 +54,8 @@ afford. It also weakens publishing as a deliberate act, which issue #5 depends o
 notice period can publish on the day, and a later feature can add scheduling as a queued act that
 still resolves to a stored state.
 
+**ADR:** docs/adr/0001-publication-takes-effect-immediately.md
+
 ## D4 — No rollback to an earlier published version
 
 **Ambiguous**: whether a bad publish can be undone by making the previous version current again.
@@ -60,6 +66,8 @@ still resolves to a stored state.
 exists to provide. It also destroys the history: a document whose current version moves backwards
 has no honest answer to "what was in force in March". Republishing the old wording costs one
 version and leaves a truthful record of what happened.
+
+**ADR:** none — the requirement owns it. `spec.md` states there is no reverse operation and a test asserts the absence by name, so nothing downstream inherits a choice this entry made.
 
 ## D5 — No screens, no addresses
 
@@ -72,6 +80,8 @@ surface nobody can exercise it by hand.
 follow immediately. An admin registration here would be written to be replaced, and the throwaway
 version is the one that tends to survive. Tests exercise the rules, and they are the right consumer
 for a feature whose entire value is a set of invariants.
+
+**ADR:** none — scope for this feature only. The authoring and reading surfaces are separate features, and a test holds the absence in the meantime.
 
 ## D6 — Deleting a document that has published versions is refused
 
@@ -86,6 +96,8 @@ This closes the loophole rather than adding a policy, and it follows from Articl
 extending it. A document created by mistake and never published can still be deleted, because
 nothing has been put in front of anybody.
 
+**ADR:** none — the rule is a requirement in `spec.md`, and the mechanism that holds it graduated separately as docs/adr/0002-document-deletion-is-refused-by-the-foreign-key.md.
+
 ## D7 — Empty rendered output is refused at publication
 
 **Ambiguous**: what happens when authored markup produces nothing, for instance a version whose
@@ -97,6 +109,8 @@ entire body is a comment.
 is a site with a privacy policy page showing nothing while acceptance records accumulate against
 it. Refusing at publication is the cheap moment to catch it, and it cannot be caught later because
 a published version cannot be corrected.
+
+**ADR:** none — the requirement owns it. Refusing an empty publication is stated in `spec.md` and covered by a test. This entry records why it is refused rather than a shape others build on.
 
 ## D8 — A document holding any version cannot be deleted, not only one holding published versions
 
@@ -120,6 +134,8 @@ draft. The benefit is that the route which destroys published wording does not e
 The two failure modes are not comparable — one is mild inconvenience, the other is the loss of the
 evidence this package exists to keep.
 
+**ADR:** docs/adr/0002-document-deletion-is-refused-by-the-foreign-key.md
+
 ## D9 — Refusals raise package exceptions, not `ValidationError`
 
 **Ambiguous**: Django's house style for a rejected write is `ValidationError`, and a later feature
@@ -135,6 +151,8 @@ which form and admin code does by design — would swallow it into a field error
 discard FR-012 exists to forbid. Issue #5 builds the authoring screens and can translate either
 exception into a form error deliberately, at the one layer where a person is actually being asked
 to fix something.
+
+**ADR:** docs/adr/0003-refusals-raise-package-exceptions.md
 
 ## D10 — One route stays open, and it is one this package writes rather than offers
 
@@ -153,6 +171,8 @@ any other code and now covered by a test that fails if someone writes one. Closi
 shipping database triggers, which means maintaining the DDL in three dialects and having no answer
 for whatever backend a host project brings. The residue is named here rather than left for somebody
 to discover, because an immutability claim with an unstated exception is worse than a stated one.
+
+**ADR:** docs/adr/0004-migrations-are-the-one-route-immutability-cannot-close.md
 
 ## D11 — On MySQL, the row lock holds FR-007 alone, and that is recorded rather than assumed
 
@@ -187,6 +207,8 @@ This repository's tests run on SQLite, which is where the constraint is exercise
 verified on MySQL, because nothing in this organisation runs MySQL; that is why this entry says what
 is promised rather than the test suite implying it.
 
+**ADR:** docs/adr/0005-one-version-in-force-is-held-by-two-mechanisms.md
+
 ## D12 — proving the numbering collision needs bypassing `save()`, not calling it
 
 **Decision**: `TestVersion::test_number_cannot_collide_within_a_document` forces the
@@ -204,6 +226,8 @@ caller-supplied number still intact — and that is what exercises
 management command, a bulk import) — that path needs the same collision test, because
 `save()`'s auto-assignment cannot protect it.
 
+**ADR:** none — test construction, sealed inside one test. Nothing outside it inherits the choice.
+
 ## D13 — docs/models.md written even though it is not in the brief's file scope
 
 **Decision**: added `docs/models.md`, documenting `Document` and `Version`, though the
@@ -219,6 +243,8 @@ silent on documentation, not opposed to it, and the gate is red without the page
 **Revisit if**: a later story finds `docs/models.md` a better fit merged into a larger
 page (e.g. once publishing and rendering land) — nothing here is meant to be the final
 shape of the package's documentation.
+
+**ADR:** none — a scope note about which story wrote which page, not a rule anyone abides by.
 
 ## D14 — `Version`'s partial constraints match `Status` values as string literals, not the enum
 
@@ -237,6 +263,8 @@ trick.
 **Revisit if**: a `Status` value's string ever changes — both constraints need updating by hand,
 since nothing ties them to the enum.
 
+**ADR:** none — a Python scoping detail local to one class body, and the code carries the comment explaining it at the point it matters.
+
 ## D15 — `publish()` does not translate a constraint `IntegrityError` into `PublishError`
 
 **Decision**: `plan.md`'s Publishing section describes an `IntegrityError` from the partial
@@ -252,6 +280,8 @@ kind of untested capability `craft-increments` asks not to build.
 **Revisit if**: a later story finds a real path that reaches the constraint through `publish()`
 itself (for instance, a host project running without the row lock's guarantee) — then the
 translation earns a test and belongs with it.
+
+**ADR:** none — declining to build a translation with no test behind it. `publish()`'s surface is unchanged, so nothing downstream inherits it.
 
 ## D16 — `use_in_migrations = True` landed with T031, not T032
 
@@ -276,6 +306,8 @@ is there, one that a historical model ends up holding the manager.
 **Revisit if**: a later story's task split assumes T032 introduces new model behaviour rather
 than only the test for it.
 
+**ADR:** none — commit sequencing within one story. The behaviour it concerns is covered by two tests and carries no consequence past this branch.
+
 ## D17 — the US-3 guardrail flag on `tests/test_models.py` is an import block, not a weakened test
 
 **Decision**: the guardrail scan over US-3's commits flags `tests/test_models.py` as a modified
@@ -289,6 +321,8 @@ present before US-3 are present afterwards, byte-for-byte, and US-3 only appends
 
 **Revisit if**: a later story's flag on the same file covers a range where a test body, and not
 only the import block, differs.
+
+**ADR:** none — a guardrail triage record for one commit range, not a rule.
 
 ## D18 — `TestMarkdownRenderer` (T040) and `TestRendererSetting` (T043) were written together, in one file, one commit
 
@@ -311,6 +345,8 @@ green: `pyproject.toml`'s dependency declarations for `markdown` and `nh3` fail 
 **Revisit if**: a later story's brief splits two tests across two files instead of one, or a task
 brief separates a class and its dependency into non-adjacent tasks — either removes the coupling
 this decision is about.
+
+**ADR:** none — test file layout within one story, sealed inside the test module.
 
 ## D19 — `nh3.clean()` is called with `link_rel=None`
 
@@ -335,6 +371,8 @@ reader might open from published content) — set `link_rel` explicitly rather t
 `nh3`'s default, and add it to `allowed_attributes` so the allow list stays the single source of
 truth for what a tag may carry.
 
+**ADR:** none — local to the renderer. The reasoning lives in the class where it applies, and a test fails if the condition that makes it safe stops holding.
+
 ## D20 — migration `0005` was generated at T044, committed at T048
 
 **Decision**: `poetry run python manage.py makemigrations mvp_compliance` was run once, during
@@ -355,6 +393,8 @@ boundaries and the tree's actual runnability intact.
 **Revisit if**: a later story in this feature adds a task between a model-changing task and its
 migration task that itself changes the model — the deferred-commit approach only holds because
 nothing did here.
+
+**ADR:** none — which commit a generated file rode in on. No consequence past this branch.
 
 ## D21 — `VersionManager` forwards `published()`/`drafts()`/`current()` explicitly, rather than being built with `Manager.from_queryset()`
 
@@ -389,6 +429,8 @@ covers all three routes: `document.versions.published()`, and the current-versio
 same one-line forward rather than switching to `from_queryset()`, since the mypy rejection is
 structural to that API and does not change with the method count.
 
+**ADR:** docs/adr/0006-version-manager-forwards-queryset-methods-explicitly.md
+
 ## D22 — T055 and T056 also fixed the README's and CHANGELOG's stale scaffold banners, and T055 added a Retrieval section to `docs/models.md`
 
 **Decision**: T055's brief text is "README — the model surface, the one setting, and what this
@@ -411,3 +453,5 @@ script using a real test database, the same method D13's page used.
 
 **Revisit if**: a later story wants the README status line to say more than "early development" —
 nothing here is meant to be the last word on it, only an accurate one.
+
+**ADR:** none — a scope note about two stale banners and one extra page, not a rule anyone abides by.
