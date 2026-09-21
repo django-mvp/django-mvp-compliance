@@ -303,6 +303,31 @@ class TestImmutability:
         published_version.refresh_from_db()
         assert published_version.markdown == original_markdown
 
+    def test_published_html_cannot_be_changed(self, published_version):
+        original_html = published_version.html
+
+        published_version.html = "<p>Tampered</p>"
+        with pytest.raises(PublishedVersionError):
+            published_version.save()
+        published_version.refresh_from_db()
+        assert published_version.html == original_html
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=published_version.pk).update(
+                html="<p>Tampered</p>"
+            )
+        published_version.refresh_from_db()
+        assert published_version.html == original_html
+
+        published_version.html = "<p>Tampered</p>"
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False); without our own savepoint here, the raised error
+        # would leave the connection unusable for the rest of the test.
+        with pytest.raises(PublishedVersionError), transaction.atomic():
+            Version.objects.bulk_update([published_version], ["html"])
+        published_version.refresh_from_db()
+        assert published_version.html == original_html
+
     def test_deleting_a_published_version_instance_is_refused(self, published_version):
         original_markdown = published_version.markdown
 

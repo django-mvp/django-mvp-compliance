@@ -12,7 +12,7 @@ from mvp_compliance.rendering import get_renderer
 #: Everything a published version carries except its standing (FR-013) — the
 #: one change a published version ever undergoes is draft -> current ->
 #: superseded, never a change to what it says.
-PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "published_at")
+PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "html", "published_at")
 
 
 def _frozen_fields() -> list[models.Field]:
