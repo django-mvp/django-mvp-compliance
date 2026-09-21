@@ -587,3 +587,15 @@ throwaway script using a real test database (`DiscoverRunner.setup_databases`)
 whitespace, end-of-file and deptry checks passed.
 Next: T056 — CHANGELOG.
 Watch: nothing.
+
+## 2026-09-22T00:44:40+02:00 · Implementer US-5 · T056
+
+Did: CHANGELOG — replaced the stale "Initial scaffold, no models yet" prose
+under `## [Unreleased]` (same staleness as the README banner T055 fixed)
+with a Keep a Changelog `### Added` section naming `Document` and `Version`,
+the two dependencies (`markdown`, `nh3`) and what each does, and the
+`MVP_COMPLIANCE_RENDERER` setting.
+Verified: `poetry run pre-commit run --files CHANGELOG.md` — trailing
+whitespace, end-of-file and deptry checks passed.
+Next: T057 — assert no admin/forms/views/urls.
+Watch: nothing.
