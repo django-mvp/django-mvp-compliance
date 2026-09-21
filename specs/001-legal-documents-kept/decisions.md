@@ -97,3 +97,59 @@ entire body is a comment.
 is a site with a privacy policy page showing nothing while acceptance records accumulate against
 it. Refusing at publication is the cheap moment to catch it, and it cannot be caught later because
 a published version cannot be corrected.
+
+## D8 — A document holding any version cannot be deleted, not only one holding published versions
+
+**Ambiguous**: D6 settled that a document with published versions cannot be deleted and that a
+document created by mistake and never published still can. It did not settle how, and the two
+available mechanisms differ in what they protect.
+
+**Chosen**: the version's foreign key to its document uses `on_delete=PROTECT`. A document holding
+any version at all — draft or published — refuses deletion. A document created by mistake is
+deleted by discarding its drafts first, which FR-005 already allows, and then deleting it.
+
+**Why defensible**: the alternative is `CASCADE` plus an override on `Document.delete()` and
+another on the queryset's `delete()`, because `QuerySet.delete()` never calls `Model.delete()`. That
+is two overrides and a third route — a cascade reaching the document from somewhere else — that
+neither of them covers. `PROTECT` is enforced by Django's deletion collector on every route
+including that third one, and it is part of the field rather than of the model class, so the
+historical model inside a migration carries it too.
+
+The cost is one extra step for a case that should be rare: deleting a document that still holds a
+draft. The benefit is that the route which destroys published wording does not exist to be missed.
+The two failure modes are not comparable — one is mild inconvenience, the other is the loss of the
+evidence this package exists to keep.
+
+## D9 — Refusals raise package exceptions, not `ValidationError`
+
+**Ambiguous**: Django's house style for a rejected write is `ValidationError`, and a later feature
+will present these refusals in a form, which is what `ValidationError` is built for.
+
+**Chosen**: two exception classes of this package's own — `PublishedVersionError` for an attempt to
+change or delete a published version, `PublishError` for a publication refused.
+
+**Why defensible**: `ValidationError` means "this input was not acceptable, tell the person and let
+them try again". Neither of these is that. An attempt to rewrite published wording is a breach of
+the invariant the package exists to hold, and a caller that catches `ValidationError` broadly —
+which form and admin code does by design — would swallow it into a field error, which is the silent
+discard FR-012 exists to forbid. Issue #5 builds the authoring screens and can translate either
+exception into a form error deliberately, at the one layer where a person is actually being asked
+to fix something.
+
+## D10 — One route stays open, and it is one this package writes rather than offers
+
+**Ambiguous**: FR-011 requires the rule to live with the data rather than with any one caller, and
+names data migrations the package ships. Django's historical models are rebuilt from migration
+state and do not carry a model's custom `save()`, so no model-layer guard can reach them.
+
+**Chosen**: the manager is declared `use_in_migrations`, which closes the bulk routes inside a
+migration. The one remaining route — a shipped data migration calling `save()` on a historical
+instance — is closed by not writing one, and a test asserts no shipped migration writes to a
+published version.
+
+**Why defensible**: the route that remains is not a route the package offers anybody. It is
+available only to code inside this repository, written by the people who set the rule, reviewed like
+any other code and now covered by a test that fails if someone writes one. Closing it properly means
+shipping database triggers, which means maintaining the DDL in three dialects and having no answer
+for whatever backend a host project brings. The residue is named here rather than left for somebody
+to discover, because an immutability claim with an unstated exception is worse than a stated one.
