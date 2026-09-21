@@ -186,3 +186,20 @@ reach on every backend, and one backend fewer has a net to catch it.
 This repository's tests run on SQLite, which is where the constraint is exercised. Nothing here is
 verified on MySQL, because nothing in this organisation runs MySQL; that is why this entry says what
 is promised rather than the test suite implying it.
+
+## D12 — proving the numbering collision needs bypassing `save()`, not calling it
+
+**Decision**: `TestVersion::test_number_cannot_collide_within_a_document` forces the
+collision with `Version.objects.bulk_create([Version(document=..., number=1, ...)])`
+rather than constructing a second `Version` and calling `.save()` on it.
+
+**Why**: `Version.save()` always overwrites `number` with `max+1` on insert (D2 — the
+package assigns it, not the caller), so a second `save()` call would never collide; it
+would just get the next number. `bulk_create()` inserts rows without calling each
+instance's `save()`, which is the only route in this story that reaches the table with a
+caller-supplied number still intact — and that is what exercises
+`unique_version_number_per_document` rather than the `save()` logic.
+
+**Revisit if**: a future story adds another write path that bypasses `save()` (a
+management command, a bulk import) — that path needs the same collision test, because
+`save()`'s auto-assignment cannot protect it.
