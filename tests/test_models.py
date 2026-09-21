@@ -167,3 +167,9 @@ class TestPublishing:
 
         second.publish()
         assert document.versions.filter(status=Version.Status.CURRENT).count() == 1
+
+    def test_no_reverse_operation_exists(self):
+        forbidden = {"unpublish", "revert", "rollback", "make_current", "restore"}
+
+        assert not forbidden & set(dir(Version))
+        assert not forbidden & set(dir(Version.objects))
