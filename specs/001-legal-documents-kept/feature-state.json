@@ -20,8 +20,8 @@
       ]
     },
     "plan": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "notified",
+      "at": "2026-09-21T21:05:00Z"
     },
     "merge": {
       "approved_by": null,
@@ -46,11 +46,6 @@
       "status": "todo",
       "replans": 0,
       "tasks": [
-        {
-          "id": "T001",
-          "status": "todo",
-          "attempts": 0
-        },
         {
           "id": "T002",
           "status": "todo",
@@ -248,6 +243,11 @@
         },
         {
           "id": "T047",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T048",
           "status": "todo",
           "attempts": 0
         }

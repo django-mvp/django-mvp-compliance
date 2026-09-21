@@ -7,7 +7,6 @@ Every task follows Article I: the failing test comes first.
 
 | Id | Task | Done when |
 |---|---|---|
-| T001 | Add `markdown` and `nh3` to `[project] dependencies` in `pyproject.toml`, with the comment saying why each is there, and update `poetry.lock` | `poetry install` succeeds, `deptry` reports no missing and no unused dependency |
 | T002 | Create `mvp_compliance/migrations/__init__.py` | The app is migration-enabled and `makemigrations mvp_compliance` writes into it |
 | T003 | Add `tests/test_migrations.py` and `tests/factories.py` to `[tool.forge.conformance] non-mirror-paths` in `pyproject.toml`, beside the existing `tests/test_app.py` entry, with a comment naming the subject each one has instead of a module | `forge conformance` passes on the branch |
 
@@ -55,13 +54,14 @@ Every task follows Article I: the failing test comes first.
 | Id | Task | Done when |
 |---|---|---|
 | T040 | `tests/test_rendering.py::TestMarkdownRenderer` — headings, lists, emphasis, links and tables survive; `<script>`, `<style>`, `<iframe>`, an `onclick` attribute and a `javascript:` URL do not (FR-017, US-4 scenario 4) | Fails before T041 |
-| T041 | `mvp_compliance/rendering.py` — `MarkdownRenderer` per plan.md: `extensions`, `allowed_tags`, `allowed_attributes`, `allowed_url_schemes` as class attributes, `render()` running `markdown` then `nh3.clean`. Module docstring stating Article XIII: this is called once, at publication | T040 passes |
-| T042 | `mvp_compliance/rendering.py` — `get_renderer()`, resolving `MVP_COMPLIANCE_RENDERER` through `import_string` and defaulting to `MarkdownRenderer`. `tests/test_rendering.py::TestRendererSetting` covers the default and an override | Passes |
-| T043 | `mvp_compliance/models.py` — `html` (`TextField(blank=True)`), and `publish()` renders into it before anything is written. A draft carries no `html` (FR-019, scenario 5) | `tests/test_models.py::TestPublishing` covers both |
-| T044 | `mvp_compliance/models.py` — `publish()` refuses with `PublishError` when the rendered output is empty once whitespace is stripped, before the row is touched (FR-018, D7, edge case 6) | Test passes and the document is unchanged afterwards |
-| T045 | `tests/test_models.py::TestPublishing::test_stored_html_survives_a_renderer_change` — publish, swap `MVP_COMPLIANCE_RENDERER` with `override_settings` for a renderer that produces something visibly different, re-read, assert the stored HTML is byte-identical (US-4 scenario 3, SC-004) | Passes |
-| T046 | `tests/test_models.py::TestImmutability::test_published_html_cannot_be_changed` — `html` is in the frozen set, covered by the same five routes as `markdown` | Passes |
-| T047 | `makemigrations mvp_compliance` | `makemigrations --check` clean |
+| T041 | Add `markdown` and `nh3` to `[project] dependencies` in `pyproject.toml` with a comment saying why each is there, and `poetry lock`. This lands here rather than in the foundational phase because `deptry` fails a declared dependency nothing imports, and `rendering.py` is the first module to import either | `deptry` reports no missing and no unused dependency |
+| T042 | `mvp_compliance/rendering.py` — `MarkdownRenderer` per plan.md: `extensions`, `allowed_tags`, `allowed_attributes`, `allowed_url_schemes` as class attributes, `render()` running `markdown` then `nh3.clean`. Module docstring stating Article XIII: this is called once, at publication | T040 passes |
+| T043 | `mvp_compliance/rendering.py` — `get_renderer()`, resolving `MVP_COMPLIANCE_RENDERER` through `import_string` and defaulting to `MarkdownRenderer`. `tests/test_rendering.py::TestRendererSetting` covers the default and an override | Passes |
+| T044 | `mvp_compliance/models.py` — `html` (`TextField(blank=True)`), and `publish()` renders into it before anything is written. A draft carries no `html` (FR-019, scenario 5) | `tests/test_models.py::TestPublishing` covers both |
+| T045 | `mvp_compliance/models.py` — `publish()` refuses with `PublishError` when the rendered output is empty once whitespace is stripped, before the row is touched (FR-018, D7, edge case 6) | Test passes and the document is unchanged afterwards |
+| T046 | `tests/test_models.py::TestPublishing::test_stored_html_survives_a_renderer_change` — publish, swap `MVP_COMPLIANCE_RENDERER` with `override_settings` for a renderer that produces something visibly different, re-read, assert the stored HTML is byte-identical (US-4 scenario 3, SC-004) | Passes |
+| T047 | `tests/test_models.py::TestImmutability::test_published_html_cannot_be_changed` — `html` is in the frozen set, covered by the same routes as `markdown` | Passes |
+| T048 | `makemigrations mvp_compliance` | `makemigrations --check` clean |
 
 ## US-5 — Every version stays retrievable, forever (P2, issue #11)
 
