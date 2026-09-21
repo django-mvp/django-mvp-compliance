@@ -34,9 +34,15 @@ version a person saw.
   at what time.
 - Enforcement, so a user who has not accepted the current version is asked to
   before continuing.
+- Translations, so a reader sees a document in their own language.
 - Cookie consent, gathered and recorded alongside everything else.
 - A place in the account area where a signed-in person can see what they have
   agreed to and what they have chosen.
+
+Each version has one canonical text, and that is the text an acceptance points
+at. Translations exist so people can read a document in their own language, and
+carry the usual notice that the canonical version governs. Adding a translation
+later does not create a new version for everyone who already accepted.
 
 **What it deliberately is not**
 
@@ -50,14 +56,20 @@ version a person saw.
 - **It is not a CMS.** The documents it manages are the legal ones. Nothing
   here is aimed at general page content.
 
-**Tie-breaks**
+**When it cannot be recorded, it did not happen**
 
-1. A published version is immutable. Everything else gives way to that, because
-   an editable record of what someone agreed to is not a record.
-2. Prefer what the host project already runs. Rendering, styling and navigation
-   come from django-mvp rather than from anything shipped here.
-3. Record over enforce. When the two conflict, keeping an accurate account of
-   what happened wins.
+This is the principle that settles the close calls. Someone who clicks "I
+accept" and whose acceptance fails to save has not accepted: they see the page
+again rather than continuing with nothing behind them. A check that cannot
+reach the data telling it whether someone has accepted does not assume they
+have.
+
+Letting a person through and reconciling afterwards is the other available
+answer, and it is the wrong one here. A gap in enforcement is a gap. A person
+using the site with no record of what they agreed to is the thing this package
+exists to prevent.
+
+The standing directions this package steers by are in [GOALS.md](GOALS.md).
 
 ## Prior art
 
