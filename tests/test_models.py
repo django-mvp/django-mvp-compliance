@@ -116,6 +116,20 @@ class TestPublishing:
 
         assert version.html != ""
 
+    def test_publishing_a_draft_whose_output_is_empty_once_stripped_is_refused(
+        self, document
+    ):
+        version = VersionFactory(document=document, markdown="   \n\n   ")
+
+        with pytest.raises(PublishError):
+            version.publish()
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.DRAFT
+        assert version.published_at is None
+        assert version.html == ""
+        assert not document.versions.filter(status=Version.Status.CURRENT).exists()
+
     def test_a_draft_with_stored_html_is_refused_by_the_database(self, document):
         with pytest.raises(IntegrityError):
             Version.objects.bulk_create(

@@ -189,12 +189,16 @@ class Version(models.Model):
     def publish(self) -> None:
         """Make this draft the version in force, superseding whichever one held it.
 
-        Refuses when this version is not a draft (FR-010).
+        Refuses when this version is not a draft (FR-010), or when the
+        rendered output is empty once whitespace is stripped (FR-018, D7) —
+        before anything about this row or the document is touched.
         """
         if self.status != self.Status.DRAFT:
             raise PublishError(_("This version has already been published."))
 
         html = get_renderer()().render(self.markdown)
+        if not html.strip():
+            raise PublishError(_("Publishing this would produce no output."))
 
         with transaction.atomic():
             # Not belt-and-braces: MySQL and MariaDB silently omit the partial
