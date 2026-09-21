@@ -15,17 +15,17 @@ from mvp_compliance.rendering import get_renderer
 PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "html", "published_at")
 
 
-def _frozen_fields() -> list[models.Field]:
+def frozen_fields() -> list[models.Field]:
     return [
         cast(models.Field, Version._meta.get_field(name))
         for name in PUBLISHED_FROZEN_FIELDS
     ]
 
 
-def _frozen_field_keys() -> set[str]:
+def frozen_field_keys() -> set[str]:
     """Each frozen field's name and attname, so ``document_id`` is caught too."""
     keys: set[str] = set()
-    for field in _frozen_fields():
+    for field in frozen_fields():
         keys.add(field.name)
         keys.add(field.attname)
     return keys
@@ -67,7 +67,7 @@ class VersionQuerySet(models.QuerySet):
     """
 
     def update(self, **kwargs) -> int:
-        touches_frozen_field = bool(_frozen_field_keys() & set(kwargs))
+        touches_frozen_field = bool(frozen_field_keys() & set(kwargs))
         if touches_frozen_field and self.exclude(status=Version.Status.DRAFT).exists():
             raise PublishedVersionError(
                 _("A published version's wording cannot be changed.")
@@ -253,17 +253,17 @@ class Version(models.Model):
             )["number__max"]
             self.number = (current_max or 0) + 1
         else:
-            self._refuse_if_published_wording_changed()
+            self.refuse_if_published_wording_changed()
         super().save(*args, **kwargs)
 
-    def _refuse_if_published_wording_changed(self) -> None:
+    def refuse_if_published_wording_changed(self) -> None:
         """Refuse a ``save()`` that changes a frozen field on a published row.
 
         Re-reads the stored row rather than trusting this instance's own
         history, so the check survives ``refresh_from_db``, deferred loading
         and an instance built by a third party.
         """
-        attnames = [field.attname for field in _frozen_fields()]
+        attnames = [field.attname for field in frozen_fields()]
         stored = Version.objects.filter(pk=self.pk).values("status", *attnames).first()
         if stored is None or stored["status"] == self.Status.DRAFT:
             return
