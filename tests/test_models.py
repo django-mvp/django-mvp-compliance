@@ -470,3 +470,12 @@ class TestRetrieval:
         third.publish()
 
         assert document.current == third
+
+    def test_a_document_with_nothing_published_reports_no_version_in_force(
+        self, document
+    ):
+        assert document.current is None
+
+        VersionFactory(document=document)
+
+        assert document.current is None
