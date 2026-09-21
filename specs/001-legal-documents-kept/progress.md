@@ -536,3 +536,34 @@ files. `poetry run ruff check mvp_compliance tests` and
 `poetry run ruff format --check mvp_compliance tests` — both clean.
 Next: T052 — the never-published case.
 Watch: nothing.
+
+## 2026-09-22T00:43:08+02:00 · Implementer US-5 · T052
+
+Did: `test_a_document_with_nothing_published_reports_no_version_in_force` — a
+freshly created document, then one with only a draft, both read
+`document.current`.
+Verified: `poetry run pytest tests/test_models.py::TestRetrieval` — 4 passed
+on first run, T051's implementation already covers it (FR-008, SC-006).
+Next: T053.
+Watch: nothing.
+
+## 2026-09-22T00:43:08+02:00 · Implementer US-5 · T053
+
+Did: `test_one_version_by_its_number` — `document.versions.get(number=2)`
+against a document with three versions.
+Verified: `poetry run pytest tests/test_models.py::TestRetrieval` — 5 passed
+on first run; the plain Django idiom needs no wrapper (FR-021).
+Next: T054.
+Watch: nothing.
+
+## 2026-09-22T00:43:08+02:00 · Implementer US-5 · T054
+
+Did: `test_four_documents_do_not_interfere` — four documents each
+accumulating their own versions (one untouched, one draft-only, two
+published to different depths), asserting numbering, `.current` and
+`.published()` are exactly each document's own (SC-001).
+Verified: `poetry run pytest tests/test_models.py::TestRetrieval` — 6
+passed on first run. `poetry run ruff check tests` and
+`poetry run ruff format --check tests` clean.
+Next: T055 — README.
+Watch: nothing.
