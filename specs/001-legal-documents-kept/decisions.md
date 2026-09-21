@@ -388,3 +388,26 @@ covers all three routes: `document.versions.published()`, and the current-versio
 **Revisit if**: `VersionQuerySet` gains a fourth method a related manager needs to expose — add the
 same one-line forward rather than switching to `from_queryset()`, since the mypy rejection is
 structural to that API and does not change with the method count.
+
+## D22 — T055 and T056 also fixed the README's and CHANGELOG's stale scaffold banners, and T055 added a Retrieval section to `docs/models.md`
+
+**Decision**: T055's brief text is "README — the model surface, the one setting, and what this
+feature does and does not provide". Doing that meant replacing the README's `> **Status: 0.0.1,
+scaffold only** ... No models ... have been built yet` banner and the CHANGELOG's `## [Unreleased]`
+prose ("Initial scaffold ... No models ... yet"), both unchanged since the initial scaffold commit
+and both false since US-1 landed `Document` and `Version`. T055 also added a `### Retrieval`
+section to `docs/models.md`, outside the brief's named files.
+
+**Why**: writing an accurate "the models are X" section directly beneath a banner claiming no
+models exist is not documentation, it is a contradiction on one page — the reader has no way to
+know which claim to believe. `docs/models.md` follows D13's precedent exactly: new public surface
+(`published()`, `drafts()`, `current()`, `Document.current`) gets a page in the story that adds it,
+and the full verify's `docs` step is where that would otherwise be caught red.
+
+**What makes it safe**: both banner rewrites are narrowly scoped to the false claim itself — the
+README's "Scope & philosophy" section and the CHANGELOG's format/header lines are untouched. Every
+code example added to README.md and docs/models.md was run against this branch in a throwaway
+script using a real test database, the same method D13's page used.
+
+**Revisit if**: a later story wants the README status line to say more than "early development" —
+nothing here is meant to be the last word on it, only an accurate one.
