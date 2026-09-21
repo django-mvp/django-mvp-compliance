@@ -32,6 +32,33 @@ number its document already holds — it is never supplied by whoever writes the
 version, and the database refuses a second version with a number its document
 already has.
 
-Nothing about publishing, immutability or rendering is here yet: a version at this
-stage is freely editable Markdown with no legal standing. Those behaviours land in
-later stories on top of the two models above.
+### Publishing
+
+A version starts as a **draft**: no legal standing, invisible to readers, freely
+editable and freely discardable.
+
+```python
+version = Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...")
+version.status  # Version.Status.DRAFT
+version.is_published  # False
+```
+
+Calling `version.publish()` makes it the version **current** for its document — the
+one in force — and moves whichever version was current before it to **superseded**.
+A document has at most one current version at any moment, held by a database
+constraint rather than by the method:
+
+```python
+version.publish()
+version.status  # Version.Status.CURRENT
+version.published_at  # the moment it was published
+```
+
+Publishing an already-published version raises `mvp_compliance.exceptions.PublishError`
+and changes nothing about the document. Publishing is one-way: the package offers no
+`unpublish`, `revert`, `rollback`, `restore` or `make_current` — a correction of any
+size is published again as a new version.
+
+Nothing about immutability or rendering is here yet: a published version's wording
+can still be changed by this story's code. That lands in a later story on top of the
+model above.
