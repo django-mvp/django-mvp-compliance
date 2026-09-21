@@ -43,27 +43,58 @@ version.status  # Version.Status.DRAFT
 version.is_published  # False
 ```
 
-Calling `version.publish()` makes it the version **current** for its document — the
-one in force — and moves whichever version was current before it to **superseded**.
-A document has at most one current version at any moment, held by a database
-constraint rather than by the method:
+Calling `version.publish()` renders `version.markdown` to HTML, then makes the
+version **current** for its document — the one in force — and moves whichever
+version was current before it to **superseded**. A document has at most one
+current version at any moment, held by a database constraint rather than by the
+method:
 
 ```python
 version.publish()
 version.status  # Version.Status.CURRENT
 version.published_at  # the moment it was published
+version.html  # the HTML a reader is served, rendered from version.markdown
 ```
 
 Publishing an already-published version raises `mvp_compliance.exceptions.PublishError`
-and changes nothing about the document. Publishing is one-way: the package offers no
-`unpublish`, `revert`, `rollback`, `restore` or `make_current` — a correction of any
-size is published again as a new version.
+and changes nothing about the document. Publishing is also refused, before anything
+is written, when the rendered output is empty once whitespace is stripped — a draft
+whose markdown produces nothing has nothing to publish. Publishing is one-way: the
+package offers no `unpublish`, `revert`, `rollback`, `restore` or `make_current` — a
+correction of any size is published again as a new version.
+
+### Rendering
+
+`version.html` is produced once, at publication, by
+`mvp_compliance.rendering.MarkdownRenderer` — never again on the way a stored
+version is read, so a later change to the renderer cannot alter what a published
+version already says:
+
+```python
+from mvp_compliance.rendering import MarkdownRenderer
+
+MarkdownRenderer().render("# Heading\n\nSome *text* and a [link](https://example.com).")
+```
+
+The output is sanitised against an explicit allow list — headings, paragraphs,
+lists, emphasis, links, blockquotes, code and tables survive; `<script>`,
+`<style>`, `<iframe>` and any `javascript:` URL do not. A host project that wants
+a different allow list subclasses `MarkdownRenderer` and points the
+`MVP_COMPLIANCE_RENDERER` setting at it as a dotted path:
+
+```python
+# settings.py
+MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"
+```
+
+`mvp_compliance.rendering.get_renderer()` resolves that setting, defaulting to
+`MarkdownRenderer` when it is unset.
 
 ### Immutability
 
 Once a version is published — current or superseded, `version.is_published` — its
-`document`, `number`, `markdown` and `published_at` can never change again. Only
-`status` can, because moving from current to superseded is the one change a
+`document`, `number`, `markdown`, `html` and `published_at` can never change again.
+Only `status` can, because moving from current to superseded is the one change a
 published version ever undergoes:
 
 ```python
@@ -95,4 +126,3 @@ including a queryset delete and a cascade from elsewhere — the package adds no
 override on either side.
 
 `mvp_compliance.exceptions.PublishedVersionError` is what every route above raises.
-Rendering is not here yet: `Version.html` and the renderer land in a later story.
