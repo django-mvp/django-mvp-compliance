@@ -47,6 +47,22 @@ class TestMarkdownRenderer:
         assert "javascript:" in source
         assert "javascript:" not in html
 
+    def test_a_link_cannot_open_a_new_browsing_context(self):
+        """What makes dropping ``rel`` safe (D19).
+
+        ``rel="noopener noreferrer"`` only protects a link that opens a new
+        browsing context, and ``target`` is not an attribute this renderer
+        allows. Widen the allow list to include it and this fails, which is
+        the point at which ``link_rel`` has to come back.
+        """
+        source = '<a href="https://example.com" target="_blank">a link</a>'
+
+        html = MarkdownRenderer().render(source)
+
+        assert "target" in source
+        assert "target" not in html
+        assert '<a href="https://example.com">a link</a>' in html
+
 
 class TestRendererSetting:
     """The renderer is resolved from a setting, defaulting to MarkdownRenderer."""

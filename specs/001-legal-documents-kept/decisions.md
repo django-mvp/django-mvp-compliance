@@ -324,6 +324,12 @@ Without `link_rel=None`, that assertion failed on the first run with an unexpect
 noreferrer"` on the tag — not a bug in the test or the allow list, but `nh3` adding an attribute
 outside the ones this renderer declares.
 
+**What makes it safe**: `rel="noopener noreferrer"` protects a link that opens a new browsing
+context, and `target` is not an attribute this renderer allows, so a rendered link cannot open
+one. That is the whole of the argument, and it holds only as long as `target` stays out of the
+allow list — so `test_a_link_cannot_open_a_new_browsing_context` asserts it, confirmed failing
+with `target` added and passing with it removed.
+
 **Revisit if**: a later story wants `rel` on rendered links (for instance, `noopener` on links a
 reader might open from published content) — set `link_rel` explicitly rather than relying on
 `nh3`'s default, and add it to `allowed_attributes` so the allow list stays the single source of

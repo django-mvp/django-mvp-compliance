@@ -495,3 +495,18 @@ and all five immutability-refusal routes each raised
 `PublishedVersionError` as shown. All passed.
 Next: full verify (§5).
 Watch: nothing.
+
+## 2026-09-22T00:45:00+02:00 · US-4 acceptance
+
+Did: independent re-verification of US-4. Full suite 49 passed, all eight
+pre-commit hooks green on a cleared lint cache, `makemigrations --check
+--dry-run` clean, guardrail scan clean over c13c411..HEAD.
+Checked D19 rather than taking it. Dropping `rel` from rendered links is safe
+because `target` is not an allowed attribute, so a link cannot open a new
+browsing context — but nothing asserted that, which left the argument one
+allow-list widening away from being wrong silently. Added
+`test_a_link_cannot_open_a_new_browsing_context`, confirmed red with `target`
+allowed and green with it removed, and recorded what holds D19 up. Suite now
+50 passed.
+Next: US-5.
+Watch: nothing.
