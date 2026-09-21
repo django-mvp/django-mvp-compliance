@@ -3,11 +3,12 @@
 import pytest
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
+from django.db.models import ProtectedError
 from django.utils import timezone
 
 from mvp_compliance.exceptions import PublishedVersionError, PublishError
 from mvp_compliance.models import Document, Version, VersionManager
-from tests.factories import VersionFactory
+from tests.factories import DocumentFactory, VersionFactory
 
 
 @pytest.mark.django_db
@@ -260,6 +261,33 @@ class TestImmutability:
         first.refresh_from_db()
         assert first.status == Version.Status.SUPERSEDED
         assert first.markdown == original_markdown
+
+    def test_deleting_a_document_holding_a_version_is_refused(self, document):
+        VersionFactory(document=document)
+
+        with pytest.raises(ProtectedError):
+            document.delete()
+
+        assert Document.objects.filter(pk=document.pk).exists()
+
+    def test_deleting_a_document_with_no_versions_succeeds(self):
+        empty = DocumentFactory()
+        pk = empty.pk
+
+        empty.delete()
+
+        assert not Document.objects.filter(pk=pk).exists()
+
+    def test_discarding_the_only_draft_returns_the_document_to_its_empty_state(
+        self, document
+    ):
+        draft = VersionFactory(document=document)
+
+        draft.delete()
+
+        assert not document.versions.exists()
+        document.delete()
+        assert not Document.objects.filter(pk=document.pk).exists()
 
     def test_historical_version_model_uses_this_packages_manager(self):
         """A migration's historical model gets the same guards (D10)."""
