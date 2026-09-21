@@ -13,7 +13,12 @@ requires-python = ">=3.12,<4.0"
 # inside django-mvp's layout primitives and take their styling from the daisyUI
 # theme the host project already runs. Installed without it, every page this
 # package owns renders unstyled.
-dependencies = ["django>=5.2", "django-mvp>=0.23.0"]
+dependencies = [
+    "django>=5.2",
+    "django-mvp>=0.23.0",
+    "markdown>=3.7", # turns an authored version's wording into HTML at publication
+    "nh3>=0.2", # sanitises that HTML against an explicit allow list before it is stored
+]
 keywords = ["django", "gdpr", "privacy", "consent", "terms", "cookies"]
 classifiers = [
     "Development Status :: 3 - Alpha",
