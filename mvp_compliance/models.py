@@ -15,22 +15,6 @@ from mvp_compliance.rendering import get_renderer
 PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "html", "published_at")
 
 
-def frozen_fields() -> list[models.Field]:
-    return [
-        cast(models.Field, Version._meta.get_field(name))
-        for name in PUBLISHED_FROZEN_FIELDS
-    ]
-
-
-def frozen_field_keys() -> set[str]:
-    """Each frozen field's name and attname, so ``document_id`` is caught too."""
-    keys: set[str] = set()
-    for field in frozen_fields():
-        keys.add(field.name)
-        keys.add(field.attname)
-    return keys
-
-
 class Document(models.Model):
     """A named legal text with a lasting identity, such as a privacy policy.
 
@@ -67,7 +51,7 @@ class VersionQuerySet(models.QuerySet):
     """
 
     def update(self, **kwargs) -> int:
-        touches_frozen_field = bool(frozen_field_keys() & set(kwargs))
+        touches_frozen_field = bool(Version.frozen_field_keys() & set(kwargs))
         if touches_frozen_field and self.published().exists():
             raise PublishedVersionError(
                 _("A published version's wording cannot be changed.")
@@ -218,6 +202,23 @@ class Version(models.Model):
         """Whether this version has ever been published — current or superseded."""
         return self.status != self.Status.DRAFT
 
+    @classmethod
+    def frozen_fields(cls) -> list[models.Field]:
+        """The fields a published version may never change."""
+        return [
+            cast(models.Field, cls._meta.get_field(name))
+            for name in PUBLISHED_FROZEN_FIELDS
+        ]
+
+    @classmethod
+    def frozen_field_keys(cls) -> set[str]:
+        """Each frozen field's name and attname, so ``document_id`` is caught too."""
+        keys: set[str] = set()
+        for field in cls.frozen_fields():
+            keys.add(field.name)
+            keys.add(field.attname)
+        return keys
+
     def publish(self) -> None:
         """Make this draft the version in force, superseding whichever one held it.
 
@@ -261,7 +262,7 @@ class Version(models.Model):
         history, so the check survives ``refresh_from_db``, deferred loading
         and an instance built by a third party.
         """
-        attnames = [field.attname for field in frozen_fields()]
+        attnames = [field.attname for field in self.frozen_fields()]
         stored = Version.objects.filter(pk=self.pk).values("status", *attnames).first()
         if stored is None or stored["status"] == self.Status.DRAFT:
             return
