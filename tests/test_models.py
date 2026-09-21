@@ -433,3 +433,40 @@ class TestImmutability:
         historical_version = state.apps.get_model("mvp_compliance", "Version")
 
         assert isinstance(historical_version.objects, VersionManager)
+
+
+@pytest.mark.django_db
+class TestRetrieval:
+    """Every version stays retrievable, forever (US-5)."""
+
+    def test_published_history_comes_back_in_order_with_drafts_absent(self, document):
+        first = VersionFactory(document=document, markdown="First wording")
+        first.publish()
+        second = VersionFactory(document=document, markdown="Second wording")
+        second.publish()
+        third = VersionFactory(document=document, markdown="Third wording")
+        third.publish()
+        VersionFactory(document=document, markdown="An unpublished draft")
+
+        assert list(document.versions.published()) == [first, second, third]
+
+    def test_a_superseded_version_keeps_its_original_wording_and_html(self, document):
+        first = VersionFactory(document=document, markdown="Original wording")
+        first.publish()
+        original_markdown = first.markdown
+        original_html = first.html
+
+        VersionFactory(document=document, markdown="Replacement wording").publish()
+
+        first.refresh_from_db()
+        assert first.status == Version.Status.SUPERSEDED
+        assert first.markdown == original_markdown
+        assert first.html == original_html
+
+    def test_the_version_in_force_is_the_one_most_recently_published(self, document):
+        VersionFactory(document=document, markdown="First wording").publish()
+        VersionFactory(document=document, markdown="Second wording").publish()
+        third = VersionFactory(document=document, markdown="Third wording")
+        third.publish()
+
+        assert document.current == third
