@@ -1,0 +1,63 @@
+{
+  "role": "reviewer",
+  "repo": "django-mvp/django-mvp-compliance",
+  "feature": "001-legal-documents-kept",
+  "epic": 4,
+  "pr": 19,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-fs001",
+  "diff_range": "origin/main..HEAD",
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-17/b773db2e"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    }
+  ],
+  "context": {
+    "what_this_feature_is": "The data layer for versioned legal documents. A document is a name with a lasting identity and no wording of its own. Every word lives in one of its versions. A version starts as a draft, and publishing is a one-way step that renders it to HTML, freezes it, and makes it the version in force while the previous one becomes superseded. A published version can never be changed or deleted by any route the package offers.",
+    "read_first": [
+      "specs/001-legal-documents-kept/spec.md — the approved specification, including all five user stories, FR-001 to FR-022 and SC-001 to SC-007. This is what the code is reviewed against.",
+      "specs/001-legal-documents-kept/plan.md — the design, as corrected by the design review.",
+      "CONSTITUTION.md — the repo's own standards, including the Django field requirements and the test structure articles.",
+      "specs/001-legal-documents-kept/decisions.md — 22 decisions. Several rule out things that would otherwise look like omissions, so check a suspected gap against this file before reporting it."
+    ],
+    "environment": "Poetry. `poetry run pytest`, `poetry run pre-commit run --all-files`, `poetry run python manage.py makemigrations --check --dry-run`. All three are green on the branch tip as of this dispatch.",
+    "already_verified": "58 tests pass, every lint, format, type and dependency hook passes on a cleared cache, no migration is outstanding, and the guardrail scan over the whole branch is clean. Do not spend the review re-running these. Your value is in what a machine gate cannot read.",
+    "decisions_that_are_not_defects": [
+      "D5 — no admin, no forms, no views, no URLs. Deliberate for this feature.",
+      "D8 — no `Document.delete()` override. `on_delete=PROTECT` is what refuses it, on every route.",
+      "D10 — a data migration calling `save()` on a historical instance is a route the guards cannot reach. It is closed by a test asserting no shipped migration contains a `RunPython` or `RunSQL`.",
+      "D11 — the conditional unique constraint is not created on MySQL or MariaDB. The row lock in `publish()` is the only thing holding one-version-in-force there. This is recorded, not overlooked.",
+      "D15 — `publish()` deliberately does not translate a constraint `IntegrityError` into `PublishError`.",
+      "D19 — `nh3.clean()` is called with `link_rel=None`, so the sanitiser does not add `rel` outside the declared allow list. Its safety rests on `target` not being an allowed attribute, which has its own test.",
+      "D21 — `VersionManager` forwards queryset methods explicitly because `Manager.from_queryset()` does not type-check."
+    ]
+  },
+  "lenses": [
+    "correctness — does the code do what the specification says, on every path, including the ones no test covers? Read `publish()`, the four refusal routes and the check constraint especially carefully.",
+    "spec compliance — is every functional requirement and success criterion actually delivered, and is anything delivered that the specification does not ask for?"
+  ],
+  "specific_questions": [
+    "The save() guard re-reads the stored row and compares each frozen field. Is there a way to change a published version's wording that it misses — deferred loading, an instance built from `.only()`, `update_fields`, a raw queryset, `refresh_from_db`, a signal?",
+    "`publish()` calls `save(update_fields=[...])`, which goes through the same `save()` that refuses changes to frozen fields on a published row. The row is still a draft at that moment. Is that reasoning airtight, including when `publish()` is called on an instance that was loaded before another process published it?",
+    "The check constraint ties status, published_at and html together. Are there states the constraint permits that the specification forbids, or states it forbids that the specification permits?",
+    "Version numbers are assigned in `save()` by taking `Max(number) + 1` for the document. What happens under two concurrent creations, and is the unique constraint the intended catch?",
+    "`document.current` returns `.first()` on a queryset filtered to current. The database permits at most one such row on SQLite and PostgreSQL but not on MySQL. Is `.first()` the right call, and does the ordering make it deterministic?"
+  ],
+  "report": {
+    "path": "/tmp/dmc-review-findings.json",
+    "schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json"
+  },
+  "rules": [
+    "Report findings, not preferences. A finding names what is wrong, why it is wrong, and what would fix it. A different way you would have written it is not a finding.",
+    "Every finding carries a severity you can defend and the evidence for it — the file and line, and the input or sequence that makes it fail.",
+    "Check a suspected gap against decisions.md before reporting it. Several apparent omissions are recorded decisions.",
+    "Do not change any code. You review, you do not fix.",
+    "Copy each required skill's RECEIPT line verbatim into skills_loaded."
+  ]
+}
