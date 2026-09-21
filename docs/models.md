@@ -61,4 +61,6 @@ size is published again as a new version.
 
 Nothing about immutability or rendering is here yet: a published version's wording
 can still be changed by this story's code. That lands in a later story on top of the
-model above.
+model above, and it is what `mvp_compliance.exceptions.PublishedVersionError` will be
+raised for — declared now, alongside `PublishError`, but not yet raised by anything
+in this story.
