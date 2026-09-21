@@ -4,7 +4,7 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
-from mvp_compliance.exceptions import PublishError
+from mvp_compliance.exceptions import PublishedVersionError, PublishError
 from mvp_compliance.models import Document, Version
 from tests.factories import VersionFactory
 
@@ -173,3 +173,63 @@ class TestPublishing:
 
         assert not forbidden & set(dir(Version))
         assert not forbidden & set(dir(Version.objects))
+
+
+@pytest.mark.django_db
+class TestImmutability:
+    """A published version's wording can never change (Article XII, FR-011 to FR-014)."""
+
+    def test_saving_a_published_version_with_changed_wording_is_refused(
+        self, published_version
+    ):
+        original_markdown = published_version.markdown
+        published_version.markdown = "Tampered wording"
+
+        with pytest.raises(PublishedVersionError):
+            published_version.save()
+
+        published_version.refresh_from_db()
+        assert published_version.markdown == original_markdown
+
+    def test_updating_a_published_version_through_the_queryset_is_refused(
+        self, published_version
+    ):
+        original_markdown = published_version.markdown
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=published_version.pk).update(
+                markdown="Tampered wording"
+            )
+
+        published_version.refresh_from_db()
+        assert published_version.markdown == original_markdown
+
+    def test_bulk_updating_a_published_version_is_refused(self, published_version):
+        original_markdown = published_version.markdown
+        published_version.markdown = "Tampered wording"
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.bulk_update([published_version], ["markdown"])
+
+        published_version.refresh_from_db()
+        assert published_version.markdown == original_markdown
+
+    def test_deleting_a_published_version_instance_is_refused(self, published_version):
+        original_markdown = published_version.markdown
+
+        with pytest.raises(PublishedVersionError):
+            published_version.delete()
+
+        published_version.refresh_from_db()
+        assert published_version.markdown == original_markdown
+
+    def test_deleting_a_published_version_through_the_queryset_is_refused(
+        self, published_version
+    ):
+        original_markdown = published_version.markdown
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=published_version.pk).delete()
+
+        published_version.refresh_from_db()
+        assert published_version.markdown == original_markdown

@@ -15,3 +15,11 @@ def document(db):
 def draft(db):
     """A saved :class:`Version`, with its owning document auto-created."""
     return VersionFactory()
+
+
+@pytest.fixture
+def published_version(db):
+    """A saved, published :class:`Version`, with its owning document auto-created."""
+    version = VersionFactory()
+    version.publish()
+    return version
