@@ -479,3 +479,10 @@ class TestRetrieval:
         VersionFactory(document=document)
 
         assert document.current is None
+
+    def test_one_version_by_its_number(self, document):
+        VersionFactory(document=document, markdown="First wording")
+        second = VersionFactory(document=document, markdown="Second wording")
+        VersionFactory(document=document, markdown="Third wording")
+
+        assert document.versions.get(number=2) == second
