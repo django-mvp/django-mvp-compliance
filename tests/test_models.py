@@ -277,6 +277,51 @@ class TestImmutability:
         published_version.refresh_from_db()
         assert published_version.markdown == original_markdown
 
+    def test_saving_a_fresh_instance_carrying_a_published_pk_is_refused(
+        self, published_version
+    ):
+        """A guard keyed on "is this instance new" is no guard at all.
+
+        An instance built with ``Version(...)`` has never been fetched, so
+        Django reports it as being added even when its primary key names a
+        stored row. The write still lands as an update.
+        """
+        original_markdown = published_version.markdown
+        forged = Version(
+            pk=published_version.pk,
+            document=published_version.document,
+            number=published_version.number,
+            markdown="Tampered wording",
+            html=published_version.html,
+            status=published_version.status,
+            published_at=published_version.published_at,
+        )
+
+        with pytest.raises(PublishedVersionError):
+            forged.save()
+
+        published_version.refresh_from_db()
+        assert published_version.markdown == original_markdown
+        assert Version.objects.filter(pk=published_version.pk).count() == 1
+
+    def test_a_draft_still_saves_from_a_fresh_instance_carrying_its_pk(self, draft):
+        """The same route on a draft is an ordinary edit and stays allowed."""
+        rebuilt = Version(
+            pk=draft.pk,
+            document=draft.document,
+            number=draft.number,
+            markdown="Reworded while still a draft",
+            html=draft.html,
+            status=draft.status,
+            published_at=draft.published_at,
+        )
+
+        rebuilt.save()
+
+        draft.refresh_from_db()
+        assert draft.markdown == "Reworded while still a draft"
+        assert draft.number == rebuilt.number
+
     def test_updating_a_published_version_through_the_queryset_is_refused(
         self, published_version
     ):

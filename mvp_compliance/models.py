@@ -246,26 +246,40 @@ class Version(models.Model):
             self.save(update_fields=["status", "published_at", "html"])
 
     def save(self, *args, **kwargs) -> None:
-        if self._state.adding:
+        stored = self.stored_row()
+        if stored is None:
             current_max = Version.objects.filter(document=self.document).aggregate(
                 models.Max("number")
             )["number__max"]
             self.number = (current_max or 0) + 1
         else:
-            self.refuse_if_published_wording_changed()
+            self.refuse_if_published_wording_changed(stored)
         super().save(*args, **kwargs)
 
-    def refuse_if_published_wording_changed(self) -> None:
+    def stored_row(self) -> dict | None:
+        """This row as the database holds it, or ``None`` when it is new.
+
+        Asking the database, rather than asking Django whether this instance
+        is being added. An instance built with ``Version(pk=...)`` has never
+        been fetched, so Django reports it as being added even though the
+        write it is about to make is an update to a row that already exists.
+        """
+        if self.pk is None:
+            return None
+        attnames = [field.attname for field in self.frozen_fields()]
+        stored = Version.objects.filter(pk=self.pk).values("status", *attnames).first()
+        return cast(dict | None, stored)
+
+    def refuse_if_published_wording_changed(self, stored: dict) -> None:
         """Refuse a ``save()`` that changes a frozen field on a published row.
 
-        Re-reads the stored row rather than trusting this instance's own
+        Compares against the stored row rather than this instance's own
         history, so the check survives ``refresh_from_db``, deferred loading
         and an instance built by a third party.
         """
-        attnames = [field.attname for field in self.frozen_fields()]
-        stored = Version.objects.filter(pk=self.pk).values("status", *attnames).first()
-        if stored is None or stored["status"] == self.Status.DRAFT:
+        if stored["status"] == self.Status.DRAFT:
             return
+        attnames = [field.attname for field in self.frozen_fields()]
         if any(stored[attname] != getattr(self, attname) for attname in attnames):
             raise PublishedVersionError(
                 _("A published version's wording cannot be changed.")
