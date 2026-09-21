@@ -3,7 +3,7 @@
 import pytest
 from django.db import IntegrityError
 
-from mvp_compliance.models import Document
+from mvp_compliance.models import Document, Version
 
 
 @pytest.mark.django_db
@@ -30,3 +30,30 @@ class TestDocument:
             field.name for field in Document._meta.get_fields() if field.concrete
         }
         assert field_names == {"id", "name"}
+
+
+@pytest.mark.django_db
+class TestVersion:
+    """Versions belong to one document and are numbered by the package."""
+
+    def test_versions_are_numbered_in_order_independently_per_document(self):
+        privacy = Document.objects.create(name="Privacy policy")
+        terms = Document.objects.create(name="Terms")
+
+        privacy_v1 = Version.objects.create(document=privacy, markdown="Privacy v1")
+        terms_v1 = Version.objects.create(document=terms, markdown="Terms v1")
+        privacy_v2 = Version.objects.create(document=privacy, markdown="Privacy v2")
+
+        assert list(privacy.versions.all()) == [privacy_v1, privacy_v2]
+        assert [v.number for v in privacy.versions.all()] == [1, 2]
+        assert list(terms.versions.all()) == [terms_v1]
+        assert [v.number for v in terms.versions.all()] == [1]
+
+    def test_number_cannot_collide_within_a_document(self):
+        privacy = Document.objects.create(name="Privacy policy")
+        Version.objects.create(document=privacy, markdown="Privacy v1")
+
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [Version(document=privacy, markdown="Privacy v2", number=1)]
+            )
