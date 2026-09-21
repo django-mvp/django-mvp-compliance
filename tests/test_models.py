@@ -147,3 +147,13 @@ class TestPublishing:
                     )
                 ]
             )
+
+    def test_second_current_row_is_refused_by_the_database(self, document):
+        first = VersionFactory(document=document)
+        second = VersionFactory(document=document)
+        first.publish()
+
+        with pytest.raises(IntegrityError):
+            Version.objects.filter(pk=second.pk).update(
+                status=Version.Status.CURRENT, published_at=timezone.now()
+            )

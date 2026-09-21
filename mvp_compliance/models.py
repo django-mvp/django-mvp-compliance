@@ -92,6 +92,13 @@ class Version(models.Model):
                 fields=["document", "number"],
                 name="unique_version_number_per_document",
             ),
+            models.UniqueConstraint(
+                fields=["document"],
+                # Matches Status.CURRENT's value directly — see the note on the
+                # check constraint below about a nested Meta's name resolution.
+                condition=models.Q(status="current"),
+                name="one_current_version_per_document",
+            ),
             models.CheckConstraint(
                 # A nested Meta class cannot see names bound in Version's own class
                 # body, so this matches Status.DRAFT's value directly rather than
