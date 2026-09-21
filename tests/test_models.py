@@ -157,3 +157,13 @@ class TestPublishing:
             Version.objects.filter(pk=second.pk).update(
                 status=Version.Status.CURRENT, published_at=timezone.now()
             )
+
+    def test_two_publishes_leave_one_version_in_force(self, document):
+        first = VersionFactory(document=document)
+        second = VersionFactory(document=document)
+
+        first.publish()
+        assert document.versions.filter(status=Version.Status.CURRENT).count() == 1
+
+        second.publish()
+        assert document.versions.filter(status=Version.Status.CURRENT).count() == 1
