@@ -57,3 +57,27 @@ class TestVersion:
             Version.objects.bulk_create(
                 [Version(document=privacy, markdown="Privacy v2", number=1)]
             )
+
+
+@pytest.mark.django_db
+class TestPublishing:
+    """Publishing puts exactly one version in force."""
+
+    def test_a_new_version_is_a_draft_with_no_standing_or_publication_time(self, draft):
+        assert draft.status == Version.Status.DRAFT
+        assert draft.is_published is False
+        assert draft.published_at is None
+
+    def test_a_draft_is_freely_editable(self, draft):
+        draft.markdown = "Revised wording"
+        draft.save()
+
+        draft.refresh_from_db()
+        assert draft.markdown == "Revised wording"
+
+    def test_a_draft_is_freely_discardable(self, draft):
+        pk = draft.pk
+
+        draft.delete()
+
+        assert not Version.objects.filter(pk=pk).exists()
