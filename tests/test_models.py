@@ -4,11 +4,20 @@ import pytest
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
+from django.test import override_settings
 from django.utils import timezone
 
 from mvp_compliance.exceptions import PublishedVersionError, PublishError
 from mvp_compliance.models import Document, Version, VersionManager
+from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
+
+
+class UppercaseRenderer(MarkdownRenderer):
+    """A stand-in renderer that produces visibly different output."""
+
+    def render(self, source: str) -> str:
+        return super().render(source).upper()
 
 
 @pytest.mark.django_db
@@ -129,6 +138,19 @@ class TestPublishing:
         assert version.published_at is None
         assert version.html == ""
         assert not document.versions.filter(status=Version.Status.CURRENT).exists()
+
+    def test_stored_html_survives_a_renderer_change(self, document):
+        version = VersionFactory(document=document, markdown="Original wording")
+        version.publish()
+        original_html = version.html
+        assert original_html != original_html.upper()
+
+        with override_settings(
+            MVP_COMPLIANCE_RENDERER="tests.test_models.UppercaseRenderer"
+        ):
+            version.refresh_from_db()
+
+        assert version.html == original_html
 
     def test_a_draft_with_stored_html_is_refused_by_the_database(self, document):
         with pytest.raises(IntegrityError):
