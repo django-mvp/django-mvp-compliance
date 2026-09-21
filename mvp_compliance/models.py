@@ -1,7 +1,10 @@
 """Documents and their versions."""
 
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from mvp_compliance.exceptions import PublishError
 
 
 class Document(models.Model):
@@ -106,6 +109,27 @@ class Version(models.Model):
     def is_published(self) -> bool:
         """Whether this version has ever been published — current or superseded."""
         return self.status != self.Status.DRAFT
+
+    def publish(self) -> None:
+        """Make this draft the version in force, superseding whichever one held it.
+
+        Refuses when this version is not a draft (FR-010).
+        """
+        if self.status != self.Status.DRAFT:
+            raise PublishError(_("This version has already been published."))
+
+        with transaction.atomic():
+            # Not belt-and-braces: MySQL and MariaDB silently omit the partial
+            # unique index that otherwise holds "one current version per
+            # document" (models.W036), so on those backends this lock is the
+            # only thing enforcing FR-007 (research.md R1, D11).
+            document = Document.objects.select_for_update().get(pk=self.document_id)
+            Version.objects.filter(
+                document=document, status=self.Status.CURRENT
+            ).update(status=self.Status.SUPERSEDED)
+            self.status = self.Status.CURRENT
+            self.published_at = timezone.now()
+            self.save(update_fields=["status", "published_at"])
 
     def save(self, *args, **kwargs) -> None:
         if self._state.adding:
