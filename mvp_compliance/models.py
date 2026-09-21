@@ -68,14 +68,14 @@ class VersionQuerySet(models.QuerySet):
 
     def update(self, **kwargs) -> int:
         touches_frozen_field = bool(frozen_field_keys() & set(kwargs))
-        if touches_frozen_field and self.exclude(status=Version.Status.DRAFT).exists():
+        if touches_frozen_field and self.published().exists():
             raise PublishedVersionError(
                 _("A published version's wording cannot be changed.")
             )
         return super().update(**kwargs)
 
     def delete(self):
-        if self.exclude(status=Version.Status.DRAFT).exists():
+        if self.published().exists():
             raise PublishedVersionError(_("A published version cannot be deleted."))
         return super().delete()
 
