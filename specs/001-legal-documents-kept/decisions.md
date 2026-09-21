@@ -219,3 +219,36 @@ silent on documentation, not opposed to it, and the gate is red without the page
 **Revisit if**: a later story finds `docs/models.md` a better fit merged into a larger
 page (e.g. once publishing and rendering land) — nothing here is meant to be the final
 shape of the package's documentation.
+
+## D14 — `Version`'s partial constraints match `Status` values as string literals, not the enum
+
+**Decision**: `one_current_version_per_document` and `version_status_agrees_with_published_at`
+write `status="draft"` / `status="current"` directly rather than `Status.DRAFT` /
+`Status.CURRENT`.
+
+**Why**: both constraints are declared inside `Version.Meta`, a nested class. A nested class's
+body does not see names bound in its enclosing class's body — that scoping rule is Python's, not
+Django's — so `Status` (bound in `Version`'s body, one level up) is not a name `Meta`'s body can
+resolve; referencing it raises `NameError` at class-definition time. The values are stable
+(`Status` is this story's own new enum, not sourced from elsewhere), so the literal is written
+once, at the point Python's scoping forces it, rather than routed around with a forward-reference
+trick.
+
+**Revisit if**: a `Status` value's string ever changes — both constraints need updating by hand,
+since nothing ties them to the enum.
+
+## D15 — `publish()` does not translate a constraint `IntegrityError` into `PublishError`
+
+**Decision**: `plan.md`'s Publishing section describes an `IntegrityError` from the partial
+unique index being translated into `PublishError` inside `publish()`. This story does not build
+that translation.
+
+**Why**: no task's acceptance criteria in `US2-brief.json` exercises it, and on every backend the
+row lock `publish()` takes serialises the ordinary path before the index is ever reached — the
+index only fires on a route that bypasses `publish()` entirely (T025's own test does exactly
+that, directly, not through `publish()`). Adding a catch clause with no test behind it is the
+kind of untested capability `craft-increments` asks not to build.
+
+**Revisit if**: a later story finds a real path that reaches the constraint through `publish()`
+itself (for instance, a host project running without the row lock's guarantee) — then the
+translation earns a test and belongs with it.
