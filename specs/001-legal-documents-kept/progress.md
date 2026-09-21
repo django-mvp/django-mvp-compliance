@@ -219,3 +219,106 @@ on a throwaway settings module pointed at it — `0001_initial`, `0002_...`,
 `0003_...` all applied `OK`, exit 0, file removed afterwards.
 Next: docs/models.md, then the full verify (§5) and the completion report.
 Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T030
+
+Did: wrote `TestImmutability` in `tests/test_models.py` — one test per mutation
+route per SC-003 (`save()`, `.update()`, `.bulk_update()`, instance `.delete()`,
+queryset `.delete()`), each asserting `PublishedVersionError` and that the stored
+wording is unchanged afterwards. Added a `published_version` fixture to
+`conftest.py`.
+Verified: `poetry run pytest tests/test_models.py::TestImmutability` — 5 failed,
+all `DID NOT RAISE PublishedVersionError` (the right reason: no guard exists
+yet). Lint clean.
+Next: T031.
+Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T031
+
+Did: `PUBLISHED_FROZEN_FIELDS`, `VersionQuerySet.update()`/`.delete()`,
+`Version.delete()` and a `save()` guard (`_refuse_if_published_wording_changed`)
+that re-reads the stored row rather than trusting the in-memory instance. No
+`bulk_update()` override (ARC-001). The frozen-field comparison uses each
+field's `name` and `attname`. Also added an explicit test that a status-only
+update on a published version still passes (FR-013).
+Deviated: `models.Manager.from_queryset(VersionQuerySet)` failed mypy
+("Unsupported dynamic base class"); replaced with `VersionManager(models.Manager)`
+overriding `get_queryset()` to return `VersionQuerySet(self.model, using=self._db)`
+— behaviourally identical since `VersionQuerySet` only overrides existing
+`QuerySet` methods, not new ones, so the base `Manager`'s already-generated
+wrappers (`update`, `delete`, `bulk_update`, `filter`, ...) all resolve through
+it. `Version._meta.get_field(name).attname` needed `typing.cast(models.Field, ...)`
+to satisfy mypy's `Field | ForeignObjectRel` return type (an `assert isinstance`
+tripped ruff's S101).
+Verified: `poetry run pytest tests/test_models.py` — 22 passed (the 5 from T030,
+now green, plus the new status-only test, plus every pre-existing test in the
+file still green). `poetry run pre-commit run --files mvp_compliance/models.py
+mvp_compliance/migrations/0004_alter_version_managers.py` — all hooks passed,
+including mypy and ruff. `makemigrations --check --dry-run` required a new
+migration for the manager change (`AlterModelManagers`, not a data migration) —
+generated as `0004_alter_version_managers.py`.
+Next: T032.
+Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T032
+
+Did: `test_historical_version_model_uses_this_packages_manager` — loads the
+migration graph's project state at `mvp_compliance`'s leaf migration via
+`MigrationLoader` and confirms the historical model's `objects` is an instance
+of `VersionManager`.
+Deviated (D16): `use_in_migrations = True` was already written in T031's commit
+alongside the rest of `VersionManager`, so this test is green from the moment
+it exists rather than failing first — recorded in `decisions.md` rather than
+manufacturing a red state that was not real.
+Verified: `poetry run pytest
+tests/test_models.py::TestImmutability::test_historical_version_model_uses_this_packages_manager`
+— 1 passed. Lint clean.
+Next: T033.
+Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T033
+
+Did: new `tests/test_migrations.py` (declared in `non-mirror-paths` already) —
+reads every operation in every migration module under
+`mvp_compliance/migrations/` and fails on a `RunPython` or `RunSQL` (D10). A
+comment says what a legitimate future data migration must do instead.
+Verified: `poetry run pytest tests/test_migrations.py` — 1 passed. Sanity-checked
+the assertion actually fires, without touching a real migration file, by
+constructing a bare `RunPython`/`RunSQL` instance in a throwaway interpreter and
+confirming `isinstance(..., (RunPython, RunSQL))` is `True` for both. Lint clean.
+Next: T034.
+Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T034
+
+Did: `test_superseding_does_not_change_the_wording` — a version superseded by a
+later publish keeps its original `markdown` (FR-013, scenario 3).
+Verified: `poetry run pytest
+tests/test_models.py::TestImmutability::test_superseding_does_not_change_the_wording`
+— 1 passed (green immediately: T031's guard and `publish()`'s status-only
+`.update()` already give this). Lint clean.
+Next: T035.
+Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T035
+
+Did: three tests — deleting a document holding a version raises
+`ProtectedError` and leaves the document in place; a document holding none
+deletes normally; discarding a document's only draft returns it to that empty
+state and it then deletes normally too (FR-014, D8, edge case 4).
+Verified: `poetry run pytest tests/test_models.py::TestImmutability -k document`
+— 3 passed (green immediately: `on_delete=PROTECT` already closes this route,
+per D8 — no `Document.delete()` override written). Lint clean.
+Next: T036.
+Watch: nothing.
+
+## 2026-09-21T23:34:03+02:00 · Implementer US-3 · T036
+
+Did: `test_correcting_an_error_makes_a_new_version` — publishes an erroneous
+version, then a correcting one; the erroneous version stays readable with its
+original wording and superseded standing (SC-007, scenario 6).
+Verified: `poetry run pytest
+tests/test_models.py::TestImmutability::test_correcting_an_error_makes_a_new_version`
+— 1 passed. Lint clean.
+Next: docs/models.md, then the full verify (§5) and the completion report.
+Watch: nothing.

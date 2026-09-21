@@ -59,8 +59,34 @@ and changes nothing about the document. Publishing is one-way: the package offer
 `unpublish`, `revert`, `rollback`, `restore` or `make_current` — a correction of any
 size is published again as a new version.
 
-Nothing about immutability or rendering is here yet: a published version's wording
-can still be changed by this story's code. That lands in a later story on top of the
-model above, and it is what `mvp_compliance.exceptions.PublishedVersionError` will be
-raised for — declared now, alongside `PublishError`, but not yet raised by anything
-in this story.
+### Immutability
+
+Once a version is published — current or superseded, `version.is_published` — its
+`document`, `number`, `markdown` and `published_at` can never change again. Only
+`status` can, because moving from current to superseded is the one change a
+published version ever undergoes:
+
+```python
+version.markdown = "Revised wording"
+version.save()  # raises PublishedVersionError; the stored wording is untouched
+
+Version.objects.filter(pk=version.pk).update(markdown="Revised wording")  # same
+Version.objects.bulk_update([version], ["markdown"])  # same
+version.delete()  # raises PublishedVersionError; a published version can't be deleted
+Version.objects.filter(pk=version.pk).delete()  # same
+```
+
+A draft is unaffected by any of this: it stays freely editable and freely
+discardable until the moment it is published. A correction, of any size, is always
+a new version — never an edit to the one that carries the error, which stays
+readable at its own standing.
+
+Deleting a `Document` that still holds any version — draft, current or superseded —
+raises `django.db.models.ProtectedError` and leaves the document in place; a
+document holding none deletes normally. This is `Version.document`'s
+`on_delete=PROTECT`, enforced by Django's deletion collector on every route,
+including a queryset delete and a cascade from elsewhere — the package adds no
+override on either side.
+
+`mvp_compliance.exceptions.PublishedVersionError` is what every route above raises.
+Rendering is not here yet: `Version.html` and the renderer land in a later story.
