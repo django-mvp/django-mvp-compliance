@@ -289,3 +289,63 @@ present before US-3 are present afterwards, byte-for-byte, and US-3 only appends
 
 **Revisit if**: a later story's flag on the same file covers a range where a test body, and not
 only the import block, differs.
+
+## D18 — `TestMarkdownRenderer` (T040) and `TestRendererSetting` (T043) were written together, in one file, one commit
+
+**Decision**: both test classes for `tests/test_rendering.py` were authored in T040's commit,
+even though the brief assigns `TestMarkdownRenderer` to T040 and `TestRendererSetting` to T043.
+`TestMarkdownRenderer` could not be run standalone between T040 and T043: the single `from
+mvp_compliance.rendering import MarkdownRenderer, get_renderer` import line fails to collect the
+whole module until `get_renderer` exists, exactly as `tests/test_models.py` importing both
+`Document` and `Version` would if either were missing.
+
+**Why**: the brief itself places both test classes in the same file, so the coupling is inherent
+to the task split, not introduced by how the tests were written. T042 (`MarkdownRenderer`) was
+verified instead by a manual script running every assertion in `TestMarkdownRenderer` directly
+against `MarkdownRenderer().render()` — recorded in `progress.md`'s T042 entry — rather than by
+a `pytest` run, since no `pytest` run of that test could succeed in isolation at that point. This
+mirrors T041/T042's own documented reason for landing adjacent tasks that are not independently
+green: `pyproject.toml`'s dependency declarations for `markdown` and `nh3` fail `deptry` until
+`rendering.py` imports them, by the brief's own design.
+
+**Revisit if**: a later story's brief splits two tests across two files instead of one, or a task
+brief separates a class and its dependency into non-adjacent tasks — either removes the coupling
+this decision is about.
+
+## D19 — `nh3.clean()` is called with `link_rel=None`
+
+**Decision**: `MarkdownRenderer.render()` passes `link_rel=None` to `nh3.clean()`.
+
+**Why**: `nh3.clean()`'s default `link_rel="noopener noreferrer"` adds a `rel` attribute to every
+`<a>` tag regardless of the `attributes` argument passed in. plan.md's Rendering section declares
+`allowed_attributes` as an explicit set including `{"a": {"href", "title"}}` and nothing about
+`rel`; T040's test asserts a link renders as exactly `<a href="https://example.com">a link</a>`.
+Without `link_rel=None`, that assertion failed on the first run with an unexpected `rel="noopener
+noreferrer"` on the tag — not a bug in the test or the allow list, but `nh3` adding an attribute
+outside the ones this renderer declares.
+
+**Revisit if**: a later story wants `rel` on rendered links (for instance, `noopener` on links a
+reader might open from published content) — set `link_rel` explicitly rather than relying on
+`nh3`'s default, and add it to `allowed_attributes` so the allow list stays the single source of
+truth for what a tag may carry.
+
+## D20 — migration `0005` was generated at T044, committed at T048
+
+**Decision**: `poetry run python manage.py makemigrations mvp_compliance` was run once, during
+T044, to generate `mvp_compliance/migrations/0005_...py` — without it, the `html` column doesn't
+exist in the test database and T044's own tests can't run. The generated file was left uncommitted
+(and therefore untracked, not staged) through T045–T047, and committed only at T048, under that
+task's own commit.
+
+**Why**: T045 (the empty-output refusal) and T047 (`html` joining `PUBLISHED_FROZEN_FIELDS`) are
+both pure Python behaviour changes — neither touches a model field or constraint, so neither needed
+a new migration, and running `makemigrations` again at T048 produced "No changes detected",
+confirming the file generated at T044 already covered the whole story's schema change. Generating
+the migration early (to make T044 verifiable at all) and committing it late (to keep the migration
+task, T048, meaningful as its own commit with its own acceptance check —
+`makemigrations --check --dry-run` clean — rather than an empty no-op) keeps both the brief's task
+boundaries and the tree's actual runnability intact.
+
+**Revisit if**: a later story in this feature adds a task between a model-changing task and its
+migration task that itself changes the model — the deferred-commit approach only holds because
+nothing did here.

@@ -339,3 +339,159 @@ attribute removed and green with it restored. D16 rewritten to say what the
 tests cover. Suite now 38 passed.
 Next: US-4.
 Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T040
+
+Did: `tests/test_rendering.py::TestMarkdownRenderer` — one test asserting
+headings, emphasis, strong, lists, a link and a table survive rendering, and
+that `<script>`, `<style>`, `<iframe>`, `onclick` and a `javascript:` link do
+not, checking both presence and absence in the same output (FR-017).
+Verified: `poetry run pytest tests/test_rendering.py -x` — collection error,
+`ModuleNotFoundError: No module named 'mvp_compliance.rendering'` (RED for the
+right reason: the module doesn't exist yet).
+Next: T041.
+Watch: `TestRendererSetting` (T043) lives in the same file and was written
+alongside this test since the brief places both in `tests/test_rendering.py`
+— see D18.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T041
+
+Did: added `markdown` and `nh3` to `[project] dependencies` in
+`pyproject.toml`, each with a comment saying what it's for; `poetry lock`,
+`poetry install --sync`.
+Verified: `poetry lock` and `poetry install --sync` succeeded, installing
+`markdown 3.10.3` and `nh3 0.3.7`. `deptry` not run in isolation at this
+point — nothing imports either package yet, so it would fail by design (the
+brief's own rationale for this task's placement); confirmed clean once T042
+lands, see that entry.
+Next: T042.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T042
+
+Did: `mvp_compliance/rendering.py` — `MarkdownRenderer` with `extensions`,
+`allowed_tags`, `allowed_attributes`, `allowed_url_schemes` class attributes
+and `render()` running `markdown.markdown()` then `nh3.clean()`. Module
+docstring states Article XIII.
+Verified: manual script (T040's test file can't collect standalone until
+T043's `get_renderer` also exists — D18) exercising every assertion in
+`TestMarkdownRenderer` directly against `MarkdownRenderer().render()` — all
+passed. First pass failed one assertion: `nh3` adds `rel="noopener
+noreferrer"` to links by default, which isn't in plan.md's declared
+`allowed_attributes` for `a`; fixed by passing `link_rel=None` to
+`nh3.clean()` (D19). `poetry run ruff check`, `ruff format --check`, `mypy` —
+all clean.
+Next: T043.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T043
+
+Did: `mvp_compliance/rendering.py` — `get_renderer()`, resolving
+`MVP_COMPLIANCE_RENDERER` through `import_string`, defaulting to
+`MarkdownRenderer`.
+Verified: `poetry run pytest tests/test_rendering.py -v` — 3 passed
+(`TestMarkdownRenderer` from T040 and both `TestRendererSetting` cases from
+this task, now that the module collects). `deptry .` — clean, confirming
+T041's dependency declarations are now used. `ruff check`, `ruff format
+--check`, `mypy` — all clean.
+Next: T044.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T044
+
+Did: `mvp_compliance/models.py` — `Version.html` (`TextField(blank=True)`,
+help_text, verbose_name); `publish()` renders `self.markdown` through
+`get_renderer()` before the row lock is taken and stores it in `self.html`;
+widened `version_status_agrees_with_published_at` to require `html=""` on a
+draft and `html != ""` on a published version. `tests/test_models.py::TestPublishing`
+gained four tests: rendering happens on publish, a draft's `html` is empty,
+and both directions of the widened constraint refused by the database
+directly via `bulk_create`.
+Verified: `poetry run pytest tests/test_models.py::TestPublishing -v` — RED
+first (`AttributeError`/`TypeError`, `html` didn't exist), then GREEN, 16
+passed, after generating migration `0005` (needed for the new column to exist
+in the test database — see D20 on why that migration's own commit waits for
+T048). Two pre-existing tests in this class
+(`test_status_and_published_at_must_agree`,
+`test_a_published_version_must_have_a_publication_time`) were re-run
+unmodified and stayed green — the widened constraint only adds restrictions,
+it doesn't loosen the ones they exercise. `ruff check`, `ruff format
+--check` (one file reformatted, applied), `mypy` — all clean.
+Next: T045.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T045
+
+Did: `publish()` now refuses with `PublishError` when the rendered output is
+empty once stripped, checked immediately after rendering and before the
+`transaction.atomic()` block — before the row lock and before anything is
+written (FR-018, D7).
+Verified: new test
+`test_publishing_a_draft_whose_output_is_empty_once_stripped_is_refused` —
+RED first (`IntegrityError` from the check constraint, since nothing refused
+the publish before the write), then GREEN after the guard, along with the
+rest of the class: `poetry run pytest tests/test_models.py -v` — 35 passed.
+`ruff check`, `ruff format --check`, `mypy` — all clean.
+Next: T046.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T046
+
+Did: `test_stored_html_survives_a_renderer_change` — publishes, swaps
+`MVP_COMPLIANCE_RENDERER` to a local `UppercaseRenderer` via
+`override_settings`, re-reads, asserts the stored `html` is byte-identical to
+what publication produced (US-4 scenario 3, SC-004).
+Verified: passed on first run, as the brief's own acceptance expects ("no
+model change implied by this task). Probed per `craft-tdd`'s mutation check
+rather than trusting a first-run pass: temporarily made `save()` re-render
+`html` in upper case on every write to a published row, re-ran the single
+test, watched it fail with the expected mismatch, then reverted the
+mutation with `git checkout -- mvp_compliance/models.py` and re-ran the full
+suite green (36 passed) to confirm the revert was clean.
+Next: T047.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T047
+
+Did: `test_published_html_cannot_be_changed` — one test covering all three
+write routes (`save()`, queryset `update()`, `bulk_update()`) refusing a
+change to a published version's `html`; `PUBLISHED_FROZEN_FIELDS` gained
+`"html"` between `"markdown"` and `"published_at"`, matching plan.md's
+Immutability section. No other line changed — the four refusal routes read
+the constant, per D-prior_decisions in the brief.
+Verified: RED first (`Failed: DID NOT RAISE PublishedVersionError`), then
+GREEN: `poetry run pytest tests/test_models.py -v` — 37 passed. `ruff
+check`, `ruff format --check`, `mypy` — all clean.
+Next: T048.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · T048
+
+Did: `poetry run python manage.py makemigrations mvp_compliance` — "No
+changes detected" (migration `0005`, generated during T044 to make its tests
+runnable, already covers every model change this story makes; T045 and T047
+touched only Python-level behaviour and a module constant, neither needs a
+schema change). Committed the migration file under this task, per the
+brief's task split (D20).
+Verified: `poetry run python manage.py makemigrations --check --dry-run` —
+clean, exit 0. `deptry .` and `mypy mvp_compliance` — both clean across the
+whole package.
+Next: update `docs/models.md` (rendering and immutability sections described
+the pre-US-4 state, including a line explicitly deferring rendering to "a
+later story"), then the full verify (§5) and the completion report.
+Watch: nothing.
+
+## 2026-09-22T00:31:25+02:00 · Implementer US-4 · docs
+
+Did: `docs/models.md` — added a Rendering section (`MarkdownRenderer`,
+`get_renderer()`, the `MVP_COMPLIANCE_RENDERER` setting, the allow-list
+behaviour), updated Publishing to mention `html` and the empty-output
+refusal, updated Immutability's frozen-field list to include `html`, removed
+the line stating rendering "is not here yet".
+Verified: every code example on the page executed against this branch in a
+throwaway script using a real test database (`DiscoverRunner.setup_databases`)
+— `Document`/`Version` creation, `publish()`, `MarkdownRenderer().render()`,
+and all five immutability-refusal routes each raised
+`PublishedVersionError` as shown. All passed.
+Next: full verify (§5).
+Watch: nothing.
