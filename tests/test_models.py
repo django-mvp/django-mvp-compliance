@@ -249,6 +249,18 @@ class TestImmutability:
         published_version.refresh_from_db()
         assert published_version.status == Version.Status.SUPERSEDED
 
+    def test_superseding_does_not_change_the_wording(self, document):
+        first = VersionFactory(document=document, markdown="Original wording")
+        first.publish()
+        original_markdown = first.markdown
+
+        second = VersionFactory(document=document)
+        second.publish()
+
+        first.refresh_from_db()
+        assert first.status == Version.Status.SUPERSEDED
+        assert first.markdown == original_markdown
+
     def test_historical_version_model_uses_this_packages_manager(self):
         """A migration's historical model gets the same guards (D10)."""
         loader = MigrationLoader(connection)
