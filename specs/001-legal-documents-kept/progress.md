@@ -599,3 +599,18 @@ Verified: `poetry run pre-commit run --files CHANGELOG.md` — trailing
 whitespace, end-of-file and deptry checks passed.
 Next: T057 — assert no admin/forms/views/urls.
 Watch: nothing.
+
+## 2026-09-22T00:45:32+02:00 · Implementer US-5 · T057
+
+Did: `tests/test_app.py` — two new tests on `TestPackagedApp`:
+`mvp_compliance.admin/forms/views/urls` don't exist as modules, and neither
+`Document` nor `Version` is in `admin.site._registry` (D5).
+Verified: `poetry run pytest tests/test_app.py` — 4 passed. Probed the new
+absence-test rather than trusting it: added a throwaway
+`mvp_compliance/admin.py`, confirmed the test failed with the expected
+`AssertionError`, removed the file, confirmed green again.
+`poetry run ruff check tests` clean; `ruff format` reformatted the file once
+(parenthesised assert message), reran green. `poetry run mypy
+mvp_compliance` — Success: no issues found in 5 source files.
+Next: full verify (§5) — the story's last task.
+Watch: nothing.
