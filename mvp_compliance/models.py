@@ -244,6 +244,13 @@ class Version(models.Model):
             # document" (models.W036), so on those backends this lock is the
             # only thing enforcing FR-007 (research.md R1, D11).
             document = Document.objects.select_for_update().get(pk=self.document_id)
+            # Under the lock, ask the row rather than this instance. The check
+            # above reads a copy of the standing that may be older than the
+            # row, which is what a second process publishing first looks like
+            # from here (FR-010).
+            stored = self.stored_row()
+            if stored is None or stored["status"] != self.Status.DRAFT:
+                raise PublishError(_("This version is no longer a draft."))
             document.versions.current().update(status=self.Status.SUPERSEDED)
             self.html = html
             self.status = self.Status.CURRENT

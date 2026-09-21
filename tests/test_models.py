@@ -254,6 +254,29 @@ class TestPublishing:
         second.publish()
         assert document.versions.filter(status=Version.Status.CURRENT).count() == 1
 
+    def test_publishing_a_version_another_process_already_published_is_refused(
+        self, document
+    ):
+        """FR-010's refusal is about the stored row, not this instance's copy.
+
+        Two objects loaded from the same draft is what a second process looks
+        like from here. The second call must refuse the way FR-010 says it
+        refuses, so a caller catching that alone does not miss it.
+        """
+        VersionFactory(document=document)
+        first = Version.objects.get(document=document, number=1)
+        stale = Version.objects.get(document=document, number=1)
+        first.publish()
+        published_at = first.published_at
+
+        with pytest.raises(PublishError):
+            stale.publish()
+
+        first.refresh_from_db()
+        assert first.status == Version.Status.CURRENT
+        assert first.published_at == published_at
+        assert document.versions.current().count() == 1
+
     def test_a_status_outside_the_three_standings_is_refused_by_the_database(
         self, published_version
     ):
