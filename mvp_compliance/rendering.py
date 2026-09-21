@@ -6,8 +6,12 @@ change to the allow list below cannot retroactively alter what a document
 said when someone agreed to it.
 """
 
+from typing import cast
+
 import markdown
 import nh3
+from django.conf import settings
+from django.utils.module_loading import import_string
 
 
 class MarkdownRenderer:
@@ -62,3 +66,15 @@ class MarkdownRenderer:
             url_schemes=self.allowed_url_schemes,
             link_rel=None,
         )
+
+
+def get_renderer() -> type[MarkdownRenderer]:
+    """Resolve the renderer class, defaulting to :class:`MarkdownRenderer`.
+
+    A host project points ``MVP_COMPLIANCE_RENDERER`` at a dotted path to
+    override it.
+    """
+    dotted_path = getattr(settings, "MVP_COMPLIANCE_RENDERER", None)
+    if dotted_path is None:
+        return MarkdownRenderer
+    return cast(type[MarkdownRenderer], import_string(dotted_path))
