@@ -24,3 +24,53 @@ class Document(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Version(models.Model):
+    """One revision of a document, holding the Markdown its author wrote.
+
+    Numbered and ordered by the package — never given a label or number by
+    whoever writes it.
+    """
+
+    document = models.ForeignKey(
+        Document,
+        verbose_name=_("document"),
+        help_text=_("The document this version belongs to."),
+        related_name="versions",
+        on_delete=models.PROTECT,
+    )
+    number = models.PositiveIntegerField(
+        _("number"),
+        editable=False,
+        help_text=_(
+            "This version's position among its document's versions, "
+            "assigned automatically."
+        ),
+    )
+    markdown = models.TextField(
+        _("markdown"),
+        help_text=_("The wording of this version, written in Markdown."),
+    )
+
+    class Meta:
+        verbose_name = _("version")
+        verbose_name_plural = _("versions")
+        ordering = ["document", "number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "number"],
+                name="unique_version_number_per_document",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.document} #{self.number}"
+
+    def save(self, *args, **kwargs) -> None:
+        if self._state.adding:
+            current_max = Version.objects.filter(document=self.document).aggregate(
+                models.Max("number")
+            )["number__max"]
+            self.number = (current_max or 0) + 1
+        super().save(*args, **kwargs)
