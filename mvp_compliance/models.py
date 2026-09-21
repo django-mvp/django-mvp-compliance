@@ -238,9 +238,7 @@ class Version(models.Model):
             # document" (models.W036), so on those backends this lock is the
             # only thing enforcing FR-007 (research.md R1, D11).
             document = Document.objects.select_for_update().get(pk=self.document_id)
-            Version.objects.filter(
-                document=document, status=self.Status.CURRENT
-            ).update(status=self.Status.SUPERSEDED)
+            document.versions.current().update(status=self.Status.SUPERSEDED)
             self.html = html
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
