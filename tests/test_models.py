@@ -1,7 +1,7 @@
 """Tests for mvp_compliance.models."""
 
 import pytest
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from mvp_compliance.exceptions import PublishedVersionError, PublishError
@@ -208,7 +208,10 @@ class TestImmutability:
         original_markdown = published_version.markdown
         published_version.markdown = "Tampered wording"
 
-        with pytest.raises(PublishedVersionError):
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False); without our own savepoint here, the raised error
+        # would leave the connection unusable for the rest of the test.
+        with pytest.raises(PublishedVersionError), transaction.atomic():
             Version.objects.bulk_update([published_version], ["markdown"])
 
         published_version.refresh_from_db()
@@ -233,3 +236,14 @@ class TestImmutability:
 
         published_version.refresh_from_db()
         assert published_version.markdown == original_markdown
+
+    def test_changing_only_the_status_of_a_published_version_is_permitted(
+        self, published_version
+    ):
+        """Moving from current to superseded is what publish() does (FR-013)."""
+        Version.objects.filter(pk=published_version.pk).update(
+            status=Version.Status.SUPERSEDED
+        )
+
+        published_version.refresh_from_db()
+        assert published_version.status == Version.Status.SUPERSEDED

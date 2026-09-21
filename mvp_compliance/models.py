@@ -1,10 +1,33 @@
 """Documents and their versions."""
 
+from typing import cast
+
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from mvp_compliance.exceptions import PublishError
+from mvp_compliance.exceptions import PublishedVersionError, PublishError
+
+#: Everything a published version carries except its standing (FR-013) — the
+#: one change a published version ever undergoes is draft -> current ->
+#: superseded, never a change to what it says.
+PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "published_at")
+
+
+def _frozen_fields() -> list[models.Field]:
+    return [
+        cast(models.Field, Version._meta.get_field(name))
+        for name in PUBLISHED_FROZEN_FIELDS
+    ]
+
+
+def _frozen_field_keys() -> set[str]:
+    """Each frozen field's name and attname, so ``document_id`` is caught too."""
+    keys: set[str] = set()
+    for field in _frozen_fields():
+        keys.add(field.name)
+        keys.add(field.attname)
+    return keys
 
 
 class Document(models.Model):
@@ -27,6 +50,37 @@ class Document(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class VersionQuerySet(models.QuerySet):
+    """Enforces that a published version's wording can never change (Article XII).
+
+    ``bulk_update()`` gets no override here: it calls
+    ``self.filter(pk__in=pks).update(**update_kwargs)`` internally, so the
+    ``update()`` guard below already catches it.
+    """
+
+    def update(self, **kwargs) -> int:
+        touches_frozen_field = bool(_frozen_field_keys() & set(kwargs))
+        if touches_frozen_field and self.exclude(status=Version.Status.DRAFT).exists():
+            raise PublishedVersionError(
+                _("A published version's wording cannot be changed.")
+            )
+        return super().update(**kwargs)
+
+    def delete(self):
+        if self.exclude(status=Version.Status.DRAFT).exists():
+            raise PublishedVersionError(_("A published version cannot be deleted."))
+        return super().delete()
+
+
+class VersionManager(models.Manager):
+    """Gives a historical model in a migration the same guards (D10)."""
+
+    use_in_migrations = True
+
+    def get_queryset(self) -> VersionQuerySet:
+        return VersionQuerySet(self.model, using=self._db)
 
 
 class Version(models.Model):
@@ -82,6 +136,8 @@ class Version(models.Model):
             "never been published."
         ),
     )
+
+    objects = VersionManager()
 
     class Meta:
         verbose_name = _("version")
@@ -144,4 +200,27 @@ class Version(models.Model):
                 models.Max("number")
             )["number__max"]
             self.number = (current_max or 0) + 1
+        else:
+            self._refuse_if_published_wording_changed()
         super().save(*args, **kwargs)
+
+    def _refuse_if_published_wording_changed(self) -> None:
+        """Refuse a ``save()`` that changes a frozen field on a published row.
+
+        Re-reads the stored row rather than trusting this instance's own
+        history, so the check survives ``refresh_from_db``, deferred loading
+        and an instance built by a third party.
+        """
+        attnames = [field.attname for field in _frozen_fields()]
+        stored = Version.objects.filter(pk=self.pk).values("status", *attnames).first()
+        if stored is None or stored["status"] == self.Status.DRAFT:
+            return
+        if any(stored[attname] != getattr(self, attname) for attname in attnames):
+            raise PublishedVersionError(
+                _("A published version's wording cannot be changed.")
+            )
+
+    def delete(self, *args, **kwargs):
+        if self.is_published:
+            raise PublishedVersionError(_("A published version cannot be deleted."))
+        return super().delete(*args, **kwargs)
