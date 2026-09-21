@@ -252,3 +252,18 @@ kind of untested capability `craft-increments` asks not to build.
 **Revisit if**: a later story finds a real path that reaches the constraint through `publish()`
 itself (for instance, a host project running without the row lock's guarantee) — then the
 translation earns a test and belongs with it.
+
+## D16 — `use_in_migrations = True` landed with T031, not T032
+
+**Decision**: `VersionManager.use_in_migrations = True` was written as part of T031's commit,
+alongside the manager and queryset it belongs to, rather than held back for T032 as `tasks.md`
+lists it. T032's own commit is the test alone, and it is green from the moment it is written.
+
+**Why**: the attribute is one line on the same class T031 was already introducing; splitting a
+single class definition across two commits to keep the red/green boundary exactly on the task
+line would have meant an incomplete `VersionManager` sitting in the tree between T031 and T032,
+which is a worse state than the test arriving already green. Nothing about the attribute's
+behaviour is unverified — T032's test is what proves it, immediately.
+
+**Revisit if**: a later story's task split assumes T032 introduces new model behaviour rather
+than only the test for it.

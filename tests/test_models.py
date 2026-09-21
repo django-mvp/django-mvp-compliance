@@ -1,11 +1,12 @@
 """Tests for mvp_compliance.models."""
 
 import pytest
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
+from django.db.migrations.loader import MigrationLoader
 from django.utils import timezone
 
 from mvp_compliance.exceptions import PublishedVersionError, PublishError
-from mvp_compliance.models import Document, Version
+from mvp_compliance.models import Document, Version, VersionManager
 from tests.factories import VersionFactory
 
 
@@ -247,3 +248,12 @@ class TestImmutability:
 
         published_version.refresh_from_db()
         assert published_version.status == Version.Status.SUPERSEDED
+
+    def test_historical_version_model_uses_this_packages_manager(self):
+        """A migration's historical model gets the same guards (D10)."""
+        loader = MigrationLoader(connection)
+        (leaf,) = loader.graph.leaf_nodes(app="mvp_compliance")
+        state = loader.project_state(leaf)
+        historical_version = state.apps.get_model("mvp_compliance", "Version")
+
+        assert isinstance(historical_version.objects, VersionManager)
