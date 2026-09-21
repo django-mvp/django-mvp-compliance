@@ -1,0 +1,117 @@
+{
+  "story": "US5",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 11,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-fs001",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-16/3c401f5e"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-08-05/d3dce07f"
+    }
+  ],
+  "tasks": ["T050", "T051", "T052", "T053", "T054", "T055", "T056", "T057"],
+  "context": {
+    "why": "The previous stories made a published version permanent. This one makes it reachable. A record nobody can retrieve is not evidence, so the package has to answer three questions plainly: what is in force now, what was in force at some point in the past, and what has this document ever said. The answers are queryset methods and one property, not a service layer — a consumer asks the document, and the absence of a published version is a normal answer rather than an exception. This is also the story that documents the package for the first time: what it offers, the one setting, and what it deliberately does not do.",
+    "environment": "Poetry. Run everything with `poetry run ...` from the worktree root. The virtualenv is synced. Full verify (once, at the end): `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. Narrow scope per task: `poetry run pytest tests/test_models.py::TestRetrieval`. The lint gate is `poetry run pre-commit run --all-files`.",
+    "spec_sections": [
+      "specs/001-legal-documents-kept/spec.md § User Story 5 - Every version stays retrievable, forever",
+      "specs/001-legal-documents-kept/spec.md § Requirements — FR-008, FR-020, FR-021, FR-022",
+      "specs/001-legal-documents-kept/spec.md § Success Criteria — SC-001, SC-006"
+    ],
+    "plan_sections": [
+      "specs/001-legal-documents-kept/plan.md § Design → Retrieval",
+      "specs/001-legal-documents-kept/plan.md § Design → Data model"
+    ],
+    "prior_decisions": [
+      "D5 — this package registers no admin, ships no forms, no views and no URLs. T057 asserts that still holds. Do not add any of them.",
+      "A document with nothing published reports no version in force by returning `None`, never by raising. That is FR-008 and it is a normal state, not an edge case to guard against.",
+      "Asking for one named version is `document.versions.get(number=n)` — the plain Django idiom. Do not write a wrapper method for it; T053 tests the idiom works, which it does because `number` is unique per document.",
+      "`VersionQuerySet` already exists in models.py and already overrides `update()` and `delete()`. Add `published()`, `drafts()` and `current()` to that same class — do not create a second queryset or manager.",
+      "`VersionManager` overrides `get_queryset()` rather than being built with `Manager.from_queryset()`, because the latter does not type-check here. A bare `get_queryset()` override does NOT forward new queryset methods onto the manager. `document.versions` is a related manager, so `document.versions.published()` will fail unless the manager forwards it. Decide how to close that — the options are `Manager.from_queryset()` with whatever type annotation makes mypy pass, or explicit forwarding methods on `VersionManager` — and record the choice in decisions.md with the mypy output that drove it. This is the one genuine design question in the story; the tests in T050 are what prove you closed it.",
+      "`Document.current` is a property on the model returning the current `Version` or `None`. Not a queryset method, not a manager method."
+    ],
+    "acceptance": [
+      {
+        "task": "T050",
+        "given_when_then": "Given a document with three published versions and one draft, when its published history is asked for, then all three published versions come back in order and the draft is absent; when a superseded version is read, then it returns its original wording and its original stored output; and when the version in force is asked for, then it is exactly the one most recently published. Written before T051 and confirmed failing."
+      },
+      {
+        "task": "T051",
+        "given_when_then": "Given `VersionQuerySet`, when `published()`, `drafts()` and `current()` are added and `Document.current` is added as a property, then T050 passes and `document.versions.published()` works through the related manager — not only `Version.objects.published()`."
+      },
+      {
+        "task": "T052",
+        "given_when_then": "Given a document created and never published, when `document.current` is read, then it is `None` and nothing is raised. Also covers a document whose only version is a draft."
+      },
+      {
+        "task": "T053",
+        "given_when_then": "Given a document with several versions, when `document.versions.get(number=2)` is called, then it returns that document's second version — and not another document's, which is what makes the per-document numbering meaningful."
+      },
+      {
+        "task": "T054",
+        "given_when_then": "Given four documents each accumulating their own version history, when versions are added and published across all four, then each document's history, numbering and version in force are exactly its own and no operation on one alters another (SC-001)."
+      },
+      {
+        "task": "T055",
+        "given_when_then": "Given the README, when it is updated, then it describes the two models and what they hold, the way to ask for the version in force and for the published history, the one setting and what it points at, and what this package deliberately does not provide (no admin, no forms, no views, no URLs, no way to unpublish). Every code example in it runs against the branch as it stands."
+      },
+      {
+        "task": "T056",
+        "given_when_then": "Given the CHANGELOG, when an `### Added` entry is written under `## [Unreleased]`, then it names the two models, the two dependencies and the setting in plain language a reader outside this project can act on."
+      },
+      {
+        "task": "T057",
+        "given_when_then": "Given the installed app, when its registrations are inspected, then it registers nothing in the admin and ships no forms, no views and no URLs (D5). Extend tests/test_app.py rather than replacing what is there."
+      }
+    ],
+    "verified_base": {
+      "commit": "2035441f698e8b23e0865f0ae8743778fcbea18b",
+      "verified_at": "2026-09-21T22:36:46Z",
+      "steps": [
+        "conformance",
+        "docs",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "note": "Green on this exact commit in this exact worktree, minutes before dispatch: conformance, docs, ruff lint and format, mypy, deptry, the full pytest suite (50 passed) and poetry build. If your HEAD is not this commit, stop and report blocked. If the suite cannot run at all, that is an environment fault: report it, do not work around it."
+    },
+    "public_writing": [
+      "The README and the CHANGELOG are read by people outside this project. Write for a first-time reader who has never seen this repository: name the concrete thing, never a label they cannot look up.",
+      "No agent names, no internal process vocabulary, no stage or task identifiers, no references to a review panel, a pipeline or a lane. `FS-001` and `US-5` are fine in the ledger and in commit messages; they do not belong in the README or the CHANGELOG.",
+      "Write plainly. No promotional adjectives, no rule-of-three flourishes, no 'seamlessly', 'robust', 'powerful', 'leverage'. Say what it does and what it refuses to do."
+    ]
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 90
+  },
+  "rituals": [
+    "Load craft-tdd and craft-increments from the absolute paths in required_skills, and copy each RECEIPT line verbatim into skills_loaded.",
+    "Read this brief in full.",
+    "Read only the US-5 rows of specs/001-legal-documents-kept/tasks.md.",
+    "Read the plan.md sections named in context.plan_sections and stop there.",
+    "Read mvp_compliance/models.py, tests/test_models.py and tests/test_app.py as US-4 left them.",
+    "git log --oneline -10.",
+    "Do not run a baseline verify: context.verified_base is Forge's assurance and it has already been given."
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story. Everything in tests/ predates this story except what you add. If a pre-existing test genuinely must change, mark the task blocked and say why in concerns.",
+    "Do not add an admin registration, a form, a view, a URL or a template. D5 says this package ships none, and T057 is the test that keeps it true.",
+    "Do not add a way to unpublish, revert or make-current. Their absence is a requirement and there is already a test asserting it by name.",
+    "Do not add a runtime dependency.",
+    "Do not squash, renumber or regenerate the branch's existing migrations. If your changes need a new migration, generate one and leave the earlier ones alone.",
+    "Never edit feature-state.json beyond flipping your own tasks' status, attempts and evidence.",
+    "No git merge, no push, no gh, no token minting. Your story ends at a clean committed worktree and a report.",
+    "Never weaken an assertion, add a skip or an xfail, or special-case code to make a test pass.",
+    "Never write a receipt you did not read from a file, and never claim a command you did not run."
+  ],
+  "report_path": "/tmp/dmc-us5-report.json"
+}

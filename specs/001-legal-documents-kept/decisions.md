@@ -355,3 +355,36 @@ boundaries and the tree's actual runnability intact.
 **Revisit if**: a later story in this feature adds a task between a model-changing task and its
 migration task that itself changes the model — the deferred-commit approach only holds because
 nothing did here.
+
+## D21 — `VersionManager` forwards `published()`/`drafts()`/`current()` explicitly, rather than being built with `Manager.from_queryset()`
+
+**Decision**: `VersionManager` keeps its existing `get_queryset()` override and gains three thin
+methods — `published()`, `drafts()`, `current()` — each returning `self.get_queryset().<method>()`.
+`Manager.from_queryset(VersionQuerySet)` was tried first and rejected.
+
+**Why**: a bare `get_queryset()` override does not forward a queryset's own methods onto the
+manager, and `document.versions` is a related manager built from `VersionManager`, so
+`document.versions.published()` raised `AttributeError: 'RelatedManager' object has no attribute
+'published'` before this change (T050, observed). `Manager.from_queryset(VersionQuerySet)` as
+`VersionManager`'s base class does forward the methods, but mypy refuses it outright:
+
+```
+mvp_compliance/models.py:89: error: Unsupported dynamic base class "models.Manager.from_queryset"  [misc]
+Found 1 error in 1 file (checked 5 source files)
+```
+
+`from_queryset()` builds its return value at runtime, so mypy has no static class to check against
+— there is no type annotation that makes this pass; the base class itself is what is rejected.
+Silencing it with `# type: ignore[misc]` was available but not taken: it would suppress mypy's
+view of every method the manager gains this way, not just this one dynamic base, which is a wider
+loss of type-checking than three named methods cost to write out.
+
+**What makes it safe**: each forwarding method is a one-line delegation with its own return type
+annotation (`VersionQuerySet`), so mypy checks the manager's public surface the same way it checks
+everything else in this file — confirmed clean, `Success: no issues found in 5 source files`. T050
+covers all three routes: `document.versions.published()`, and the current-version query that
+`Document.current` sits on top of.
+
+**Revisit if**: `VersionQuerySet` gains a fourth method a related manager needs to expose — add the
+same one-line forward rather than switching to `from_queryset()`, since the mypy rejection is
+structural to that API and does not change with the method count.

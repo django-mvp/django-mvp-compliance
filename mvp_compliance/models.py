@@ -52,6 +52,11 @@ class Document(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def current(self) -> "Version | None":
+        """The version in force, or ``None`` when nothing has been published."""
+        return self.versions.current().first()
+
 
 class VersionQuerySet(models.QuerySet):
     """Enforces that a published version's wording can never change (Article XII).
@@ -74,14 +79,41 @@ class VersionQuerySet(models.QuerySet):
             raise PublishedVersionError(_("A published version cannot be deleted."))
         return super().delete()
 
+    def published(self) -> "VersionQuerySet":
+        """Every version that has ever been published, current or superseded."""
+        return self.exclude(status=Version.Status.DRAFT)
+
+    def drafts(self) -> "VersionQuerySet":
+        return self.filter(status=Version.Status.DRAFT)
+
+    def current(self) -> "VersionQuerySet":
+        """The version in force, if any — zero or one row."""
+        return self.filter(status=Version.Status.CURRENT)
+
 
 class VersionManager(models.Manager):
-    """Gives a historical model in a migration the same guards (D10)."""
+    """Gives a historical model in a migration the same guards (D10).
+
+    Overrides ``get_queryset()`` rather than being built with
+    ``Manager.from_queryset()`` — the latter is a dynamic base class mypy
+    refuses to type-check (D-N, decisions.md). A bare override does not
+    forward ``VersionQuerySet``'s own methods onto the manager, so each one
+    a related manager needs to expose is forwarded here explicitly.
+    """
 
     use_in_migrations = True
 
     def get_queryset(self) -> VersionQuerySet:
         return VersionQuerySet(self.model, using=self._db)
+
+    def published(self) -> VersionQuerySet:
+        return self.get_queryset().published()
+
+    def drafts(self) -> VersionQuerySet:
+        return self.get_queryset().drafts()
+
+    def current(self) -> VersionQuerySet:
+        return self.get_queryset().current()
 
 
 class Version(models.Model):

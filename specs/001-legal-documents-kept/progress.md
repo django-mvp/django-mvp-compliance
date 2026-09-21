@@ -510,3 +510,29 @@ allowed and green with it removed, and recorded what holds D19 up. Suite now
 50 passed.
 Next: US-5.
 Watch: nothing.
+
+## 2026-09-22T00:42:16+02:00 · Implementer US-5 · T050
+
+Did: wrote `TestRetrieval` in `tests/test_models.py` — three tests covering
+scenarios 1, 2 and 3 (published history in order with drafts absent, a
+superseded version's original wording and stored HTML, the version in force
+is the most recently published one).
+Verified: `poetry run pytest tests/test_models.py::TestRetrieval -x` — failed
+on the first test with `AttributeError: 'RelatedManager' object has no
+attribute 'published'`, the right reason (the method does not exist yet).
+Next: T051 — implement `published()`, `drafts()`, `current()` and
+`Document.current`.
+Watch: the manager-forwarding question named in the brief.
+
+## 2026-09-22T00:42:16+02:00 · Implementer US-5 · T051
+
+Did: `VersionQuerySet.published()`, `.drafts()`, `.current()`;
+`VersionManager` forwards all three explicitly (D21 — `Manager.from_queryset()`
+tried first, rejected by mypy); `Document.current` as a property returning
+`self.versions.current().first()`.
+Verified: `poetry run pytest tests/test_models.py::TestRetrieval` — 3 passed.
+`poetry run mypy mvp_compliance` — Success: no issues found in 5 source
+files. `poetry run ruff check mvp_compliance tests` and
+`poetry run ruff format --check mvp_compliance tests` — both clean.
+Next: T052 — the never-published case.
+Watch: nothing.
