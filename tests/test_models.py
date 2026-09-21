@@ -2,6 +2,7 @@
 
 import pytest
 from django.db import IntegrityError
+from django.utils import timezone
 
 from mvp_compliance.exceptions import PublishError
 from mvp_compliance.models import Document, Version
@@ -120,3 +121,29 @@ class TestPublishing:
         version.refresh_from_db()
         assert version.status == Version.Status.CURRENT
         assert version.published_at == published_at
+
+    def test_status_and_published_at_must_agree(self, document):
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [
+                    Version(
+                        document=document,
+                        markdown="Draft with a publication time",
+                        status=Version.Status.DRAFT,
+                        published_at=timezone.now(),
+                    )
+                ]
+            )
+
+    def test_a_published_version_must_have_a_publication_time(self, document):
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [
+                    Version(
+                        document=document,
+                        markdown="Published with no publication time",
+                        status=Version.Status.CURRENT,
+                        published_at=None,
+                    )
+                ]
+            )

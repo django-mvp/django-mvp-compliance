@@ -53,6 +53,33 @@ class Version(models.Model):
         help_text=_("The wording of this version, written in Markdown."),
     )
 
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        CURRENT = "current", _("Current")
+        SUPERSEDED = "superseded", _("Superseded")
+
+    status = models.CharField(
+        _("status"),
+        max_length=10,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        editable=False,
+        help_text=_(
+            "Whether this version is a draft, the version currently in force, "
+            "or superseded by a later one."
+        ),
+    )
+    published_at = models.DateTimeField(
+        _("published at"),
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=_(
+            "The moment this version was published. Null for a draft that has "
+            "never been published."
+        ),
+    )
+
     class Meta:
         verbose_name = _("version")
         verbose_name_plural = _("versions")
@@ -62,10 +89,23 @@ class Version(models.Model):
                 fields=["document", "number"],
                 name="unique_version_number_per_document",
             ),
+            models.CheckConstraint(
+                # A nested Meta class cannot see names bound in Version's own class
+                # body, so this matches Status.DRAFT's value directly rather than
+                # referencing the enum.
+                condition=models.Q(status="draft", published_at__isnull=True)
+                | (~models.Q(status="draft") & models.Q(published_at__isnull=False)),
+                name="version_status_agrees_with_published_at",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.document} #{self.number}"
+
+    @property
+    def is_published(self) -> bool:
+        """Whether this version has ever been published — current or superseded."""
+        return self.status != self.Status.DRAFT
 
     def save(self, *args, **kwargs) -> None:
         if self._state.adding:
