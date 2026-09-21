@@ -322,3 +322,20 @@ tests/test_models.py::TestImmutability::test_correcting_an_error_makes_a_new_ver
 — 1 passed. Lint clean.
 Next: docs/models.md, then the full verify (§5) and the completion report.
 Watch: nothing.
+
+## 2026-09-22T00:30:00+02:00 · US-3 acceptance
+
+Did: independent re-verification of US-3 rather than acceptance of its report.
+Full suite 37 passed, `pre-commit run --all-files` green across all eight hooks
+on a cleared lint cache, `makemigrations --check --dry-run` clean. The
+guardrail scan flags `tests/test_models.py`; triaged as an import-block rewrite
+with all eighteen pre-existing tests intact (D17).
+Checked the declared deviation (D16) rather than taking it: removing
+`use_in_migrations = True` leaves
+`test_historical_version_model_uses_this_packages_manager` green, because
+migration `0004` records the manager in state permanently. Added
+`test_the_manager_is_declared_for_use_in_migrations`, confirmed red with the
+attribute removed and green with it restored. D16 rewritten to say what the
+tests cover. Suite now 38 passed.
+Next: US-4.
+Watch: nothing.

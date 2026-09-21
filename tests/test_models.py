@@ -307,6 +307,15 @@ class TestImmutability:
         assert correction.status == Version.Status.CURRENT
         assert document.versions.count() == 2
 
+    def test_the_manager_is_declared_for_use_in_migrations(self):
+        """Without this, no migration ever records the manager (D10).
+
+        Asserted on the class rather than on migration state: a recorded
+        manager stays in an already-written migration even after the
+        declaration is dropped, so state alone cannot see it go.
+        """
+        assert VersionManager.use_in_migrations is True
+
     def test_historical_version_model_uses_this_packages_manager(self):
         """A migration's historical model gets the same guards (D10)."""
         loader = MigrationLoader(connection)

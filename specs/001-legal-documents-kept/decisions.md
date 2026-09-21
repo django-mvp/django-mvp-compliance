@@ -262,8 +262,30 @@ lists it. T032's own commit is the test alone, and it is green from the moment i
 **Why**: the attribute is one line on the same class T031 was already introducing; splitting a
 single class definition across two commits to keep the red/green boundary exactly on the task
 line would have meant an incomplete `VersionManager` sitting in the tree between T031 and T032,
-which is a worse state than the test arriving already green. Nothing about the attribute's
-behaviour is unverified — T032's test is what proves it, immediately.
+which is a worse state than the test arriving already green.
+
+**What the tests cover**: `test_historical_version_model_uses_this_packages_manager` reads the
+manager off migration state, and migration `0004` records it there permanently. Take
+`use_in_migrations` off the class and that test stays green. Only `makemigrations --check` goes
+red, because the autodetector then wants the manager taken back out of state. The declaration
+therefore gets its own assertion on the class,
+`test_the_manager_is_declared_for_use_in_migrations`, confirmed red with the attribute removed
+and green with it restored. The two tests answer different questions: one that the declaration
+is there, one that a historical model ends up holding the manager.
 
 **Revisit if**: a later story's task split assumes T032 introduces new model behaviour rather
 than only the test for it.
+
+## D17 — the US-3 guardrail flag on `tests/test_models.py` is an import block, not a weakened test
+
+**Decision**: the guardrail scan over US-3's commits flags `tests/test_models.py` as a modified
+pre-existing test file. Accepted as clean.
+
+**Why**: the flag is raised per file, and every removed line in the range is an import line that
+US-3 rewrote to bring in `connection`, `transaction`, `MigrationLoader`, `ProtectedError`,
+`PublishedVersionError`, `VersionManager` and `DocumentFactory`. All eighteen test functions
+present before US-3 are present afterwards, byte-for-byte, and US-3 only appends a new
+`TestImmutability` class below them.
+
+**Revisit if**: a later story's flag on the same file covers a range where a test body, and not
+only the import block, differs.
