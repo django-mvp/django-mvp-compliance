@@ -203,3 +203,19 @@ caller-supplied number still intact — and that is what exercises
 **Revisit if**: a future story adds another write path that bypasses `save()` (a
 management command, a bulk import) — that path needs the same collision test, because
 `save()`'s auto-assignment cannot protect it.
+
+## D13 — docs/models.md written even though it is not in the brief's file scope
+
+**Decision**: added `docs/models.md`, documenting `Document` and `Version`, though the
+brief's scope list names only `mvp_compliance/models.py`, `mvp_compliance/migrations/`,
+and the listed test files.
+
+**Why**: the full verify's `docs` step (run once, at the end, per the implementer
+protocol) failed on `docs-undocumented`: two new public names with no page describing
+them. The protocol is explicit that new public surface with no page at all is a page
+written in the story it belongs to, unless the brief says otherwise — the brief is
+silent on documentation, not opposed to it, and the gate is red without the page.
+
+**Revisit if**: a later story finds `docs/models.md` a better fit merged into a larger
+page (e.g. once publishing and rendering land) — nothing here is meant to be the final
+shape of the package's documentation.
