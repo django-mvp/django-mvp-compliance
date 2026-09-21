@@ -366,6 +366,13 @@ one. That is the whole of the argument, and it holds only as long as `target` st
 allow list — so `test_a_link_cannot_open_a_new_browsing_context` asserts it, confirmed failing
 with `target` added and passing with it removed.
 
+**What is given up with it**: `noreferrer` also suppresses the `Referer` header on an ordinary
+same-tab navigation, which has nothing to do with `target`, and that half goes too. The header
+it would have suppressed names the compliance page the reader was on, which is a public page
+whose whole purpose is to be read. A site that does not want even that leaking sets a referrer
+policy for itself, which is a decision about the site rather than about this package's allow
+list.
+
 **Revisit if**: a later story wants `rel` on rendered links (for instance, `noopener` on links a
 reader might open from published content) — set `link_rel` explicitly rather than relying on
 `nh3`'s default, and add it to `allowed_attributes` so the allow list stays the single source of

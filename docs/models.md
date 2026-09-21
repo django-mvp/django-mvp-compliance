@@ -57,9 +57,11 @@ version.html  # the HTML a reader is served, rendered from version.markdown
 ```
 
 Publishing an already-published version raises `mvp_compliance.exceptions.PublishError`
-and changes nothing about the document. Publishing is also refused, before anything
-is written, when the rendered output is empty once whitespace is stripped — a draft
-whose markdown produces nothing has nothing to publish. Publishing is one-way: the
+and changes nothing about the document. The same applies when something else published
+the version first and this copy of it is out of date, so a caller that catches
+`PublishError` catches both. Publishing is also refused, before anything is written,
+when the rendered output is empty once whitespace is stripped — a draft whose markdown
+produces nothing has nothing to publish. Publishing is one-way: the
 package offers no `unpublish`, `revert`, `rollback`, `restore` or `make_current` — a
 correction of any size is published again as a new version.
 
@@ -76,11 +78,18 @@ from mvp_compliance.rendering import MarkdownRenderer
 MarkdownRenderer().render("# Heading\n\nSome *text* and a [link](https://example.com).")
 ```
 
-The output is sanitised against an explicit allow list — headings, paragraphs,
-lists, emphasis, links, blockquotes, code and tables survive; `<script>`,
-`<style>`, `<iframe>` and any `javascript:` URL do not. A host project that wants
-a different allow list subclasses `MarkdownRenderer` and points the
-`MVP_COMPLIANCE_RENDERER` setting at it as a dotted path:
+The output is sanitised against an explicit allow list. Headings, paragraphs,
+lists, emphasis, links, blockquotes, code and tables survive. `<script>`,
+`<style>`, `<iframe>` and any `javascript:` URL do not.
+
+The renderer also discards characters that change what text says without being
+visible in it: the Unicode direction overrides, which reorder the characters
+after them, and the zero-width characters, which let two words read as one.
+Neither is reachable through the tag and attribute allow list, because neither
+is a tag or an attribute, and what is rendered is stored permanently.
+
+A host project that wants a different allow list subclasses `MarkdownRenderer`
+and points the `MVP_COMPLIANCE_RENDERER` setting at it as a dotted path:
 
 ```python
 # settings.py
