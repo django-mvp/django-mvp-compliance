@@ -96,7 +96,7 @@ class VersionManager(models.Manager):
 
     Overrides ``get_queryset()`` rather than being built with
     ``Manager.from_queryset()`` — the latter is a dynamic base class mypy
-    refuses to type-check (D-N, decisions.md). A bare override does not
+    refuses to type-check (D21, decisions.md). A bare override does not
     forward ``VersionQuerySet``'s own methods onto the manager, so each one
     a related manager needs to expose is forwarded here explicitly.
     """
