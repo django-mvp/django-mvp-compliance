@@ -84,8 +84,8 @@
       }
     ],
     "verified_base": {
-      "commit": "7bd02952f1f6d7fd6ca0d80cd573b7a298b4dfb3",
-      "verified_at": "2026-09-21T21:08:35Z",
+      "commit": "a08496c1548f3933655e5a2bc27575ef17b46974",
+      "verified_at": "2026-09-21T21:09:42Z",
       "steps": [
         "conformance",
         "docs",
