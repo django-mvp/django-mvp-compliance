@@ -81,6 +81,12 @@ discardable until the moment it is published. A correction, of any size, is alwa
 a new version — never an edit to the one that carries the error, which stays
 readable at its own standing.
 
+The guard on the four write routes above lives on `Version`'s default manager,
+`VersionManager`, and the queryset behind it, `VersionQuerySet` — both importable
+from `mvp_compliance.models`, and both plain subclasses with no configuration of
+their own. `VersionManager.use_in_migrations` is set, so a historical `Version`
+model inside a migration inherits the same guard.
+
 Deleting a `Document` that still holds any version — draft, current or superseded —
 raises `django.db.models.ProtectedError` and leaves the document in place; a
 document holding none deletes normally. This is `Version.document`'s
