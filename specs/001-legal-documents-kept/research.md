@@ -9,16 +9,32 @@ found, and what the plan does about it.
 Application-level code that reads the current version, supersedes it and then promotes a new one is
 a read-modify-write, and two of them interleave.
 
-**Found**: Django supports partial unique indexes through `UniqueConstraint(condition=...)` on every
-backend the CI matrix runs (SQLite 3.8+, PostgreSQL, MySQL 8.0.13+). A constraint of the form
-`unique(document) where status = 'current'` is enforced by the database, so the second writer fails
-with `IntegrityError` regardless of how the application interleaved.
+**Found**: Django supports partial unique indexes through `UniqueConstraint(condition=...)` on
+SQLite and PostgreSQL, and **not** on MySQL or MariaDB. `supports_partial_indexes` defaults to
+`True` (`django/db/backends/base/features.py:303`) and MySQL's backend sets it to `False`
+(`django/db/backends/mysql/features.py:45`, comment: "Neither MySQL nor MariaDB support partial
+indexes"). On a backend without support, Django does not raise: it emits system check `models.W036`
+and omits the constraint (`django/db/models/constraints.py:392-405`). A constraint that is silently
+absent is worse than one that fails loudly, so this is stated rather than assumed.
 
-**Plan**: the invariant is a database constraint, and `publish()` additionally takes a row lock on
-the document inside a transaction so the ordinary path serialises rather than raising. The
-constraint is the guarantee; the lock is the ergonomics. Tested both ways — a direct attempt to
-write a second current row must raise, and two serialised publishes must leave exactly one current
-version.
+The row lock is the other half. `select_for_update()` takes real row locks on PostgreSQL and MySQL.
+SQLite ignores it, and does not need it: it serialises writers at the database level.
+
+So the two mechanisms cover the three backends between them, and neither covers all three alone:
+
+| Backend | Partial unique index | `select_for_update()` |
+|---|---|---|
+| SQLite | enforced | ignored — writers already serialise |
+| PostgreSQL | enforced | real row lock |
+| MySQL / MariaDB | **silently omitted** | real row lock |
+
+**Plan**: `publish()` takes the row lock inside a transaction *and* the partial unique constraint is
+declared. On SQLite and PostgreSQL the constraint is the backstop and the lock is ergonomics; on
+MySQL the lock is the whole of it. Tested on SQLite, which is what this repository's CI runs
+(`tests/settings.py` uses an in-memory SQLite database and no workflow starts a database service) —
+a direct attempt to write a second current row must raise `IntegrityError`, and two publishes must
+leave exactly one current version. See D11 for what a MySQL-backed host project is and is not
+promised.
 
 ## R2 — Where immutability can actually be enforced
 
@@ -45,9 +61,17 @@ models are rebuilt from migration state and do not carry custom `save()`. That i
 package writes rather than one it offers to anybody else, so it is closed by not writing one, and a
 test asserts no shipped migration writes to a published version.
 
-**Plan**: enforcement on `save()`, on the queryset's `update()`, `delete()` and `bulk_update`, with
-`use_in_migrations = True` on the manager. One test per route, per SC-003, and the residue named in
-`decisions.md` rather than left unstated.
+`bulk_update()` needs no guard of its own: it builds `Case`/`When` expressions and then calls
+`self.filter(pk__in=pks).update(**update_kwargs)` on a queryset of the same class
+(`django/db/models/query.py:920-923`), so an override on `update()` already intercepts it. One
+detail follows from the same lines — `update_kwargs` is keyed on `field.attname`, so a guard that
+compares against field *names* alone misses `document_id`. The guard compares against both.
+
+**Plan**: enforcement on `save()` and on the queryset's `update()` and `delete()`, with
+`use_in_migrations = True` on the manager. `bulk_update()` is covered transitively and is tested
+anyway, because "covered transitively" is a claim about Django's internals and a test is what keeps
+it true. One test per route, per SC-003, and the residue named in `decisions.md` rather than left
+unstated.
 
 ## R3 — Deleting a document without opening a hole under the versions
 

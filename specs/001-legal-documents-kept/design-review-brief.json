@@ -1,0 +1,43 @@
+{
+  "role": "design_reviewer",
+  "stage": "S3R",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance",
+  "branch": "feat/001-legal-documents-kept",
+  "feature": "001-legal-documents-kept",
+  "lenses": ["spec-compliance", "security", "architecture"],
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-17/b773db2e"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/design-review.md",
+  "inputs": [
+    "specs/001-legal-documents-kept/spec.md",
+    "specs/001-legal-documents-kept/decisions.md",
+    "specs/001-legal-documents-kept/research.md",
+    "specs/001-legal-documents-kept/plan.md",
+    "specs/001-legal-documents-kept/tasks.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "AGENTS.md",
+    "pyproject.toml",
+    "tests/settings.py",
+    "tests/test_app.py",
+    "mvp_compliance/apps.py"
+  ],
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs001-design-findings.json"
+}

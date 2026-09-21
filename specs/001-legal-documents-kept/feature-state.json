@@ -3,8 +3,14 @@
   "feature": "001-legal-documents-kept",
   "branch": "feat/001-legal-documents-kept",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PLAN",
-  "state_history": [],
+  "state": "DESIGN_REVIEW",
+  "state_history": [
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-21T20:47:00Z",
+      "note": "S3R: one reviewer, three lenses; both findings verified against installed Django and applied as plan edits"
+    }
+  ],
   "gates": {
     "spec": {
       "approved_by": "SamuelJennings",
@@ -20,6 +26,15 @@
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-21T21:00:00Z",
+      "self_resolved": [
+        "SPC-001 (high, verified) research.md R1 claimed MySQL 8.0.13+ supports partial unique indexes; it does not, and Django omits the constraint with models.W036 rather than failing. R1 corrected with the Django source lines, plan.md now says which mechanism carries on which backend, T024 requires the row lock to carry a comment saying it is the only thing holding FR-007 on MySQL, and D11 records what a MySQL-backed host project is promised",
+        "ARC-001 (low, verified, removes work) the planned VersionQuerySet.bulk_update() override is redundant \u2014 Django's bulk_update calls .update() internally (query.py:920-923). Dropped from plan.md and T031; T030's bulk_update test stays as regression cover",
+        "carried from ARC-001's evidence: bulk_update keys update_kwargs on field.attname, so the frozen-field guard compares name and attname both, or document_id slips past. Written into plan.md and T031"
+      ]
     }
   },
   "stories": [
@@ -31,17 +46,61 @@
       "status": "todo",
       "replans": 0,
       "tasks": [
-        { "id": "T001", "status": "todo", "attempts": 0 },
-        { "id": "T002", "status": "todo", "attempts": 0 },
-        { "id": "T003", "status": "todo", "attempts": 0 },
-        { "id": "T010", "status": "todo", "attempts": 0 },
-        { "id": "T011", "status": "todo", "attempts": 0 },
-        { "id": "T012", "status": "todo", "attempts": 0 },
-        { "id": "T013", "status": "todo", "attempts": 0 },
-        { "id": "T014", "status": "todo", "attempts": 0 },
-        { "id": "T015", "status": "todo", "attempts": 0 },
-        { "id": "T016", "status": "todo", "attempts": 0 },
-        { "id": "T017", "status": "todo", "attempts": 0 }
+        {
+          "id": "T001",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T002",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T003",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T010",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T011",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T012",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T013",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T014",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T015",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T016",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T017",
+          "status": "todo",
+          "attempts": 0
+        }
       ]
     },
     {
@@ -52,15 +111,51 @@
       "status": "todo",
       "replans": 0,
       "tasks": [
-        { "id": "T020", "status": "todo", "attempts": 0 },
-        { "id": "T021", "status": "todo", "attempts": 0 },
-        { "id": "T022", "status": "todo", "attempts": 0 },
-        { "id": "T023", "status": "todo", "attempts": 0 },
-        { "id": "T024", "status": "todo", "attempts": 0 },
-        { "id": "T025", "status": "todo", "attempts": 0 },
-        { "id": "T026", "status": "todo", "attempts": 0 },
-        { "id": "T027", "status": "todo", "attempts": 0 },
-        { "id": "T028", "status": "todo", "attempts": 0 }
+        {
+          "id": "T020",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T021",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T022",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T023",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T024",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T025",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T026",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T027",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T028",
+          "status": "todo",
+          "attempts": 0
+        }
       ]
     },
     {
@@ -71,13 +166,41 @@
       "status": "todo",
       "replans": 0,
       "tasks": [
-        { "id": "T030", "status": "todo", "attempts": 0 },
-        { "id": "T031", "status": "todo", "attempts": 0 },
-        { "id": "T032", "status": "todo", "attempts": 0 },
-        { "id": "T033", "status": "todo", "attempts": 0 },
-        { "id": "T034", "status": "todo", "attempts": 0 },
-        { "id": "T035", "status": "todo", "attempts": 0 },
-        { "id": "T036", "status": "todo", "attempts": 0 }
+        {
+          "id": "T030",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T031",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T032",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T033",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T034",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T035",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T036",
+          "status": "todo",
+          "attempts": 0
+        }
       ]
     },
     {
@@ -88,14 +211,46 @@
       "status": "todo",
       "replans": 0,
       "tasks": [
-        { "id": "T040", "status": "todo", "attempts": 0 },
-        { "id": "T041", "status": "todo", "attempts": 0 },
-        { "id": "T042", "status": "todo", "attempts": 0 },
-        { "id": "T043", "status": "todo", "attempts": 0 },
-        { "id": "T044", "status": "todo", "attempts": 0 },
-        { "id": "T045", "status": "todo", "attempts": 0 },
-        { "id": "T046", "status": "todo", "attempts": 0 },
-        { "id": "T047", "status": "todo", "attempts": 0 }
+        {
+          "id": "T040",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T041",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T042",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T043",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T044",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T045",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T046",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T047",
+          "status": "todo",
+          "attempts": 0
+        }
       ]
     },
     {
@@ -106,25 +261,69 @@
       "status": "todo",
       "replans": 0,
       "tasks": [
-        { "id": "T050", "status": "todo", "attempts": 0 },
-        { "id": "T051", "status": "todo", "attempts": 0 },
-        { "id": "T052", "status": "todo", "attempts": 0 },
-        { "id": "T053", "status": "todo", "attempts": 0 },
-        { "id": "T054", "status": "todo", "attempts": 0 },
-        { "id": "T055", "status": "todo", "attempts": 0 },
-        { "id": "T056", "status": "todo", "attempts": 0 },
-        { "id": "T057", "status": "todo", "attempts": 0 }
+        {
+          "id": "T050",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T051",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T052",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T053",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T054",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T055",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T056",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T057",
+          "status": "todo",
+          "attempts": 0
+        }
       ]
     }
   ],
   "budgets": {
-    "converge_cycles": { "used": 0, "max": 2 },
-    "review_cycles": { "used": 0, "max": 1 },
-    "design_review_cycles": { "used": 0, "max": 1 },
-    "tokens": { "used": 0, "max": 120 }
+    "converge_cycles": {
+      "used": 0,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
   },
   "pr": {
-    "number": null,
+    "number": 19,
     "draft": true
   },
   "escalations": []

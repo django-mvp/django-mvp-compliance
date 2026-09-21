@@ -153,7 +153,9 @@ later is an additive migration.
   - `UniqueConstraint(fields=["document", "number"], name="unique_version_number_per_document")` —
     the numbering cannot collide, including under a race.
   - `UniqueConstraint(fields=["document"], condition=Q(status="current"), name="one_current_version_per_document")` —
-    FR-007, enforced by the database rather than by the code that publishes.
+    FR-007, enforced by the database rather than by the code that publishes, on every backend that
+    supports a partial index. MySQL and MariaDB do not, and Django omits it there rather than
+    failing — see `research.md` R1 and D11.
   - `CheckConstraint` tying the three fields that must agree: a draft has no `published_at` and empty
     `html`; a published version has both. This is the one immutability-adjacent rule a check
     constraint *can* express, because it compares columns within the row.
@@ -174,7 +176,12 @@ later is an additive migration.
 5. Set `html`, `published_at = timezone.now()`, `status = CURRENT`, and save.
 
 An `IntegrityError` from the partial unique index is translated into `PublishError`, because a caller
-should not have to know which index it hit. The lock is ergonomics; the index is the guarantee.
+should not have to know which index it hit.
+
+Both mechanisms are load-bearing, and which one carries depends on the backend the host project
+runs. On SQLite and PostgreSQL the index is the guarantee and the lock is ergonomics. On MySQL and
+MariaDB the index is not created at all, and the lock is the whole of it. `research.md` R1 has the
+table and the Django source lines; D11 records what that means for a host project.
 
 There is no `unpublish`, no `revert` and no `make_current`. FR-009 is satisfied by the absence, and
 `tests/test_models.py` asserts the absence by name so a later convenience cannot be added quietly.
@@ -193,10 +200,14 @@ Four routes, all refusing with `PublishedVersionError`:
   instance built by a third party.
 - **`VersionQuerySet.update()`** — raise when the queryset matches any published row and the update
   names a frozen field. An update naming only `status` is how `publish()` supersedes, so it passes.
-- **`VersionQuerySet.bulk_update()`** — same rule; it is `update()`'s sibling and was missed often
-  enough elsewhere to be worth naming.
+  The comparison is against each field's `name` *and* its `attname`, because a foreign key arrives
+  as `document_id`.
 - **`Version.delete()` and `VersionQuerySet.delete()`** — refuse for published rows outright
   (FR-014).
+
+`bulk_update()` gets no override. It calls `self.filter(pk__in=pks).update(**update_kwargs)`
+internally (`django/db/models/query.py:920-923`), so the `update()` guard already catches it. It
+still has a test, because that is a claim about Django's internals rather than about this package.
 
 `VersionManager.use_in_migrations = True`, so a historical model in a shipped migration gets this
 manager and its queryset. `tests/test_migrations.py` covers the residue that leaves — a shipped data

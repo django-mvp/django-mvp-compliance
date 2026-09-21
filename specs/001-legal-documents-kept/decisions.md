@@ -153,3 +153,36 @@ any other code and now covered by a test that fails if someone writes one. Closi
 shipping database triggers, which means maintaining the DDL in three dialects and having no answer
 for whatever backend a host project brings. The residue is named here rather than left for somebody
 to discover, because an immutability claim with an unstated exception is worse than a stated one.
+
+## D11 — On MySQL, the row lock holds FR-007 alone, and that is recorded rather than assumed
+
+**Ambiguous**: the plan holds "at most one version in force" with a partial unique index and treats
+it as the guarantee. Partial indexes are not universal.
+
+**Chosen**: both mechanisms ship — the partial unique constraint and a `select_for_update()` row
+lock inside `publish()`'s transaction — and which one carries depends on the backend the host
+project runs.
+
+| Backend | Partial unique index | Row lock |
+|---|---|---|
+| SQLite | enforced | ignored, and unnecessary: writers already serialise |
+| PostgreSQL | enforced | real |
+| MySQL / MariaDB | **not created** | real, and the only thing holding the rule |
+
+**Why defensible**: MySQL and MariaDB support neither partial indexes nor a filtered unique
+constraint, and Django does not fail when asked for one — it raises system check `models.W036` and
+omits the constraint (`django/db/backends/mysql/features.py:45`,
+`django/db/models/constraints.py:392-405`). Removing the constraint to make every backend behave
+alike would give up a real database guarantee on the two backends that can provide it, to buy
+nothing. Keeping it and saying nothing would leave a MySQL-backed project believing in a guarantee
+it does not have. So both ship and the difference is written down.
+
+What a MySQL-backed host project loses is the backstop, not the behaviour: the lock serialises
+publishes through `publish()`, which is the only route this package offers, so two concurrent
+publishes still leave exactly one version in force. What it does not survive is a write that reaches
+the table by another road entirely — raw SQL, a second application, a bulk load. That is out of
+reach on every backend, and one backend fewer has a net to catch it.
+
+This repository's tests run on SQLite, which is where the constraint is exercised. Nothing here is
+verified on MySQL, because nothing in this organisation runs MySQL; that is why this entry says what
+is promised rather than the test suite implying it.
