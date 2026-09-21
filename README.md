@@ -8,8 +8,10 @@ when.
 This package is not usable on its own. It renders on the django-mvp app shell
 (DaisyUI 5 + Tailwind CSS v4 + django-cotton) and expects it.
 
-> **Status: 0.0.1, scaffold only.** The repository is set up and green. No
-> models, pages or components have been built yet.
+> **Status: early development.** `Document` and `Version` — versioned legal
+> text, authored in Markdown and published with an immutable record — are
+> built. No admin, forms, views, URLs, consent recording or account-area page
+> exist yet.
 
 ## Why
 
@@ -23,6 +25,56 @@ So the documents live in the database. They are written in Markdown, published
 as ordinary pages on your site, and a published version never changes again —
 a correction is a new version, and the acceptance record points at the exact
 version a person saw.
+
+## Models
+
+`Document` is a named legal text — a privacy policy, a set of terms, a
+cookie policy — with a lasting identity and no wording of its own. `Version`
+holds the Markdown wording and belongs to one document. A new version is a
+**draft**: no legal standing, invisible to readers, freely editable and
+freely discardable.
+
+```python
+from mvp_compliance.models import Document
+
+privacy = Document.objects.create(name="Privacy policy")
+version = privacy.versions.create(markdown="# Privacy policy\n\n...")
+version.publish()
+```
+
+Publishing renders the Markdown to HTML once and makes that version
+**current** — the one in force — moving whichever version was current
+before it to **superseded**. A published version's wording can never change
+again; a correction, of any size, is published again as a new version.
+There is no way to unpublish, revert, or make an earlier version current a
+second time.
+
+The version in force:
+
+```python
+privacy.current  # the current Version, or None if nothing has been published
+```
+
+The published history, in order, drafts absent:
+
+```python
+privacy.versions.published()
+```
+
+Rendering is `mvp_compliance.rendering.MarkdownRenderer`, configured by one
+setting:
+
+```python
+# settings.py
+MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"  # optional
+```
+
+`MVP_COMPLIANCE_RENDERER` is a dotted path to the renderer class, and
+defaults to `MarkdownRenderer` when unset. A host project that wants a
+different HTML allow list points it at a subclass.
+
+This package registers nothing in the Django admin and ships no forms, no
+views and no URLs — a host project brings its own.
 
 ## Scope & philosophy
 

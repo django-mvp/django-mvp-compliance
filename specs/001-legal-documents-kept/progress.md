@@ -567,3 +567,23 @@ passed on first run. `poetry run ruff check tests` and
 `poetry run ruff format --check tests` clean.
 Next: T055 — README.
 Watch: nothing.
+
+## 2026-09-22T00:44:40+02:00 · Implementer US-5 · T055
+
+Did: README — replaced the stale "scaffold only, no models" status banner
+(unchanged since the initial scaffold, contradicted by every story since
+US-1) with an accurate one, and added a "Models" section: what `Document`
+and `Version` hold, publish/current/published() usage, the
+`MVP_COMPLIANCE_RENDERER` setting, and what the package deliberately ships
+none of (admin, forms, views, URLs). Also added a Retrieval section to
+`docs/models.md` (D13's precedent: new public surface gets a page in the
+story it belongs to) covering `document.current`, `.get(number=n)` and
+`.published()`.
+Verified: every code example in both pages run against this branch in a
+throwaway script using a real test database (`DiscoverRunner.setup_databases`)
+— document/version creation, `publish()`, `.current`, `.published()`,
+`.drafts()`, `.get(number=...)`, `get_renderer()` all executed as shown.
+`poetry run pre-commit run --files README.md docs/models.md` — trailing
+whitespace, end-of-file and deptry checks passed.
+Next: T056 — CHANGELOG.
+Watch: nothing.

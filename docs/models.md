@@ -126,3 +126,31 @@ including a queryset delete and a cascade from elsewhere — the package adds no
 override on either side.
 
 `mvp_compliance.exceptions.PublishedVersionError` is what every route above raises.
+
+### Retrieval
+
+The version in force — `document.current` — is a property returning the current
+`Version`, or `None` when nothing has ever been published. `None` is a normal
+answer, not an error:
+
+```python
+document.current  # the Version in force, or None
+```
+
+One version by its number, the plain Django idiom, no wrapper method:
+
+```python
+document.versions.get(number=2)
+```
+
+The published history, in order, with drafts absent — `VersionQuerySet.published()`,
+reachable through the related manager on any document:
+
+```python
+document.versions.published()  # every version that has ever been current, in order
+```
+
+`VersionQuerySet` also carries `.drafts()`, the complement — every version that has
+never been published — and `.current()`, the queryset `document.current` is built on
+top of. All three are available both as `Version.objects.<method>()` and as
+`document.versions.<method>()`.
