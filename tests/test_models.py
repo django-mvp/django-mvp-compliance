@@ -73,6 +73,9 @@ class TestPublishing:
         assert draft.is_published is False
         assert draft.published_at is None
 
+    def test_a_draft_has_no_stored_html(self, draft):
+        assert draft.html == ""
+
     def test_a_draft_is_freely_editable(self, draft):
         draft.markdown = "Revised wording"
         draft.save()
@@ -97,6 +100,51 @@ class TestPublishing:
         assert version.status == Version.Status.CURRENT
         assert version.published_at is not None
         assert not document.versions.filter(status=Version.Status.SUPERSEDED).exists()
+
+    def test_publishing_renders_the_markdown_into_html(self, document):
+        version = VersionFactory(document=document, markdown="# Heading\n\nBody text.")
+
+        version.publish()
+
+        assert "<h1>Heading</h1>" in version.html
+        assert "<p>Body text.</p>" in version.html
+
+    def test_a_published_version_has_non_empty_stored_html(self, document):
+        version = VersionFactory(document=document)
+
+        version.publish()
+
+        assert version.html != ""
+
+    def test_a_draft_with_stored_html_is_refused_by_the_database(self, document):
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [
+                    Version(
+                        document=document,
+                        markdown="Draft with rendered output",
+                        status=Version.Status.DRAFT,
+                        published_at=None,
+                        html="<p>Draft with rendered output</p>",
+                    )
+                ]
+            )
+
+    def test_a_published_version_with_no_stored_html_is_refused_by_the_database(
+        self, document
+    ):
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [
+                    Version(
+                        document=document,
+                        markdown="Published with no rendered output",
+                        status=Version.Status.CURRENT,
+                        published_at=timezone.now(),
+                        html="",
+                    )
+                ]
+            )
 
     def test_publishing_a_second_draft_becomes_current_and_supersedes_the_first(
         self, document

@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import PublishedVersionError, PublishError
+from mvp_compliance.rendering import get_renderer
 
 #: Everything a published version carries except its standing (FR-013) — the
 #: one change a published version ever undergoes is draft -> current ->
@@ -109,6 +110,14 @@ class Version(models.Model):
         _("markdown"),
         help_text=_("The wording of this version, written in Markdown."),
     )
+    html = models.TextField(
+        _("html"),
+        blank=True,
+        help_text=_(
+            "The HTML a reader is served, rendered from the markdown once, "
+            "at publication. Empty for a draft that has never been published."
+        ),
+    )
 
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
@@ -159,8 +168,12 @@ class Version(models.Model):
                 # A nested Meta class cannot see names bound in Version's own class
                 # body, so this matches Status.DRAFT's value directly rather than
                 # referencing the enum.
-                condition=models.Q(status="draft", published_at__isnull=True)
-                | (~models.Q(status="draft") & models.Q(published_at__isnull=False)),
+                condition=models.Q(status="draft", published_at__isnull=True, html="")
+                | (
+                    ~models.Q(status="draft")
+                    & models.Q(published_at__isnull=False)
+                    & ~models.Q(html="")
+                ),
                 name="version_status_agrees_with_published_at",
             ),
         ]
@@ -181,6 +194,8 @@ class Version(models.Model):
         if self.status != self.Status.DRAFT:
             raise PublishError(_("This version has already been published."))
 
+        html = get_renderer()().render(self.markdown)
+
         with transaction.atomic():
             # Not belt-and-braces: MySQL and MariaDB silently omit the partial
             # unique index that otherwise holds "one current version per
@@ -190,9 +205,10 @@ class Version(models.Model):
             Version.objects.filter(
                 document=document, status=self.Status.CURRENT
             ).update(status=self.Status.SUPERSEDED)
+            self.html = html
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
-            self.save(update_fields=["status", "published_at"])
+            self.save(update_fields=["status", "published_at", "html"])
 
     def save(self, *args, **kwargs) -> None:
         if self._state.adding:
