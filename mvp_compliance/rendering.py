@@ -57,8 +57,22 @@ class MarkdownRenderer:
 
     allowed_url_schemes = {"http", "https", "mailto"}
 
+    #: Characters that change what text says without being visible in it.
+    #: The allow list above governs tags, attributes and URL schemes, none of
+    #: which reaches text content, so these are removed separately. The first
+    #: group reorders the characters after it, which lets a link's wording
+    #: name a different site from the one it points at. The second is
+    #: invisible, which lets two words read as one.
+    discarded_characters = str.maketrans(
+        "",
+        "",
+        "‪‫‬‭‮⁦⁧⁨⁩​‌‍‎‏﻿",
+    )
+
     def render(self, source: str) -> str:
-        html = markdown.markdown(source, extensions=self.extensions)
+        html = markdown.markdown(
+            source.translate(self.discarded_characters), extensions=self.extensions
+        )
         return nh3.clean(
             html,
             tags=self.allowed_tags,

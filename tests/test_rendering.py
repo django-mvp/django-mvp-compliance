@@ -63,6 +63,33 @@ class TestMarkdownRenderer:
         assert "target" not in html
         assert '<a href="https://example.com">a link</a>' in html
 
+    def test_direction_overriding_characters_do_not_survive(self):
+        """A link's visible text must not be able to disagree with its target.
+
+        A right-to-left override reverses the text after it, so the wording a
+        reader sees can be made to name a different site from the one the
+        link points at. The allow list governs tags and attributes, not text,
+        so this is removed separately.
+        """
+        source = "[https://good‮gro.example.com](https://evil.example.com)"
+
+        html = MarkdownRenderer().render(source)
+
+        assert "‮" in source
+        assert "‮" not in html
+        assert 'href="https://evil.example.com"' in html
+
+    def test_invisible_characters_do_not_survive(self):
+        """Two words separated by nothing a reader can see are one word."""
+        source = "pay​pal.example.com is not pay﻿pal.example.com"
+
+        html = MarkdownRenderer().render(source)
+
+        assert "​" in source
+        assert "​" not in html
+        assert "﻿" not in html
+        assert "paypal.example.com is not paypal.example.com" in html
+
 
 class TestRendererSetting:
     """The renderer is resolved from a setting, defaulting to MarkdownRenderer."""
