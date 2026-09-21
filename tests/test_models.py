@@ -3,7 +3,9 @@
 import pytest
 from django.db import IntegrityError
 
+from mvp_compliance.exceptions import PublishError
 from mvp_compliance.models import Document, Version
+from tests.factories import VersionFactory
 
 
 @pytest.mark.django_db
@@ -81,3 +83,40 @@ class TestPublishing:
         draft.delete()
 
         assert not Version.objects.filter(pk=pk).exists()
+
+    def test_publishing_the_only_draft_makes_it_current_with_no_superseded_versions(
+        self, document
+    ):
+        version = VersionFactory(document=document)
+
+        version.publish()
+
+        assert version.status == Version.Status.CURRENT
+        assert version.published_at is not None
+        assert not document.versions.filter(status=Version.Status.SUPERSEDED).exists()
+
+    def test_publishing_a_second_draft_becomes_current_and_supersedes_the_first(
+        self, document
+    ):
+        first = VersionFactory(document=document)
+        second = VersionFactory(document=document)
+        first.publish()
+
+        second.publish()
+
+        first.refresh_from_db()
+        assert first.status == Version.Status.SUPERSEDED
+        assert second.status == Version.Status.CURRENT
+        assert document.versions.filter(status=Version.Status.CURRENT).count() == 1
+
+    def test_publishing_an_already_published_version_is_refused(self, document):
+        version = VersionFactory(document=document)
+        version.publish()
+        published_at = version.published_at
+
+        with pytest.raises(PublishError):
+            version.publish()
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.CURRENT
+        assert version.published_at == published_at
