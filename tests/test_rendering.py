@@ -21,7 +21,7 @@ class TestMarkdownRenderer:
             "<style>body { display: none; }</style>\n\n"
             '<iframe src="https://evil.example.com"></iframe>\n\n'
             '<p onclick="alert(1)">click me</p>\n\n'
-            '[bad link](javascript:alert(1))\n'
+            "[bad link](javascript:alert(1))\n"
         )
 
         html = MarkdownRenderer().render(source)
@@ -54,9 +54,7 @@ class TestRendererSetting:
     def test_get_renderer_defaults_to_markdown_renderer(self):
         assert get_renderer() is MarkdownRenderer
 
-    @override_settings(
-        MVP_COMPLIANCE_RENDERER="tests.test_rendering.UppercaseRenderer"
-    )
+    @override_settings(MVP_COMPLIANCE_RENDERER="tests.test_rendering.UppercaseRenderer")
     def test_get_renderer_resolves_a_configured_dotted_path(self):
         assert get_renderer() is UppercaseRenderer
 
