@@ -15,39 +15,39 @@ msgstr ""
 msgid "Compliance"
 msgstr "Compliance"
 
-#: mvp_compliance/models.py:42
+#: mvp_compliance/models.py:26
 msgid "name"
 msgstr "name"
 
-#: mvp_compliance/models.py:45
+#: mvp_compliance/models.py:29
 msgid "The name this document is known by, such as “Privacy policy”."
 msgstr "The name this document is known by, such as “Privacy policy”."
 
-#: mvp_compliance/models.py:49 mvp_compliance/models.py:128
+#: mvp_compliance/models.py:33 mvp_compliance/models.py:112
 msgid "document"
 msgstr "document"
 
-#: mvp_compliance/models.py:50
+#: mvp_compliance/models.py:34
 msgid "documents"
 msgstr "documents"
 
-#: mvp_compliance/models.py:73 mvp_compliance/models.py:272
+#: mvp_compliance/models.py:57 mvp_compliance/models.py:297
 msgid "A published version's wording cannot be changed."
 msgstr "A published version's wording cannot be changed."
 
-#: mvp_compliance/models.py:79 mvp_compliance/models.py:277
+#: mvp_compliance/models.py:63 mvp_compliance/models.py:302
 msgid "A published version cannot be deleted."
 msgstr "A published version cannot be deleted."
 
-#: mvp_compliance/models.py:129
+#: mvp_compliance/models.py:113
 msgid "The document this version belongs to."
 msgstr "The document this version belongs to."
 
-#: mvp_compliance/models.py:134
+#: mvp_compliance/models.py:118
 msgid "number"
 msgstr "number"
 
-#: mvp_compliance/models.py:137
+#: mvp_compliance/models.py:121
 msgid ""
 "This version's position among its document's versions, assigned "
 "automatically."
@@ -55,19 +55,19 @@ msgstr ""
 "This version's position among its document's versions, assigned "
 "automatically."
 
-#: mvp_compliance/models.py:142
+#: mvp_compliance/models.py:126
 msgid "markdown"
 msgstr "markdown"
 
-#: mvp_compliance/models.py:143
+#: mvp_compliance/models.py:127
 msgid "The wording of this version, written in Markdown."
 msgstr "The wording of this version, written in Markdown."
 
-#: mvp_compliance/models.py:146
+#: mvp_compliance/models.py:130
 msgid "html"
 msgstr "html"
 
-#: mvp_compliance/models.py:149
+#: mvp_compliance/models.py:133
 msgid ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
@@ -75,23 +75,23 @@ msgstr ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
 
-#: mvp_compliance/models.py:155
+#: mvp_compliance/models.py:139
 msgid "Draft"
 msgstr "Draft"
 
-#: mvp_compliance/models.py:156
+#: mvp_compliance/models.py:140
 msgid "Current"
 msgstr "Current"
 
-#: mvp_compliance/models.py:157
+#: mvp_compliance/models.py:141
 msgid "Superseded"
 msgstr "Superseded"
 
-#: mvp_compliance/models.py:160
+#: mvp_compliance/models.py:144
 msgid "status"
 msgstr "status"
 
-#: mvp_compliance/models.py:166
+#: mvp_compliance/models.py:150
 msgid ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
@@ -99,11 +99,11 @@ msgstr ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
 
-#: mvp_compliance/models.py:171
+#: mvp_compliance/models.py:155
 msgid "published at"
 msgstr "published at"
 
-#: mvp_compliance/models.py:176
+#: mvp_compliance/models.py:160
 msgid ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
@@ -111,18 +111,22 @@ msgstr ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
 
-#: mvp_compliance/models.py:184
+#: mvp_compliance/models.py:168
 msgid "version"
 msgstr "version"
 
-#: mvp_compliance/models.py:185
+#: mvp_compliance/models.py:169
 msgid "versions"
 msgstr "versions"
 
-#: mvp_compliance/models.py:229
+#: mvp_compliance/models.py:235
 msgid "This version has already been published."
 msgstr "This version has already been published."
 
-#: mvp_compliance/models.py:233
+#: mvp_compliance/models.py:239
 msgid "Publishing this would produce no output."
 msgstr "Publishing this would produce no output."
+
+#: mvp_compliance/models.py:253
+msgid "This version is no longer a draft."
+msgstr "This version is no longer a draft."
