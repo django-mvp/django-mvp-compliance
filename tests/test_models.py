@@ -289,6 +289,24 @@ class TestImmutability:
         document.delete()
         assert not Document.objects.filter(pk=document.pk).exists()
 
+    def test_correcting_an_error_makes_a_new_version(self, document):
+        erroneous = VersionFactory(
+            document=document, markdown="Effective date: 2026-13-45"
+        )
+        erroneous.publish()
+        erroneous_markdown = erroneous.markdown
+
+        correction = VersionFactory(
+            document=document, markdown="Effective date: 2026-01-15"
+        )
+        correction.publish()
+
+        erroneous.refresh_from_db()
+        assert erroneous.status == Version.Status.SUPERSEDED
+        assert erroneous.markdown == erroneous_markdown
+        assert correction.status == Version.Status.CURRENT
+        assert document.versions.count() == 2
+
     def test_historical_version_model_uses_this_packages_manager(self):
         """A migration's historical model gets the same guards (D10)."""
         loader = MigrationLoader(connection)
