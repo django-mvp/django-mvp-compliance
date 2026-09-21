@@ -486,3 +486,48 @@ class TestRetrieval:
         VersionFactory(document=document, markdown="Third wording")
 
         assert document.versions.get(number=2) == second
+
+    def test_four_documents_do_not_interfere(self):
+        privacy, terms, cookies, agreement = (
+            DocumentFactory(),
+            DocumentFactory(),
+            DocumentFactory(),
+            DocumentFactory(),
+        )
+
+        privacy_v1 = VersionFactory(document=privacy, markdown="Privacy v1")
+        privacy_v1.publish()
+        privacy_v2 = VersionFactory(document=privacy, markdown="Privacy v2")
+        privacy_v2.publish()
+
+        terms_v1 = VersionFactory(document=terms, markdown="Terms v1")
+        terms_v1.publish()
+
+        VersionFactory(document=cookies, markdown="Cookies draft")
+
+        agreement_v1 = VersionFactory(document=agreement, markdown="Agreement v1")
+        agreement_v1.publish()
+        agreement_v2 = VersionFactory(document=agreement, markdown="Agreement v2")
+        agreement_v2.publish()
+        agreement_v3 = VersionFactory(document=agreement, markdown="Agreement v3")
+        agreement_v3.publish()
+
+        assert [v.number for v in privacy.versions.all()] == [1, 2]
+        assert privacy.current == privacy_v2
+        assert list(privacy.versions.published()) == [privacy_v1, privacy_v2]
+
+        assert [v.number for v in terms.versions.all()] == [1]
+        assert terms.current == terms_v1
+        assert list(terms.versions.published()) == [terms_v1]
+
+        assert [v.number for v in cookies.versions.all()] == [1]
+        assert cookies.current is None
+        assert list(cookies.versions.published()) == []
+
+        assert [v.number for v in agreement.versions.all()] == [1, 2, 3]
+        assert agreement.current == agreement_v3
+        assert list(agreement.versions.published()) == [
+            agreement_v1,
+            agreement_v2,
+            agreement_v3,
+        ]
