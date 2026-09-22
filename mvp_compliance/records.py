@@ -74,6 +74,19 @@ class PersonalRecord:
         """Whether no section holds an entry — a normal answer, not an error (FR-005)."""
         return not any(section.entries for section in self.sections)
 
+    @property
+    def coverage(self) -> "str | Promise":
+        """What the answer covers, present whether or not it holds anything (FR-015, SC-005).
+
+        "Nothing here" is not "nothing anywhere" — an empty answer carries
+        this exact statement too, per D5: this package does not reach for a
+        host project's own data, so it says so rather than implying it has.
+        """
+        return _(
+            "This covers what this package holds about this person. The project may "
+            "hold further records about them elsewhere that are not included here."
+        )
+
 
 def resolve_subject(text: str) -> str:
     """The subject identifier ``text`` names, by the order plan.md sets out.
