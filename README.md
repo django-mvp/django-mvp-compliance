@@ -10,9 +10,9 @@ This package is not usable on its own. It renders on the django-mvp app shell
 
 > **Status: early development.** `Document` and `Version` — versioned legal
 > text, authored in Markdown and published with an immutable record — are
-> built, and both are registered in the Django admin for writing them. No
-> preview, no publish confirmation, no consent recording and no account-area
-> page exist yet.
+> built, and both are registered in the Django admin for writing and
+> previewing them. No publish confirmation, no consent recording and no
+> account-area page exist yet.
 
 ## Why
 
@@ -92,6 +92,23 @@ produce is stripped when the version is published.
 The toolbar is drawn by [EasyMDE](https://github.com/Ionaru/easy-markdown-editor),
 vendored into the package rather than fetched, with its own icons in place
 of the icon font it expects and does not ship.
+
+## Previewing a version
+
+A version's change page carries a Preview link, at `<version>/preview/` in
+the admin. It shows the rendering the published page will actually use —
+content the sanitiser's allow list would strip is shown stripped, so that
+loss is visible before publication rather than discovered after.
+
+This is a different thing from the toolbar's own inline formatting display
+while writing: the toolbar approximates, and the preview is the real
+output. For a draft, that output is rendered fresh from the current
+wording. For a published version it is read from the HTML stored at
+publication — never rendered again, because that stored HTML is the
+evidence of what a reader was served.
+
+Reaching a version's preview needs the same `view_version` permission as
+its change page.
 
 ## Permissions
 

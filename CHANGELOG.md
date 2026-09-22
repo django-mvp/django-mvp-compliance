@@ -31,3 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   can reach directly. Deleting a version needs `delete_version` and is
   refused once that version has been published, matching what the model
   layer already refuses.
+- A Preview link on a version's change page shows the rendering the
+  published page will actually use, distinct from the toolbar's own
+  inline display: a fresh rendering for a draft, and the HTML stored at
+  publication for a published version, never rendered again. Content the
+  sanitiser's allow list strips previews as stripped, so the loss is
+  visible before publication.
