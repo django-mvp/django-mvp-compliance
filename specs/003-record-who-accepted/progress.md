@@ -530,3 +530,18 @@ has no attribute 'for_subject'`, since neither the queryset method nor the manag
 forward exists yet. `poetry run ruff check tests/test_models.py` clean.
 Next: T054.
 Watch: nothing.
+
+## 2026-09-22T18:47:00+02:00 · Implementer US-4 · T054
+
+Did: added `AcceptanceQuerySet.for_subject(subject)` (filters on the stored identifier)
+and `AcceptanceManager.for_subject` / `for_person(user)` to `mvp_compliance/models.py`.
+`for_person()` is a thin call through `Acceptance.subject_of(user)` into
+`for_subject()`, not a second query.
+Verified: `poetry run pytest tests/test_models.py::TestAccountRemoval -v` — 5 passed
+(T053 now green). `poetry run pytest tests/test_models.py -q` — 84 passed, no
+regressions. `poetry run ruff check mvp_compliance/models.py tests/test_models.py` and
+`poetry run mypy mvp_compliance/models.py` clean.
+`DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run`
+— "No changes detected" (no field changed, as expected).
+Next: T055.
+Watch: nothing.

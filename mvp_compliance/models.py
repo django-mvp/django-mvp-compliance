@@ -437,6 +437,12 @@ class AcceptanceQuerySet(models.QuerySet):
     def delete(self):
         raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
 
+    def for_subject(self, subject) -> "AcceptanceQuerySet":
+        """This queryset narrowed to one person's records, by the identifier that
+        survives their account being removed (FR-014).
+        """
+        return self.filter(subject=subject)
+
 
 class AcceptanceManager(models.Manager["Acceptance"]):
     """Where an acceptance is written — see ``record()``.
@@ -451,6 +457,17 @@ class AcceptanceManager(models.Manager["Acceptance"]):
 
     def get_queryset(self) -> AcceptanceQuerySet:
         return AcceptanceQuerySet(self.model, using=self._db)
+
+    def for_subject(self, subject) -> AcceptanceQuerySet:
+        return self.get_queryset().for_subject(subject)
+
+    def for_person(self, user) -> AcceptanceQuerySet:
+        """That person's acceptances, in the order they happened.
+
+        A thin call through ``subject_of()`` into ``for_subject()``, not a
+        second query — the same identifier ``record()`` writes.
+        """
+        return self.for_subject(Acceptance.subject_of(user))
 
     def record(self, user, version, request=None) -> "Acceptance":
         """Record ``user``'s acceptance of ``version``.
