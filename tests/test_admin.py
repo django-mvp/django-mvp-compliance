@@ -20,9 +20,8 @@ from tests.factories import VersionFactory
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
-#: Every address this feature serves that exists yet, and how to reach one
-#: given a draft to address it with. The publish address is not built until
-#: US-4, so it is not walked here (T020).
+#: Every address this feature serves, and how to reach one given a draft to
+#: address it with.
 DRAFT_PRIVACY_ADDRESSES = {
     "version changelist": lambda draft: reverse(
         "admin:mvp_compliance_version_changelist"
@@ -33,6 +32,9 @@ DRAFT_PRIVACY_ADDRESSES = {
     ),
     "version preview": lambda draft: reverse(
         "admin:mvp_compliance_version_preview", args=[draft.pk]
+    ),
+    "version publish": lambda draft: reverse(
+        "admin:mvp_compliance_version_publish", args=[draft.pk]
     ),
     "document changelist": lambda draft: reverse(
         "admin:mvp_compliance_document_changelist"

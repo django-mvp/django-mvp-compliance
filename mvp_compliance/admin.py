@@ -7,7 +7,7 @@ feature.
 
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
@@ -49,6 +49,11 @@ class VersionAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.preview_view),
                 name="mvp_compliance_version_preview",
             ),
+            path(
+                "<int:object_id>/publish/",
+                self.admin_site.admin_view(self.publish_view),
+                name="mvp_compliance_version_publish",
+            ),
         ]
         return urls + super().get_urls()
 
@@ -81,3 +86,18 @@ class VersionAdmin(admin.ModelAdmin):
         return TemplateResponse(
             request, "admin/mvp_compliance/version/preview.html", context
         )
+
+    def publish_view(self, request, object_id):
+        """Confirm on GET, publish on POST — behind its own permission (FR-013, FR-014).
+
+        Writing a draft and making something legally binding are different
+        levels of trust, so this checks ``publish_version`` itself rather
+        than relying on the model or the ordinary change permission.
+        """
+        version = self.get_object(request, object_id)
+        if version is None:
+            raise Http404
+        if not request.user.has_perm("mvp_compliance.publish_version"):
+            raise PermissionDenied
+
+        return HttpResponse()
