@@ -73,3 +73,28 @@ Verified: `poetry run pytest tests/test_widgets.py` — 5 passed. `poetry run ru
 mvp_compliance/widgets.py` — no issues.
 Next: T013/T014, the JS and CSS that make the toolbar work in the browser.
 Watch: nothing.
+
+## 2026-09-22T11:58:00Z · Implementer US1 · T013
+
+Did: added `markdown-editor.js`. Reads `data-toolbar` off each marked textarea, maps each declared
+control to EasyMDE's own built-in action, and instantiates EasyMDE with `spellChecker: false`,
+`status: false`, and no preview/side-by-side/full-screen control in the toolbar it builds.
+Verified: `poetry run pytest tests/test_widgets.py` — 8 passed (the two new static-asset guard
+tests exercise the file's content: every declared control appears, and none of the three
+preview-family EasyMDE actions do). No JavaScript runtime exists in this suite, so the file's
+actual behaviour in a browser is not something a test here can prove — see the report's `concerns`.
+Next: T014.
+Watch: browser behaviour unverified by test; observe on the demo server once T017 gives the
+widget a page to render on, and say so as observation, not proof.
+
+## 2026-09-22T11:59:00Z · Implementer US1 · T014
+
+Did: added `markdown-editor.css` — one inline-SVG background per toolbar button class, sized to
+16px, and a rule keeping the editor's container inside the admin's `field-markdown` box.
+Verified: `poetry run pytest tests/test_widgets.py` — 8 passed, including the guard asserting
+every declared toolbar control has a matching `.mvp-compliance-toolbar-<name>` rule.
+`poetry run ruff check`/`ruff format --check` clean; pre-commit's whitespace/format hooks ran over
+both new static files (D8 only excludes the vendored ones) and made one formatting fix, re-verified
+green afterwards.
+Next: T015/T016, the form.
+Watch: same as T013 — icon rendering itself is a demo-server observation, not a test result.
