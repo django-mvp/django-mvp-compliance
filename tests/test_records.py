@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 from django.test import override_settings
 
-from mvp_compliance.records import PersonalRecord, produce
+from mvp_compliance.records import PersonalRecord, produce, resolve_subject
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
@@ -150,6 +150,32 @@ class TestProduce:
         """
         field_names = {field.name for field in dataclasses.fields(PersonalRecord)}
         assert field_names == {"subject", "sections"}
+
+
+@pytest.mark.django_db
+class TestNamingAPerson:
+    """resolve_subject() names a person from free text (research.md R3, T020)."""
+
+    def test_an_accounts_login_name_resolves_to_its_identifier(self):
+        someone = UserFactory(username="alice")
+
+        assert resolve_subject("alice") == str(someone.pk)
+
+    def test_an_accounts_email_resolves_to_its_identifier(self):
+        someone = UserFactory(email="alice@example.com")
+
+        assert resolve_subject("alice@example.com") == str(someone.pk)
+
+    def test_an_email_match_is_case_insensitive(self):
+        someone = UserFactory(email="alice@example.com")
+
+        assert resolve_subject("ALICE@EXAMPLE.COM") == str(someone.pk)
+
+    def test_text_matching_neither_resolves_to_itself(self):
+        assert (
+            resolve_subject("nobody-the-package-has-ever-heard-of")
+            == "nobody-the-package-has-ever-heard-of"
+        )
 
 
 @pytest.mark.django_db
