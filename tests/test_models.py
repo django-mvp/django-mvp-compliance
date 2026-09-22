@@ -1271,3 +1271,12 @@ class TestOptionalEvidence:
 
         acceptance.refresh_from_db()
         assert acceptance.ip_address == "203.0.113.5"
+
+    def test_no_request_holds_no_address(self, user, published_version):
+        """With the setting on and no request, a shell or management command needs
+        no invented value — the field is empty and recording still succeeds.
+        """
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.ip_address is None

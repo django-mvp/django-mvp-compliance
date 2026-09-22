@@ -669,3 +669,19 @@ tests/test_models.py::TestAcceptanceImmutability -v` — 22 passed, confirming t
 tests/test_models.py` and `poetry run mypy mvp_compliance/models.py` clean.
 Next: T063.
 Watch: nothing.
+
+## 2026-09-22T18:59:00+02:00 · Implementer US-5 · T063
+
+Did: added `TestOptionalEvidence::test_no_request_holds_no_address` — with the setting on
+and no request supplied, recording succeeds and `ip_address` stays empty, so a management
+command or a shell session needs no invented value.
+Verified: `poetry run pytest tests/test_models.py::TestOptionalEvidence::test_no_request_holds_no_address -v`
+passed on first run, matching tasks.md's own criterion for this task ("Passes", not "Fails
+before") — T062's `request is not None` guard already gives the right answer by
+construction. Probed anyway per craft-tdd: temporarily dropped that guard so the setting
+alone triggered the `request.META` read, and reran — failed with
+`AttributeError: 'NoneType' object has no attribute 'META'`, the exact regression the test
+exists to catch. Reverted with `git checkout -- mvp_compliance/models.py` before
+committing. `poetry run ruff check tests/test_models.py` clean.
+Next: T064.
+Watch: nothing.
