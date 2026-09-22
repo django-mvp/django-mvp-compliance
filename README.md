@@ -155,6 +155,21 @@ editable form at all. Its wording is readable in full, and Django serves
 its own read-only page rather than one this package builds — not a form
 whose fields are disabled, and not one whose save is silently refused.
 
+## Starting the next version from the one in force
+
+A document's change page offers a **Start the next version** link. It
+opens the version add form with the document already chosen and, when the
+document has a version in force, that version's Markdown already in the
+box — a correction usually changes one clause, not the whole text, so
+starting from what is already there is the ordinary case.
+
+A document with nothing published yet opens the add form empty, which is
+the ordinary case for a new document.
+
+Nothing is copied on the server: the wording is read once and handed to a
+new, unsaved form as a starting point. The version it came from is never
+opened for writing, and the model would refuse it if anything tried.
+
 ## Scope & philosophy
 
 **What it is**

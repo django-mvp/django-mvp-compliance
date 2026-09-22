@@ -94,6 +94,21 @@ Once a version is published, its change page in the admin offers nothing to edit
 is readable in full, and Django serves its own read-only page — not a form with disabled
 fields, and not one whose save is silently refused.
 
+## Starting the next version from the one in force
+
+Most rewordings are edits to what is already there rather than a rewrite from nothing, so a
+document's change page offers a **Start the next version** link, next to the document's name.
+It opens the version add form with that document already chosen.
+
+When the document has a version in force, `VersionAdmin.get_changeform_initial_data()` reads
+its Markdown and hands it to the form as an initial value, so the new draft opens with the
+current wording already in the box, ready to be edited. A document with nothing published yet
+opens the box empty, which is the ordinary case for a new document.
+
+The version the wording came from is never opened for writing. The initial value populates a
+new, unsaved form; nothing on the server writes to the version it was read from, and
+`Version.save()` would refuse a write to a published row regardless.
+
 ## Who can do what
 
 Reaching any of this needs the permissions on `Version` that Django creates — `view_version`

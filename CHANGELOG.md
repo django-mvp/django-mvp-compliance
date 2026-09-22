@@ -48,3 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   message rather than an error page. A published version's change page
   offers no editable form at all — Django serves its own read-only page
   in its place.
+- A document's change page offers a Start the next version link, which
+  opens the version add form with that document chosen and, when the
+  document has a version in force, that version's Markdown already in the
+  box. A document with nothing published yet opens the box empty. The
+  version the wording came from is never opened for writing.
