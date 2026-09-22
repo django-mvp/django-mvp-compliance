@@ -600,3 +600,20 @@ story, so the message catalogue needs no regeneration. `poetry run pytest tests/
 `poetry run mypy mvp_compliance/models.py` clean.
 Next: this story's own completion report.
 Watch: nothing.
+
+## 2026-09-22T21:40:00+02:00 · Orchestrator · US-4 accepted
+
+Did: receipts matched the brief, 192 tests green, migrations clean across every app. Probed the two
+claims this story turns on rather than reading them back. The setting is genuinely read per delete —
+two removals in one process under opposite `override_settings` blocks each follow the live value.
+The second claim did not hold: research R1 and the callable's docstring both said that adding
+`lazy_sub_objs` would route the update into the queryset's refusal and break account removal under
+the default, and it does not. The collector builds `sub_objs` from `Acceptance._base_manager`, which
+is a plain manager, so there is no `update()` override in that path to hit. The refusal needs the
+attribute *and* `base_manager_name` naming `AcceptanceManager`; either alone is inert, measured all
+four ways. Corrected research.md, plan.md, tasks.md T052 and the docstring, and added a test pinning
+both halves, checked against the defect — reintroducing the attribute fails it.
+Verified: 193 tests pass with randomisation and parallelism off, `pre-commit run --all-files` green
+on a cleared cache, `makemigrations --check` clean across every app.
+Next: US-5.
+Watch: nothing new.
