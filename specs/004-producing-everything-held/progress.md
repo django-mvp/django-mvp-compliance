@@ -261,3 +261,42 @@ report.
 
 **Watch**: `feature-state.json`'s story status is left as Forge set it, per the brief's
 prohibitions.
+
+## 2026-09-23T01:44:49+02:00 · Implementer US-5 · T050-T056
+
+**Did**: `coverage` on `PersonalRecord` (T050 failing test first — `AttributeError` confirmed for
+the right reason, T051 the property), returning one fixed, translated sentence pair: what the
+answer covers, and that the project may hold more elsewhere — present and identical whether the
+answer holds anything or not (FR-015, SC-005). `produce.html` renders it right under the subject
+heading, before either the sections loop or "Nothing is held", in both states (T052 failing test
+first, T053 the template line). Catalog regenerated for the new string
+(`makemessages --locale en --no-obsolete --ignore "mvp_compliance/static/*"`), the
+`POT-Creation-Date` line removed, no entry marked fuzzy, the new msgstr filled in by hand to match
+the msgid (Article VIII). `TestUserFacingStrings` gained a second sweep, alongside the existing
+compliance-word one, for named regulations and completeness claims (T054) — nothing currently
+shown violates it, so this task had no red step; instead probed it by feeding the sweep function
+known-bad strings ("...complies with GDPR", "...satisfies your request in full", "HIPAA-ready")
+outside the test suite and confirming each was caught before trusting the assertion. `TestCoverage`
+gained the same sweep over `docs/disclosure.md` and the exact README text T032 added — a helper
+extracts just that text rather than the whole README, so the pre-existing, unrelated "It does not
+make you compliant." bullet elsewhere in the file can't produce a false pass or false fail (T055),
+probed the same way. `docs/disclosure.md` gained one paragraph naming the new statement, since the
+page's behaviour changed and the existing "What the answer contains" section was silent on it.
+CHANGELOG.md's Added section gained the entry for the whole feature — the first one, since US-1
+through US-4 all left it for this task per tasks.md (T056).
+
+**Decisions**: D15 — the statement's exact wording and the two forbidden-term lists, including why
+bare "in full" was rejected (it false-positives on this file's own "hands it over in full").
+
+**Verified**: `poetry run pytest tests/test_records.py tests/test_admin.py -q` — 104 passed, no
+skips, nothing weakened. `poetry run pytest tests/test_records.py::TestCoverage
+tests/test_admin.py::TestDisclosurePage tests/test_admin.py::TestUserFacingStrings -v` — 12 passed,
+the narrow scope run after every task. `poetry run pre-commit run --files <touched files>` — clean
+throughout; ruff-format reformatted `tests/test_admin.py`'s whitespace once, recommitted. No model
+changed, so no migration.
+
+**Next**: US-5 was the last story of this feature. `forge verify` runs once, at the end, before the
+completion report — its result is in that report, not repeated here.
+
+**Watch**: `feature-state.json`'s story status is left as Forge set it, per the brief's
+prohibitions.

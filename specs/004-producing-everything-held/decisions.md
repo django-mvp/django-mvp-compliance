@@ -238,6 +238,34 @@ exists to prevent.
 **Revisit if**: a flag ever covers a removed or altered assertion rather than an addition, which is
 a different finding and not one to approve here.
 
+## D15 — The coverage statement's exact wording, and the sweep's two lists
+
+**Ambiguous**: FR-015 fixes what the statement must say and FR-016 fixes what it must not, but
+neither fixes its wording, and T054/T055 ask for "the list of names" and "the same claims" without
+naming them.
+
+**Chosen**: `PersonalRecord.coverage` returns one sentence pair: "This covers what this package
+holds about this person. The project may hold further records about them elsewhere that are not
+included here." `FORBIDDEN_REGULATION_NAMES` (GDPR, CCPA, CPRA, HIPAA, PIPEDA, LGPD, "data
+protection act", "privacy act", each spelled out too where it has one) and
+`FORBIDDEN_COMPLETENESS_CLAIMS` (phrases built around "request in full" and "satisfies … request",
+not bare "in full" — see below) live once in `tests/test_admin.py` and are imported into
+`tests/test_records.py`'s documentation sweep, so a name only has to be listed once for both sweeps
+to catch it.
+
+**Why defensible**: the statement names no regulation, does not say "complete" or "in full", and
+does not reassure — it states what the answer covers and stops, per Article XIV and the
+conventions note on this story's own wording. Bare "in full" was tried first and rejected: it
+false-positives on `docs/disclosure.md`'s own pre-existing "hands it over in full", which describes
+wording being shown uncut, not a request being satisfied — a different claim the same three words
+make. The narrower phrases keep that sentence green while still catching "satisfies your request in
+full" if it appeared. Sharing the two lists between the catalog sweep and the documentation sweep
+was the deciding point for keeping FR-016 and SC-007 enforced by one list rather than two lists
+drifting apart, the same reasoning T049a/T049b already applied to the catalog itself.
+
+**Revisit if**: a real string needs "in full" in a context this sweep would wrongly catch, at which
+point the phrase list needs a narrower entry rather than dropping the check.
+
 ## Scope raised and left out
 
 **An access log over consent data.** Whether a site can see who produced whose records, and when.
