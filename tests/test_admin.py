@@ -309,6 +309,38 @@ class TestToolbarAgreesWithTheAllowList:
         assert "<script" not in html
 
 
+class TestMarkdownEditorWidth:
+    """T066: the editor fills the width available to it at any window width.
+
+    No JavaScript runtime is reachable from this suite, so this asserts
+    against the stylesheet itself rather than a rendered browser layout —
+    ``.flex-container`` (Django's own ``admin/css/forms.css``) puts the
+    field in a flex row with its label, and a flex item defaults to its own
+    content's width unless told to grow, and to never shrink below it
+    unless told it may.
+    """
+
+    def declarations_for(self, selector: str) -> str:
+        css_path = (
+            Path(mvp_compliance.__file__).parent
+            / "static"
+            / "mvp_compliance"
+            / "markdown-editor.css"
+        )
+        css = css_path.read_text(encoding="utf-8")
+        match = re.search(re.escape(selector) + r"\s*\{([^}]*)\}", css)
+        assert match, f"no rule for {selector!r} in {css_path}"
+        return match.group(1).replace(" ", "").replace("\n", "")
+
+    def test_the_container_grows_to_fill_its_flex_row(self) -> None:
+        declarations = self.declarations_for(".field-markdown .EasyMDEContainer")
+        assert "flex:" in declarations
+
+    def test_the_container_can_shrink_below_its_own_content_width(self) -> None:
+        declarations = self.declarations_for(".field-markdown .EasyMDEContainer")
+        assert "min-width:0" in declarations
+
+
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
 class TestDraftPrivacy:

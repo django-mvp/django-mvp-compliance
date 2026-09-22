@@ -56,3 +56,13 @@
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* `.flex-container` (admin/css/forms.css) puts the field in a flex row
+ * with its label. A flex item defaults to its own content's width unless
+ * told to grow, and never shrinks below that width unless told it may —
+ * without this the editor sits at whatever width it happened to render
+ * at rather than filling what the row leaves it, at any window width. */
+.field-markdown .EasyMDEContainer {
+  flex: 1;
+  min-width: 0;
+}
