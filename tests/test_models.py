@@ -649,3 +649,11 @@ class TestAcceptance:
             "accepted_at",
             "ip_address",
         }
+
+    def test_no_way_to_accept_a_document(self, user, document):
+        field_names = {field.name for field in Acceptance._meta.get_fields()}
+        assert "document" not in field_names
+        assert not hasattr(Acceptance.objects, "record_for_document")
+
+        with pytest.raises(AttributeError):
+            Acceptance.objects.record(user, document)
