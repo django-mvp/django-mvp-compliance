@@ -508,4 +508,4 @@ class TestPublish:
         assert published_version.markdown in content
         assert 'name="markdown"' not in content
         assert "<textarea" not in content
-        assert 'type="submit"' not in content
+        assert 'name="_save"' not in content

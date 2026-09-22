@@ -43,6 +43,17 @@ class VersionAdmin(admin.ModelAdmin):
             return False
         return super().has_delete_permission(request, obj)
 
+    def has_change_permission(self, request, obj=None):
+        """A published version offers no editable form at all (D6, FR-017).
+
+        Not disabled fields, not a save Django's own ``save()`` would
+        refuse — this is what makes Django serve its own read-only page
+        instead of ours.
+        """
+        if obj is not None and obj.is_published:
+            return False
+        return super().has_change_permission(request, obj)
+
     def get_urls(self):
         urls = [
             path(
