@@ -3,12 +3,17 @@
   "feature": "003-record-who-accepted",
   "branch": "003-record-who-accepted",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PLAN",
+  "state": "DESIGN_REVIEW",
   "state_history": [
     {
       "state": "PLAN",
-      "at": "2026-09-22T14:55:00Z",
+      "at": "2026-09-22T14:35:00Z",
       "note": "Queue verdict ready. FS-001 delivered since this spec landed; re-read spec against spec found no contradiction \u2014 FS-001 ships the published/current/superseded standing and the stored output this spec assumes."
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-22T14:44:04Z",
+      "note": "S3 artifacts committed (6ef8c78) and pushed; draft pull request 37 open with the closing block seeded. One design reviewer dispatched on sonnet, three lenses."
     }
   ],
   "gates": {
@@ -26,6 +31,14 @@
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-22T14:51:00Z",
+      "self_resolved": [
+        "DR-001 (low, verified, architecture) the on_delete callable is safe under its default SET_NULL delegation only because it lacks Django's lazy_sub_objs marker (deletion.py:73, the gate at :343, the two update branches at :476-490). Verified independently against the resolved Django 5.2.17. research.md R1 now states the attribute must never be added, plan.md repeats it where the callable is designed, and T052 requires the comment on the callable itself. US-4's T050 is the test that would catch a regression.",
+        "note swept: tasks.md T017 now names specs/001-legal-documents-kept/decisions.md D21 by file rather than by number alone"
+      ]
     }
   },
   "stories": [
@@ -295,7 +308,7 @@
       "max": 1
     },
     "design_review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "tokens": {
@@ -304,7 +317,7 @@
     }
   },
   "pr": {
-    "number": null,
+    "number": 37,
     "draft": true
   },
   "escalations": []

@@ -38,6 +38,16 @@ and says why.
 `override_settings`, and it means a project that changes its mind changes what happens next rather
 than needing a migration.
 
+**The callable must never be given a `lazy_sub_objs = True` attribute, even though Django's own
+`SET_NULL` has one** (`db/models/deletion.py:73`). The collector checks it at
+`db/models/deletion.py:343` — `if getattr(on_delete, "lazy_sub_objs", False) or sub_objs:` — and an
+ordinary callable without it has its `sub_objs` queryset evaluated before the call. That is what
+sends the resulting field update down the `objs.extend(instances)` branch and a raw
+`sql.UpdateQuery.update_batch()` (`deletion.py:476-490`) instead of `combined_updates.update(...)`,
+which would land on `AcceptanceQuerySet.update()` and be refused by the guard in R2. Copying the
+attribute across by analogy with Django's own `SET_NULL` would therefore turn every account deletion
+under the package's default into an unhandled refusal. The callable carries a comment saying so.
+
 ## R2 — Enforcing "never changed" on a row where nothing may change
 
 FS-001 had to freeze five of a version's six fields and leave `status` writable, so its guard

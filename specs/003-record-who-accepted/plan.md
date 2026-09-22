@@ -203,7 +203,11 @@ the moment a delete runs and delegates to Django's own `SET_NULL` or `CASCADE`.
 
 That the setting is read per delete rather than per process is what makes it a setting at all, and
 what makes it testable with `override_settings` — `research.md` R1 has the mechanism and the system
-check that does not fire.
+check that does not fire. It also has the one attribute the callable must never acquire:
+`lazy_sub_objs`, which Django's own `SET_NULL` carries and which would route the resulting field
+update into `AcceptanceQuerySet.update()`'s refusal instead of the raw update the collector would
+otherwise issue. The callable carries a comment saying so, because the only thing stopping a later
+cleanup pass adding it is knowing why it is absent.
 
 The configured removal does not collide with FR-006. The collector issues its deletes through
 `sql.DeleteQuery.delete_batch()` / `_raw_delete()` rather than through `QuerySet.delete()`, so the

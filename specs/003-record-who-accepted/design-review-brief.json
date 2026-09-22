@@ -1,0 +1,49 @@
+{
+  "role": "design_reviewer",
+  "stage": "S3R",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance",
+  "branch": "003-record-who-accepted",
+  "feature": "003-record-who-accepted",
+  "lenses": ["spec-compliance", "security", "architecture"],
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-17/b773db2e"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/design-review.md",
+  "inputs": [
+    "specs/003-record-who-accepted/spec.md",
+    "specs/003-record-who-accepted/decisions.md",
+    "specs/003-record-who-accepted/research.md",
+    "specs/003-record-who-accepted/plan.md",
+    "specs/003-record-who-accepted/tasks.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "AGENTS.md",
+    "docs/models.md",
+    "mvp_compliance/models.py",
+    "mvp_compliance/exceptions.py",
+    "tests/settings.py",
+    "tests/factories.py",
+    "tests/conftest.py",
+    "tests/test_models.py",
+    "tests/test_migrations.py",
+    "pyproject.toml"
+  ],
+  "resolved_django": "/home/sam/.cache/pypoetry/virtualenvs/django-mvp-compliance-dF-QNZGc-py3.14/lib/python3.14/site-packages/django",
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs003-design-findings.json"
+}

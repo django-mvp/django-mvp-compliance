@@ -26,3 +26,18 @@ The design in one line: one append-only model whose only write route is a manage
 held twice so a record survives its account and still says whose it is, "at most one record per
 person per version" as a unique constraint that `get_or_create()` rides, and the outstanding question
 answered by one queryset that the single-document form narrows rather than restates.
+
+## 2026-09-22 — S3R DESIGN REVIEW
+
+One reviewer, three lenses, on sonnet. Verdict `approve`, risk low, one verified low finding and one
+editorial note; receipts checked green both sides of the dispatch.
+
+DR-001 is a good catch and its evidence was re-verified here against the Django the project actually
+resolves. The `on_delete` callable delegating to `SET_NULL` works only because it is an ordinary
+function: Django's own `SET_NULL` carries `lazy_sub_objs = True`, the collector reads that attribute
+before calling the handler, and a handler that has it leaves `sub_objs` unevaluated, which sends the
+field update through `QuerySet.update()` — where this package's guard refuses it. Adding the
+attribute by analogy would break the default that says records survive. `research.md` R1, `plan.md`
+and T052 all now say so, and US-4's T050 is the test that would notice.
+
+No re-plan: nothing reached the critical or high bar that forces one.
