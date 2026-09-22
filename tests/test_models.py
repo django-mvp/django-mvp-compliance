@@ -1,13 +1,14 @@
 """Tests for mvp_compliance.models."""
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
 from django.test import override_settings
 from django.utils import timezone
 
-from mvp_compliance.exceptions import PublishedVersionError, PublishError
+from mvp_compliance.exceptions import PublishedVersionError, PublishError, RecordError
 from mvp_compliance.models import Acceptance, Document, Version, VersionManager
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
@@ -657,3 +658,36 @@ class TestAcceptance:
 
         with pytest.raises(AttributeError):
             Acceptance.objects.record(user, document)
+
+
+@pytest.mark.django_db
+class TestRecording:
+    """``record()`` refuses a draft version and a user with no primary key (FR-003, D2)."""
+
+    def test_recording_against_a_never_published_version_is_refused(self, user, draft):
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, draft)
+
+        assert not Acceptance.objects.exists()
+
+    def test_recording_against_a_superseded_version_is_accepted(self, user, document):
+        first = VersionFactory(document=document)
+        first.publish()
+        second = VersionFactory(document=document)
+        second.publish()
+        first.refresh_from_db()
+        assert first.status == Version.Status.SUPERSEDED
+
+        acceptance = Acceptance.objects.record(user, first)
+
+        assert acceptance.version == first
+
+    def test_recording_for_a_user_with_no_primary_key_is_refused(
+        self, published_version
+    ):
+        unsaved_user = get_user_model()(username="not-saved")
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(unsaved_user, published_version)
+
+        assert not Acceptance.objects.exists()
