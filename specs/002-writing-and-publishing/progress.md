@@ -362,3 +362,15 @@ run pytest tests/test_admin.py` — 34 passed. `poetry run pre-commit run --file
 mvp_compliance/templates/admin/mvp_compliance/version/change_form.html tests/test_admin.py` —
 clean (one ruff-format line-wrap applied and reverified).
 Next: T036, README and CHANGELOG.
+
+## 2026-09-22T12:56:00Z · Implementer US3 · T036
+
+Did: README's status line now says previewing is built, and gains a "Previewing a version"
+section: the `<version>/preview/` address, what distinguishes it from the toolbar's inline
+display (a fresh rendering for a draft, the stored html for a published version, never rendered
+again), and the `view_version` permission it needs. CHANGELOG gains the matching Added entry.
+Verified: `poetry run pre-commit run --files README.md CHANGELOG.md` — clean (no lint step
+applies to prose; whitespace/EOF hooks passed). Read back against `mvp_compliance/admin.py`'s
+actual url name and permission check, and `mvp_compliance/templates/.../preview.html`'s actual
+heading, for accuracy.
+Next: full story verify.
