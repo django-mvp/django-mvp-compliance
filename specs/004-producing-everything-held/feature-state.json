@@ -197,33 +197,78 @@
       "tasks": [
         {
           "id": "T010",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_the_wording_is_what_was_stored_at_publication"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
         },
         {
           "id": "T011",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_the_wording_is_what_was_stored_at_publication"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
         },
         {
           "id": "T012",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_a_superseded_versions_wording_is_the_superseded_one"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
         },
         {
           "id": "T013",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_each_entry_carries_its_own_versions_wording"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
         },
         {
           "id": "T014",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_nothing_is_rendered_when_an_answer_is_produced"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
         },
         {
           "id": "T015",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --steps docs --base ee871bf"
+            ]
+          }
         }
       ]
     },

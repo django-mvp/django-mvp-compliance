@@ -105,3 +105,31 @@ the opposite and was wrong; `tasks.md` T061 is now a check rather than the work,
 from US-2 on carries the correction.
 
 **Next**: US-2 — the wording served, alongside each record.
+
+## 2026-09-23T00:50:00+02:00 · Implementer US-2 · T010-T015
+
+**Did**: Added `TestWording` to `tests/test_records.py` (T010's
+`test_the_wording_is_what_was_stored_at_publication`, confirmed it failed with
+`AttributeError: 'AcceptanceEntry' object has no attribute 'wording'` before T011), then
+`mvp_compliance/records.py` gained `wording: str` on `AcceptanceEntry`, read as
+`acceptance.version.html` in `produce()` — the renderer is never imported or called from this
+module (T011). T012-T013 (`test_a_superseded_versions_wording_is_the_superseded_one`,
+`test_each_entry_carries_its_own_versions_wording`) passed immediately against T011's
+implementation, as `tasks.md` expected. T014
+(`test_nothing_is_rendered_when_an_answer_is_produced`) reused the existing
+`tests.test_models.UppercaseRenderer` stand-in renderer via `override_settings`, per the
+brief's own steer — a published version's stored `html` cannot be rewritten through any route,
+so the test switches `MVP_COMPLIANCE_RENDERER` after publication and asserts the entry still
+carries the wording stored at publication rather than what the new renderer would now produce
+from the same markdown; it also passed immediately, confirming FR-010 already held. T015 added
+the wording guarantee to `docs/models.md`'s "Producing what is held" subsection.
+
+**Verified**: `poetry run pytest tests/test_records.py -q` — 12 passed. `poetry run ruff check`
+and `poetry run ruff format --check` on both changed files — clean. `forge verify --repo . --steps
+docs --base ee871bf` → `[verify] docs: passed (0s)`. No new translatable string was added, so no
+`makemessages` run was needed this story.
+
+**Next**: US-3 — only the people who should can produce it.
+
+**Watch**: `mvp_compliance/models.py` and `mvp_compliance/rendering.py` were not touched, per the
+brief's prohibitions — the wording is read from the `Version.html` field FS-001 already stores.
