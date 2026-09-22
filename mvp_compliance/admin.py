@@ -6,9 +6,15 @@ feature.
 """
 
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.template.response import TemplateResponse
+from django.urls import path
+from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.forms import VersionForm
 from mvp_compliance.models import Document, Version
+from mvp_compliance.rendering import get_renderer
 
 
 @admin.register(Document)
@@ -35,3 +41,43 @@ class VersionAdmin(admin.ModelAdmin):
         if obj is not None and obj.is_published:
             return False
         return super().has_delete_permission(request, obj)
+
+    def get_urls(self):
+        urls = [
+            path(
+                "<int:object_id>/preview/",
+                self.admin_site.admin_view(self.preview_view),
+                name="mvp_compliance_version_preview",
+            ),
+        ]
+        return urls + super().get_urls()
+
+    def preview_view(self, request, object_id):
+        """Show the rendering a reader will actually be served.
+
+        A draft has never been rendered, so this calls ``get_renderer()``
+        for it. A published version's stored ``html`` is the evidence of
+        what somebody was shown (Article XIII), so this reads that field
+        rather than rendering the version again.
+        """
+        version = self.get_object(request, object_id)
+        if version is None:
+            raise Http404
+        if not self.has_view_permission(request, version):
+            raise PermissionDenied
+
+        if version.is_published:
+            html = version.html
+        else:
+            html = get_renderer()().render(version.markdown)
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Preview"),
+            "opts": self.opts,
+            "original": version,
+            "html": html,
+        }
+        return TemplateResponse(
+            request, "admin/mvp_compliance/version/preview.html", context
+        )

@@ -8,6 +8,7 @@ empty because this package serves no address of its own.
 
 import pytest
 from django.contrib import admin
+from django.test import override_settings
 from django.urls import path, reverse
 
 from mvp_compliance.models import Version
@@ -252,3 +253,28 @@ class TestPreview:
 
         assert response.status_code == 200
         assert expected_html in response.content.decode()
+
+    def test_a_published_versions_preview_reads_the_stored_html_not_a_fresh_rendering(
+        self, client, editor, published_version
+    ) -> None:
+        """T031, Article XIII: a published version's stored html is the
+        evidence, and it is never produced again — even when the renderer
+        that would produce it has since changed.
+        """
+        client.force_login(editor)
+        stored_html = published_version.html
+
+        with override_settings(
+            MVP_COMPLIANCE_RENDERER="tests.test_models.UppercaseRenderer"
+        ):
+            response = client.get(
+                reverse(
+                    "admin:mvp_compliance_version_preview",
+                    args=[published_version.pk],
+                )
+            )
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert stored_html in content
+        assert stored_html.upper() not in content
