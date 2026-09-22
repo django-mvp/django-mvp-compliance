@@ -381,6 +381,49 @@ class Version(models.Model):
         return super().delete(*args, **kwargs)
 
 
+def acceptances_survive_account_removal() -> bool:
+    """Whether the package's default is to keep a person's acceptances (FR-013).
+
+    Read at the point of use, not cached, so a change to
+    ``MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`` takes effect on the
+    next account removal rather than needing a restart (research.md R1).
+    """
+    return getattr(
+        settings, "MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL", True
+    )
+
+
+def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
+    """The ``on_delete`` callable on ``Acceptance.user`` (D8, research.md R1).
+
+    ``on_delete`` accepts any callable with this signature — it is all
+    ``SET_NULL`` and ``CASCADE`` are — so this one reads
+    ``acceptances_survive_account_removal()`` at the moment a delete runs and
+    delegates to Django's own implementation of whichever the setting names.
+    Reading the setting here rather than at import time is what makes it a
+    setting rather than a constant baked in when the model class was built,
+    and what makes it testable with ``override_settings``.
+
+    ``Acceptance.user`` stays ``null=True`` even though this callable is not
+    literally ``SET_NULL``: ``ForeignKey._check_on_delete`` compares
+    ``on_delete == SET_NULL`` by identity, so it does not recognise a
+    callable that only delegates to ``SET_NULL`` and will not flag a missing
+    ``null=True`` the way it would for the real thing.
+
+    This callable must never be given a ``lazy_sub_objs`` attribute the way
+    Django's own ``SET_NULL`` is. Its absence is what makes the collector
+    evaluate ``sub_objs`` before calling in, which sends the resulting field
+    update down the raw ``UpdateQuery`` path rather than
+    ``AcceptanceQuerySet.update()`` — where it would hit that queryset's
+    refusal and turn every account deletion under the package's default into
+    an unhandled error.
+    """
+    if acceptances_survive_account_removal():
+        models.SET_NULL(collector, field, sub_objs, using)
+    else:
+        models.CASCADE(collector, field, sub_objs, using)
+
+
 class AcceptanceQuerySet(models.QuerySet):
     """Refuses every route that would change or delete a recorded acceptance (Article XII)."""
 
@@ -450,7 +493,7 @@ class Acceptance(models.Model):
         ),
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,
+        on_delete=keep_or_remove_acceptances,
         related_name="compliance_acceptances",
     )
     subject = models.CharField(

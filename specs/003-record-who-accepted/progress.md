@@ -486,3 +486,34 @@ tests/test_models.py::TestAccountRemoval -v` — 1 failed (as expected), 3 passe
 `poetry run ruff check tests/test_models.py` clean.
 Next: T052.
 Watch: nothing.
+
+## 2026-09-22T18:41:00+02:00 · Implementer US-4 · T052
+
+Did: added `acceptances_survive_account_removal()` and the `on_delete` callable
+`keep_or_remove_acceptances(collector, field, sub_objs, using)` to
+`mvp_compliance/models.py` (research.md R1, D8) — it reads the setting per delete and
+delegates to Django's own `SET_NULL` or `CASCADE`. Switched `Acceptance.user.on_delete`
+to it. The callable's docstring covers the three things T052 requires: the setting is
+read per delete rather than per process, which is what makes it a setting; the field
+stays `null=True` because `ForeignKey._check_on_delete` compares `on_delete == SET_NULL`
+by identity and will not flag a delegating callable; and the callable must never be
+given a `lazy_sub_objs` attribute, because that would route the field update through
+`AcceptanceQuerySet.update()`'s refusal instead of the raw update the collector would
+otherwise issue (research.md R1).
+
+Generated the migration (`0005_alter_acceptance_user.py`) in this same commit rather
+than waiting for T056, because craft-increments requires the tree to stay green between
+slices "including migrations" and this field change alone makes `makemigrations --check`
+dirty — deferring it to T056 would mean committing a slice with a known-dirty migration
+state. Noted as a deviation from tasks.md's literal per-task split; T056 still runs and
+records its own evidence, confirming the migration this task already generated is
+sufficient and nothing further is pending.
+
+Verified: `poetry run pytest tests/test_models.py::TestAccountRemoval -v` — 4 passed
+(T050 and T051 both green). `poetry run pytest tests/ -q` — 190 passed, no regressions.
+`poetry run ruff check mvp_compliance/models.py mvp_compliance/migrations/0005_alter_acceptance_user.py
+tests/test_models.py` clean. `poetry run mypy mvp_compliance/models.py` clean.
+`DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run`
+— "No changes detected".
+Next: T053.
+Watch: nothing.
