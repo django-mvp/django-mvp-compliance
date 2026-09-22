@@ -89,8 +89,20 @@ Document.objects.outstanding_for(user)
 Recording against a version that has never been published is refused; there
 is no way to record an acceptance of a `Document`, only of one of its
 versions. `outstanding_for()` answers which documents have a version in force
-that this user has not accepted. See [docs/models.md](docs/models.md) for the
-full surface.
+that this user has not accepted.
+
+By default an acceptance survives the removal of the account it names — closing an
+account does not remove what this package holds about that person:
+
+```python
+# settings.py
+MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = True  # the default
+```
+
+Set it to `False` and removing an account takes that person's acceptances with it.
+`Acceptance.objects.for_subject(subject)` finds a person's records by the identifier
+that survives their account being removed, once `user` itself is no longer there to
+find them by. See [docs/models.md](docs/models.md) for the full surface.
 
 ## Writing a version
 

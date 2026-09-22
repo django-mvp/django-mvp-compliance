@@ -268,3 +268,38 @@ there is nothing in force to accept.
 
 This answer is deliberately unfiltered by whether a site chooses to enforce a
 document — that decision belongs elsewhere, and this method does not carry it.
+
+### Account removal
+
+Closing an account is an administrative act, not a statement about the evidence, so by
+default an acceptance survives the removal of the account it names:
+
+```python
+# settings.py
+MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = True  # the default
+```
+
+Under the default, deleting a user leaves their acceptances in place — `user` is
+cleared to `None`, and `subject` still says whose the record is. **The cost of that
+default is real and worth stating plainly: closing an account does not remove what
+this package holds about that person.** A project bound by a stricter erasure
+requirement sets the setting to `False`, and removing an account then takes that
+person's acceptances with it. Either way, removing one account never affects anyone
+else's records.
+
+Because the `user` foreign key is cleared on the surviving path, a person's records are
+found afterwards by the identifier that outlives it, not by their (now gone) account:
+
+```python
+Acceptance.objects.for_person(user)      # while the account still exists
+Acceptance.objects.for_subject(subject)  # the same records, by the stored identifier —
+                                          # what still works once the account is gone
+```
+
+Both come back in the order the acceptances happened. `for_person(user)` is a thin call
+through `Acceptance.subject_of(user)` into `for_subject()`, so the two never disagree
+about which records belong to whom.
+
+A new account created with a username an old, removed account once had inherits
+nothing: `subject` is derived from the account's primary key, never its username, so
+the two accounts are never mistaken for one another.

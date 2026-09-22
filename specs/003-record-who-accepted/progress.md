@@ -580,3 +580,23 @@ poetry run python -m django migrate --plan` — one chain from zero through
 `0003` and `0004` all present and in order ahead of it.
 Next: T057.
 Watch: nothing.
+
+## 2026-09-22T18:58:00+02:00 · Implementer US-4 · T057
+
+Did: added an *Account removal* subsection to `docs/models.md` under `Acceptance`,
+naming `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`, its default (`True`),
+`for_person()`/`for_subject()` as how to find a person's records once the account is
+gone, the recreated-account edge case, and the default's cost stated plainly: closing
+an account does not remove what this package holds about that person (D1). Extended
+the README's `Acceptance` paragraph with the setting, its default, and
+`for_subject()`, and pointed to `docs/models.md` for the rest.
+Verified: both documented code paths executed against a real test database — a scratch
+pytest module (`tests/test_docs_scratch.py`) covering the default-survival example, the
+setting-off example, and the `for_person()` example, all as documented; passed, removed
+afterwards. Diffed `mvp_compliance/models.py` against this story's base commit
+(`2677d20`) and confirmed no new `gettext_lazy` string was introduced anywhere in the
+story, so the message catalogue needs no regeneration. `poetry run pytest tests/ -q` —
+192 passed (186 at the base plus this story's 6). `poetry run ruff check .` and
+`poetry run mypy mvp_compliance/models.py` clean.
+Next: this story's own completion report.
+Watch: nothing.
