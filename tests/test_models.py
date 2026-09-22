@@ -8,7 +8,12 @@ from django.db.models import ProtectedError
 from django.test import override_settings
 from django.utils import timezone
 
-from mvp_compliance.exceptions import PublishedVersionError, PublishError, RecordError
+from mvp_compliance.exceptions import (
+    PublishedVersionError,
+    PublishError,
+    RecordedAcceptanceError,
+    RecordError,
+)
 from mvp_compliance.models import Acceptance, Document, Version, VersionManager
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
@@ -691,3 +696,59 @@ class TestRecording:
             Acceptance.objects.record(unsaved_user, published_version)
 
         assert not Acceptance.objects.exists()
+
+
+@pytest.mark.django_db
+class TestAcceptanceImmutability:
+    """An acceptance, once written, cannot be changed or deleted (Article XII, FR-004 to FR-006)."""
+
+    def test_saving_an_existing_row_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+        original_subject = acceptance.subject
+
+        acceptance.subject = "tampered"
+        with pytest.raises(RecordedAcceptanceError):
+            acceptance.save()
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == original_subject
+
+    def test_updating_through_the_queryset_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+        original_subject = acceptance.subject
+
+        with pytest.raises(RecordedAcceptanceError):
+            Acceptance.objects.filter(pk=acceptance.pk).update(subject="tampered")
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == original_subject
+
+    def test_bulk_update_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+        original_subject = acceptance.subject
+        acceptance.subject = "tampered"
+
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False); without our own savepoint here, the raised error
+        # would leave the connection unusable for the rest of the test.
+        with pytest.raises(RecordedAcceptanceError), transaction.atomic():
+            Acceptance.objects.bulk_update([acceptance], ["subject"])
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == original_subject
+
+    def test_deleting_the_instance_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        with pytest.raises(RecordedAcceptanceError):
+            acceptance.delete()
+
+        assert Acceptance.objects.filter(pk=acceptance.pk).exists()
+
+    def test_deleting_through_the_queryset_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        with pytest.raises(RecordedAcceptanceError):
+            Acceptance.objects.filter(pk=acceptance.pk).delete()
+
+        assert Acceptance.objects.filter(pk=acceptance.pk).exists()

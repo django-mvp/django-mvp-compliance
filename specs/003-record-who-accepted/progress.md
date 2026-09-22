@@ -128,3 +128,14 @@ clean; `poetry run mypy mvp_compliance/models.py` needed `models.Manager["Accept
 Next: T016.
 Watch: T010, T012 stay red on the missing table until T021 lands the migration — correct
 order, not a defect.
+
+## 2026-09-22T17:30:00+02:00 · Implementer US-1 · T016
+
+Did: added `TestAcceptanceImmutability` — one test per refused route: `save()` on an
+existing row, `AcceptanceQuerySet.update()`, `bulk_update()`, `Acceptance.delete()`,
+`AcceptanceQuerySet.delete()` (SC-001).
+Verified: `poetry run pytest tests/test_models.py::TestAcceptanceImmutability` — all 5 fail
+with `OperationalError: no such table: mvp_compliance_acceptance` (right reason: no
+migration yet, T021). `poetry run ruff check tests/test_models.py` clean.
+Next: T017.
+Watch: nothing.
