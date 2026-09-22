@@ -19,6 +19,7 @@ from mvp_compliance.exceptions import (
 from mvp_compliance.models import (
     Acceptance,
     AcceptanceManager,
+    AcceptanceQuerySet,
     Document,
     Version,
     VersionManager,
@@ -800,6 +801,54 @@ class TestRecording:
                     )
                 ]
             )
+
+    def test_two_recordings_leave_one_record(
+        self, user, published_version, monkeypatch
+    ):
+        """Scenario 5, FR-010, SC-003: the constraint's IntegrityError path
+        returns the winner's row without raising, deterministically and
+        without threads or wall-clock timing.
+
+        The first lookup is genuine and finds nothing, exactly like an
+        uncontended call. As a side effect of that miss, it inserts and
+        commits a competing row as a sibling operation rather than a nested
+        one, so it survives when record()'s own create() collides on the
+        constraint and its own attempt is rolled back — the same interleaving
+        two genuinely concurrent attempts would produce.
+        """
+        subject = Acceptance.subject_of(user)
+        original_get = AcceptanceQuerySet.get
+        seen_a_lookup = []
+
+        def get_with_a_concurrent_writer_on_the_first_miss(self, *args, **kwargs):
+            if seen_a_lookup:
+                return original_get(self, *args, **kwargs)
+            seen_a_lookup.append(True)
+            try:
+                return original_get(self, *args, **kwargs)
+            except Acceptance.DoesNotExist:
+                with transaction.atomic():
+                    Acceptance(
+                        user=user,
+                        subject=subject,
+                        version=published_version,
+                        accepted_at=timezone.now(),
+                    ).save()
+                raise
+
+        monkeypatch.setattr(
+            AcceptanceQuerySet, "get", get_with_a_concurrent_writer_on_the_first_miss
+        )
+
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.subject == subject
+        assert (
+            Acceptance.objects.filter(
+                subject=subject, version=published_version
+            ).count()
+            == 1
+        )
 
 
 @pytest.mark.django_db

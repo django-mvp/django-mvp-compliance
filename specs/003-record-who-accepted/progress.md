@@ -272,3 +272,28 @@ migration landed). `poetry run ruff check` and `mypy` clean.
 Next: T034.
 Watch: nothing new.
 
+## 2026-09-22T18:38:00+02:00 · Implementer US-2 · T034
+
+Did: `TestRecording::test_two_recordings_leave_one_record` — scenario 5, FR-010, SC-003,
+without threads or wall-clock timing. First attempt: monkeypatched `AcceptanceQuerySet.create`
+to insert a competing row before calling through — wrong, because that insert landed
+*inside* `get_or_create()`'s own `atomic()` block, so the `IntegrityError` rolled both
+rows back together and the exception propagated instead of being recovered. Corrected to
+monkeypatch `AcceptanceQuerySet.get` instead: the first (genuine) lookup misses, and only
+as a side effect of that miss does it insert-and-commit the competing row as a sibling
+`atomic()` block that releases *before* `get_or_create()`'s own `atomic()` opens — so when
+`record()`'s own insert collides and its attempt is rolled back, the competing row
+survives and the retried `get()` returns it.
+Verified: fails on this commit for the same schema reason as T033. Probed per craft-tdd
+before trusting it: reverted `record()` to the plain `create()` path — the test still
+passed, because that path never calls `.get()` so the mock's side effect never fires
+(expected: the test only speaks to the `get_or_create()`-based implementation). Reverted
+`record()` instead to the hand-rolled `try: get() / except: create()` pattern
+`research.md` R3 warns is unsafe — the test then failed with an uncaught `IntegrityError`,
+confirming it does catch the exact regression the story exists to prevent. Both mutations
+reverted with `git checkout`. `poetry run ruff check` and `mypy` clean. Squashed the
+correction into this commit with `git commit --fixup` + `git rebase -i --autosquash`
+rather than leaving a second commit for the same task, since T035 hadn't landed yet.
+Next: T035.
+Watch: nothing new.
+
