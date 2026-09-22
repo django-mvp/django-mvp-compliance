@@ -355,3 +355,35 @@ is the one file somebody about to regenerate it has open, and which survives reg
 tool's defaults matter more than the diff.
 
 **ADR:** none — a contributor convention, recorded in the file it governs.
+
+## D17 — The remaining guardrail flags on the whole feature, and why each clears
+
+**Ambiguous**: run across the whole branch rather than one story, the test guardrail reports five
+flags. Two already have records. The other three needed a look before the branch could leave
+convergence.
+
+**Chosen**: all five clear. None is a test weakened to let code through.
+
+**Why defensible**, one at a time:
+
+`tests/test_app.py` is D11 — the previous feature's scope statement, superseded by this one, with
+the half that still guards something kept.
+
+`tests/test_admin.py` is D14 — one table of every address this package serves, extended by each
+story that adds an address, never shortened.
+
+`tests/factories.py`, `tests/conftest.py` and `tests/test_factories.py` are pure additions. A user
+factory and the fixtures for each permission set this surface has to tell apart, plus the tests for
+the factory. Nothing existing was changed in any of the three; the guardrail reports the file as
+modified because it cannot tell an addition to a file from an edit inside it.
+
+The fifth flag, a weakening pattern, is a false positive on the string `skip` inside
+`skip_postgeneration_save = True` in the user factory's `Meta`. That setting tells `factory_boy`
+not to save a second time after the hook that sets the password has already saved. It has nothing
+to do with skipping a test, and there is no `skip`, `xfail` or disabled assertion anywhere on this
+branch.
+
+**Revisit if**: the guardrail grows a way to distinguish an addition from an edit, which would
+remove three of these five and make the remaining two easier to see.
+
+**ADR:** none — a triage record for one branch, not a decision anything inherits.
