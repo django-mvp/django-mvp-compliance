@@ -454,68 +454,176 @@
       "tasks": [
         {
           "id": "T040",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_caller_without_publish_version_is_refused_both_verbs",
+              "tests/test_admin.py::TestPublish::test_a_caller_with_publish_version_reaches_the_publish_address"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish -x"
+            ]
+          }
         },
         {
           "id": "T041",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T041a",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_the_change_form_offers_a_publish_link_when_permitted",
+              "tests/test_admin.py::TestPublish::test_the_change_form_offers_no_publish_link_without_permission"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish"
+            ],
+            "code": [
+              "mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:1"
+            ]
+          }
         },
         {
           "id": "T042",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_get_confirms_and_publishes_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_a_get_confirms_and_publishes_nothing -x"
+            ]
+          }
         },
         {
           "id": "T043",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish -q"
+            ]
+          }
         },
         {
           "id": "T044",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_post_publishes_and_declining_does_not"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_a_post_publishes_and_declining_does_not -x"
+            ]
+          }
         },
         {
           "id": "T045",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish -q"
+            ]
+          }
         },
         {
           "id": "T046",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_both_refusals_reach_the_author_as_a_message"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_both_refusals_reach_the_author_as_a_message -x"
+            ]
+          }
         },
         {
           "id": "T047",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_saving_a_draft_publishes_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_saving_a_draft_publishes_nothing -x"
+            ]
+          }
         },
         {
           "id": "T048",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_published_version_has_no_editable_form"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_a_published_version_has_no_editable_form -x"
+            ]
+          }
         },
         {
           "id": "T049",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py -q"
+            ]
+          }
         },
         {
           "id": "T049a",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestUserFacingStrings::test_nothing_claims_compliance"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestUserFacingStrings -x"
+            ]
+          }
         },
         {
           "id": "T049b",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestUserFacingStrings::test_every_string_is_translatable"
+            ],
+            "commands": [
+              "cd mvp_compliance && poetry run python ../manage.py makemessages -l en",
+              "poetry run pytest tests/test_admin.py::TestUserFacingStrings -q"
+            ]
+          }
         },
         {
           "id": "T049c",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py -q"
+            ]
+          }
         }
       ]
     },
