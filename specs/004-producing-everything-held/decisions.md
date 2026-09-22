@@ -102,6 +102,108 @@ choice of mechanism, while the choice itself depends on things best decided with
 front of you. Fixing it here would be specification drifting into planning, and the properties are
 what a reviewer would check either way.
 
+## D7 — The page is in the admin, on a proxy model that carries no table
+
+**Ambiguous**: D6 left the mechanism to planning, and this package serves no address of its own —
+`tests/test_app.py` asserts on main that `mvp_compliance.urls` does not exist. So there is nowhere
+obvious for a page to go.
+
+**Chosen**: the Django admin, hanging off `Disclosure`, a proxy of `Acceptance` with no fields.
+
+**Why defensible**: the admin is the only staff surface this package has, and FS-002 already put
+the authoring screens there, so this is the "somewhere they already work" the specification
+assumes. A `ModelAdmin` needs a registered model, and the three real models are each wrong: the
+page is about a person rather than a document or a version, and registering `Acceptance` itself
+would hand everyone holding `view_acceptance` a changelist of every person's consent history —
+the risk D2 exists to close, and the shape of R10, which this feature does not build.
+
+A proxy gets its own content type, so it also gets its own permissions (verified by reading
+Django 5.2.17's `create_permissions`, which resolves content types with
+`for_concrete_models=False`). That is what makes `produce_disclosure` the act's permission rather
+than a second meaning for one of `Acceptance`'s.
+
+The alternative was a `urls.py` for host projects to include. It would add the first address this
+package serves, contradict a test on main, and leave every consuming project responsible for
+mounting it behind something.
+
+## D8 — One route, and it is a GET
+
+**Ambiguous**: an answer could be a page, a downloadable file, or both, and the request could be a
+GET carrying the person in the query string or a POST carrying it in a form.
+
+**Chosen**: one page, one GET, no download.
+
+**Why defensible**: SC-003 asks for one permission test per route with none left untested, so every
+extra route is real, permanent test surface. A page already carries the wording in full and can be
+printed, which is what D3 was protecting. A POST would be the wrong verb for a read that changes
+nothing, and it would make "produce it twice" a resubmission rather than a reload — FR-006 is
+easier to trust when re-producing an answer is refreshing the page.
+
+The cost, accepted: the identifier appears in the request line a server logs, as every admin object
+address already does.
+
+A management command was considered and rejected. It has no request and no signed-in user, so
+there is nothing for FR-012 to refuse and no honest way to satisfy SC-003 for it.
+
+## D9 — The answer holds sections, not a list of acceptances
+
+**Ambiguous**: FR-017 requires a further kind of record to join without the answer's shape
+changing, while D1 forbids building an abstraction today for records that do not exist. Those pull
+in opposite directions and the line between them is a design choice.
+
+**Chosen**: the answer is a subject and a tuple of sections; a section is a heading, its entries,
+and the partial that renders them. Today exactly one section is built.
+
+**Why defensible**: it is the literal content of FR-017 at close to no cost. An answer shaped
+`{subject, acceptances}` changes shape the day cookie choices arrive, and so does every consumer
+that walked it — the retrofit the requirement exists to prevent. What D1 forbids is a registry, a
+hook or an entry point, and there is none: the function that builds the answer names each kind it
+knows about, nothing can register into it, and FR-018 is the reason.
+
+## D10 — A person is named by free text, resolved to a subject
+
+**Ambiguous**: the obvious control is a picker over the site's accounts, and the specification's
+own US-4 is about somebody who no longer has one.
+
+**Chosen**: one free-text field, resolved in order: an account's login name, an account's email
+address, then the text itself as the identifier the records carry.
+
+**Why defensible**: a picker cannot express the case US-4 exists for. Falling through to the text
+itself is the only way to ask about a person whose account is gone, and it makes a question about
+somebody the package has never heard of land on FR-005's answer rather than an error. A second
+field for the rare case would make the ordinary case worse.
+
+The ambiguity is real and small — an account whose login name is another account's identifier
+resolves as the account — so the answer reports the subject it was produced for, and a reader can
+see which reading was taken.
+
+## D11 — The answer carries no time of its own
+
+**Ambiguous**: a printed answer handed to somebody normally says when it was produced, and FR-006
+requires two productions with no change to the records to say the same thing.
+
+**Chosen**: no produced-at stamp, anywhere.
+
+**Why defensible**: a clock reading on the page makes FR-006 false by construction, and FR-006 is
+the requirement that lets anybody trust the answer at all — an answer that differs between two
+readings cannot be evidence of anything. Whoever hands an answer over knows when they produced it,
+and a site that needs that recorded needs a record of the request and its response, which D4
+already established is a process it runs rather than a gap in this package.
+
+## D12 — The optional client address is part of the answer
+
+**Ambiguous**: FR-003 names the document, the version and the moment. FS-003 lets a project also
+record the address a request came from, off by default, and this specification is silent about it.
+
+**Chosen**: where a record holds one, the answer carries it.
+
+**Why defensible**: FR-001 is "everything it holds about them", and on a site that turned that
+setting on the address is something it holds about them. Omitting it would be a partial answer
+presented as a complete one, which Article XIV names as worse than no answer. Nothing reads the
+setting at produce time — what governs the page is whether the record in front of it holds an
+address, which is also what keeps records written before it was turned on looking exactly as they
+did.
+
 ## Scope raised and left out
 
 **An access log over consent data.** Whether a site can see who produced whose records, and when.
