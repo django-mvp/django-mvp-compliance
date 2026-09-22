@@ -81,6 +81,17 @@ DATABASES = {
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
 CRISPY_TEMPLATE_PACK = "tailwind"
 
+# django-mvp's error pages name icons. Without a configured renderer, a
+# permission refusal in the admin raises while rendering its own 403 page and
+# the reader gets a server error instead of being told they cannot do that.
+EASY_ICONS = {
+    "default": {
+        "renderer": "easy_icons.renderers.ProviderRenderer",
+        "config": {"tag": "i"},
+        "packs": ["mvp.utils.BS5_ICONS"],
+    }
+}
+
 STATIC_URL = "/static/"
 
 USE_TZ = True

@@ -10,7 +10,9 @@ This package is not usable on its own. It renders on the django-mvp app shell
 
 > **Status: early development.** `Document` and `Version` — versioned legal
 > text, authored in Markdown and published with an immutable record — are
-> built. No admin, forms, views, URLs, consent recording or account-area page
+> built, and both are registered in the Django admin for writing,
+> previewing and publishing them, behind a confirmation step and a
+> permission of its own. No consent recording and no account-area page
 > exist yet.
 
 ## Why
@@ -73,8 +75,114 @@ MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"  # optional
 defaults to `MarkdownRenderer` when unset. A host project that wants a
 different HTML allow list points it at a subclass.
 
-This package registers nothing in the Django admin and ships no forms, no
-views and no URLs — a host project brings its own.
+## Writing a version
+
+`Document` and `Version` are registered in the Django admin, and writing a
+version is what that admin surface is for. Its `markdown` field carries a
+formatting toolbar over an ordinary textarea — headings, bold, italics,
+bulleted and numbered lists, links and block quotes — for a compliance
+editor who is not assumed to know Markdown. There is no image, embed,
+table, tagging or raw HTML control: a legal document is structured prose,
+and every button offered is one somebody has to be supported in using.
+Typing Markdown directly works too, because either way what is stored is
+ordinary Markdown.
+
+The controls agree with what publication keeps: nothing the toolbar can
+produce is stripped when the version is published.
+
+The toolbar is drawn by [EasyMDE](https://github.com/Ionaru/easy-markdown-editor),
+vendored into the package rather than fetched, with its own icons in place
+of the icon font it expects and does not ship.
+
+## Previewing a version
+
+A version's change page carries a Preview link, at `<version>/preview/` in
+the admin. It shows the rendering the published page will actually use —
+content the sanitiser's allow list would strip is shown stripped, so that
+loss is visible before publication rather than discovered after.
+
+This is a different thing from the toolbar's own inline formatting display
+while writing: the toolbar approximates, and the preview is the real
+output. For a draft, that output is rendered fresh from the current
+wording. For a published version it is read from the HTML stored at
+publication — never rendered again, because that stored HTML is the
+evidence of what a reader was served.
+
+Reaching a version's preview needs permission to view it — `view_version`
+or `change_version`, the same test the admin applies to its change page.
+
+## Permissions
+
+Reaching a version in the admin at all needs Django's own `view_version` and
+`change_version` permissions — the compliance editor of this package holds
+both, alongside `add_version` and `delete_version` for writing and
+discarding drafts. Nobody without them reaches a draft, a document, or a
+version's changelist: the admin refuses the request before any page of
+ours renders, so a draft stays invisible to a visitor, a signed-in account
+that isn't staff, and staff holding none of these permissions.
+
+Deleting a version needs `delete_version` too, and it is refused once that
+version has been published, regardless of who is asking — discarding is
+for drafts.
+
+Publishing needs `publish_version`, held separately from the permissions
+above. Writing a draft and making something legally binding are different
+levels of trust, so a compliance editor holding every permission except
+this one can prepare a version and cannot put it live, and — the unusual
+but coherent alternative — somebody holding only `view_version` and
+`publish_version` can approve wording somebody else wrote and write
+nothing themselves. Without `publish_version` the publish address is
+refused by both the page that confirms and the action that publishes it,
+and no link to it is offered.
+
+## Publishing
+
+Publishing is the one act in this package there is no way back from, so it
+is never a side effect of saving. A version's change page offers a
+**Publish** link once it is a draft, to whoever holds `publish_version`.
+Following it asks for confirmation first: the page names the document and
+version, shows the rendering that is about to go live, and says plainly
+that the wording cannot be changed afterwards and that a correction is
+published as another version. Nothing is published until that page is
+posted. Following its **Back** link instead leaves the draft untouched.
+
+`publish()` refuses a version that is not a draft and one whose rendered
+output is empty once stripped — both reach the person publishing as a
+message they can read, not as an error page.
+
+Once a version is published, its change page in the admin offers no
+editable form at all. Its wording is readable in full, and Django serves
+its own read-only page rather than one this package builds — not a form
+whose fields are disabled, and not one whose save is silently refused.
+
+## Starting the next version from the one in force
+
+A version that is currently in force offers a **Start the next version**
+link on its own change page, next to Preview. It opens the version add
+form with the document already chosen and that version's Markdown already
+in the box — a correction usually changes one clause, not the whole text,
+so starting from what is already there is the ordinary case.
+
+A document's own change page offers **View current version**, leading to
+that page, and **Version history**, leading to the versions list already
+narrowed to this document. **View current version** is absent for a
+document with nothing in force — no versions at all, or only a draft —
+and **Version history** is offered either way.
+
+A version can only be added from a document: neither control above hands
+somebody a form with nothing chosen to write into, a bare request for the
+add form is refused, and the versions list itself offers no way to add
+one.
+
+Saving a next version whose wording says exactly what the one in force
+already says is refused, with a message saying so — a version that
+changes nothing would supersede a wording with its own duplicate. A
+document's first version is never refused this way: there is nothing
+published yet to compare it against.
+
+Nothing is copied on the server: the wording is read once and handed to a
+new, unsaved form as a starting point. The version it came from is never
+opened for writing, and the model would refuse it if anything tried.
 
 ## Scope & philosophy
 
@@ -122,6 +230,15 @@ using the site with no record of what they agreed to is the thing this package
 exists to prevent.
 
 The standing directions this package steers by are in [GOALS.md](GOALS.md).
+
+## Documentation
+
+- [docs/models.md](docs/models.md) — documents, versions, publishing, and what a published
+  version guarantees.
+- [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
+  the form, and reading a version back the way the public will see it.
+- [docs/adr](docs/adr) — the decisions behind the design, and why the alternatives were not
+  taken.
 
 ## Prior art
 

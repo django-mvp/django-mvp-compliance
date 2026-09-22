@@ -1,0 +1,857 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "002-writing-and-publishing",
+  "branch": "002-writing-and-publishing",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "PLAN",
+      "at": "2026-09-22T11:30:00Z",
+      "note": "S3: plan, research and tasks authored on a branch off origin/main at 4f55e4d; spec re-read against FS-001 with no contradiction found"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-22T11:30:39Z",
+      "note": "S3 artefacts committed, draft PR #36 open, design reviewer dispatched"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-22T11:47:54Z",
+      "note": "Foundational phase committed at 54e50e1 and verified green; US-1 dispatched"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-22T13:17:19Z",
+      "note": "All five stories accepted after independent re-verification"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-22T13:21:29Z",
+      "note": "Convergence complete: one branch-local migration, cleanup pass fixed the confirmation page's re-rendering, ADR 0007 graduated, all gates green"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-22T13:34:20Z",
+      "note": "Review complete: two verified findings remedied and re-verified; all gates green"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-21T17:57:13Z",
+      "self_resolved": [
+        "merge commit 1f56542f8b36aaf1c9a5959c1bfec865554fd885, pull request #13"
+      ]
+    },
+    "plan": {
+      "approved_by": null,
+      "at": null
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-reviewer",
+      "at": "2026-09-22T11:45:00Z",
+      "self_resolved": [
+        "DR-002 (medium, verified) VersionForm declared no field list and Version.html carries no editable=False, so the rendered output publish() produces could have been exposed as a postable field. plan.md and T016 now declare fields = [document, markdown] with a test asserting exactly those two, and T017 marks number, status, published_at and html read-only",
+        "DR-003 (medium, verified) all five stories add to one admin.py, so they are sequentially dependent. tasks.md now states it rather than leaving it to surface at convergence",
+        "DR-004 (low, verified, removes work) the planned except branch for PublishedVersionError in the publish view is unreachable: both refusals raise PublishError, and the save inside publish() runs while the stored row is still a draft so the immutability guard returns first. Dropped from plan.md, T045 and D7",
+        "DR-001 (high, verified) NOT applied — not a plan fault. This spec's edge case permitting deletion of a document holding only drafts contradicts FS-001's D8 and accepted ADR 0002. No FR, scenario or SC in FS-002 depends on it; recorded as D13 and put to Sam. Delivered behaviour stands meanwhile"
+      ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-09-22T14:10:00Z",
+      "self_resolved": [
+        "REV-001 (high, verified) remedied — the document identifier from the query string was handed to the database unchecked, so a value that is not a number raised and served a 500 instead of an empty form. Reproduced against the running application first; my own first probe reported no crash because it ran against a urlconf with nothing mounted. Guarded, D18, with a parametrised test that goes red when the guard is removed",
+        "REV-002 (medium, verified) remedied — the approver fixture built for the specification's publish-without-write case was never used by any test, leaving the whole justification for two permissions uncovered. Test added, D19",
+        "Reviewer note on README wording (preview permission) applied: the check is satisfied by view_version or change_version, not view_version alone"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T15:44:06Z",
+      "self_resolved": [
+        "Reject saving a version whose wording has not changed — built at save time, then moved to publication on his question. Saving a duplicate draft is harmless and the answer can go stale while a draft waits; publishing is the act that would supersede a wording with its own copy",
+        "A control to start the next version when viewing the version in force — added to the version's own page",
+        "A document filter on the versions list — added",
+        "Replace the document page's start-the-next-version control with View current version and Version history — done, history lands on the list already narrowed to that document",
+        "A new version should never begin from nothing — adding one is now only reachable from a document, enforced on the request rather than by hiding a button",
+        "The editor was too narrow with no way to widen it — it was the admin's flex row sizing the field to its own content; fixed there",
+        "Summary columns on the documents list — needs its own specification, filed as #39",
+        "A year-based version number format — same change as the numbering gaps below, filed together as #38",
+        "Version numbers leave gaps when several drafts exist and a later one is published — numbers are allocated when a draft is written rather than when one is published; filed as #38"
+      ]
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 14,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "sha256sum mvp_compliance/static/mvp_compliance/vendor/easymde/easymde.min.js easymde.min.css",
+              "poetry build"
+            ],
+            "code": [
+              "mvp_compliance/static/mvp_compliance/vendor/easymde/VERSION.md:1"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_factories.py::TestUserFactory"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_factories.py"
+            ],
+            "code": [
+              "tests/factories.py:36"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ],
+            "code": [
+              "tests/conftest.py:28"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python -m django makemigrations --check --dry-run --settings tests.settings"
+            ],
+            "code": [
+              "mvp_compliance/models.py:171",
+              "mvp_compliance/migrations/0002_version_publish_permission.py:1"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_it_registers_no_public_urls",
+              "tests/test_app.py::TestPackagedApp::test_it_registers_both_models_in_the_admin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py"
+            ]
+          }
+        },
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python manage.py seed_demo",
+              "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8021/admin/"
+            ],
+            "code": [
+              "demo/management/commands/seed_demo.py:1",
+              "demo/urls.py:9"
+            ]
+          }
+        },
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorWidget"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ]
+          }
+        },
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorWidget::test_it_offers_no_forbidden_control"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ]
+          }
+        },
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorWidget"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py",
+              "poetry run mypy mvp_compliance/widgets.py"
+            ],
+            "code": [
+              "mvp_compliance/widgets.py:9"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorStaticAssets::test_every_toolbar_control_is_wired_in_the_script"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ],
+            "code": [
+              "mvp_compliance/static/mvp_compliance/markdown-editor.js:1"
+            ]
+          }
+        },
+        {
+          "id": "T014",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorStaticAssets::test_every_toolbar_control_has_a_css_icon_rule"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ],
+            "code": [
+              "mvp_compliance/static/mvp_compliance/markdown-editor.css:1"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_forms.py::TestVersionForm::test_markdown_typed_by_hand_round_trips_unchanged"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_forms.py"
+            ]
+          }
+        },
+        {
+          "id": "T016",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_forms.py::TestVersionForm::test_it_exposes_only_what_an_author_supplies"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_forms.py",
+              "poetry run mypy mvp_compliance/forms.py"
+            ],
+            "code": [
+              "mvp_compliance/forms.py:9"
+            ]
+          }
+        },
+        {
+          "id": "T017",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py",
+              "poetry run mypy mvp_compliance/admin.py"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:14"
+            ]
+          }
+        },
+        {
+          "id": "T018",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestToolbarAgreesWithTheAllowList"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T019",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pre-commit run --files README.md CHANGELOG.md CONTEXT.md"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 15,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T020",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_anonymous_reaches_nothing",
+              "tests/test_admin.py::TestDraftPrivacy::test_a_signed_in_non_staff_visitor_reaches_nothing",
+              "tests/test_admin.py::TestDraftPrivacy::test_staff_without_permissions_reaches_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDraftPrivacy"
+            ],
+            "code": [
+              "tests/test_admin.py:130"
+            ]
+          }
+        },
+        {
+          "id": "T021",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_a_published_version_offers_no_delete_action"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py",
+              "poetry run mypy mvp_compliance/admin.py"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:29"
+            ]
+          }
+        },
+        {
+          "id": "T022",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_a_draft_survives_being_left_alone"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T023",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_discarding_a_draft_leaves_other_versions_alone"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T024",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_every_draft_of_a_document_is_listed_and_separately_editable"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T025",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_it_registers_no_public_urls"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py"
+            ]
+          }
+        },
+        {
+          "id": "T026",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pre-commit run --files README.md CHANGELOG.md"
+            ],
+            "code": [
+              "README.md:95"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P1",
+      "issue": 16,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T030",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T031",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T032",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T033",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T034",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T035",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T036",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P1",
+      "issue": 17,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T040",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_caller_without_publish_version_is_refused_both_verbs",
+              "tests/test_admin.py::TestPublish::test_a_caller_with_publish_version_reaches_the_publish_address"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish -x"
+            ]
+          }
+        },
+        {
+          "id": "T041",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T041a",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_the_change_form_offers_a_publish_link_when_permitted",
+              "tests/test_admin.py::TestPublish::test_the_change_form_offers_no_publish_link_without_permission"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish"
+            ],
+            "code": [
+              "mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:1"
+            ]
+          }
+        },
+        {
+          "id": "T042",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_get_confirms_and_publishes_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_a_get_confirms_and_publishes_nothing -x"
+            ]
+          }
+        },
+        {
+          "id": "T043",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish -q"
+            ]
+          }
+        },
+        {
+          "id": "T044",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_post_publishes_and_declining_does_not"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_a_post_publishes_and_declining_does_not -x"
+            ]
+          }
+        },
+        {
+          "id": "T045",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish -q"
+            ]
+          }
+        },
+        {
+          "id": "T046",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_both_refusals_reach_the_author_as_a_message"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_both_refusals_reach_the_author_as_a_message -x"
+            ]
+          }
+        },
+        {
+          "id": "T047",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_saving_a_draft_publishes_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_saving_a_draft_publishes_nothing -x"
+            ]
+          }
+        },
+        {
+          "id": "T048",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestPublish::test_a_published_version_has_no_editable_form"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublish::test_a_published_version_has_no_editable_form -x"
+            ]
+          }
+        },
+        {
+          "id": "T049",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T049a",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestUserFacingStrings::test_nothing_claims_compliance"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestUserFacingStrings -x"
+            ]
+          }
+        },
+        {
+          "id": "T049b",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestUserFacingStrings::test_every_string_is_translatable"
+            ],
+            "commands": [
+              "cd mvp_compliance && poetry run python ../manage.py makemessages -l en",
+              "poetry run pytest tests/test_admin.py::TestUserFacingStrings -q"
+            ]
+          }
+        },
+        {
+          "id": "T049c",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py -q"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US5",
+      "priority": "P2",
+      "issue": 18,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T050",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T051",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T052",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T053",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T054",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T055",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T056",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US6",
+      "priority": "P1",
+      "issue": 17,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T060",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_refuses_a_save_identical_to_the_version_the_form_started_from",
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_a_changed_wording_saves",
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_the_first_version_of_a_document_is_never_refused",
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_saving_an_existing_draft_unchanged_is_not_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_forms.py tests/test_admin.py::TestUserFacingStrings",
+              "poetry run pre-commit run --files mvp_compliance/forms.py tests/test_forms.py",
+              "poetry run python manage.py makemessages -l en --no-obsolete"
+            ]
+          }
+        },
+        {
+          "id": "T061",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin::test_a_version_in_forces_page_offers_the_next_version",
+              "tests/test_admin.py::TestVersionAdmin::test_a_draft_offers_no_control_to_start_the_next_version"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestVersionAdmin",
+              "poetry run pre-commit run --files mvp_compliance/templates/admin/mvp_compliance/version/change_form.html tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T062",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin::test_the_changelist_offers_a_filter_by_document",
+              "tests/test_admin.py::TestVersionAdmin::test_narrowing_by_document_shows_only_that_documents_versions"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestVersionAdmin",
+              "poetry run pre-commit run --files mvp_compliance/admin.py tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T063",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentAdmin::test_the_document_page_offers_its_current_version_and_history"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDocumentAdmin",
+              "poetry run pytest tests/test_admin.py",
+              "poetry run pre-commit run --files mvp_compliance/templates/admin/mvp_compliance/document/change_form.html tests/test_admin.py mvp_compliance/locale/en/LC_MESSAGES/django.po"
+            ]
+          }
+        },
+        {
+          "id": "T064",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentAdmin::test_a_document_with_nothing_in_force_offers_no_current_version_control[False]",
+              "tests/test_admin.py::TestDocumentAdmin::test_a_document_with_nothing_in_force_offers_no_current_version_control[True]"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDocumentAdmin",
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T065",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestAddingAVersion::test_the_changelist_offers_no_way_to_add_a_version",
+              "tests/test_admin.py::TestAddingAVersion::test_a_bare_request_for_the_add_form_is_refused",
+              "tests/test_admin.py::TestAddingAVersion::test_reaching_the_add_form_from_a_document_still_works",
+              "tests/test_admin.py::TestAddingAVersion::test_the_add_form_offers_no_save_and_add_another"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py",
+              "poetry run pytest",
+              "poetry run pre-commit run --files mvp_compliance/admin.py tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T066",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestMarkdownEditorWidth::test_the_container_grows_to_fill_its_flex_row",
+              "tests/test_admin.py::TestMarkdownEditorWidth::test_the_container_can_shrink_below_its_own_content_width"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestMarkdownEditorWidth tests/test_widgets.py",
+              "poetry run pytest",
+              "poetry run pre-commit run --files mvp_compliance/static/mvp_compliance/markdown-editor.css tests/test_admin.py"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 36,
+    "draft": true
+  }
+}

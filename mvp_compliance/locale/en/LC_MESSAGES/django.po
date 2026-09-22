@@ -1,6 +1,17 @@
 # English translation catalog for django-mvp-compliance.
 # Copyright (C) 2026 Samuel Jennings
 # This file is distributed under the same license as the django-mvp-compliance package.
+#
+# Regenerate from the repository root, not from inside the package:
+#
+#     poetry run python manage.py makemessages -l en --no-obsolete
+#
+# Run anywhere else and every file reference below is rewritten relative to
+# that directory instead, so the whole file diffs without a single string
+# having changed. Then delete the POT-Creation-Date line it adds, which
+# changes on every run and says nothing, and check any entry it marks fuzzy:
+# it guesses a new string is a rewording of an existing one and copies that
+# entry's translation instead of using the new text.
 msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
@@ -10,6 +21,17 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: mvp_compliance/admin.py:177
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
+msgid "Preview"
+msgstr "Preview"
+
+#: mvp_compliance/admin.py:206
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
+msgid "Publish"
+msgstr "Publish"
 
 #: mvp_compliance/apps.py:8
 msgid "Compliance"
@@ -31,11 +53,11 @@ msgstr "document"
 msgid "documents"
 msgstr "documents"
 
-#: mvp_compliance/models.py:57 mvp_compliance/models.py:297
+#: mvp_compliance/models.py:57 mvp_compliance/models.py:327
 msgid "A published version's wording cannot be changed."
 msgstr "A published version's wording cannot be changed."
 
-#: mvp_compliance/models.py:63 mvp_compliance/models.py:302
+#: mvp_compliance/models.py:63 mvp_compliance/models.py:332
 msgid "A published version cannot be deleted."
 msgstr "A published version cannot be deleted."
 
@@ -119,14 +141,86 @@ msgstr "version"
 msgid "versions"
 msgstr "versions"
 
-#: mvp_compliance/models.py:235
+#: mvp_compliance/models.py:174
+msgid "Can publish a version"
+msgstr "Can publish a version"
+
+#: mvp_compliance/models.py:253
 msgid "This version has already been published."
 msgstr "This version has already been published."
 
-#: mvp_compliance/models.py:239
+#: mvp_compliance/models.py:257
 msgid "Publishing this would produce no output."
 msgstr "Publishing this would produce no output."
 
-#: mvp_compliance/models.py:253
+#: mvp_compliance/models.py:271
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
+
+#: mvp_compliance/models.py:282
+msgid "This says exactly what the version in force already says."
+msgstr "This says exactly what the version in force already says."
+
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
+msgid "View current version"
+msgstr "View current version"
+
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:17
+msgid "Version history"
+msgstr "Version history"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:22
+msgid "Start the next version"
+msgstr "Start the next version"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/preview.html:5
+msgid "This is what a reader will be served"
+msgstr "This is what a reader will be served"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/preview.html:11
+msgid "Back to this version"
+msgstr "Back to this version"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:5
+msgid "Publish this version?"
+msgstr "Publish this version?"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:11
+msgid ""
+"This will make it the version in force. Once published, the wording cannot "
+"be changed — a correction is published as another version."
+msgstr ""
+"This will make it the version in force. Once published, the wording cannot "
+"be changed — a correction is published as another version."
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:20
+msgid "Back"
+msgstr "Back"
+
+#: mvp_compliance/widgets.py:26
+msgid "Heading"
+msgstr "Heading"
+
+#: mvp_compliance/widgets.py:27
+msgid "Bold"
+msgstr "Bold"
+
+#: mvp_compliance/widgets.py:28
+msgid "Italic"
+msgstr "Italic"
+
+#: mvp_compliance/widgets.py:29
+msgid "Bulleted list"
+msgstr "Bulleted list"
+
+#: mvp_compliance/widgets.py:30
+msgid "Numbered list"
+msgstr "Numbered list"
+
+#: mvp_compliance/widgets.py:31
+msgid "Link"
+msgstr "Link"
+
+#: mvp_compliance/widgets.py:32
+msgid "Quote"
+msgstr "Quote"

@@ -71,6 +71,13 @@ _Avoid_: anonymous user (a visitor may well be signed in), guest, session.
 **User**:
 A signed-in account, Django's `AUTH_USER_MODEL`. Acceptances belong to users and to nothing else.
 
+**Compliance editor**:
+Whoever is responsible for the wording of a site's legal documents — not assumed to be a
+developer, an employee, or familiar with Markdown. Writes and publishes versions through the
+admin's formatting-control editor.
+_Avoid_: author (too generic — this package's other roles write things too), admin (names the
+Django feature, not the person), legal team (an editor may be neither legal nor a team).
+
 **Enforcement**:
 Stopping a signed-in user who has not accepted the current version of a document from continuing,
 and sending them somewhere they can read it and accept. Configurable per document, and off is a

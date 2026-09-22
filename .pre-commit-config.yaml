@@ -9,7 +9,12 @@
 # replacement, and ruff's UP rules cover pyupgrade (enable them in the repo's
 # `[tool.ruff.lint]` select list).
 
-exclude: "^docs/|/migrations/"
+# The vendored path is this repo's own addition to the shared list. Files under
+# it are third-party distributions kept byte-identical to what their project
+# published, with a hash recorded beside them. trailing-whitespace and
+# end-of-file-fixer rewrite them on sight, which makes the recorded hash wrong
+# and turns every future refresh into a diff nobody can read.
+exclude: "^docs/|/migrations/|^mvp_compliance/static/mvp_compliance/vendor/"
 default_stages: [pre-commit]
 
 repos:

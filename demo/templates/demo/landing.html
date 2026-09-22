@@ -16,20 +16,63 @@
       </p>
 
       <div class="card bg-base-200 mt-10 p-6">
-        <h2 class="text-xl font-semibold">Nothing to see yet</h2>
+        <h2 class="text-xl font-semibold">Writing and publishing a document</h2>
         <p class="mt-2 opacity-75">
-          The package is scaffolded and the test harness is green. No models, pages or
-          components have been written. Each one gets rendered here as it lands.
+          The authoring surface is the Django admin. Documents and their versions are
+          under <a class="link" href="/admin/mvp_compliance/">Compliance</a>.
         </p>
+        <p class="mt-2 opacity-75">
+          There are no public pages yet. A document with nothing published is invisible to a
+          visitor, which is why this page shows none of them.
+        </p>
+        <a class="btn btn-primary mt-4 w-fit" href="/admin/">Open the admin</a>
       </div>
 
       <div class="card bg-base-200 mt-6 p-6">
-        <h2 class="text-xl font-semibold">What will appear here first</h2>
+        <h2 class="text-xl font-semibold">Accounts</h2>
+        <p class="mt-2 opacity-75">Password for every one of them is <code>password</code>.</p>
+        <table class="table mt-4">
+          <thead>
+            <tr>
+              <th>Sign in as</th>
+              <th>Can do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>editor.user@example.com</code></td>
+              <td>Write, preview and discard versions. Cannot publish.</td>
+            </tr>
+            <tr>
+              <td><code>publisher.user@example.com</code></td>
+              <td>Everything the editor can, and publish.</td>
+            </tr>
+            <tr>
+              <td><code>super.user@example.com</code></td>
+              <td>Everything, including the rest of the admin.</td>
+            </tr>
+            <tr>
+              <td><code>staff.user@example.com</code></td>
+              <td>Reach the admin and nothing in this package.</td>
+            </tr>
+            <tr>
+              <td><code>regular.user@example.com</code></td>
+              <td>Not staff. Cannot reach the admin at all.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card bg-base-200 mt-6 p-6">
+        <h2 class="text-xl font-semibold">Seeded documents</h2>
+        <ul class="mt-2 list-disc pl-6 opacity-75">
+          <li><strong>Privacy policy</strong> — two published versions, one in force and one superseded.</li>
+          <li><strong>Terms of use</strong> — one version, in force.</li>
+          <li><strong>Cookie policy</strong> — a draft and nothing published.</li>
+          <li><strong>Acceptable use</strong> — no versions at all.</li>
+        </ul>
         <p class="mt-2 opacity-75">
-          A published policy page, rendered from Markdown held in the database, and the flow
-          that asks a signed-in user to accept a version they have not seen. The demo carries
-          seeded documents so every state — draft, published, superseded, accepted and not yet
-          accepted — is reachable without setting one up by hand.
+          Rebuild them with <code>python manage.py seed_demo</code>.
         </p>
       </div>
     </main>

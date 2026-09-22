@@ -168,6 +168,10 @@ class Version(models.Model):
         verbose_name = _("version")
         verbose_name_plural = _("versions")
         ordering = ["document", "number"]
+        # Writing a version and making one legally binding are different levels
+        # of trust, so publishing needs a permission Django does not create on
+        # its own (FR-014). A site that wants one person to do both grants both.
+        permissions = [("publish_version", _("Can publish a version"))]
         constraints = [
             models.UniqueConstraint(
                 fields=["document", "number"],
@@ -224,12 +228,26 @@ class Version(models.Model):
             keys.add(field.attname)
         return keys
 
+    @staticmethod
+    def same_wording(one: str, other: str) -> bool:
+        """Whether two wordings say the same thing.
+
+        Neither difference this ignores is one a reader would see. A
+        browser stores a text area's content with a carriage return before
+        every newline, so a draft written in one carries them and a
+        wording written any other way does not, and a trailing newline is
+        present or absent depending on how each was entered.
+        """
+        return one.replace("\r\n", "\n").strip() == other.replace("\r\n", "\n").strip()
+
     def publish(self) -> None:
         """Make this draft the version in force, superseding whichever one held it.
 
-        Refuses when this version is not a draft (FR-010), or when the
-        rendered output is empty once whitespace is stripped (FR-018, D7) —
-        before anything about this row or the document is touched.
+        Refuses when this version is not a draft (FR-010), when the
+        rendered output is empty once whitespace is stripped (FR-018, D7),
+        or when it says exactly what the version in force already says
+        (D23) — each before anything about this row or the document is
+        touched.
         """
         if self.status != self.Status.DRAFT:
             raise PublishError(_("This version has already been published."))
@@ -251,6 +269,18 @@ class Version(models.Model):
             stored = self.stored_row()
             if stored is None or stored["status"] != self.Status.DRAFT:
                 raise PublishError(_("This version is no longer a draft."))
+            # Read under the same lock, because this is the one refusal whose
+            # answer can change while a draft sits unpublished. A draft that
+            # duplicates today's version in force is a different draft once
+            # somebody publishes another one, so asking any earlier than here
+            # answers a question about a document that has since moved (D23).
+            current = document.versions.current().first()
+            if current is not None and self.same_wording(
+                self.markdown, current.markdown
+            ):
+                raise PublishError(
+                    _("This says exactly what the version in force already says.")
+                )
             document.versions.current().update(status=self.Status.SUPERSEDED)
             self.html = html
             self.status = self.Status.CURRENT
