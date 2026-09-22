@@ -280,3 +280,28 @@ and cheaper once he has said which behaviour he wants than after the wrong one i
 
 **ADR:** none — this decision builds nothing. The architectural record that governs the question is
 ADR 0002, which stands unamended; if Sam overturns it, that is a new ADR superseding it.
+
+## D14 — The privacy walk is one table every later story extends
+
+**Ambiguous**: US-2 built a table of every address this package serves and walked each one against
+three callers who should not reach it. US-3 and US-4 each add an address. Extending that table
+counts as modifying a test somebody else wrote, which the guardrail flags, and the alternative is a
+second parallel walk per story.
+
+**Chosen**: one table. Each story adds its address to it and writes no second walk.
+
+**Why defensible**: the requirement is that **no** request lacking the permission reaches a draft at
+**any** address the package serves, which is a statement about the whole set. A per-story walk
+would prove it address by address and never state it, and the day an address is added without a
+walk beside it, nothing goes red. With one table, a new address that is not added to it is visible
+as an absence in a single place.
+
+The guardrail flag is correct and this entry is the record that clears it. What it cannot tell
+apart is a test being weakened from a test being widened, so the distinction is stated here: every
+change to that table so far adds a row and an assertion, and removes neither.
+
+**Revisit if**: a story adds an address the three callers *should* reach, which would mean the
+table has stopped being a list of one thing.
+
+**ADR:** none — a test-organisation choice, local to one module and explained by the comment above
+the table.

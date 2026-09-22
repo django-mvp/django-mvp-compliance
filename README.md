@@ -171,6 +171,15 @@ exists to prevent.
 
 The standing directions this package steers by are in [GOALS.md](GOALS.md).
 
+## Documentation
+
+- [docs/models.md](docs/models.md) — documents, versions, publishing, and what a published
+  version guarantees.
+- [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
+  the form, and reading a version back the way the public will see it.
+- [docs/adr](docs/adr) — the decisions behind the design, and why the alternatives were not
+  taken.
+
 ## Prior art
 
 `django-termsandconditions` and `django-tos` both store terms in the database
