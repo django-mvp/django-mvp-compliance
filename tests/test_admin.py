@@ -444,3 +444,28 @@ class TestPublish:
         assert draft.status == draft.Status.CURRENT
         assert draft.published_at is not None
         assert previous.status == previous.Status.SUPERSEDED
+
+    def test_both_refusals_reach_the_author_as_a_message(
+        self, client, publisher, document
+    ) -> None:
+        """T046, FR-018, SC-007."""
+        client.force_login(publisher)
+        empty_draft = VersionFactory(document=document, markdown="   \n\n   ")
+        published = VersionFactory(document=document)
+        published.publish()
+
+        empty_response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[empty_draft.pk]),
+            follow=True,
+        )
+        already_response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[published.pk]),
+            follow=True,
+        )
+
+        empty_draft.refresh_from_db()
+        published.refresh_from_db()
+        assert b"Publishing this would produce no output" in empty_response.content
+        assert b"This version has already been published" in already_response.content
+        assert empty_draft.status == empty_draft.Status.DRAFT
+        assert published.status == published.Status.CURRENT
