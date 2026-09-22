@@ -509,3 +509,32 @@ class TestPublish:
         assert 'name="markdown"' not in content
         assert "<textarea" not in content
         assert 'name="_save"' not in content
+
+    def test_the_change_form_offers_a_publish_link_when_permitted(
+        self, client, publisher, draft
+    ) -> None:
+        """The confirmation page needs a route to it (FR-013) — the same
+        object-tools pattern T035 used for the preview link.
+        """
+        client.force_login(publisher)
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert publish_url.encode() in response.content
+
+    def test_the_change_form_offers_no_publish_link_without_permission(
+        self, client, editor, draft
+    ) -> None:
+        client.force_login(editor)
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert publish_url.encode() not in response.content

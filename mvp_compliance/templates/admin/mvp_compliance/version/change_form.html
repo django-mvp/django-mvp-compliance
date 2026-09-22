@@ -8,6 +8,13 @@
         {% translate "Preview" %}
       </a>
     </li>
+    {% if original.status == "draft" and perms.mvp_compliance.publish_version %}
+    <li>
+      <a href="{% url opts|admin_urlname:'publish' original.pk %}" class="button">
+        {% translate "Publish" %}
+      </a>
+    </li>
+    {% endif %}
   {% endif %}
   {{ block.super }}
 {% endblock %}
