@@ -345,3 +345,22 @@ defect — reintroducing the attribute fails it.
 the other half matter.
 
 **ADR:** none — a correction to this feature's own research, with nothing outside it affected.
+
+## D18 — SC-008 needed the case a real page produces, not the one with nothing supplied
+
+**Decision**: `TestOptionalEvidence` gains `test_a_request_under_the_defaults_still_holds_no_address`,
+recording with a request in hand while the setting is off.
+
+**Why**: the story's own defaults test records without a request, so it passes whether or not the
+setting is honoured — removing the setting check from `record()` entirely left the whole suite green.
+That is the wrong test to rest SC-008 on, because the case it leaves uncovered is the ordinary one: a
+sign-in flow has a request to hand and the project has not asked for the address to be kept. A
+regression there would collect personal data the project never asked for, silently, against
+Article XV, and nothing would have failed. The story disclosed that the test passed by construction;
+what it did not draw out was which case therefore went untested.
+
+**Revisit if**: nothing. The general rule is the one already recorded about choices: a test that
+passes for a reason other than the behaviour it names is not covering that behaviour, and the fix is
+to find the input that separates them.
+
+**ADR:** none — one test added to cover a criterion already specified.

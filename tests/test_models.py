@@ -1234,6 +1234,23 @@ class TestOptionalEvidence:
 
         assert acceptance.ip_address is None
 
+    def test_a_request_under_the_defaults_still_holds_no_address(
+        self, user, published_version
+    ):
+        """Scenario 1, SC-008, with the request a real page would supply.
+
+        The test above records without one, so it says nothing about the
+        setting — it would pass just as well if the address were read
+        unconditionally. This is the case that decides it, and the one an
+        ordinary sign-in flow produces: a request is to hand, and the project
+        has not asked for the address to be kept.
+        """
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        acceptance = Acceptance.objects.record(user, published_version, request)
+
+        assert acceptance.ip_address is None
+
     def test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied(
         self, user, published_version
     ):
