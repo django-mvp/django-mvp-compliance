@@ -645,6 +645,22 @@ class TestDocumentAdmin:
         assert response.status_code == 200
         assert draft.markdown.encode() not in response.content
 
+    def test_the_document_page_offers_the_next_version(
+        self, client, editor, document
+    ) -> None:
+        """T053."""
+        client.force_login(editor)
+        expected_url = (
+            f"{reverse('admin:mvp_compliance_version_add')}?document={document.pk}"
+        )
+
+        response = client.get(
+            reverse("admin:mvp_compliance_document_change", args=[document.pk])
+        )
+
+        assert response.status_code == 200
+        assert expected_url.encode() in response.content
+
 
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
