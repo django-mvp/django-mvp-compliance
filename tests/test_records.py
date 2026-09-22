@@ -294,3 +294,25 @@ class TestSurvivingRecords:
         record = produce(subject)
 
         assert record.is_empty is True
+
+    def test_a_mix_of_people_with_and_without_accounts(self):
+        """Scenario 4; FR-004."""
+        gone = UserFactory()
+        gone_version = VersionFactory(document=DocumentFactory(name="Gone's document"))
+        gone_version.publish()
+        gone_acceptance = AcceptanceFactory(user=gone, version=gone_version)
+        gone_subject = gone_acceptance.subject
+        gone.delete()
+
+        still_here = UserFactory()
+        still_here_version = VersionFactory(
+            document=DocumentFactory(name="Still here's document")
+        )
+        still_here_version.publish()
+        AcceptanceFactory(user=still_here, version=still_here_version)
+
+        record = produce(gone_subject)
+
+        entries = record.sections[0].entries
+        assert record.subject == gone_subject
+        assert [entry.document for entry in entries] == ["Gone's document"]
