@@ -282,7 +282,15 @@ msgstr "everything held about a person"
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
-#: mvp_compliance/records.py:130
+#: mvp_compliance/records.py:86
+msgid ""
+"This covers what this package holds about this person. The project may hold "
+"further records about them elsewhere that are not included here."
+msgstr ""
+"This covers what this package holds about this person. The project may hold "
+"further records about them elsewhere that are not included here."
+
+#: mvp_compliance/records.py:143
 msgid "Acceptances"
 msgstr "Acceptances"
 
@@ -294,7 +302,7 @@ msgstr "Recorded from"
 msgid "Produce"
 msgstr "Produce"
 
-#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:17
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:18
 msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 

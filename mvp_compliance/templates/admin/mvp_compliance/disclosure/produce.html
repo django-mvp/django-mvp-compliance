@@ -13,6 +13,7 @@
 
   {% if record %}
     <h2>{{ record.subject }}</h2>
+    <p>{{ record.coverage }}</p>
     {% if record.is_empty %}
       <p>{% translate "Nothing is held about this person." %}</p>
     {% else %}
