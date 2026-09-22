@@ -1003,29 +1003,19 @@ class TestDisclosureRefusals:
 
         assert response.status_code == 302
 
-    def test_staff_holding_every_other_permission_is_refused(self, client) -> None:
+    def test_staff_holding_every_other_permission_is_refused(
+        self, client, everything_else
+    ) -> None:
         """T023, scenario 2, FR-012: including the proxy's own routine ``view_disclosure``."""
-        person = UserFactory(is_staff=True)
-        person.user_permissions.add(
-            *Permission.objects.filter(
-                content_type__app_label="mvp_compliance"
-            ).exclude(codename="produce_disclosure")
-        )
-        client.force_login(person)
+        client.force_login(everything_else)
 
         response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
 
         assert response.status_code == 403
 
-    def test_a_refusal_reveals_nothing(self, client) -> None:
+    def test_a_refusal_reveals_nothing(self, client, everything_else) -> None:
         """T024, scenario 4, FR-013, SC-004."""
-        person = UserFactory(is_staff=True)
-        person.user_permissions.add(
-            *Permission.objects.filter(
-                content_type__app_label="mvp_compliance"
-            ).exclude(codename="produce_disclosure")
-        )
-        client.force_login(person)
+        client.force_login(everything_else)
         with_records = AcceptanceFactory()
         url = reverse("admin:mvp_compliance_disclosure_changelist")
 
