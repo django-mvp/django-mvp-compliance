@@ -2,6 +2,7 @@
 
 from typing import cast
 
+from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -301,3 +302,73 @@ class Version(models.Model):
         if self.is_published:
             raise PublishedVersionError(_("A published version cannot be deleted."))
         return super().delete(*args, **kwargs)
+
+
+class Acceptance(models.Model):
+    """The record that one person accepted one published version, at one moment.
+
+    Once written, this record is finished: nothing in this package will ever
+    change it or delete it.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("user"),
+        help_text=_(
+            "The account that accepted this version, at the time it accepted "
+            "it. Null only ever means the account has since been removed — "
+            "never that the acceptor was unknown."
+        ),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="compliance_acceptances",
+    )
+    subject = models.CharField(
+        _("subject"),
+        max_length=255,
+        editable=False,
+        help_text=_(
+            "The accepted user's primary key, held as text and written once, "
+            "when this record is made. The `user` foreign key is cleared when "
+            "that account is removed, so without this field the record could "
+            "no longer say whose it is or be found among that person's others."
+        ),
+    )
+    version = models.ForeignKey(
+        Version,
+        verbose_name=_("version"),
+        help_text=_(
+            "The published version this acceptance names. Never a draft — "
+            "recording an acceptance of one is refused."
+        ),
+        on_delete=models.PROTECT,
+        related_name="acceptances",
+    )
+    accepted_at = models.DateTimeField(
+        _("accepted at"),
+        editable=False,
+        db_index=True,
+        help_text=_(
+            "The moment this acceptance was recorded. Set once, when the "
+            "record is made, and never rewritten."
+        ),
+    )
+    ip_address = models.GenericIPAddressField(
+        _("IP address"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "The address the request came from when this acceptance was "
+            "recorded. Held only when the host project has turned that on and "
+            "supplied the request — personal data about someone who did not "
+            "ask for it to be kept, so it is the host project's decision."
+        ),
+    )
+
+    class Meta:
+        verbose_name = _("acceptance")
+        verbose_name_plural = _("acceptances")
+
+    def __str__(self) -> str:
+        return f"{self.subject} accepted {self.version}"
