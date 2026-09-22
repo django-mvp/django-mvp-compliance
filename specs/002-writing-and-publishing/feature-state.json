@@ -296,43 +296,108 @@
       "id": "US2",
       "priority": "P1",
       "issue": 15,
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
           "id": "T020",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_anonymous_reaches_nothing",
+              "tests/test_admin.py::TestDraftPrivacy::test_a_signed_in_non_staff_visitor_reaches_nothing",
+              "tests/test_admin.py::TestDraftPrivacy::test_staff_without_permissions_reaches_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDraftPrivacy"
+            ],
+            "code": [
+              "tests/test_admin.py:130"
+            ]
+          }
         },
         {
           "id": "T021",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_a_published_version_offers_no_delete_action"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py",
+              "poetry run mypy mvp_compliance/admin.py"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:29"
+            ]
+          }
         },
         {
           "id": "T022",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_a_draft_survives_being_left_alone"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
         },
         {
           "id": "T023",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_discarding_a_draft_leaves_other_versions_alone"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
         },
         {
           "id": "T024",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDraftPrivacy::test_every_draft_of_a_document_is_listed_and_separately_editable"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
         },
         {
           "id": "T025",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_it_registers_no_public_urls"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py"
+            ]
+          }
         },
         {
           "id": "T026",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pre-commit run --files README.md CHANGELOG.md"
+            ],
+            "code": [
+              "README.md:95"
+            ]
+          }
         }
       ]
     },
