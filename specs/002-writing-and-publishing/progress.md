@@ -153,3 +153,17 @@ never trigger a restart the way an edit to an existing one does. This is an obse
 demo server's process lifecycle, not a claim about the code: `tests/test_admin.py` reaches the same
 add page through a fresh process per test run and finds the editor markup there. The brief says not
 to start or stop the server, so this is left for Forge rather than restarted here.
+
+## 2026-09-22T14:05:00Z · Implementer US1 · T018
+
+Did: `tests/test_admin.py::TestToolbarAgreesWithTheAllowList` — one Markdown sample per declared
+toolbar control against `MarkdownRenderer`, asserted to keep its element, plus a sample the allow
+list strips, asserted to be stripped.
+Verified: this test needed no new production code, so red/green was checked by mutation instead —
+temporarily dropped `"a"` from `MarkdownRenderer.allowed_tags`, confirmed
+`test_every_toolbar_control_survives_publication` failed on the `link` case with the stripped
+output shown in the message, then restored the file (`git status --short mvp_compliance/rendering.py`
+confirmed clean) and reran: `poetry run pytest tests/test_admin.py` — 5 passed.
+`ruff check`/`ruff format --check` clean.
+Next: T019, documentation.
+Watch: nothing.
