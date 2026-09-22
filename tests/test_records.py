@@ -37,3 +37,21 @@ class TestProduce:
         )
         assert by_document["Terms"].version == terms_v1.number
         assert by_document["Terms"].accepted_at == terms_acceptance.accepted_at
+
+    def test_it_contains_nothing_belonging_to_anybody_else(self):
+        """Scenario 3; FR-004, SC-001."""
+        version = VersionFactory()
+        version.publish()
+
+        first = UserFactory()
+        second = UserFactory()
+        third = UserFactory()
+        AcceptanceFactory(user=first, version=version)
+        AcceptanceFactory(user=second, version=version)
+        AcceptanceFactory(user=third, version=version)
+
+        record = produce(str(second.pk))
+
+        entries = record.sections[0].entries
+        assert len(entries) == 1
+        assert record.subject == str(second.pk)
