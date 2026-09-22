@@ -282,68 +282,199 @@
       "tasks": [
         {
           "id": "T020",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_login_name_resolves_to_its_identifier",
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_email_resolves_to_its_identifier",
+              "tests/test_records.py::TestNamingAPerson::test_an_email_match_is_case_insensitive",
+              "tests/test_records.py::TestNamingAPerson::test_text_matching_neither_resolves_to_itself"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestNamingAPerson -x"
+            ]
+          }
         },
         {
           "id": "T021",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_login_name_resolves_to_its_identifier",
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_email_resolves_to_its_identifier"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestNamingAPerson -x"
+            ],
+            "code": [
+              "mvp_compliance/records.py:78"
+            ]
+          }
         },
         {
           "id": "T022",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python manage.py makemigrations --check --dry-run",
+              "poetry run pytest tests/test_models.py tests/test_app.py -q"
+            ],
+            "code": [
+              "mvp_compliance/models.py:625",
+              "mvp_compliance/migrations/0004_disclosure.py:1"
+            ]
+          }
         },
         {
           "id": "T023",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_not_signed_in_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_signed_in_and_not_staff_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_staff_holding_every_other_permission_is_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ]
+          }
         },
         {
           "id": "T024",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_a_refusal_reveals_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ]
+          }
         },
         {
           "id": "T025",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_the_permission_is_held_by_nobody_on_installation"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ]
+          }
         },
         {
           "id": "T026",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_not_signed_in_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_signed_in_and_not_staff_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_staff_holding_every_other_permission_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_a_refusal_reveals_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:257",
+              "mvp_compliance/forms.py:26"
+            ]
+          }
         },
         {
           "id": "T027",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ],
+            "code": [
+              "tests/conftest.py:102",
+              "tests/conftest.py:109"
+            ]
+          }
         },
         {
           "id": "T028",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_answer_names_every_acceptance_in_full",
+              "tests/test_admin.py::TestDisclosurePage::test_a_person_with_no_records_gets_a_page_saying_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -q"
+            ]
+          }
         },
         {
           "id": "T029",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_answer_names_every_acceptance_in_full",
+              "tests/test_admin.py::TestDisclosurePage::test_a_person_with_no_records_gets_a_page_saying_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -q"
+            ],
+            "code": [
+              "mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:1",
+              "mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:1"
+            ]
+          }
         },
         {
           "id": "T030",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_page_offers_no_way_to_change_anything"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -q"
+            ]
+          }
         },
         {
           "id": "T031",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_the_disclosure_proxy_is_registered_and_acceptance_is_not",
+              "tests/test_app.py::TestPackagedApp::test_it_still_registers_no_public_urls"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py -q"
+            ]
+          }
         },
         {
           "id": "T032",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "docs/disclosure.md:1",
+              "README.md:11"
+            ]
+          }
         }
       ]
     },
