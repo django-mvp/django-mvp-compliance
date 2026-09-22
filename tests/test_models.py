@@ -997,3 +997,23 @@ class TestOutstanding:
         outstanding = Document.objects.outstanding_for(user)
 
         assert list(outstanding) == []
+
+    def test_the_answer_costs_a_fixed_number_of_queries(
+        self, user, django_assert_num_queries
+    ):
+        """Scenario 7, FR-018, SC-005: the cost does not move with the count."""
+        for _ in range(2):
+            VersionFactory().publish()
+
+        with django_assert_num_queries(1) as at_two_documents:
+            list(Document.objects.outstanding_for(user))
+
+        for _ in range(8):  # ten documents total
+            VersionFactory().publish()
+
+        with django_assert_num_queries(1) as at_ten_documents:
+            list(Document.objects.outstanding_for(user))
+
+        assert len(at_two_documents.captured_queries) == len(
+            at_ten_documents.captured_queries
+        )
