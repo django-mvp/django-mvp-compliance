@@ -5,13 +5,14 @@ admin, forms and views would arrive (decisions.md D11) — this is that
 feature.
 """
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponseRedirect
 from django.template.response import TemplateResponse
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
+from mvp_compliance.exceptions import PublishError
 from mvp_compliance.forms import VersionForm
 from mvp_compliance.models import Document, Version
 from mvp_compliance.rendering import get_renderer
@@ -100,8 +101,14 @@ class VersionAdmin(admin.ModelAdmin):
         if not request.user.has_perm("mvp_compliance.publish_version"):
             raise PermissionDenied
 
+        change_url = reverse("admin:mvp_compliance_version_change", args=[version.pk])
+
         if request.method == "POST":
-            return HttpResponse()
+            try:
+                version.publish()
+            except PublishError as exc:
+                messages.error(request, str(exc))
+            return HttpResponseRedirect(change_url)
 
         html = get_renderer()().render(version.markdown)
         context = {
