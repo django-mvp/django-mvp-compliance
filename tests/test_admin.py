@@ -2,13 +2,12 @@
 
 Exercised through the ``client`` fixture against a real, permitted user — a ``ModelAdmin`` method
 called directly proves nothing about what a request receives. ``urlpatterns`` below mounts the
-admin for this module only (``@pytest.mark.urls(__name__)``); the shared ``tests/urls.py`` is
-outside this story's scope and stays empty.
+admin for this module only (``@pytest.mark.urls(__name__)``); the shared ``tests/urls.py`` stays
+empty because this package serves no address of its own.
 """
 
 import pytest
 from django.contrib import admin
-from django.http import HttpResponseForbidden
 from django.urls import path, reverse
 
 from mvp_compliance.models import Version
@@ -17,20 +16,6 @@ from mvp_compliance.widgets import MarkdownEditorWidget
 from tests.factories import VersionFactory
 
 urlpatterns = [path("admin/", admin.site.urls)]
-
-
-def _refuse(request, exception):
-    """A 403 response that renders nothing of the host shell's.
-
-    The project's own 403 page extends the django-mvp shell, which this
-    module's isolated urlconf carries no configuration for (no
-    ``EASY_ICONS``, outside this story's scope) — this stands in so a
-    refusal itself can be asserted on without that unrelated gap.
-    """
-    return HttpResponseForbidden("Forbidden")
-
-
-handler403 = _refuse
 
 #: Every address this feature serves that exists yet, and how to reach one
 #: given a draft to address it with. The preview and publish addresses are
