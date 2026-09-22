@@ -19,6 +19,7 @@ from django.utils import formats, timezone
 
 import mvp_compliance
 from mvp_compliance.models import Version
+from mvp_compliance.records import PersonalRecord
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
 from tests.factories import (
@@ -1165,6 +1166,31 @@ class TestDisclosurePage:
         )
         assert expected_moment in content
         assert version.html in content
+
+    def test_the_page_states_what_it_covers(
+        self, client, disclosure_producer
+    ) -> None:
+        """T052, FR-015, US-5 scenarios 1, 2: the statement is on the page in
+        both states, near the answer rather than in a footer.
+        """
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+        statement = str(PersonalRecord(subject="irrelevant", sections=()).coverage)
+
+        full_content = client.get(url, {"subject": someone.username}).content.decode()
+        empty_content = client.get(
+            url, {"subject": "nobody-the-package-has-ever-heard-of"}
+        ).content.decode()
+
+        assert statement in full_content
+        assert full_content.index(statement) < full_content.index("Acceptances")
+
+        assert statement in empty_content
+        assert empty_content.index(statement) < empty_content.index("Nothing is held")
 
 
 class TestUserFacingStrings:
