@@ -366,7 +366,15 @@ entry.document       # "Privacy policy" — the document's current name
 entry.version         # 1 — Version.number
 entry.accepted_at     # the moment this acceptance was recorded
 entry.ip_address      # the address the request came from, or None
+entry.wording         # the HTML stored on that version at publication, in full
 ```
+
+Each entry's `wording` is `Version.html` exactly as it was stored at publication — never
+rendered again here, and never the current wording of a document whose version has since
+been superseded. `produce()` reads the field; it never calls the renderer, so a later
+change to `MVP_COMPLIANCE_RENDERER` or its allow list cannot alter what an entry shows for
+an acceptance already recorded. A person with acceptances of several versions of one
+document gets each entry carrying that version's own wording, never another's.
 
 Every acceptance held for that person appears, including several acceptances of the same
 document over time, and nothing belonging to anybody else. A person the package holds
