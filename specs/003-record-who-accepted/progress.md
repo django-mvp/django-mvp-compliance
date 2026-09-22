@@ -179,3 +179,14 @@ Verified: `poetry run pytest tests/test_models.py::TestAcceptance::test_record_s
 tests/test_models.py` clean.
 Next: T020.
 Watch: nothing.
+
+## 2026-09-22T17:48:00+02:00 · Implementer US-1 · T020
+
+Did: added `AcceptanceFactory` (`SubFactory` on `user` and `version`, `subject` derived from
+the user's pk, `accepted_at` supplied) and its test; `acceptance` fixture in `conftest.py`.
+Verified: `poetry run pytest tests/test_factories.py::TestAcceptanceFactory` — fails with
+`OperationalError: no such table` (right reason, T021). `poetry run ruff check` clean (two
+import-ordering auto-fixes, on `tests/conftest.py` and `tests/test_factories.py`); `poetry
+run mypy tests/factories.py` clean.
+Next: T021.
+Watch: nothing.

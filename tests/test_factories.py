@@ -2,7 +2,12 @@
 
 import pytest
 
-from tests.factories import DocumentFactory, UserFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 
 
 @pytest.mark.django_db
@@ -35,3 +40,12 @@ class TestUserFactory:
         assert first.pk is not None
         assert second.pk is not None
         assert first.username != second.username
+
+
+@pytest.mark.django_db
+class TestAcceptanceFactory:
+    def test_it_builds_a_valid_saved_acceptance(self):
+        acceptance = AcceptanceFactory()
+
+        assert acceptance.pk is not None
+        assert acceptance.subject == str(acceptance.user.pk)
