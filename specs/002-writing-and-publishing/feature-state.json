@@ -694,6 +694,127 @@
           "attempts": 0
         }
       ]
+    },
+    {
+      "id": "US6",
+      "priority": "P1",
+      "issue": 17,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T060",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_refuses_a_save_identical_to_the_version_the_form_started_from",
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_a_changed_wording_saves",
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_the_first_version_of_a_document_is_never_refused",
+              "tests/test_forms.py::TestVersionFormRefusesUnchangedWording::test_saving_an_existing_draft_unchanged_is_not_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_forms.py tests/test_admin.py::TestUserFacingStrings",
+              "poetry run pre-commit run --files mvp_compliance/forms.py tests/test_forms.py",
+              "poetry run python manage.py makemessages -l en --no-obsolete"
+            ]
+          }
+        },
+        {
+          "id": "T061",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin::test_a_version_in_forces_page_offers_the_next_version",
+              "tests/test_admin.py::TestVersionAdmin::test_a_draft_offers_no_control_to_start_the_next_version"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestVersionAdmin",
+              "poetry run pre-commit run --files mvp_compliance/templates/admin/mvp_compliance/version/change_form.html tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T062",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin::test_the_changelist_offers_a_filter_by_document",
+              "tests/test_admin.py::TestVersionAdmin::test_narrowing_by_document_shows_only_that_documents_versions"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestVersionAdmin",
+              "poetry run pre-commit run --files mvp_compliance/admin.py tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T063",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentAdmin::test_the_document_page_offers_its_current_version_and_history"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDocumentAdmin",
+              "poetry run pytest tests/test_admin.py",
+              "poetry run pre-commit run --files mvp_compliance/templates/admin/mvp_compliance/document/change_form.html tests/test_admin.py mvp_compliance/locale/en/LC_MESSAGES/django.po"
+            ]
+          }
+        },
+        {
+          "id": "T064",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentAdmin::test_a_document_with_nothing_in_force_offers_no_current_version_control[False]",
+              "tests/test_admin.py::TestDocumentAdmin::test_a_document_with_nothing_in_force_offers_no_current_version_control[True]"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDocumentAdmin",
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T065",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestAddingAVersion::test_the_changelist_offers_no_way_to_add_a_version",
+              "tests/test_admin.py::TestAddingAVersion::test_a_bare_request_for_the_add_form_is_refused",
+              "tests/test_admin.py::TestAddingAVersion::test_reaching_the_add_form_from_a_document_still_works",
+              "tests/test_admin.py::TestAddingAVersion::test_the_add_form_offers_no_save_and_add_another"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py",
+              "poetry run pytest",
+              "poetry run pre-commit run --files mvp_compliance/admin.py tests/test_admin.py"
+            ]
+          }
+        },
+        {
+          "id": "T066",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestMarkdownEditorWidth::test_the_container_grows_to_fill_its_flex_row",
+              "tests/test_admin.py::TestMarkdownEditorWidth::test_the_container_can_shrink_below_its_own_content_width"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestMarkdownEditorWidth tests/test_widgets.py",
+              "poetry run pytest",
+              "poetry run pre-commit run --files mvp_compliance/static/mvp_compliance/markdown-editor.css tests/test_admin.py"
+            ]
+          }
+        }
+      ]
     }
   ],
   "budgets": {
