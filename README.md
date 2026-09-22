@@ -14,8 +14,10 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > previewing and publishing them, behind a confirmation step and a
 > permission of its own. So is `Acceptance` — recording who accepted which
 > version, and when. `mvp_compliance.records.produce(subject)` assembles
-> everything the package holds about one person into a single answer;
-> nothing calls it yet. No account-area page exists yet.
+> everything the package holds about one person into a single answer, and
+> the admin's **Everything held about a person** page is what calls it,
+> behind a permission of its own that nobody holds by default. No
+> account-area page exists yet.
 
 ## Why
 
@@ -286,6 +288,8 @@ The standing directions this package steers by are in [GOALS.md](GOALS.md).
   version guarantees.
 - [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
   the form, and reading a version back the way the public will see it.
+- [docs/disclosure.md](docs/disclosure.md) — producing everything held about a person: the
+  page, its permission, and what the answer contains.
 - [docs/adr](docs/adr) — the decisions behind the design, and why the alternatives were not
   taken.
 
