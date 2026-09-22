@@ -308,3 +308,15 @@ and the anonymous/visitor cases redirecting. `poetry run pre-commit run --files
 mvp_compliance/admin.py mvp_compliance/templates/admin/mvp_compliance/version/preview.html
 tests/test_admin.py` — clean (ruff, mypy, deptry).
 Next: T032, the preview page's own heading and link back to the version.
+
+## 2026-09-22T12:40:00Z · Implementer US3 · T032
+
+Did: the preview template gains an `<h1>` stating this is what a reader will be served (US-3
+scenario 5) and a link back to the version's change page, both translated.
+Verified: `poetry run pytest tests/test_admin.py::TestPreview::test_the_preview_page_states_what_a_reader_will_be_served
+tests/test_admin.py::TestPreview::test_the_preview_links_back_to_the_version` — both failed before
+the template change (neither string was in the response), passed after. `poetry run pytest
+tests/test_admin.py` — 31 passed. `poetry run pre-commit run --files
+mvp_compliance/templates/admin/mvp_compliance/version/preview.html tests/test_admin.py` — clean
+(one ruff-format line-wrap applied and reverified).
+Next: T033, previewed content the allow list strips shows as stripped.
