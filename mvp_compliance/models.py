@@ -7,7 +7,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from mvp_compliance.exceptions import PublishedVersionError, PublishError
+from mvp_compliance.exceptions import PublishedVersionError, PublishError, RecordError
 from mvp_compliance.rendering import get_renderer
 
 #: Everything a published version carries except its standing (FR-013) — the
@@ -304,6 +304,31 @@ class Version(models.Model):
         return super().delete(*args, **kwargs)
 
 
+class AcceptanceManager(models.Manager["Acceptance"]):
+    """Where an acceptance is written — see ``record()``."""
+
+    def record(self, user, version, request=None) -> "Acceptance":
+        """Record ``user``'s acceptance of ``version``.
+
+        Refuses a version that has never been published (FR-003) before
+        anything is written. ``request`` is accepted for a later story's use
+        and is not read here.
+        """
+        if not version.is_published:
+            raise RecordError(
+                _(
+                    "Cannot record an acceptance of a version that has never been published."
+                )
+            )
+        subject = Acceptance.subject_of(user)
+        return self.create(
+            user=user,
+            subject=subject,
+            version=version,
+            accepted_at=timezone.now(),
+        )
+
+
 class Acceptance(models.Model):
     """The record that one person accepted one published version, at one moment.
 
@@ -366,9 +391,24 @@ class Acceptance(models.Model):
         ),
     )
 
+    objects = AcceptanceManager()
+
     class Meta:
         verbose_name = _("acceptance")
         verbose_name_plural = _("acceptances")
 
     def __str__(self) -> str:
         return f"{self.subject} accepted {self.version}"
+
+    @staticmethod
+    def subject_of(user) -> str:
+        """The identifier ``record()`` writes and a later story's lookups read back.
+
+        The single place the identifier is derived, so writing and reading
+        cannot disagree about what identifies a person.
+        """
+        if user.pk is None:
+            raise RecordError(
+                _("Cannot record an acceptance for a user with no primary key.")
+            )
+        return str(user.pk)

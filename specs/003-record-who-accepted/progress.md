@@ -111,3 +111,20 @@ Verified: `poetry run pytest tests/test_exceptions.py` — 8 passed. `poetry run
 and `poetry run mypy mvp_compliance/exceptions.py` both clean.
 Next: T014.
 Watch: nothing.
+
+## 2026-09-22T17:24:00+02:00 · Implementer US-1 · T014
+
+Did: added `Acceptance.subject_of(user)` (`staticmethod`, raises `RecordError` for a user
+with no primary key) and `AcceptanceManager.record(user, version, request=None)` (refuses a
+draft with `RecordError`, derives the subject, creates the row with
+`accepted_at = timezone.now()`); `objects = AcceptanceManager()` on `Acceptance`.
+Verified: `poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestRecording`
+— 1 passed (`test_no_way_to_accept_a_document`, no DB write on that path), 4 failed with
+`OperationalError: no such table: mvp_compliance_acceptance`. Expected: no migration yet
+(T021); the draft-refusal test's own `pytest.raises(RecordError)` passes before its trailing
+`exists()` assertion hits the missing table. `poetry run ruff check mvp_compliance/models.py`
+clean; `poetry run mypy mvp_compliance/models.py` needed `models.Manager["Acceptance"]`
+(parameterized) instead of a bare `models.Manager`, then clean.
+Next: T016.
+Watch: T010, T012 stay red on the missing table until T021 lands the migration — correct
+order, not a defect.
