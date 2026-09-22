@@ -16,6 +16,8 @@ offering a registry for one it does not (FR-018, D1, D9).
 from dataclasses import dataclass
 from datetime import datetime
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import FieldDoesNotExist
 from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 
@@ -71,6 +73,37 @@ class PersonalRecord:
     def is_empty(self) -> bool:
         """Whether no section holds an entry — a normal answer, not an error (FR-005)."""
         return not any(section.entries for section in self.sections)
+
+
+def resolve_subject(text: str) -> str:
+    """The subject identifier ``text`` names, by the order plan.md sets out.
+
+    An account's ``USERNAME_FIELD`` is tried first, then its ``email`` where
+    the user model has one, case-insensitively and only when exactly one
+    account matches. Neither found, the text is treated as the subject
+    itself — the only way to ask about a removed account, whose row is gone
+    and whose records carry nothing else to look it up by (research.md R3,
+    D10). The ambiguity this accepts — an account whose username is
+    literally another account's primary key — is why the produced answer
+    reports the subject it was produced for, so a reader can see which
+    reading was taken.
+    """
+    user_model = get_user_model()
+    username_field = user_model.USERNAME_FIELD
+    account = user_model._default_manager.filter(**{username_field: text}).first()
+    if account is not None:
+        return str(account.pk)
+
+    try:
+        user_model._meta.get_field("email")
+    except FieldDoesNotExist:
+        return text
+
+    matches = user_model._default_manager.filter(email__iexact=text)[:2]
+    if len(matches) == 1:
+        return str(matches[0].pk)
+
+    return text
 
 
 def produce(subject: str) -> PersonalRecord:
