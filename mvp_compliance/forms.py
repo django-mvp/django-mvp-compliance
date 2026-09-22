@@ -23,21 +23,32 @@ class VersionForm(forms.ModelForm):
         fields = ["document", "markdown"]
         widgets = {"markdown": MarkdownEditorWidget}
 
-    def clean_markdown(self) -> str:
-        """Refuse a new version that says exactly what it started from.
+    def clean(self) -> dict:
+        """Refuse a new version that says exactly what the one in force says.
 
-        Only on an add: ``self.initial`` there carries the wording of the
-        document's version in force (FR-021), never this form's own
-        instance, so a change form re-saving an untouched draft is not
-        this. A document that has published nothing leaves nothing in
-        ``initial`` to compare against, so its first version is never
-        refused (FR-022).
+        The comparison is against the document's current version, read
+        here from the document that was submitted — never against
+        ``self.initial``. Django builds a bound form as
+        ``ModelForm(request.POST, instance=obj)`` and passes no initial
+        data on a post, so a form that compared against what it was seeded
+        with would have nothing to compare against at exactly the moment
+        it matters, and would refuse nothing.
+
+        Only on an add. Re-saving an existing draft untouched is a
+        different thing and is not refused. A document that has published
+        nothing has no version in force, so its first version is never
+        refused either.
         """
-        markdown = cast(str, self.cleaned_data["markdown"])
-        if self.instance.pk is None:
-            started_from = self.initial.get("markdown")
-            if started_from and markdown == started_from:
-                raise forms.ValidationError(
-                    _("This says exactly what the version in force already says.")
+        cleaned = cast(dict, super().clean())
+        document = cleaned.get("document")
+        markdown = cleaned.get("markdown")
+        if self.instance.pk is None and document is not None and markdown is not None:
+            current = document.current
+            if current is not None and markdown == current.markdown:
+                self.add_error(
+                    "markdown",
+                    forms.ValidationError(
+                        _("This says exactly what the version in force already says.")
+                    ),
                 )
-        return markdown
+        return cleaned

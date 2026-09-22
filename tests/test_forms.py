@@ -1,9 +1,13 @@
 """VersionForm: what a compliance editor may supply for a version."""
 
 import pytest
+from django.contrib import admin
+from django.urls import path, reverse
 
 from mvp_compliance.widgets import MarkdownEditorWidget
 from tests.factories import VersionFactory
+
+urlpatterns = [path("admin/", admin.site.urls)]
 
 
 class TestVersionForm:
@@ -37,68 +41,106 @@ class TestVersionForm:
 
 
 @pytest.mark.django_db
+@pytest.mark.urls(__name__)
 class TestVersionFormRefusesUnchangedWording:
     """T060: a next version identical to the one in force changes nothing.
 
-    ``VersionForm`` never knows on its own which version a form "started
-    from" — the admin hands that over as ``initial``, the same way it does
-    for FR-021's next-version wording. These tests supply ``initial`` the
-    way the admin does, without going through a live request.
+    Every test here goes through the admin's own add page, as a browser
+    does. Building the form by hand and handing it ``initial`` proves
+    nothing about this rule: Django builds a bound form as
+    ``ModelForm(request.POST, instance=obj)`` and passes no initial data on
+    a post, so a form that compared against what it was seeded with would
+    refuse nothing at the only moment that counts. That is exactly what the
+    first version of this shipped, and it passed its own tests while doing
+    nothing at all in the browser.
     """
 
-    def test_refuses_a_save_identical_to_the_version_the_form_started_from(
-        self, document
+    def add_url(self, document):
+        """The add page as the next-version control reaches it."""
+        return f"{reverse('admin:mvp_compliance_version_add')}?document={document.pk}"
+
+    def test_a_version_identical_to_the_one_in_force_is_refused(
+        self, client, editor, document
     ) -> None:
-        from mvp_compliance.forms import VersionForm
-
+        client.force_login(editor)
         current = VersionFactory(document=document, markdown="The current wording")
         current.publish()
 
-        form = VersionForm(
+        response = client.post(
+            self.add_url(document),
             data={"document": document.pk, "markdown": current.markdown},
-            initial={"document": document.pk, "markdown": current.markdown},
         )
 
-        assert not form.is_valid()
-        assert "markdown" in form.errors
+        assert response.status_code == 200
+        assert b"exactly what the version in force already says" in response.content
+        assert document.versions.count() == 1
 
-    def test_a_changed_wording_saves(self, document) -> None:
-        from mvp_compliance.forms import VersionForm
-
+    def test_a_changed_wording_saves(self, client, editor, document) -> None:
+        client.force_login(editor)
         current = VersionFactory(document=document, markdown="The current wording")
         current.publish()
 
-        form = VersionForm(
-            data={"document": document.pk, "markdown": "The current wording, revised"},
-            initial={"document": document.pk, "markdown": current.markdown},
+        response = client.post(
+            self.add_url(document),
+            data={
+                "document": document.pk,
+                "markdown": "The current wording, revised",
+            },
         )
 
-        assert form.is_valid(), form.errors
-        version = form.save()
+        assert response.status_code == 302
+        assert document.versions.count() == 2
+        assert document.versions.drafts().get().markdown == (
+            "The current wording, revised"
+        )
 
-        assert version.markdown == "The current wording, revised"
+    def test_the_first_version_of_a_document_is_never_refused(
+        self, client, editor, document
+    ) -> None:
+        """Nothing in force, so there is nothing it could be identical to."""
+        client.force_login(editor)
 
-    def test_the_first_version_of_a_document_is_never_refused(self, document) -> None:
-        """Nothing published yet, so there is nothing to compare against."""
-        from mvp_compliance.forms import VersionForm
+        response = client.post(
+            self.add_url(document),
+            data={"document": document.pk, "markdown": "First wording"},
+        )
 
-        form = VersionForm(data={"document": document.pk, "markdown": "First wording"})
+        assert response.status_code == 302
+        assert document.versions.get().markdown == "First wording"
 
-        assert form.is_valid(), form.errors
+    def test_a_version_identical_to_a_sibling_draft_is_not_refused(
+        self, client, editor, document
+    ) -> None:
+        """The comparison is against the version in force, not against drafts.
 
-    def test_saving_an_existing_draft_unchanged_is_not_refused(self, document) -> None:
-        """A change form's own initial is the instance's own wording, not the
-        document's version in force — resaving a draft untouched is not the
-        scenario this refusal guards against.
+        A draft has no standing, so a new version saying what an
+        unpublished sibling says is not a version that changes nothing.
         """
-        from mvp_compliance.forms import VersionForm
+        client.force_login(editor)
+        VersionFactory(document=document, markdown="Unpublished wording")
 
-        draft = VersionFactory(document=document, markdown="Unpublished wording")
-
-        form = VersionForm(
-            data={"document": document.pk, "markdown": draft.markdown},
-            initial={"document": document.pk, "markdown": draft.markdown},
-            instance=draft,
+        response = client.post(
+            self.add_url(document),
+            data={"document": document.pk, "markdown": "Unpublished wording"},
         )
 
-        assert form.is_valid(), form.errors
+        assert response.status_code == 302
+        assert document.versions.count() == 2
+
+    def test_saving_an_existing_draft_unchanged_is_not_refused(
+        self, client, editor, document
+    ) -> None:
+        """Re-saving a draft you are still working on is not this rule."""
+        client.force_login(editor)
+        current = VersionFactory(document=document, markdown="The current wording")
+        current.publish()
+        draft = VersionFactory(document=document, markdown="The current wording")
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk]),
+            data={"document": document.pk, "markdown": draft.markdown},
+        )
+
+        draft.refresh_from_db()
+        assert response.status_code == 302
+        assert draft.markdown == "The current wording"
