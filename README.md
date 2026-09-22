@@ -10,8 +10,8 @@ This package is not usable on its own. It renders on the django-mvp app shell
 
 > **Status: early development.** `Document` and `Version` — versioned legal
 > text, authored in Markdown and published with an immutable record — are
-> built. No admin, forms, views, URLs, consent recording or account-area page
-> exist yet.
+> built, and so is `Acceptance` — recording who accepted which version, and
+> when. No admin, forms, views, URLs or account-area page exist yet.
 
 ## Why
 
@@ -72,6 +72,20 @@ MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"  # optional
 `MVP_COMPLIANCE_RENDERER` is a dotted path to the renderer class, and
 defaults to `MarkdownRenderer` when unset. A host project that wants a
 different HTML allow list points it at a subclass.
+
+`Acceptance` is the record that one user agreed to one published version, at
+one moment. It names the user, the version and when it happened, and once
+written it is finished — nothing in this package will edit it or delete it.
+
+```python
+from mvp_compliance.models import Acceptance
+
+Acceptance.objects.record(user, privacy.current)
+```
+
+Recording against a version that has never been published is refused; there
+is no way to record an acceptance of a `Document`, only of one of its
+versions. See [docs/models.md](docs/models.md) for the full surface.
 
 This package registers nothing in the Django admin and ships no forms, no
 views and no URLs — a host project brings its own.

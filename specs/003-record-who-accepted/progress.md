@@ -206,3 +206,17 @@ ruff check mvp_compliance/migrations/0002_acceptance.py` clean (one quoting auto
 `poetry run mypy mvp_compliance/migrations/0002_acceptance.py` clean.
 Next: T022.
 Watch: nothing.
+
+## 2026-09-22T17:58:00+02:00 · Implementer US-1 · T022
+
+Did: added an `## Acceptance` section to `docs/models.md` (what the record is,
+`Acceptance.objects.record()`, the draft refusal, the immutability routes in the style the
+`Version` section uses); updated `README.md`'s status line and `## Models` section with
+`Acceptance`.
+Verified: every code example in both pages run against this branch — executed by hand
+against a real test database (`Acceptance.objects.record()`, the draft refusal, and each of
+the five immutability routes), all six behaved exactly as documented.
+`poetry run pytest tests/ -q` — 83 passed (up from the 65 that were green at the story's
+`verified_base`).
+Next: US-1's own §5 verify, then the completion report.
+Watch: nothing.

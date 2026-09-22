@@ -163,3 +163,59 @@ document.versions.published()  # every version that has ever been current, in or
 never been published — and `.current()`, the queryset `document.current` is built on
 top of. All three are available both as `Version.objects.<method>()` and as
 `document.versions.<method>()`.
+
+## `Acceptance`
+
+The record that one person accepted one published version, at one moment. It names
+the user, the version and when it happened, and points at a version — never at a
+document, because a document has said different things at different times and a
+record naming only the document couldn't say which of them the person saw.
+
+```python
+from mvp_compliance.models import Acceptance
+
+acceptance = Acceptance.objects.record(user, privacy.current)
+acceptance.user        # the user
+acceptance.version     # the exact Version they accepted
+acceptance.accepted_at # the moment it happened
+```
+
+`Acceptance.objects.record(user, version)` is the only route that writes one.
+Recording against a version that has never been published — `version.is_published`
+is `False` — is refused:
+
+```python
+Acceptance.objects.record(user, draft_version)  # raises RecordError; writes nothing
+```
+
+A superseded version is accepted; only a draft is refused, because a draft has no
+standing for anybody to agree to. There is no way to record an acceptance of a
+`Document` — `Acceptance` has no field and no manager method that takes one.
+
+### Immutability
+
+Once written, an acceptance is finished. Every route the package offers to change
+or delete one is refused:
+
+```python
+acceptance.subject = "tampered"
+acceptance.save()  # raises RecordedAcceptanceError; the stored row is untouched
+
+Acceptance.objects.filter(pk=acceptance.pk).update(subject="tampered")  # same
+Acceptance.objects.bulk_update([acceptance], ["subject"])  # same
+acceptance.delete()  # raises RecordedAcceptanceError; an acceptance can't be deleted
+Acceptance.objects.filter(pk=acceptance.pk).delete()  # same
+```
+
+The guard lives on `Acceptance`'s default manager, `AcceptanceManager`, and the
+queryset behind it, `AcceptanceQuerySet` — both importable from
+`mvp_compliance.models`. `AcceptanceManager.use_in_migrations` is set, so a
+historical `Acceptance` model inside a migration inherits the same guard, and no
+migration this package ships writes to one.
+
+When a version an acceptance names is later superseded, the acceptance is
+unaffected — it keeps pointing at the exact version the person saw.
+
+`mvp_compliance.exceptions.RecordedAcceptanceError` is what every route above
+raises; `mvp_compliance.exceptions.RecordError` is what recording itself raises
+when it is refused.
