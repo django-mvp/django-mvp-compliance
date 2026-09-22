@@ -722,3 +722,18 @@ regeneration. `poetry run pytest tests/ -q` — 198 passed (193 at the base plus
 story's 5 new tests). `poetry run ruff check .` clean.
 Next: this story's own completion report.
 Watch: nothing.
+
+## 2026-09-22T22:20:00+02:00 · Orchestrator · US-5 accepted
+
+Did: receipts matched the brief, 198 tests green, no migration outstanding, catalogue clean with no
+fuzzy entry. Swept the whole feature diff for a forwarded-header read — every mention is prose
+explaining the refusal, and the only `request.META` read in the package is `REMOTE_ADDR`. Probed the
+setting gate by deleting it from `record()`: the suite stayed green, because the defaults test
+records without a request and so never exercises the gate at all. Added the case that does — a
+request in hand with the setting off, which is what an ordinary sign-in flow produces — and checked
+it against the defect: with the gate removed it fails on the recorded address. D18 records it.
+Verified: 199 tests pass with randomisation and parallelism off, `pre-commit run --all-files` green
+on a cleared cache, `makemigrations --check` clean across every app.
+Next: convergence — squash this branch's migrations into one, regenerate the catalogue, cleanup pass,
+ADR verdicts. Then the review gate.
+Watch: nothing.
