@@ -297,3 +297,17 @@ rather than leaving a second commit for the same task, since T035 hadn't landed 
 Next: T035.
 Watch: nothing new.
 
+## 2026-09-22T18:50:00+02:00 · Implementer US-2 · T035
+
+Did: `DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations
+mvp_compliance` — generated `0003_alter_acceptance_options_and_more.py` (the `Meta`
+options change and the `AddConstraint`).
+Verified: `--check --dry-run` reports no changes. `poetry run pytest
+tests/test_models.py::TestAcceptance tests/test_models.py::TestRecording
+tests/test_models.py::TestAcceptanceImmutability tests/test_migrations.py
+tests/test_factories.py tests/test_exceptions.py -q` — 31 passed, including T033 and
+T034 which were red since their own commits. `poetry run ruff check
+mvp_compliance/migrations/0003_alter_acceptance_options_and_more.py` and `mypy` clean.
+Next: T036.
+Watch: nothing.
+

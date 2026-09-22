@@ -230,3 +230,29 @@ and a comment — the assertion itself is untouched and now covers acceptances a
 beside it. That is a different act and does not belong in this entry.
 
 **ADR:** none — a record of one triage decision on one branch, with nothing downstream inheriting it.
+
+## D14 — T033 and T034 land red on their own commits, and T035 is what turns them green
+
+**Decision**: `tests/test_models.py::TestRecording::test_a_second_row_is_refused_by_the_database`
+(T033) and `::test_two_recordings_leave_one_record` (T034) both fail on the commit that introduces
+them — not for a missing table this time, but because `one_acceptance_per_person_per_version` is on
+`Acceptance.Meta` (T032) and not yet in the schema pytest-django builds the test database from. Both
+turn green only once T035 generates the migration.
+
+**Why**: `tasks.md` states T033's and T034's own "Done when" as "Passes", which their own commits do
+not satisfy — but a constraint's `AddConstraint` migration is what makes SQLite enforce it, and
+`Meta.constraints` alone does not (confirmed by probe: `bulk_create()`-ing a duplicate row after
+T032 but before T035 raised nothing). Generating a migration per model-touching task, rather than
+once at the story's model-work boundary, was rejected as the alternative: T021 already established
+the pattern of landing several red, table-shaped tests across T010–T020 and turning them green
+together at the one migration task, and re-deriving a fresh migration after every field or
+constraint would produce several migrations this story squashes at convergence anyway (T070) for no
+benefit before then. T033 and T034 follow the same sequencing T021 set, for the same reason.
+
+**Revisit if**: a future story's migration task is skipped or reordered on the assumption that every
+task before it must independently pass — on this branch, model-shape tasks are allowed to stay red
+until the migration task lands, and `forge check-receipts`/tamper-check should read a red
+intermediate commit as expected rather than as a guardrail trip, the same way it already does for
+T010–T020.
+
+**ADR:** none — commit sequencing within one story, matching D12 and the precedent T021 already set.
