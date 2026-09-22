@@ -3,7 +3,7 @@
   "feature": "001-legal-documents-kept",
   "branch": "feat/001-legal-documents-kept",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "DESIGN_REVIEW",
@@ -24,6 +24,11 @@
       "state": "REVIEW",
       "at": "2026-09-21T22:58:35Z",
       "note": "Convergence complete: migrations squashed, catalog added, ADR verdicts recorded, cleanup pass done"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-22T08:35:00Z",
+      "note": "Branch re-verified independently from a cleared lint cache: 65 tests pass, pre-commit clean across all files including ruff, format, mypy and deptry, makemigrations --check reports no changes, tamper-check clean against origin/main. Walkthrough approved by Sam on the message catalog wording. PR #19 taken out of draft for his merge gate."
     }
   ],
   "gates": {
@@ -49,6 +54,13 @@
         "SPC-001 (high, verified) research.md R1 claimed MySQL 8.0.13+ supports partial unique indexes; it does not, and Django omits the constraint with models.W036 rather than failing. R1 corrected with the Django source lines, plan.md now says which mechanism carries on which backend, T024 requires the row lock to carry a comment saying it is the only thing holding FR-007 on MySQL, and D11 records what a MySQL-backed host project is promised",
         "ARC-001 (low, verified, removes work) the planned VersionQuerySet.bulk_update() override is redundant \u2014 Django's bulk_update calls .update() internally (query.py:920-923). Dropped from plan.md and T031; T030's bulk_update test stays as regression cover",
         "carried from ARC-001's evidence: bulk_update keys update_kwargs on field.attname, so the frozen-field guard compares name and attname both, or document_id slips past. Written into plan.md and T031"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T08:31:46Z",
+      "self_resolved": [
+        "The message catalog wording: field labels, help text, the three standings and the five refusal messages. No page to show, because the package registers no admin and ships no forms, views, templates or URLs. Sam reviewed the wording, raised the stored html field rather than the labels, accepted the answer and approved as it stands."
       ]
     }
   },
