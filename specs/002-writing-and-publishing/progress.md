@@ -254,3 +254,15 @@ resolving through the admin's own queryset. Reverted (`git checkout -- mvp_compl
 confirmed clean) and reran: `poetry run pytest tests/test_admin.py` — 24 passed. `ruff
 check`/`ruff format --check` clean.
 Next: T025, the packaged app's existing URL-surface assertion, exercised rather than rewritten.
+
+## 2026-09-22T12:35:00Z · Implementer US2 · T025
+
+Did: no new test — `tests/test_app.py::TestPackagedApp::test_it_registers_no_public_urls` is
+T005's narrowed assertion, and it already exercises this task's given/when/then: a document whose
+only version is a draft is invisible to a visitor because the package registers no public urls
+module at all (FR-008, US-2 scenario 4). Nothing to add.
+Verified: `poetry run pytest tests/test_app.py::TestPackagedApp::test_it_registers_no_public_urls`
+— passed. Probed it can fail: wrote a transient `mvp_compliance/urls.py` (`urlpatterns = []`), reran
+— failed (`find_spec(...) is None` no longer true, module spec resolved). Deleted the file
+(`git status --short` confirmed clean) and reran: `poetry run pytest tests/test_app.py` — 4 passed.
+Next: T026, README permissions section and CHANGELOG line.
