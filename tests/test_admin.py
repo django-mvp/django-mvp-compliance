@@ -180,3 +180,21 @@ class TestDraftPrivacy:
 
         assert delete_url.encode() not in change_response.content
         assert delete_response.status_code == 403
+
+    def test_a_draft_survives_being_left_alone(self, client, editor, draft) -> None:
+        """T022, US-2 scenario 1, FR-006: fetched and saved again, unchanged."""
+        client.force_login(editor)
+        original_markdown = draft.markdown
+        change_url = reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+
+        get_response = client.get(change_url)
+        post_response = client.post(
+            change_url,
+            data={"document": draft.document_id, "markdown": original_markdown},
+        )
+
+        draft.refresh_from_db()
+        assert get_response.status_code == 200
+        assert post_response.status_code == 302
+        assert draft.markdown == original_markdown
+        assert draft.status == draft.Status.DRAFT
