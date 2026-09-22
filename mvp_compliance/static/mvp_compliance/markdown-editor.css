@@ -1,0 +1,58 @@
+/* Icons for the editor's toolbar (D9, R3).
+ *
+ * EasyMDE ships no icons of its own and writes Font Awesome 4 class names
+ * into every button it builds; its stylesheet has no rule for any of them.
+ * `markdown-editor.js` gives each button its own class instead, and each
+ * rule below draws that button from an inline SVG — no icon font, no web
+ * font, no request to anywhere.
+ */
+
+.editor-toolbar button.mvp-compliance-toolbar-heading,
+.editor-toolbar button.mvp-compliance-toolbar-bold,
+.editor-toolbar button.mvp-compliance-toolbar-italic,
+.editor-toolbar button.mvp-compliance-toolbar-unordered-list,
+.editor-toolbar button.mvp-compliance-toolbar-ordered-list,
+.editor-toolbar button.mvp-compliance-toolbar-link,
+.editor-toolbar button.mvp-compliance-toolbar-quote {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-heading {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 4v16M18 4v16M6 12h12'/%3E%3C/svg%3E");
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-bold {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4h6a3.5 3.5 0 0 1 0 7H7zM7 11h7a3.5 3.5 0 0 1 0 7H7z'/%3E%3C/svg%3E");
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-italic {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M10 4h6M6 20h6M14 4 10 20'/%3E%3C/svg%3E");
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-unordered-list {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='4' cy='6' r='1.2'/%3E%3Ccircle cx='4' cy='12' r='1.2'/%3E%3Ccircle cx='4' cy='18' r='1.2'/%3E%3Cpath d='M9 6h11M9 12h11M9 18h11'/%3E%3C/svg%3E");
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-ordered-list {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 6h11M9 12h11M9 18h11'/%3E%3Ctext x='1' y='8' font-size='7' fill='%23333' stroke='none' font-family='sans-serif'%3E1%3C/text%3E%3Ctext x='1' y='14' font-size='7' fill='%23333' stroke='none' font-family='sans-serif'%3E2%3C/text%3E%3Ctext x='1' y='20' font-size='7' fill='%23333' stroke='none' font-family='sans-serif'%3E3%3C/text%3E%3C/svg%3E");
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-link {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 15 15 9'/%3E%3Cpath d='M10.5 6.5 12 5a3.5 3.5 0 0 1 5 5l-1.5 1.5'/%3E%3Cpath d='M13.5 17.5 12 19a3.5 3.5 0 0 1-5-5l1.5-1.5'/%3E%3C/svg%3E");
+}
+
+.editor-toolbar button.mvp-compliance-toolbar-quote {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333' stroke='none'%3E%3Cpath d='M7 6c-2.2 0-4 1.8-4 4 0 1.9 1.3 3.4 3 3.9-.1 1.6-1 3-1 4.1h2c1.7 0 3-2 3-4v-4c0-2.2-1.8-4-3-4z'/%3E%3Cpath d='M17 6c-2.2 0-4 1.8-4 4 0 1.9 1.3 3.4 3 3.9-.1 1.6-1 3-1 4.1h2c1.7 0 3-2 3-4v-4c0-2.2-1.8-4-3-4z'/%3E%3C/svg%3E");
+}
+
+/* Fits the control inside the admin's change form instead of spilling past
+ * its fieldset at narrower widths. */
+.field-markdown .EasyMDEContainer,
+.field-markdown .CodeMirror {
+  max-width: 100%;
+  box-sizing: border-box;
+}
