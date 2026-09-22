@@ -10,8 +10,9 @@ This package is not usable on its own. It renders on the django-mvp app shell
 
 > **Status: early development.** `Document` and `Version` — versioned legal
 > text, authored in Markdown and published with an immutable record — are
-> built. No admin, forms, views, URLs, consent recording or account-area page
-> exist yet.
+> built, and both are registered in the Django admin for writing them. No
+> preview, no publish confirmation, no consent recording and no account-area
+> page exist yet.
 
 ## Why
 
@@ -73,8 +74,24 @@ MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"  # optional
 defaults to `MarkdownRenderer` when unset. A host project that wants a
 different HTML allow list points it at a subclass.
 
-This package registers nothing in the Django admin and ships no forms, no
-views and no URLs — a host project brings its own.
+## Writing a version
+
+`Document` and `Version` are registered in the Django admin, and writing a
+version is what that admin surface is for. Its `markdown` field carries a
+formatting toolbar over an ordinary textarea — headings, bold, italics,
+bulleted and numbered lists, links and block quotes — for a compliance
+editor who is not assumed to know Markdown. There is no image, embed,
+table, tagging or raw HTML control: a legal document is structured prose,
+and every button offered is one somebody has to be supported in using.
+Typing Markdown directly works too, because either way what is stored is
+ordinary Markdown.
+
+The controls agree with what publication keeps: nothing the toolbar can
+produce is stripped when the version is published.
+
+The toolbar is drawn by [EasyMDE](https://github.com/Ionaru/easy-markdown-editor),
+vendored into the package rather than fetched, with its own icons in place
+of the icon font it expects and does not ship.
 
 ## Scope & philosophy
 
