@@ -251,3 +251,29 @@ class TestWording:
         entry = record.sections[0].entries[0]
         assert entry.wording == stored_html
         assert entry.wording != stored_html.upper()
+
+
+@pytest.mark.django_db
+class TestSurvivingRecords:
+    """Acceptances survive the removal of the account they name (FR-014, SC-006)."""
+
+    def test_the_answer_still_names_the_person_version_and_moment(self):
+        """Scenarios 1, 2; FR-014, SC-006."""
+        someone = UserFactory()
+        version = VersionFactory(document=DocumentFactory(name="Privacy policy"))
+        version.publish()
+        acceptance = AcceptanceFactory(user=someone, version=version)
+        subject = acceptance.subject
+
+        someone.delete()
+
+        record = produce(subject)
+
+        entries = record.sections[0].entries
+        assert len(entries) == 1
+        entry = entries[0]
+        assert record.subject == subject
+        assert entry.document == "Privacy policy"
+        assert entry.version == version.number
+        assert entry.accepted_at == acceptance.accepted_at
+        assert entry.wording == version.html
