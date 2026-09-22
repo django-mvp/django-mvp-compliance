@@ -75,6 +75,37 @@ class TestVersionFormRefusesUnchangedWording:
         assert b"exactly what the version in force already says" in response.content
         assert document.versions.count() == 1
 
+    def test_a_version_identical_but_for_how_a_browser_sends_it_is_refused(
+        self, client, editor, document
+    ) -> None:
+        """The case the first two attempts at this rule both missed.
+
+        The stored wording ends with a newline, as almost every document
+        does, and Django strips that from what is submitted. A browser also
+        sends a text area's content with a carriage return before every
+        newline, which the value it was filled from does not have. Either
+        difference alone is enough to make an untouched resubmission look
+        like a change, and together they are why this refused nothing in a
+        real browser while its own tests passed.
+        """
+        client.force_login(editor)
+        current = VersionFactory(
+            document=document, markdown="## Heading\n\nA clause.\n"
+        )
+        current.publish()
+
+        response = client.post(
+            self.add_url(document),
+            data={
+                "document": document.pk,
+                "markdown": "## Heading\r\n\r\nA clause.",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"exactly what the version in force already says" in response.content
+        assert document.versions.count() == 1
+
     def test_a_changed_wording_saves(self, client, editor, document) -> None:
         client.force_login(editor)
         current = VersionFactory(document=document, markdown="The current wording")

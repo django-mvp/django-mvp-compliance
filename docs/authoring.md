@@ -114,10 +114,15 @@ A document's own change page offers **View current version**, leading to that pa
 exists, and **Version history**, leading to the versions list narrowed to this document with
 `VersionAdmin.list_filter`.
 
-`VersionForm.clean_markdown()` refuses to save a new version whose wording is identical to the
-one it started from — only on an add, and only when that starting wording came from a document's
-version in force, so resaving an existing draft untouched is unaffected and a document's first
-version is never refused.
+A new version whose wording is identical to the one in force is refused: it would supersede a
+wording with its own duplicate and change nothing. The comparison is against the document's
+current version, read when the form is submitted, and it ignores the two differences that a
+round trip through a form produces on its own — the carriage returns a browser adds to a text
+area's content, and the trailing newline a form strips from what is sent.
+
+It applies only when adding. Re-saving a draft you are still working on is not refused, a
+wording identical to an unpublished sibling is not refused, and a document with nothing in force
+has nothing its first version could duplicate.
 
 ## Who can do what
 

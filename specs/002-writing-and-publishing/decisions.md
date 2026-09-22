@@ -490,3 +490,35 @@ refused". These are not tests weakened or special-cased to pass; each now assert
 task itself specifies, in the same place it asserted the old one.
 
 **ADR:** none — four assertions brought into line with a behaviour the tasks table itself changed.
+
+## D22 — Two wordings are the same when they read the same, not when their bytes match
+
+**Ambiguous**: "refuse a version whose wording has not changed" sounds like string equality. It is
+not, and this rule shipped twice before it refused anything.
+
+The first attempt compared against the wording the form was seeded with. Django builds a bound
+form from a post without passing initial data, so at the one moment the rule matters there was
+nothing to compare against.
+
+The second compared against the document's version in force, which is the right thing, and still
+refused nothing in a browser. A text area is submitted with a carriage return before every
+newline, which the value it was filled from does not have, and Django's `CharField` strips the
+trailing whitespace from what is submitted while the stored wording keeps the trailing newline
+almost every document ends with. Either difference alone makes an untouched resubmission look like
+an edit.
+
+**Chosen**: compare line endings and surrounding whitespace normalised on both sides.
+
+**Why defensible**: neither difference is one a reader would ever see, and neither is produced by
+anybody editing anything — both are made by the journey from a stored row into a form and back.
+A rule that treats them as changes is a rule that never fires, which is exactly what happened.
+
+**What this run should have done sooner**: both misses were the same mistake, which is that the
+tests built the form by hand and handed it the data the admin does not send. They now post to the
+admin's own add page, and one of them submits the wording the way a browser actually shapes it.
+Reinstating either of the two earlier comparisons turns a test red.
+
+**Revisit if**: a document's wording ever becomes something where trailing whitespace carries
+meaning. It does not for Markdown prose.
+
+**ADR:** none — a comparison inside one method, with the reasoning beside it.
