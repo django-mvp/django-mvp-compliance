@@ -25,3 +25,24 @@ No contradiction, so nothing to put to Sam.
 
 Wrote `research.md` (eight questions), `plan.md` and `tasks.md`. The design is one function, one
 page and one permission, and it stores nothing.
+
+## 2026-09-22T22:33:27Z · Implementer US-1 · T001-T004
+
+**Did**: Wrote the three RED tests for `produce()` (`TestProduce::test_the_answer_contains_every_acceptance_with_its_document_version_and_moment`,
+`::test_it_contains_nothing_belonging_to_anybody_else`, `::test_every_acceptance_of_one_document_appears`),
+confirmed each failed on `ModuleNotFoundError: No module named 'mvp_compliance.records'` (the module
+did not exist), then wrote `mvp_compliance/records.py`: `AcceptanceEntry`, `Section`,
+`PersonalRecord` as frozen dataclasses and `produce(subject)` over
+`Acceptance.objects.for_subject(subject).select_related("version", "version__document")`.
+`wording` left off `AcceptanceEntry` per the brief — that is US-2's T011.
+
+**Verified**: `poetry run pytest tests/test_records.py -v` → 3 passed. `poetry run ruff check
+mvp_compliance/records.py tests/test_records.py` → all checks passed. `poetry run mypy
+mvp_compliance/records.py` → no issues. `poetry run python manage.py makemigrations --check
+--dry-run` → no changes detected (this module adds no model). Demonstrates SC-001 (nothing
+belonging to anybody else), FR-001/002/003.
+
+**Next**: T005-T008 — the empty answer, equality across two productions, the fixed query count,
+and the `{subject, sections}` field-name guarantee.
+
+**Watch**: none.
