@@ -31,6 +31,16 @@
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-reviewer",
+      "at": "2026-09-22T11:45:00Z",
+      "self_resolved": [
+        "DR-002 (medium, verified) VersionForm declared no field list and Version.html carries no editable=False, so the rendered output publish() produces could have been exposed as a postable field. plan.md and T016 now declare fields = [document, markdown] with a test asserting exactly those two, and T017 marks number, status, published_at and html read-only",
+        "DR-003 (medium, verified) all five stories add to one admin.py, so they are sequentially dependent. tasks.md now states it rather than leaving it to surface at convergence",
+        "DR-004 (low, verified, removes work) the planned except branch for PublishedVersionError in the publish view is unreachable: both refusals raise PublishError, and the save inside publish() runs while the stored row is still a draft so the immutability guard returns first. Dropped from plan.md, T045 and D7",
+        "DR-001 (high, verified) NOT applied \u2014 not a plan fault. This spec's edge case permitting deletion of a document holding only drafts contradicts FS-001's D8 and accepted ADR 0002. No FR, scenario or SC in FS-002 depends on it; recorded as D13 and put to Sam. Delivered behaviour stands meanwhile"
+      ]
     }
   },
   "stories": [

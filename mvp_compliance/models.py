@@ -168,6 +168,10 @@ class Version(models.Model):
         verbose_name = _("version")
         verbose_name_plural = _("versions")
         ordering = ["document", "number"]
+        # Writing a version and making one legally binding are different levels
+        # of trust, so publishing needs a permission Django does not create on
+        # its own (FR-014). A site that wants one person to do both grants both.
+        permissions = [("publish_version", _("Can publish a version"))]
         constraints = [
             models.UniqueConstraint(
                 fields=["document", "number"],
