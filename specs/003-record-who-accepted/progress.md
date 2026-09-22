@@ -412,3 +412,21 @@ pytest module exercising the exact lines, removed afterwards) — both behaved e
 documented. `poetry run ruff check .` clean.
 Next: US-3's own §5 verify, then the completion report.
 Watch: nothing.
+
+## 2026-09-22T20:20:00+02:00 · Orchestrator · US-3 accepted
+
+Did: ran the craft-skill receipt gate against the report and the brief the story was dispatched with
+(both matched), then re-verified rather than reading the report back. 96 tests pass with
+randomisation and parallelism off, `makemigrations --check` is clean across every app, and the
+guardrail is clean for this story's range — no pre-existing test was touched. Probed T043's query
+bound independently of the Implementer's own probe: replaced `outstanding_for()` with a loop that
+asks each document separately, and the test failed with six queries where it expects one, so the
+bound is load-bearing against the regression it exists to catch. Fixed a formatting-only miss in
+`tests/test_models.py` that the story's commits left behind — a test signature that fits on one line
+at 88 characters — which the code quality check would have failed on.
+Verified: `forge verify` green end to end after the fix; `pre-commit run --all-files` green on a
+cleared cache; `poetry run pytest tests/ -q` — 96 passed.
+Next: US-4.
+Watch: the branch still conflicts with main, which moved when FS-002 merged at 15:55. Until that is
+resolved the pull request runs no checks at all, because the merge ref cannot be built — it reads as
+quiet rather than failing. Integrate before the review gate.
