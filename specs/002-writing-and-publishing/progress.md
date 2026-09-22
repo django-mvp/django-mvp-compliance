@@ -227,3 +227,16 @@ failed — `assert 'Wording 0!' == 'Wording 0'`. Reverted (`git checkout -- mvp_
 confirmed clean) and reran: `poetry run pytest tests/test_admin.py` — 22 passed. `ruff
 check`/`ruff format --check` clean.
 Next: T023, discarding a draft leaves other versions alone.
+
+## 2026-09-22T12:28:00Z · Implementer US2 · T023
+
+Did: `TestDraftPrivacy::test_discarding_a_draft_leaves_other_versions_alone` — a document with a
+published version and a draft, deleting the draft through the admin removes only that row and
+leaves the published one `CURRENT`.
+Verified: needed no production change (an ordinary single-object admin delete), so checked by
+mutation. Temporarily made `has_delete_permission` return `False` unconditionally:
+`poetry run pytest tests/test_admin.py::TestDraftPrivacy::test_discarding_a_draft_leaves_other_versions_alone`
+failed — `assert 403 == 302`, delete refused and the row still present. Reverted
+(`git checkout -- mvp_compliance/admin.py`, confirmed clean) and reran: `poetry run pytest
+tests/test_admin.py` — 23 passed. `ruff check`/`ruff format --check` clean.
+Next: T024, several drafts of one document all listed and separately editable.
