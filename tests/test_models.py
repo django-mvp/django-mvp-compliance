@@ -965,3 +965,35 @@ class TestOutstanding:
     ):
         """Scenario 5: nothing in force means nothing to accept."""
         assert not document.is_outstanding_for(user)
+
+    def test_outstanding_for_names_exactly_the_unaccepted_documents(self, user):
+        """Scenario 4, FR-012, SC-004: exactly the unaccepted documents, no others."""
+        accepted_document = DocumentFactory()
+        accepted_version = VersionFactory(document=accepted_document)
+        accepted_version.publish()
+        Acceptance.objects.record(user, accepted_version)
+
+        superseded_document = DocumentFactory()
+        superseded_version = VersionFactory(document=superseded_document)
+        superseded_version.publish()
+        Acceptance.objects.record(user, superseded_version)
+        VersionFactory(document=superseded_document).publish()
+
+        never_accepted_document = DocumentFactory()
+        VersionFactory(document=never_accepted_document).publish()
+
+        DocumentFactory()  # never published — must not appear either way
+
+        outstanding = Document.objects.outstanding_for(user)
+
+        assert set(outstanding) == {superseded_document, never_accepted_document}
+
+    def test_nothing_outstanding_is_an_empty_result_not_an_error(
+        self, user, published_version
+    ):
+        """Scenario 6: empty is a normal result, not an error."""
+        Acceptance.objects.record(user, published_version)
+
+        outstanding = Document.objects.outstanding_for(user)
+
+        assert list(outstanding) == []
