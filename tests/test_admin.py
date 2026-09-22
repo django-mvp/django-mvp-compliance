@@ -1092,6 +1092,29 @@ class TestDisclosurePage:
         assert response.status_code == 200
         assert b"Nothing is held" in response.content
 
+    def test_the_page_offers_no_way_to_change_anything(
+        self, client, disclosure_producer, everything_else
+    ) -> None:
+        """T030."""
+        client.force_login(disclosure_producer)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url)
+        content = response.content.decode()
+
+        assert response.status_code == 200
+        assert "addlink" not in content
+        assert "changelink" not in content
+        assert "deletelink" not in content
+        assert 'name="_save"' not in content
+
+        index_response = client.get(reverse("admin:index"))
+        assert b"Everything held about a person" in index_response.content
+
+        client.force_login(everything_else)
+        everyone_elses_index = client.get(reverse("admin:index"))
+        assert b"Everything held about a person" not in everyone_elses_index.content
+
 
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
