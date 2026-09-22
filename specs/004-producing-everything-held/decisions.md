@@ -204,6 +204,23 @@ setting at produce time — what governs the page is whether the record in front
 address, which is also what keeps records written before it was turned on looking exactly as they
 did.
 
+## D13 — The form field is named `subject`, even though it holds free text
+
+**Ambiguous**: `resolve_subject()` (D10) turns free text — a login name, an email address, or an
+identifier a removed account's records still carry — into the subject `produce()` reads. Nothing
+in the spec or plan names the field the page exposes for typing that text in.
+
+**Chosen**: `DisclosureForm.subject`, and the same name in the query string.
+
+**Why defensible**: the glossary term this story is told to use throughout code, tests and
+commits is `subject` (brief `glossary_terms`), and `resolve_subject(form.cleaned_data["subject"])`
+in `changelist_view()` reads as what it does rather than needing a second name translated into the
+first at the boundary. The field's own `label` (`_("Person")`) and `help_text` are what a reader
+sees; the internal name is not user-facing text.
+
+**Revisit if**: a future story adds a second free-text input this page reads (unlikely — D8 keeps
+this to one field), where two fields both plausibly named "subject" would collide.
+
 ## Scope raised and left out
 
 **An access log over consent data.** Whether a site can see who produced whose records, and when.

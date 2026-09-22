@@ -133,3 +133,81 @@ docs --base ee871bf` → `[verify] docs: passed (0s)`. No new translatable strin
 
 **Watch**: `mvp_compliance/models.py` and `mvp_compliance/rendering.py` were not touched, per the
 brief's prohibitions — the wording is read from the `Version.html` field FS-001 already stores.
+
+## 2026-09-23T01:00:00+02:00 · Implementer US-3 · T020-T022
+
+**Did**: Added `TestNamingAPerson` to `tests/test_records.py` (T020: an account's login name, its
+email case-insensitively, and text matching neither resolving to itself), confirmed it failed with
+`ImportError: cannot import name 'resolve_subject'` before adding `resolve_subject(text)` to
+`mvp_compliance/records.py` (T021) — the resolution order from `plan.md`'s "Naming a person": the
+user model's `USERNAME_FIELD`, then `email` where the user model has one and exactly one account
+matches, then the text itself. T022 added `Disclosure`, a proxy of `Acceptance` with no fields,
+`Meta.permissions = [("produce_disclosure", ...)]`, and generated
+`mvp_compliance/migrations/0004_disclosure.py`.
+
+**Verified**: `poetry run pytest tests/test_records.py::TestNamingAPerson -x` — 4 passed.
+`poetry run python manage.py makemigrations --check --dry-run` — no changes detected.
+`poetry run pytest tests/test_models.py tests/test_app.py -q` — 98 passed (no regression from the
+new proxy). `ruff check`/`ruff format --check` and `mypy` clean on both changed files.
+
+**Watch**: T025's acceptance criterion — a fresh account holding `produce_disclosure` in neither
+case — was already true the moment T022's migration landed, before any admin code exists. Verified
+this is not a test-ordering accident: Django's `post_migrate` permission creation reads the
+**migration-state** models built by the migration executor, not the live `models.py` — mutating
+`Disclosure.Meta.permissions` to `[]` in the source file, with the migration left alone, still
+produced the permission on `migrate`. Recorded so nobody "fixes" this by rewriting T025 to depend
+on T026.
+
+## 2026-09-23T01:20:00+02:00 · Implementer US-3 · T023-T027
+
+**Did**: `TestDisclosureRefusals` in `tests/test_admin.py` — not signed in (T023, 302, the admin's
+own login redirect), signed in and not staff (T023, 302), staff holding every other permission this
+package defines including the proxy's own routine `view_disclosure` (T023, 403), a refusal for a
+person with records and one for a person without them carrying the same status and body (T024,
+built with `AcceptanceFactory()` against one subject and a made-up one against the other), and a
+fresh account/fresh staff account holding `produce_disclosure` in neither case (T025 — already
+green per the note above). Confirmed T023/T024 failed on `NoReverseMatch: ... disclosure_changelist
+... not found` before implementing. `mvp_compliance/forms.py` gained `DisclosureForm` — one
+`subject` field, `required=False`, `help_text` naming what may be typed into it.
+`mvp_compliance/admin.py` gained `DisclosureAdmin`: `has_view_permission`/`has_module_permission`
+keyed on `produce_disclosure` alone, the three write hooks `False`, `changelist_view()` replaced
+outright — checks the permission and raises `PermissionDenied` itself before reading
+`request.GET` at all, never calls `super()` (T026). T027 added `disclosure_producer` and
+`everything_else` fixtures to `conftest.py`, built on the existing `grant()` helper, and refactored
+T023/T024's inline `Permission.objects.filter(...)` construction onto `everything_else`.
+
+**Verified**: `poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q` — 5 passed, both
+before and after the T027 refactor. `poetry run pytest tests/test_admin.py -q` — 76 passed
+(`TestUserFacingStrings` required regenerating the catalog — `makemessages --locale en --no-obsolete
+--ignore "mvp_compliance/static/*"`, `POT-Creation-Date` line removed, five new entries filled with
+their own text, none marked fuzzy). `ruff`/`mypy` clean.
+
+## 2026-09-23T01:45:00+02:00 · Implementer US-3 · T028-T032
+
+**Did**: `TestDisclosurePage` in `tests/test_admin.py` — the answer names the document, version,
+moment (compared via `formats.date_format(timezone.localtime(...), "DATETIME_FORMAT")`, matching
+the template's own `|date` filter rather than a raw UTC compare) and wording in full for a person
+with records, and a person with none gets a page saying so (T028) — confirmed both failed on
+`TemplateDoesNotExist: admin/mvp_compliance/disclosure/produce.html` before adding
+`mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html` (the form, the produced
+subject, a loop over `record.sections` including each section's own template — no coverage
+statement and no produced-at stamp, both out of scope per the brief) and `.../acceptances.html`
+(document, version, moment, wording marked `|safe`, T029). T030's
+`test_the_page_offers_no_way_to_change_anything` and T031's admin-registration additions to
+`tests/test_app.py` (`Disclosure` registered, `Acceptance` is not, `mvp_compliance.urls` still
+absent) both passed immediately — nothing in T026/T029 registers a changelist or exposes a write
+control, and `test_it_registers_no_public_urls` was never touched. T032 added
+`docs/disclosure.md` (the page, its address, the permission and that it starts held by nobody,
+naming a person, what the answer contains, what it does not do) and updated `README.md`'s status
+callout and documentation list.
+
+**Verified**: `poetry run pytest tests/test_admin.py tests/test_app.py -q` — 85 passed. Catalog
+regenerated a second time for the template strings (`Produce`, `Nothing is held about this
+person.` — the latter came back `#, fuzzy` against `Everything held about a person`, corrected by
+hand to its own text). `djlint --reformat` on both new templates. `ruff`/`mypy` clean throughout.
+
+**Next**: US-3 complete (T020-T032). The story's own scope is green; `forge verify` runs once,
+at the end, before the completion report.
+
+**Watch**: `feature-state.json`'s story status is left as Forge set it, per the brief's
+prohibitions.
