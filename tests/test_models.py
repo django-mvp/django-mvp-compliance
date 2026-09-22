@@ -8,7 +8,7 @@ from django.test import override_settings
 from django.utils import timezone
 
 from mvp_compliance.exceptions import PublishedVersionError, PublishError
-from mvp_compliance.models import Document, Version, VersionManager
+from mvp_compliance.models import Acceptance, Document, Version, VersionManager
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
 
@@ -623,3 +623,29 @@ class TestRetrieval:
             agreement_v2,
             agreement_v3,
         ]
+
+
+@pytest.mark.django_db
+class TestAcceptance:
+    """Recording an acceptance names a user, a version and a moment (FR-001)."""
+
+    def test_recording_creates_a_record_naming_the_user_version_and_moment(
+        self, user, published_version
+    ):
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.user == user
+        assert acceptance.version == published_version
+        assert acceptance.accepted_at is not None
+
+        field_names = {
+            field.name for field in Acceptance._meta.get_fields() if field.concrete
+        }
+        assert field_names == {
+            "id",
+            "user",
+            "subject",
+            "version",
+            "accepted_at",
+            "ip_address",
+        }
