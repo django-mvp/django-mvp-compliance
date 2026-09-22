@@ -26,3 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [EasyMDE](https://github.com/Ionaru/easy-markdown-editor), vendored into
   the package with its own icons. Stored content is ordinary Markdown either
   way, and every control the toolbar offers survives publication intact.
+- A draft is reachable in the admin only by someone holding `view_version`
+  and `change_version`, and the package still serves no address a visitor
+  can reach directly. Deleting a version needs `delete_version` and is
+  refused once that version has been published, matching what the model
+  layer already refuses.

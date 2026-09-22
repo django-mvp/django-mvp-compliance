@@ -93,6 +93,20 @@ The toolbar is drawn by [EasyMDE](https://github.com/Ionaru/easy-markdown-editor
 vendored into the package rather than fetched, with its own icons in place
 of the icon font it expects and does not ship.
 
+## Permissions
+
+Reaching a version in the admin at all needs Django's own `view_version` and
+`change_version` permissions — the compliance editor of this package holds
+both, alongside `add_version` and `delete_version` for writing and
+discarding drafts. Nobody without them reaches a draft, a document, or a
+version's changelist: the admin refuses the request before any page of
+ours renders, so a draft stays invisible to a visitor, a signed-in account
+that isn't staff, and staff holding none of these permissions.
+
+Deleting a version needs `delete_version` too, and it is refused once that
+version has been published, regardless of who is asking — discarding is
+for drafts.
+
 ## Scope & philosophy
 
 **What it is**
