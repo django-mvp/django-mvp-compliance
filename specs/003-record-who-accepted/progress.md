@@ -340,3 +340,75 @@ Verified: `forge verify` green end to end; `poetry run pytest tests/ -q` — 89 
 Next: US-3.
 Watch: nothing. Everything from US-1's first task onward is still local — the branch on the remote
 is the S3 artifact commit, so the checks showing green on the pull request predate all of it.
+
+## 2026-09-22T19:45:00+02:00 · Implementer US-3 · T040
+
+Did: added `TestOutstanding` to `tests/test_models.py` with the four single-document
+scenarios (1, 2, 3, 5) — accepted-the-version-in-force, never-accepted, accepted-a-
+superseded-version, and nothing-ever-published — each calling `document.is_outstanding_for(user)`.
+Verified: `poetry run pytest tests/test_models.py::TestOutstanding -v` — all four fail
+with `AttributeError: 'Document' object has no attribute 'is_outstanding_for'`, the
+right reason (the method doesn't exist yet).
+Next: T041.
+Watch: nothing.
+
+## 2026-09-22T19:50:00+02:00 · Implementer US-3 · T041
+
+Did: added the multi-document scenarios (4, 6) to `TestOutstanding` —
+`test_outstanding_for_names_exactly_the_unaccepted_documents` builds one accepted, one
+superseded-then-reaccepted-required, one never-accepted and one never-published
+document and asserts `Document.objects.outstanding_for(user)` names exactly the
+superseded and never-accepted ones; `test_nothing_outstanding_is_an_empty_result_not_an_error`
+asserts an empty queryset rather than an exception.
+Verified: `poetry run pytest tests/test_models.py::TestOutstanding -v` — both new tests
+fail with `AttributeError: 'Manager' object has no attribute 'outstanding_for'`.
+Next: T042.
+Watch: nothing.
+
+## 2026-09-22T19:58:00+02:00 · Implementer US-3 · T042
+
+Did: `mvp_compliance/models.py` gained `DocumentQuerySet.outstanding_for(user)` — one
+query with a subquery per `research.md` R4 (`filter(versions__status=CURRENT).exclude(
+pk__in=accepted.values("version__document_id"))`), `DocumentManager` forwarding it in
+the same shape as `VersionManager`, `Document.objects = DocumentManager()`, and
+`Document.is_outstanding_for(user)` as that same queryset narrowed to `self.pk` (D11) —
+not a second expression of the rule.
+Verified: `poetry run pytest tests/test_models.py::TestOutstanding -v` — 6 passed (T040's
+four plus T041's two). `poetry run pytest tests/test_models.py -q` — 72 passed, no
+regressions. `poetry run ruff check mvp_compliance/models.py tests/test_models.py` and
+`poetry run mypy mvp_compliance/models.py` clean. `makemigrations --check --dry-run` —
+no changes detected, as expected: no field or model shape changed.
+Next: T043.
+Watch: nothing.
+
+## 2026-09-22T20:05:00+02:00 · Implementer US-3 · T043
+
+Did: added `test_the_answer_costs_a_fixed_number_of_queries` — measures
+`Document.objects.outstanding_for(user)` with `django_assert_num_queries(1)` at two
+published documents and again at ten, and asserts the two captured-query counts are
+equal.
+Verified: passed immediately, since T042's mechanism was already the single-query
+shape — nothing to observe red about it as new behaviour. Per craft-tdd's rule that an
+already-covered criterion must be probed rather than trusted, mutated
+`outstanding_for` to a per-document loop (one `.exists()` query per candidate document
+plus a final re-fetch) and re-ran the test: failed with "Expected to perform 1 queries
+but 4 were done" against 2 documents, confirming the assertion is load-bearing and
+would catch an N+1 regression. Reverted the mutation with `git checkout --
+mvp_compliance/models.py`, leaving only the new test. `poetry run pytest
+tests/test_models.py::TestOutstanding -v` — 7 passed. `poetry run ruff check
+tests/test_models.py` clean.
+Next: T044.
+Watch: nothing.
+
+## 2026-09-22T20:10:00+02:00 · Implementer US-3 · T044
+
+Did: added an *Outstanding* subsection to `docs/models.md` under `Acceptance`, naming
+both entry points (`document.is_outstanding_for(user)` and
+`Document.objects.outstanding_for(user)`), stating that a document with no published
+version is never outstanding for anybody, and stating that the answer is deliberately
+unfiltered by whether a site enforces a document.
+Verified: both code examples executed by hand against a real test database (a scratch
+pytest module exercising the exact lines, removed afterwards) — both behaved exactly as
+documented. `poetry run ruff check .` clean.
+Next: US-3's own §5 verify, then the completion report.
+Watch: nothing.

@@ -353,28 +353,79 @@
       "tasks": [
         {
           "id": "T040",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_once_the_version_in_force_is_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_nothing_has_ever_been_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_the_accepted_version_has_been_superseded",
+              "tests/test_models.py::TestOutstanding::test_not_outstanding_when_nothing_has_ever_been_published"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding -v"
+            ]
+          }
         },
         {
           "id": "T041",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_outstanding_for_names_exactly_the_unaccepted_documents",
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_is_an_empty_result_not_an_error"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding -v"
+            ]
+          }
         },
         {
           "id": "T042",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_once_the_version_in_force_is_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_nothing_has_ever_been_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_the_accepted_version_has_been_superseded",
+              "tests/test_models.py::TestOutstanding::test_not_outstanding_when_nothing_has_ever_been_published",
+              "tests/test_models.py::TestOutstanding::test_outstanding_for_names_exactly_the_unaccepted_documents",
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_is_an_empty_result_not_an_error"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding -v",
+              "poetry run pytest tests/test_models.py -q",
+              "poetry run ruff check mvp_compliance/models.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run"
+            ]
+          }
         },
         {
           "id": "T043",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_the_answer_costs_a_fixed_number_of_queries"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding::test_the_answer_costs_a_fixed_number_of_queries -v"
+            ]
+          }
         },
         {
           "id": "T044",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v (scratch module exercising both doc examples, removed after passing)",
+              "poetry run ruff check ."
+            ]
+          }
         }
       ]
     },
