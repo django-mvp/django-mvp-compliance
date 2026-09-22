@@ -469,3 +469,25 @@ class TestPublish:
         assert b"This version has already been published" in already_response.content
         assert empty_draft.status == empty_draft.Status.DRAFT
         assert published.status == published.Status.CURRENT
+
+    def test_saving_a_draft_publishes_nothing(self, client, editor, draft) -> None:
+        """T047, FR-013, US-4 scenario 4."""
+        client.force_login(editor)
+        change_url = reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+
+        get_response = client.get(change_url)
+        post_response = client.post(
+            change_url,
+            data={"document": draft.document_id, "markdown": "Updated wording"},
+        )
+
+        draft.refresh_from_db()
+        changelist_response = client.get(
+            reverse("admin:mvp_compliance_version_changelist")
+        )
+        assert post_response.status_code == 302
+        assert draft.status == draft.Status.DRAFT
+        assert draft.published_at is None
+        assert b'name="publish"' not in get_response.content
+        assert b'value="publish"' not in get_response.content
+        assert b'value="publish"' not in changelist_response.content
