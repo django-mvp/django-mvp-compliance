@@ -1,5 +1,7 @@
 """Tests for mvp_compliance.models."""
 
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
@@ -22,7 +24,7 @@ from mvp_compliance.models import (
     VersionManager,
 )
 from mvp_compliance.rendering import MarkdownRenderer
-from tests.factories import DocumentFactory, VersionFactory
+from tests.factories import DocumentFactory, UserFactory, VersionFactory
 
 
 class UppercaseRenderer(MarkdownRenderer):
@@ -714,6 +716,60 @@ class TestRecording:
             Acceptance.objects.record(unsaved_user, published_version)
 
         assert not Acceptance.objects.exists()
+
+    def test_accepting_a_later_version_of_the_same_document_creates_a_second_record(
+        self, user, document
+    ):
+        """Scenario 1, FR-008, SC-002: two records, and the earlier one is unchanged."""
+        first_version = VersionFactory(document=document)
+        first_version.publish()
+        first = Acceptance.objects.record(user, first_version)
+        original_accepted_at = first.accepted_at
+
+        second_version = VersionFactory(document=document)
+        second_version.publish()
+        Acceptance.objects.record(user, second_version)
+
+        first.refresh_from_db()
+        assert first.version == first_version
+        assert first.accepted_at == original_accepted_at
+        assert (
+            Acceptance.objects.filter(subject=Acceptance.subject_of(user)).count() == 2
+        )
+
+    def test_acceptances_are_listed_in_the_order_they_happened(
+        self, user, document, monkeypatch
+    ):
+        """Scenario 2, FR-008: listed in the order they happened, not the order of their rows."""
+        later_version = VersionFactory(document=document)
+        later_version.publish()
+        earlier_version = VersionFactory(document=document)
+        earlier_version.publish()
+
+        later_moment = timezone.now()
+        earlier_moment = later_moment - timedelta(minutes=5)
+
+        monkeypatch.setattr(timezone, "now", lambda: later_moment)
+        later = Acceptance.objects.record(user, later_version)
+
+        monkeypatch.setattr(timezone, "now", lambda: earlier_moment)
+        earlier = Acceptance.objects.record(user, earlier_version)
+
+        ordered = list(Acceptance.objects.filter(subject=Acceptance.subject_of(user)))
+        assert ordered == [earlier, later]
+
+    def test_two_people_accepting_the_same_version_each_get_their_own_record(
+        self, published_version
+    ):
+        """Scenario 4, FR-008: neither person's record can be mistaken for the other's."""
+        alice = UserFactory()
+        bob = UserFactory()
+
+        alice_acceptance = Acceptance.objects.record(alice, published_version)
+        bob_acceptance = Acceptance.objects.record(bob, published_version)
+
+        assert alice_acceptance.subject != bob_acceptance.subject
+        assert Acceptance.objects.filter(version=published_version).count() == 2
 
 
 @pytest.mark.django_db

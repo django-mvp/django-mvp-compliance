@@ -220,3 +220,19 @@ the five immutability routes), all six behaved exactly as documented.
 `verified_base`).
 Next: US-1's own §5 verify, then the completion report.
 Watch: nothing.
+
+## 2026-09-22T18:10:00+02:00 · Implementer US-2 · T030
+
+Did: three tests in `TestRecording` for scenarios 1, 2 and 4 — a later version leaves a
+second record with the earlier one untouched; acceptances list in the order they
+happened rather than the order of their rows (`timezone.now` patched via `monkeypatch`
+so an earlier-timestamped acceptance is recorded after a later one, to prove the claim
+isn't riding on insertion order); two people accepting the same version each get their
+own record.
+Verified: `poetry run pytest tests/test_models.py::TestRecording -v` — 6 passed, 1
+failed (`test_acceptances_are_listed_in_the_order_they_happened`, right reason: no
+`Meta.ordering` yet, so the query returns rows in insertion order). `poetry run ruff
+check tests/test_models.py` clean; `poetry run mypy tests/test_models.py` clean.
+Next: T031.
+Watch: nothing.
+
