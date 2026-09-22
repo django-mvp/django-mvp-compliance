@@ -3,7 +3,7 @@
   "feature": "002-writing-and-publishing",
   "branch": "002-writing-and-publishing",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "CONVERGE",
   "state_history": [
     {
       "state": "PLAN",
@@ -19,6 +19,11 @@
       "state": "IMPLEMENT",
       "at": "2026-09-22T11:47:54Z",
       "note": "Foundational phase committed at 54e50e1 and verified green; US-1 dispatched"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-22T13:17:19Z",
+      "note": "All five stories accepted after independent re-verification"
     }
   ],
   "gates": {
@@ -631,7 +636,7 @@
       "id": "US5",
       "priority": "P2",
       "issue": 18,
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -674,7 +679,7 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 2
     },
     "review_cycles": {

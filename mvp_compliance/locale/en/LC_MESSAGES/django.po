@@ -1,6 +1,17 @@
 # English translation catalog for django-mvp-compliance.
 # Copyright (C) 2026 Samuel Jennings
 # This file is distributed under the same license as the django-mvp-compliance package.
+#
+# Regenerate from the repository root, not from inside the package:
+#
+#     poetry run python manage.py makemessages -l en --no-obsolete
+#
+# Run anywhere else and every file reference below is rewritten relative to
+# that directory instead, so the whole file diffs without a single string
+# having changed. Then delete the POT-Creation-Date line it adds, which
+# changes on every run and says nothing, and check any entry it marks fuzzy:
+# it guesses a new string is a rewording of an existing one and copies that
+# entry's translation instead of using the new text.
 msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"

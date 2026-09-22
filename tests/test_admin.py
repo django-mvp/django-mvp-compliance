@@ -541,6 +541,35 @@ class TestPublish:
         assert empty_draft.status == empty_draft.Status.DRAFT
         assert published.status == published.Status.CURRENT
 
+    def test_the_confirmation_shows_a_published_versions_stored_output(
+        self, client, publisher, published_version
+    ) -> None:
+        """A published version reached here is shown what was served, not a re-rendering.
+
+        Its POST is refused, but its confirmation page is still reachable,
+        and the two pages this admin serves have to answer "what would a
+        reader be served" the same way. Re-rendering could differ from the
+        stored output after a library upgrade or a change to the allow
+        list, which would show somebody wording nobody was ever served
+        (Article XIII).
+        """
+        client.force_login(publisher)
+        stored_html = published_version.html
+
+        with override_settings(
+            MVP_COMPLIANCE_RENDERER="tests.test_models.UppercaseRenderer"
+        ):
+            response = client.get(
+                reverse(
+                    "admin:mvp_compliance_version_publish", args=[published_version.pk]
+                )
+            )
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert stored_html in content
+        assert stored_html.upper() not in content
+
     def test_saving_a_draft_publishes_nothing(self, client, editor, draft) -> None:
         """T047, FR-013, US-4 scenario 4."""
         client.force_login(editor)

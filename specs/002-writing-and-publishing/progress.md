@@ -464,3 +464,25 @@ diff` empty — the catalog is stable across repeated runs, T056's "Done when". 
 `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base
 origin/main` — conformance, docs, poetry:lint, poetry:typecheck, poetry:test (131 passed),
 poetry:build all passed. `git status --short` — clean.
+
+## 2026-09-22 — S5 CONVERGE
+
+All five stories accepted after independent re-verification. One branch-local migration, so nothing
+to consolidate. Migrate-from-zero reaches the same state and `makemigrations --check` is clean.
+
+The cleanup pass found one real inconsistency rather than only noise. The preview branched
+carefully between rendering a draft and reading a published version's stored output; the publish
+confirmation did not, and rendered whatever it was given. Nothing was ever written either way, so
+no stored evidence was at risk and the suite was green — but a published version's confirmation
+page is reachable, and it was showing a fresh rendering of wording somebody had already been served
+a different rendering of. Both pages now ask one method. The test reinstates the defect: with the
+branch removed, the preview's assertion and the new one both go red.
+
+Folding the two views into that method also removed their duplicated page setup, so the only
+difference left between them is the one that matters.
+
+The catalog convention two implementers rediscovered the hard way is now a comment in the catalog's
+own header, which is the file somebody about to regenerate it has open.
+
+One decision graduated to an architecture record: vendoring the editor rather than depending on it
+or fetching it (ADR 0007). The other fifteen stay where they are, each with its reason.

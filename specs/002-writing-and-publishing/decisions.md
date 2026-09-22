@@ -157,9 +157,11 @@ are stated in `plan.md`'s Complexity Tracking rather than passed over.
 than on taste: it ships no formatting toolbar at all, which is FR-002's whole purpose, and it does
 ship drag-and-drop image upload, which FR-003 forbids.
 
-**ADR:** none — a vendoring choice, recorded where it lands. `VERSION.md` beside the files says what
-they are and where they came from, which is what somebody upgrading them needs; nothing else in the
-package inherits a structure from it.
+**ADR:** docs/adr/0007-the-markdown-editor-is-vendored.md — it clears all three legs. It is durable
+(a future editor change has to overturn it), it is architectural (a dependency, a supply-chain
+boundary and the package's distributed size), and it is non-obvious enough that "why is a third-party
+library committed here rather than declared?" is the first thing a contributor asks. `VERSION.md`
+beside the files answers what they are; the record answers why they are there at all.
 
 ## D9 — The toolbar's icons are ours, and there is no icon font
 
@@ -305,3 +307,51 @@ table has stopped being a list of one thing.
 
 **ADR:** none — a test-organisation choice, local to one module and explained by the comment above
 the table.
+
+## D15 — Both admin pages answer "what would a reader be served" the same way
+
+**Ambiguous**: the preview branched carefully — render a draft, read a published version's stored
+output — and the confirmation page did not. It rendered whatever version it was given. Nothing was
+written either way, so no stored evidence was ever at risk, and the suite was green.
+
+**Chosen**: one method answers the question and both pages call it.
+
+**Why defensible**: the confirmation page for a version that has already been published is
+reachable. Its POST is refused, which is the requirement, but its GET was showing a fresh rendering
+of wording somebody was already served a different rendering of. After a Markdown library upgrade
+or a change to the allow list those two differ, and the page would be showing something nobody was
+ever shown, on the one screen in the package that is about what goes in front of people.
+
+Folding it into one method also removed the duplicated page setup the two views carried, so the
+only difference between them is now the one that matters.
+
+The test reinstates the defect rather than asserting the fix: with the branch removed, both the
+preview's and the confirmation's assertions go red, and with it in place both pass.
+
+**Revisit if**: a third page needs the same answer with a different rule, which would mean the
+question is not one question after all.
+
+**ADR:** none — a correction inside one class, and the rule it applies is already recorded as
+Article XIII in the constitution and as ADR 0001's neighbours. Nothing downstream inherits it.
+
+## D16 — The message catalog is regenerated from the repository root
+
+**Ambiguous**: `makemessages` behaves differently depending on where it is run, and nothing said
+which. Run from the package directory it rewrites every file reference to be relative to that
+directory, so the whole file diffs for reasons unrelated to any string in it. It also writes a
+creation timestamp that changes on every run, and it can mark a new string as a fuzzy match against
+a similarly-worded existing one and copy that entry's translation instead of using the new text.
+
+**Chosen**: run it from the repository root, keep the file references repository-relative as the
+committed file already had them, carry no creation timestamp, and check every entry it marks fuzzy
+before committing.
+
+**Why defensible**: the convention was already in the committed file and was followed by nobody,
+because it was written down nowhere — two separate pieces of work in this run rediscovered it by
+producing a large diff and having it corrected. It is now a comment in the catalog's own header, which
+is the one file somebody about to regenerate it has open, and which survives regeneration.
+
+**Revisit if**: the project adopts a translation workflow that owns the file, in which case the
+tool's defaults matter more than the diff.
+
+**ADR:** none — a contributor convention, recorded in the file it governs.

@@ -87,13 +87,40 @@ class VersionAdmin(admin.ModelAdmin):
         ]
         return urls + super().get_urls()
 
-    def preview_view(self, request, object_id):
-        """Show the rendering a reader will actually be served.
+    def output_for(self, version):
+        """The HTML a reader would be served for this version.
 
-        A draft has never been rendered, so this calls ``get_renderer()``
-        for it. A published version's stored ``html`` is the evidence of
-        what somebody was shown (Article XIII), so this reads that field
-        rather than rendering the version again.
+        A draft has never been rendered, so this renders it. A published
+        version's stored ``html`` is the evidence of what somebody was
+        shown (Article XIII), so this reads that field rather than
+        producing it again — a fresh rendering can differ from the stored
+        one after a library upgrade or a change to the allow list, and
+        showing the fresh one would be showing something nobody was
+        served.
+
+        Both pages below answer the same question, so both ask it here.
+        """
+        if version.is_published:
+            return version.html
+        return get_renderer()().render(version.markdown)
+
+    def version_page(self, request, version, template, title):
+        """Render one of this admin's own pages for a single version."""
+        context = {
+            **self.admin_site.each_context(request),
+            "title": title,
+            "opts": self.opts,
+            "original": version,
+            "html": self.output_for(version),
+        }
+        return TemplateResponse(request, template, context)
+
+    def preview_view(self, request, object_id):
+        """Show the rendering a reader will actually be served (FR-010).
+
+        This is not the editor's own inline display, which approximates
+        while somebody writes and knows nothing about the allow list. What
+        this page shows is what publication stores.
         """
         version = self.get_object(request, object_id)
         if version is None:
@@ -101,20 +128,11 @@ class VersionAdmin(admin.ModelAdmin):
         if not self.has_view_permission(request, version):
             raise PermissionDenied
 
-        if version.is_published:
-            html = version.html
-        else:
-            html = get_renderer()().render(version.markdown)
-
-        context = {
-            **self.admin_site.each_context(request),
-            "title": _("Preview"),
-            "opts": self.opts,
-            "original": version,
-            "html": html,
-        }
-        return TemplateResponse(
-            request, "admin/mvp_compliance/version/preview.html", context
+        return self.version_page(
+            request,
+            version,
+            "admin/mvp_compliance/version/preview.html",
+            _("Preview"),
         )
 
     def publish_view(self, request, object_id):
@@ -130,23 +148,18 @@ class VersionAdmin(admin.ModelAdmin):
         if not request.user.has_perm("mvp_compliance.publish_version"):
             raise PermissionDenied
 
-        change_url = reverse("admin:mvp_compliance_version_change", args=[version.pk])
-
         if request.method == "POST":
             try:
                 version.publish()
             except PublishError as exc:
                 messages.error(request, str(exc))
-            return HttpResponseRedirect(change_url)
+            return HttpResponseRedirect(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk])
+            )
 
-        html = get_renderer()().render(version.markdown)
-        context = {
-            **self.admin_site.each_context(request),
-            "title": _("Publish"),
-            "opts": self.opts,
-            "original": version,
-            "html": html,
-        }
-        return TemplateResponse(
-            request, "admin/mvp_compliance/version/publish_confirmation.html", context
+        return self.version_page(
+            request,
+            version,
+            "admin/mvp_compliance/version/publish_confirmation.html",
+            _("Publish"),
         )
