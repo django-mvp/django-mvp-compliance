@@ -560,38 +560,106 @@
       "tasks": [
         {
           "id": "T050",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestCoverage::test_a_full_answer_carries_the_statement",
+              "tests/test_records.py::TestCoverage::test_an_empty_answer_carries_the_same_statement"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestCoverage -v"
+            ]
+          }
         },
         {
           "id": "T051",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestCoverage::test_a_full_answer_carries_the_statement",
+              "tests/test_records.py::TestCoverage::test_an_empty_answer_carries_the_same_statement"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestCoverage -v"
+            ],
+            "code": [
+              "mvp_compliance/records.py:78"
+            ]
+          }
         },
         {
           "id": "T052",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_page_states_what_it_covers"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -v"
+            ]
+          }
         },
         {
           "id": "T053",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_page_states_what_it_covers"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -v",
+              "poetry run python manage.py makemessages --locale en --no-obsolete --ignore \"mvp_compliance/static/*\""
+            ],
+            "code": [
+              "mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:16"
+            ]
+          }
         },
         {
           "id": "T054",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestUserFacingStrings::test_nothing_names_a_regulation_or_claims_completeness"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestUserFacingStrings -v"
+            ]
+          }
         },
         {
           "id": "T055",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestCoverage::test_the_documentation_claims_nothing_either"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestCoverage -v"
+            ],
+            "code": [
+              "docs/disclosure.md:74"
+            ]
+          }
         },
         {
           "id": "T056",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pre-commit run --files CHANGELOG.md"
+            ],
+            "code": [
+              "CHANGELOG.md:101"
+            ]
+          }
         }
       ]
     }
