@@ -21,6 +21,37 @@ from mvp_compliance.rendering import get_renderer
 PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "html", "published_at")
 
 
+class DocumentQuerySet(models.QuerySet):
+    """Answers what a person has outstanding, without a query per document."""
+
+    def outstanding_for(self, user) -> "DocumentQuerySet":
+        """Every document in this queryset whose version in force ``user`` has not accepted.
+
+        One query with a subquery rather than a loop, so the cost does not
+        grow with the number of documents (FR-012, FR-018, SC-005;
+        research.md R4). A document with no version in force is excluded by
+        the first filter rather than counted as outstanding — there is
+        nothing in force for anybody to accept.
+        """
+        subject = Acceptance.subject_of(user)
+        accepted = Acceptance.objects.filter(
+            subject=subject, version__status=Version.Status.CURRENT
+        )
+        return self.filter(versions__status=Version.Status.CURRENT).exclude(
+            pk__in=accepted.values("version__document_id")
+        )
+
+
+class DocumentManager(models.Manager["Document"]):
+    """Forwards ``DocumentQuerySet``'s methods, the same shape as ``VersionManager``."""
+
+    def get_queryset(self) -> DocumentQuerySet:
+        return DocumentQuerySet(self.model, using=self._db)
+
+    def outstanding_for(self, user) -> DocumentQuerySet:
+        return self.get_queryset().outstanding_for(user)
+
+
 class Document(models.Model):
     """A named legal text with a lasting identity, such as a privacy policy.
 
@@ -35,6 +66,8 @@ class Document(models.Model):
         help_text=_("The name this document is known by, such as “Privacy policy”."),
     )
 
+    objects = DocumentManager()
+
     class Meta:
         verbose_name = _("document")
         verbose_name_plural = _("documents")
@@ -46,6 +79,15 @@ class Document(models.Model):
     def current(self) -> "Version | None":
         """The version in force, or ``None`` when nothing has been published."""
         return self.versions.current().first()
+
+    def is_outstanding_for(self, user) -> bool:
+        """Whether ``user`` has not accepted the version currently in force (FR-011).
+
+        The ``outstanding_for`` queryset narrowed to this document's primary
+        key, rather than a second expression of the rule (D11). ``False``
+        when nothing is in force — a normal answer, not an error.
+        """
+        return Document.objects.outstanding_for(user).filter(pk=self.pk).exists()
 
 
 class VersionQuerySet(models.QuerySet):
