@@ -1038,6 +1038,18 @@ class TestDisclosureRefusals:
         assert no_records_response.status_code == 403
         assert has_records_response.content == no_records_response.content
 
+    def test_the_permission_is_held_by_nobody_on_installation(self) -> None:
+        """T025, scenario 5, FR-011."""
+        fresh_account = UserFactory()
+        fresh_staff = UserFactory(is_staff=True)
+
+        assert not fresh_account.has_perm("mvp_compliance.produce_disclosure")
+        assert not fresh_staff.has_perm("mvp_compliance.produce_disclosure")
+        assert Permission.objects.filter(
+            content_type__app_label="mvp_compliance",
+            codename="produce_disclosure",
+        ).exists()
+
 
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
