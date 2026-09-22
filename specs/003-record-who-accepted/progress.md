@@ -563,3 +563,20 @@ tests/test_models.py::TestAccountRemoval -v` — 6 passed. `poetry run ruff chec
 tests/test_models.py` clean.
 Next: T056.
 Watch: nothing.
+
+## 2026-09-22T18:53:00+02:00 · Implementer US-4 · T056
+
+Did: nothing to generate — the one schema change this story makes (`Acceptance.user`'s
+`on_delete`) was already migrated in T052's commit (`0005_alter_acceptance_user.py`),
+because craft-increments requires the tree to stay green, migrations included, between
+every slice, and deferring it to this task would have left T052 through T055 sitting on
+a dirty migration state. This task verifies that decision was sufficient.
+Verified: `DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django
+makemigrations mvp_compliance` — "No changes detected in app 'mvp_compliance'".
+`DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations
+--check --dry-run` — "No changes detected", exit 0. `DJANGO_SETTINGS_MODULE=tests.settings
+poetry run python -m django migrate --plan` — one chain from zero through
+`mvp_compliance.0005_alter_acceptance_user`, main's `0001` and `0002` and this branch's
+`0003` and `0004` all present and in order ahead of it.
+Next: T057.
+Watch: nothing.
