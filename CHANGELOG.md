@@ -98,3 +98,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the setting on or off only ever affects acceptances recorded
   afterwards; an existing record keeps whatever it held when it was
   written.
+- `mvp_compliance.records.produce(subject)` assembles everything this
+  package holds about one person into a single answer: every acceptance,
+  each carrying the wording it was actually served, in one query
+  regardless of how many documents exist. An answer for somebody the
+  package holds nothing about says so, and carries the same statement of
+  what it covers as any other answer.
+- The admin's **Everything held about a person** page, at
+  `/admin/mvp_compliance/disclosure/`, is the one way to reach that
+  answer: a GET behind its own permission, `produce_disclosure`, which
+  nobody holds by default and which every other permission this package
+  defines grants nothing towards. Every refusal — not signed in, signed
+  in without the permission, or asking about somebody with no records —
+  looks the same. The page states plainly what it covers and what it
+  does not, in both states, and offers no download and no management
+  command.
+- `mvp_compliance.records.resolve_subject(text)` finds the person a
+  request names: an account's login name, then its email address where
+  the user model has one, and otherwise the identifier itself — which is
+  what makes it possible to ask about somebody whose account is gone,
+  because their acceptances still carry it.
+- Producing an answer reads what is already held and nothing more.
+  Nothing about the request is stored, and asking twice leaves no
+  record of having asked once.
