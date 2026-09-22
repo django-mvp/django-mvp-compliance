@@ -183,3 +183,22 @@ class TestWording:
         entry = record.sections[0].entries[0]
         assert entry.wording == v1.html
         assert entry.wording != v2.html
+
+    def test_each_entry_carries_its_own_versions_wording(self):
+        """Scenario 4; FR-009."""
+        document = DocumentFactory()
+        someone = UserFactory()
+        versions = []
+        for n in range(3):
+            version = VersionFactory(document=document, markdown=f"Wording {n}")
+            version.publish()
+            AcceptanceFactory(user=someone, version=version)
+            versions.append(version)
+
+        record = produce(str(someone.pk))
+
+        entries = record.sections[0].entries
+        assert len(entries) == 3
+        by_version_number = {entry.version: entry for entry in entries}
+        for version in versions:
+            assert by_version_number[version.number].wording == version.html
