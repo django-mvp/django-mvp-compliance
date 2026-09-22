@@ -52,83 +52,196 @@
       "priority": "P1",
       "issue": 24,
       "worktree": null,
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
           "id": "T001",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_factories.py::TestUserFactory::test_two_builds_do_not_collide"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_factories.py::TestUserFactory -q"
+            ]
+          }
         },
         {
           "id": "T002",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest --fixtures tests/test_app.py"
+            ]
+          }
         },
         {
           "id": "T010",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptance::test_recording_creates_a_record_naming_the_user_version_and_moment"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_recording_creates_a_record_naming_the_user_version_and_moment -q"
+            ]
+          }
         },
         {
           "id": "T011",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptance::test_no_way_to_accept_a_document"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_no_way_to_accept_a_document -q"
+            ]
+          }
         },
         {
           "id": "T012",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_recording_against_a_never_published_version_is_refused",
+              "tests/test_models.py::TestRecording::test_recording_against_a_superseded_version_is_accepted",
+              "tests/test_models.py::TestRecording::test_recording_for_a_user_with_no_primary_key_is_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording -q"
+            ]
+          }
         },
         {
           "id": "T013",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run ruff check mvp_compliance/models.py",
+              "poetry run mypy mvp_compliance/models.py"
+            ]
+          }
         },
         {
           "id": "T014",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_recording_creates_a_record_naming_the_user_version_and_moment tests/test_models.py::TestRecording -q"
+            ]
+          }
         },
         {
           "id": "T015",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_exceptions.py::TestExceptions::test_record_error_is_not_a_validation_error",
+              "tests/test_exceptions.py::TestExceptions::test_recorded_acceptance_error_is_not_a_validation_error",
+              "tests/test_exceptions.py::TestExceptions::test_record_error_has_a_docstring_naming_its_requirement",
+              "tests/test_exceptions.py::TestExceptions::test_recorded_acceptance_error_has_a_docstring_naming_its_requirement"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_exceptions.py -q"
+            ]
+          }
         },
         {
           "id": "T016",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptanceImmutability::test_saving_an_existing_row_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_updating_through_the_queryset_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_bulk_update_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_deleting_the_instance_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_deleting_through_the_queryset_is_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptanceImmutability -k 'not historical' -q"
+            ]
+          }
         },
         {
           "id": "T017",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptanceImmutability -k 'not historical' -q"
+            ]
+          }
         },
         {
           "id": "T018",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptanceImmutability::test_a_historical_model_inherits_the_guard"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptanceImmutability::test_a_historical_model_inherits_the_guard tests/test_migrations.py -q"
+            ]
+          }
         },
         {
           "id": "T019",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptance::test_record_still_points_at_the_version_it_named"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_record_still_points_at_the_version_it_named -q"
+            ]
+          }
         },
         {
           "id": "T020",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_factories.py::TestAcceptanceFactory::test_it_builds_a_valid_saved_acceptance"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_factories.py::TestAcceptanceFactory -q"
+            ]
+          }
         },
         {
           "id": "T021",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance --pythonpath .",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance --check --dry-run --pythonpath ."
+            ]
+          }
         },
         {
           "id": "T022",
           "status": "done",
-          "attempts": 0
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/ -q"
+            ]
+          }
         }
       ]
     },
