@@ -1,11 +1,12 @@
 """Tests for mvp_compliance.records."""
 
+import dataclasses
 from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
 
-from mvp_compliance.records import produce
+from mvp_compliance.records import PersonalRecord, produce
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
@@ -137,3 +138,10 @@ class TestProduce:
         assert len(at_two_documents.captured_queries) == len(
             at_ten_documents.captured_queries
         )
+
+    def test_a_further_kind_of_record_would_not_change_the_answer(self):
+        """FR-017: the answer's own field names are exactly ``subject`` and ``sections``,
+        so a further kind of record can only join as a section.
+        """
+        field_names = {field.name for field in dataclasses.fields(PersonalRecord)}
+        assert field_names == {"subject", "sections"}
