@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
+from django.test import override_settings
 
 from mvp_compliance.records import PersonalRecord, produce
 from tests.factories import (
@@ -202,3 +203,25 @@ class TestWording:
         by_version_number = {entry.version: entry for entry in entries}
         for version in versions:
             assert by_version_number[version.number].wording == version.html
+
+    def test_nothing_is_rendered_when_an_answer_is_produced(self):
+        """FR-010: the renderer is never called on this path.
+
+        The configured renderer is switched to one that produces visibly
+        different output, so an entry carrying what it would render — rather
+        than what was stored at publication — is caught rather than missed.
+        """
+        version = VersionFactory(markdown="# Privacy policy\n\nSome wording.")
+        version.publish()
+        stored_html = version.html
+        someone = UserFactory()
+        AcceptanceFactory(user=someone, version=version)
+
+        with override_settings(
+            MVP_COMPLIANCE_RENDERER="tests.test_models.UppercaseRenderer"
+        ):
+            record = produce(str(someone.pk))
+
+        entry = record.sections[0].entries[0]
+        assert entry.wording == stored_html
+        assert entry.wording != stored_html.upper()
