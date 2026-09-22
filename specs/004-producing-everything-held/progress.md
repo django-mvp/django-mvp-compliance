@@ -225,3 +225,39 @@ modules is an import, and no assertion was weakened.
 template block and passes with it.
 
 **Next**: US-4 — an answer for a person whose account is gone.
+
+## 2026-09-23T01:30:28+02:00 · Implementer US-4 · T040-T044
+
+**Did**: `TestSurvivingRecords` in `tests/test_records.py`: an acceptance recorded, its account
+deleted under the package's default (`MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL` unset,
+i.e. `True`), still names the person (`record.subject`), the version, the moment and carries the
+wording served (T040). With the setting off under `override_settings`, the same removal leaves
+`produce()` reporting `is_empty` (T041). A mix of one person whose account is gone and one whose
+account remains: producing for the gone one contains only their document, nothing of the other's
+(T042). `TestDisclosurePage::test_a_person_whose_account_is_gone` reaches the same result through
+the page, querying by the acceptance's own `subject` string rather than a username or email — the
+only way to name someone whose account row no longer exists (T043). `docs/disclosure.md` gained
+*Asking about somebody whose account is gone*, saying the field takes the identifier the records
+carry and that what survives is `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`, decided once
+at removal, rather than anything this page does (T044).
+
+All five tests passed on first run, against the code US-1 to US-3 left, exactly as tasks.md
+predicted — `produce()` already reaches records by `subject`, never by `user`. Before trusting
+that, mutated `AcceptanceQuerySet.for_subject()` in `mvp_compliance/models.py` from
+`self.filter(subject=subject)` to `self.filter(user__pk=subject)` (looking the person up through
+the account instead) and reran `TestSurvivingRecords`: T040's and T042's tests failed —
+`assert 0 == 1` (`len(entries)`) and `assert [] == ["Gone's document"]` — because a removed
+account's now-null `user` no longer matches. T041 stayed green, since it already expects nothing
+produced. Reverted the mutation (`git diff` empty afterwards) and reran clean. No production code
+was written for this story.
+
+**Verified**: `poetry run pytest tests/test_records.py::TestSurvivingRecords tests/test_admin.py::TestDisclosurePage -v`
+— 8 passed. `ruff check tests/test_records.py tests/test_admin.py` — clean. No model, form or
+admin file changed, so no migration and no catalog regeneration were needed (Article VIII n/a —
+no new translatable string).
+
+**Next**: US-4 complete (T040-T044). `forge verify` runs once, at the end, before the completion
+report.
+
+**Watch**: `feature-state.json`'s story status is left as Forge set it, per the brief's
+prohibitions.

@@ -488,28 +488,68 @@
       "tasks": [
         {
           "id": "T040",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestSurvivingRecords::test_the_answer_still_names_the_person_version_and_moment"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestSurvivingRecords -v"
+            ]
+          }
         },
         {
           "id": "T041",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestSurvivingRecords::test_the_other_setting_leaves_nothing_to_produce"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestSurvivingRecords -v"
+            ]
+          }
         },
         {
           "id": "T042",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestSurvivingRecords::test_a_mix_of_people_with_and_without_accounts"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestSurvivingRecords -v"
+            ]
+          }
         },
         {
           "id": "T043",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_a_person_whose_account_is_gone"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -v"
+            ]
+          }
         },
         {
           "id": "T044",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run forge verify --repo . --base ee871bf"
+            ],
+            "code": [
+              "docs/disclosure.md"
+            ]
+          }
         }
       ]
     },
