@@ -99,6 +99,34 @@ def template_translatable_strings() -> set[str]:
     return strings
 
 
+#: FR-016, SC-007: no string this package shows may name one of these. Read
+#: by the catalog sweep below, and by TestCoverage's documentation sweep in
+#: tests/test_records.py, so a name only has to be listed once.
+FORBIDDEN_REGULATION_NAMES = (
+    "gdpr",
+    "general data protection regulation",
+    "ccpa",
+    "cpra",
+    "california consumer privacy act",
+    "hipaa",
+    "pipeda",
+    "lgpd",
+    "data protection act",
+    "privacy act",
+)
+
+#: FR-016, SC-007: no string this package shows may claim it satisfies a
+#: request in full.
+FORBIDDEN_COMPLETENESS_CLAIMS = (
+    "request in full",
+    "satisfies this request",
+    "satisfies your request",
+    "satisfies a request",
+    "in full compliance",
+    "complete legal answer",
+)
+
+
 #: Every address this feature serves, and how to reach one given a draft to
 #: address it with.
 DRAFT_PRIVACY_ADDRESSES = {
@@ -1167,9 +1195,7 @@ class TestDisclosurePage:
         assert expected_moment in content
         assert version.html in content
 
-    def test_the_page_states_what_it_covers(
-        self, client, disclosure_producer
-    ) -> None:
+    def test_the_page_states_what_it_covers(self, client, disclosure_producer) -> None:
         """T052, FR-015, US-5 scenarios 1, 2: the statement is on the page in
         both states, near the answer rather than in a footer.
         """
@@ -1212,6 +1238,19 @@ class TestUserFacingStrings:
             lowered = text.lower()
             assert "compliant" not in lowered, text
             assert "complies" not in lowered, text
+
+    def test_nothing_names_a_regulation_or_claims_completeness(self) -> None:
+        """T054, FR-016, SC-007, US-5 scenario 3."""
+        entries = catalog_entries()
+        shown_strings = [msgstr for msgid, msgstr in entries if msgid]
+        assert shown_strings
+
+        for text in shown_strings:
+            lowered = text.lower()
+            for name in FORBIDDEN_REGULATION_NAMES:
+                assert name not in lowered, text
+            for claim in FORBIDDEN_COMPLETENESS_CLAIMS:
+                assert claim not in lowered, text
 
     def test_every_string_is_translatable(self) -> None:
         """T049b, FR-020, SC-008."""
