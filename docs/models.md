@@ -192,6 +192,34 @@ A superseded version is accepted; only a draft is refused, because a draft has n
 standing for anybody to agree to. There is no way to record an acceptance of a
 `Document` — `Acceptance` has no field and no manager method that takes one.
 
+Accepting a later version of the same document is a second record, not a change to
+the first: the earlier acceptance is left exactly as it was, and both stand.
+
+```python
+version_one = Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...")
+version_one.publish()
+first = Acceptance.objects.record(user, version_one)
+
+version_two = Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...v2")
+version_two.publish()  # supersedes version_one
+second = Acceptance.objects.record(user, version_two)
+
+first.version  # still version_one — unchanged
+Acceptance.objects.filter(subject=Acceptance.subject_of(user)).count()  # 2
+```
+
+Recording the same person's acceptance of the same version again — including two
+attempts at once — succeeds and returns the record that already exists. It does not
+raise and it does not write a second row:
+
+```python
+again = Acceptance.objects.record(user, version_two)
+again == second  # True — the record that already existed, not a new one
+Acceptance.objects.filter(version=version_two).count()  # still 1
+```
+
+A person's acceptances always come back in the order they happened, oldest first.
+
 ### Immutability
 
 Once written, an acceptance is finished. Every route the package offers to change

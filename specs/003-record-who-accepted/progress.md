@@ -311,3 +311,13 @@ mvp_compliance/migrations/0003_alter_acceptance_options_and_more.py` and `mypy` 
 Next: T036.
 Watch: nothing.
 
+## 2026-09-22T18:56:00+02:00 · Implementer US-2 · T036
+
+Did: added the later-version and repeat behaviour to `docs/models.md`'s `Acceptance`
+section — stated as what happens, not as an API note — plus that acceptances come back
+in the order they happened.
+Verified: both code examples executed by hand against a real test database (a scratch
+pytest module exercising the exact lines, removed afterwards) — both behaved exactly as
+documented. `poetry run ruff check .` clean.
+Next: US-2's own §5 verify, then the completion report.
+Watch: nothing.
