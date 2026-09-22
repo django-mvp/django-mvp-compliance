@@ -13,8 +13,9 @@ from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import PublishError
-from mvp_compliance.forms import VersionForm
-from mvp_compliance.models import Document, Version
+from mvp_compliance.forms import DisclosureForm, VersionForm
+from mvp_compliance.models import Disclosure, Document, Version
+from mvp_compliance.records import produce, resolve_subject
 from mvp_compliance.rendering import get_renderer
 
 
@@ -204,4 +205,60 @@ class VersionAdmin(admin.ModelAdmin):
             version,
             "admin/mvp_compliance/version/publish_confirmation.html",
             _("Publish"),
+        )
+
+
+@admin.register(Disclosure)
+class DisclosureAdmin(admin.ModelAdmin):
+    """The one route that produces everything held about a person.
+
+    Gated on ``produce_disclosure`` alone — holding every other permission
+    this package defines, including the proxy's own routine
+    ``view_disclosure``, grants nothing here (plan.md Design -> The route,
+    decisions.md D2, D7).
+    """
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.has_perm("mvp_compliance.produce_disclosure")
+
+    def has_module_permission(self, request):
+        return request.user.has_perm("mvp_compliance.produce_disclosure")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        """Replaces the changelist outright — never calls ``super()``.
+
+        No ``ChangeList`` and no queryset over acceptances: registering
+        ``Acceptance`` itself, or building one here, would hand everyone
+        holding the permission a list of every person's consent history
+        (decisions.md D7). The admin's own URL wrapper only checks that the
+        caller is active staff, so this raises the real refusal itself,
+        before anything about the named person is read — the same refusal
+        for a person with records and a person without (FR-013).
+        """
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+
+        form = DisclosureForm(request.GET or None)
+        record = None
+        if form.is_bound and form.is_valid() and form.cleaned_data["subject"]:
+            record = produce(resolve_subject(form.cleaned_data["subject"]))
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Everything held about a person"),
+            "opts": self.opts,
+            "form": form,
+            "record": record,
+        }
+        return TemplateResponse(
+            request, "admin/mvp_compliance/disclosure/produce.html", context
         )

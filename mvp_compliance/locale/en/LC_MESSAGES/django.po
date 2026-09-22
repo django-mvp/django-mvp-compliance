@@ -22,20 +22,36 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:177
+#: mvp_compliance/admin.py:178
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:206
+#: mvp_compliance/admin.py:207
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Publish"
 msgstr "Publish"
 
+#: mvp_compliance/admin.py:257
+msgid "Everything held about a person"
+msgstr "Everything held about a person"
+
 #: mvp_compliance/apps.py:8
 msgid "Compliance"
 msgstr "Compliance"
+
+#: mvp_compliance/forms.py:36
+msgid "Person"
+msgstr "Person"
+
+#: mvp_compliance/forms.py:38
+msgid ""
+"The account's login name or email address, or, for somebody whose account "
+"has since been removed, the identifier their records still carry."
+msgstr ""
+"The account's login name or email address, or, for somebody whose account "
+"has since been removed, the identifier their records still carry."
 
 #: mvp_compliance/models.py:63
 msgid "name"
@@ -252,7 +268,19 @@ msgstr "acceptances"
 msgid "Cannot record an acceptance for a user with no primary key."
 msgstr "Cannot record an acceptance for a user with no primary key."
 
-#: mvp_compliance/records.py:91
+#: mvp_compliance/models.py:639
+msgid "disclosure"
+msgstr "disclosure"
+
+#: mvp_compliance/models.py:640
+msgid "everything held about a person"
+msgstr "everything held about a person"
+
+#: mvp_compliance/models.py:642
+msgid "Can produce everything held about a person"
+msgstr "Can produce everything held about a person"
+
+#: mvp_compliance/records.py:130
 msgid "Acceptances"
 msgstr "Acceptances"
 
