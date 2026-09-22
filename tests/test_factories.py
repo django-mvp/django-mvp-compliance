@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.factories import DocumentFactory, VersionFactory
+from tests.factories import DocumentFactory, UserFactory, VersionFactory
 
 
 @pytest.mark.django_db
@@ -24,3 +24,14 @@ class TestVersionFactory:
 
         assert first.pk is not None
         assert second.pk is not None
+
+
+@pytest.mark.django_db
+class TestUserFactory:
+    def test_two_builds_do_not_collide(self):
+        first = UserFactory()
+        second = UserFactory()
+
+        assert first.pk is not None
+        assert second.pk is not None
+        assert first.username != second.username
