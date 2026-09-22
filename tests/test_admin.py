@@ -217,3 +217,27 @@ class TestDraftPrivacy:
         assert not Version.objects.filter(pk=victim.pk).exists()
         keeper.refresh_from_db()
         assert keeper.status == Version.Status.CURRENT
+
+    def test_every_draft_of_a_document_is_listed_and_separately_editable(
+        self, client, editor, document
+    ) -> None:
+        """T024, US-2 scenario 5, FR-009."""
+        client.force_login(editor)
+        drafts = [VersionFactory(document=document) for _ in range(3)]
+
+        changelist_content = client.get(
+            reverse("admin:mvp_compliance_version_changelist")
+        ).content.decode()
+        for version in drafts:
+            assert str(version.number) in changelist_content
+
+        for version in drafts:
+            response = client.get(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk])
+            )
+            content = response.content.decode()
+            others = [other for other in drafts if other.pk != version.pk]
+
+            assert response.status_code == 200
+            assert version.markdown in content
+            assert all(other.markdown not in content for other in others)
