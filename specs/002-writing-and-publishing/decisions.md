@@ -387,3 +387,45 @@ branch.
 remove three of these five and make the remaining two easier to see.
 
 **ADR:** none — a triage record for one branch, not a decision anything inherits.
+
+## D18 — A document identifier from the query string is validated before it is asked for
+
+**Ambiguous**: starting the next version reaches the form with a document named in the query
+string. That value arrives as a string and can be anything at all, and nothing checked it before
+handing it to the database.
+
+**Chosen**: anything the identifier cannot be is treated the same as a document that does not
+exist. The form opens empty.
+
+**Why defensible**: asking for a document whose identifier is not a number raises rather than
+returning nothing, so a mistyped or edited link produced a server error instead of an empty form.
+The person it reaches is by assumption not a developer and has done nothing wrong. Treating an
+unusable identifier as "no such document" gives the same answer the feature already gives for a
+document that has nothing in force, which is the ordinary case rather than an error.
+
+Nothing was exposed by it — the value never reached SQL, because the field refused to prepare it —
+so this is a broken page rather than a way in. It is fixed because a broken page is enough.
+
+The test parametrises the identifiers that cannot work, including one shaped like an injection
+attempt, and asserts each opens the form. Removing the guard turns two of them red.
+
+**Revisit if**: another surface takes an identifier from a query string, which would make this a
+shape worth sharing rather than a guard on one method.
+
+**ADR:** none — input handling inside one method, with the requirement it serves recorded above it.
+
+## D19 — The edge case that justifies two permissions is tested by the thing it describes
+
+**Ambiguous**: the specification names somebody who may publish and may not write as an intended
+arrangement, and D4 calls it the reason the two permissions are split at all. A fixture was built
+for it during the groundwork and then never used by any test.
+
+**Chosen**: a test that uses it, asserting both halves — such a person can put a version in force,
+and cannot change a word of it.
+
+**Why defensible**: the split is the whole of FR-014, and the case that makes it more than a
+formality was the one case nothing exercised. A fixture defined and never called is also a reliable
+sign that a requirement was read and not built, which is what it turned out to be here — the
+behaviour was already correct, and nothing would have said so if it stopped being.
+
+**ADR:** none — a missing test, now present.

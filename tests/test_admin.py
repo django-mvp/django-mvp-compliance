@@ -541,6 +541,35 @@ class TestPublish:
         assert empty_draft.status == empty_draft.Status.DRAFT
         assert published.status == published.Status.CURRENT
 
+    def test_somebody_who_may_publish_and_may_not_write_can_publish(
+        self, client, approver, draft
+    ) -> None:
+        """The specification's odd-but-coherent case, and why the split exists at all.
+
+        An approver signs off wording somebody else prepared: they hold
+        ``publish_version`` and ``view_version`` and nothing that would let
+        them write. They can put a version in force and they cannot change
+        a word of it.
+        """
+        client.force_login(approver)
+        publish_url = reverse(
+            "admin:mvp_compliance_version_publish", args=[draft.pk]
+        )
+
+        confirmation = client.get(publish_url)
+        published = client.post(publish_url)
+        refused_write = client.post(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk]),
+            data={"document": draft.document_id, "markdown": "Rewritten by the approver"},
+        )
+
+        draft.refresh_from_db()
+        assert confirmation.status_code == 200
+        assert published.status_code == 302
+        assert draft.status == draft.Status.CURRENT
+        assert refused_write.status_code == 403
+        assert draft.markdown != "Rewritten by the approver"
+
     def test_the_confirmation_shows_a_published_versions_stored_output(
         self, client, publisher, published_version
     ) -> None:
@@ -673,6 +702,27 @@ class TestDocumentAdmin:
 
         assert response.status_code == 200
         assert draft.markdown.encode() not in response.content
+
+    @pytest.mark.parametrize(
+        "document_id", ["not-a-number", "", "1 OR 1=1", "999999999"]
+    )
+    def test_a_document_the_query_string_cannot_name_opens_empty(
+        self, client, editor, document_id
+    ) -> None:
+        """A mistyped or hostile link opens an empty form, never a server error.
+
+        The value comes straight off the query string, and asking the
+        database for a document whose identifier is not a number raises
+        rather than returning nothing. Anything the identifier cannot be is
+        the same answer as a document that does not exist.
+        """
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_add"), {"document": document_id}
+        )
+
+        assert response.status_code == 200
 
     def test_the_document_page_offers_the_next_version(
         self, client, editor, document

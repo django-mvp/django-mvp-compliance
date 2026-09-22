@@ -108,8 +108,8 @@ wording. For a published version it is read from the HTML stored at
 publication — never rendered again, because that stored HTML is the
 evidence of what a reader was served.
 
-Reaching a version's preview needs the same `view_version` permission as
-its change page.
+Reaching a version's preview needs permission to view it — `view_version`
+or `change_version`, the same test the admin applies to its change page.
 
 ## Permissions
 

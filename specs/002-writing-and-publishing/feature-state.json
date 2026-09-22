@@ -3,7 +3,7 @@
   "feature": "002-writing-and-publishing",
   "branch": "002-writing-and-publishing",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "CONVERGE",
+  "state": "REVIEW",
   "state_history": [
     {
       "state": "PLAN",
@@ -24,6 +24,11 @@
       "state": "CONVERGE",
       "at": "2026-09-22T13:17:19Z",
       "note": "All five stories accepted after independent re-verification"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-22T13:21:29Z",
+      "note": "Convergence complete: one branch-local migration, cleanup pass fixed the confirmation page's re-rendering, ADR 0007 graduated, all gates green"
     }
   ],
   "gates": {
@@ -683,7 +688,7 @@
       "max": 2
     },
     "review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "design_review_cycles": {

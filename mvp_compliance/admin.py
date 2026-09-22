@@ -65,12 +65,27 @@ class VersionAdmin(admin.ModelAdmin):
         point (D6, Article XII).
         """
         initial = super().get_changeform_initial_data(request)
-        document_id = initial.get("document")
-        if document_id:
-            document = Document.objects.filter(pk=document_id).first()
-            if document is not None and document.current is not None:
-                initial["markdown"] = document.current.markdown
+        document = self.document_from(initial.get("document"))
+        if document is not None and document.current is not None:
+            initial["markdown"] = document.current.markdown
         return initial
+
+    def document_from(self, document_id):
+        """The document a query string names, or ``None`` when it names none.
+
+        The value arrives straight from the query string, so it can be
+        anything at all. Asking the database for a document whose
+        identifier is not a number raises rather than returning nothing,
+        which would put a server error in front of somebody who mistyped a
+        link. Anything the identifier cannot be is treated the same as a
+        document that does not exist: the form opens empty.
+        """
+        if not document_id:
+            return None
+        try:
+            return Document.objects.filter(pk=document_id).first()
+        except (ValueError, TypeError):
+            return None
 
     def get_urls(self):
         urls = [
