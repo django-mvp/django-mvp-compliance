@@ -1,5 +1,8 @@
 """Tests for mvp_compliance.records."""
 
+from datetime import UTC, datetime
+from unittest import mock
+
 import pytest
 
 from mvp_compliance.records import produce
@@ -93,3 +96,21 @@ class TestProduce:
 
         assert record.is_empty is True
         assert record.sections[0].entries == ()
+
+    def test_the_same_answer_twice(self):
+        """Scenario 6; FR-006, D11: no attribute of the answer is a clock reading."""
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+
+        with mock.patch("django.utils.timezone.now") as now:
+            now.side_effect = [
+                datetime(2026, 1, 1, tzinfo=UTC),
+                datetime(2099, 1, 1, tzinfo=UTC),
+            ]
+            first = produce(str(someone.pk))
+            second = produce(str(someone.pk))
+
+        assert first == second
+        assert now.call_count == 0
