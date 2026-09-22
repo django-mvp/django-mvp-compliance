@@ -75,6 +75,25 @@ For a version that has already been published, the preview shows the HTML stored
 rather than rendering it again, because that stored output is the evidence of what a person was
 shown. Upgrading the Markdown library or changing the allow list does not alter it.
 
+## Publishing
+
+Publishing needs its own permission, `publish_version`, and its own step: a version's change
+page offers a **Publish** link once it is a draft, to whoever holds it. There is no other route
+— no changelist action, no field, no checkbox saves and publishes at once.
+
+The link leads to a confirmation page before anything happens. It names the document and
+version, shows the rendering about to go live, and says plainly that the wording cannot be
+changed afterwards and that a correction is published as another version. Publishing happens
+only when that page is posted. Following its **Back** link instead leaves the draft untouched.
+
+`Version.publish()` refuses a version that is not a draft, and one whose rendered output is
+empty once whitespace is stripped. Both refusals reach the person publishing as a message on
+the page they return to, not as a traceback.
+
+Once a version is published, its change page in the admin offers nothing to edit. Its wording
+is readable in full, and Django serves its own read-only page — not a form with disabled
+fields, and not one whose save is silently refused.
+
 ## Who can do what
 
 Reaching any of this needs the permissions on `Version` that Django creates — `view_version`
@@ -82,5 +101,5 @@ and `change_version` for reading and writing, `add_version` to start one. A requ
 them reaches nothing at any address the package serves, and a document with no published
 version is invisible to a visitor.
 
-See [Permissions](../README.md#permissions) in the README for the publishing permission, which
-is deliberately separate.
+See [Permissions](../README.md#permissions) in the README for `publish_version`, which is
+deliberately separate from the permissions above.

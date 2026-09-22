@@ -10,9 +10,10 @@ This package is not usable on its own. It renders on the django-mvp app shell
 
 > **Status: early development.** `Document` and `Version` — versioned legal
 > text, authored in Markdown and published with an immutable record — are
-> built, and both are registered in the Django admin for writing and
-> previewing them. No publish confirmation, no consent recording and no
-> account-area page exist yet.
+> built, and both are registered in the Django admin for writing,
+> previewing and publishing them, behind a confirmation step and a
+> permission of its own. No consent recording and no account-area page
+> exist yet.
 
 ## Why
 
@@ -123,6 +124,36 @@ that isn't staff, and staff holding none of these permissions.
 Deleting a version needs `delete_version` too, and it is refused once that
 version has been published, regardless of who is asking — discarding is
 for drafts.
+
+Publishing needs `publish_version`, held separately from the permissions
+above. Writing a draft and making something legally binding are different
+levels of trust, so a compliance editor holding every permission except
+this one can prepare a version and cannot put it live, and — the unusual
+but coherent alternative — somebody holding only `view_version` and
+`publish_version` can approve wording somebody else wrote and write
+nothing themselves. Without `publish_version` the publish address is
+refused by both the page that confirms and the action that publishes it,
+and no link to it is offered.
+
+## Publishing
+
+Publishing is the one act in this package there is no way back from, so it
+is never a side effect of saving. A version's change page offers a
+**Publish** link once it is a draft, to whoever holds `publish_version`.
+Following it asks for confirmation first: the page names the document and
+version, shows the rendering that is about to go live, and says plainly
+that the wording cannot be changed afterwards and that a correction is
+published as another version. Nothing is published until that page is
+posted. Following its **Back** link instead leaves the draft untouched.
+
+`publish()` refuses a version that is not a draft and one whose rendered
+output is empty once stripped — both reach the person publishing as a
+message they can read, not as an error page.
+
+Once a version is published, its change page in the admin offers no
+editable form at all. Its wording is readable in full, and Django serves
+its own read-only page rather than one this package builds — not a form
+whose fields are disabled, and not one whose save is silently refused.
 
 ## Scope & philosophy
 

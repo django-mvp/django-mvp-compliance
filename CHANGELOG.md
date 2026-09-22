@@ -37,3 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   publication for a published version, never rendered again. Content the
   sanitiser's allow list strips previews as stripped, so the loss is
   visible before publication.
+- Publishing is a distinct action behind its own permission,
+  `publish_version`, held separately from the permissions writing a draft
+  needs. A version's change page offers a Publish link, which leads to a
+  confirmation page naming the document and version, showing the
+  rendering about to go live, and stating plainly that the wording cannot
+  be changed afterwards and that a correction is published as another
+  version. Publishing happens only when that page is posted. Both
+  refusals `Version.publish()` can raise reach the author as a readable
+  message rather than an error page. A published version's change page
+  offers no editable form at all — Django serves its own read-only page
+  in its place.
