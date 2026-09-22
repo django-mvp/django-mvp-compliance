@@ -168,6 +168,36 @@ class TestVersionAdmin:
         assert str(published_version.number) in content
         assert "Current" in content
 
+    def test_a_version_in_forces_page_offers_the_next_version(
+        self, client, editor, published_version
+    ) -> None:
+        """T061: alongside the preview control it already has."""
+        client.force_login(editor)
+        expected_url = (
+            f"{reverse('admin:mvp_compliance_version_add')}"
+            f"?document={published_version.document_id}"
+        )
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[published_version.pk])
+        )
+
+        assert response.status_code == 200
+        assert expected_url.encode() in response.content
+
+    def test_a_draft_offers_no_control_to_start_the_next_version(
+        self, client, editor, draft
+    ) -> None:
+        """T061: a version not in force has nothing to start the next one from."""
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert b"Start the next version" not in response.content
+
 
 class TestToolbarAgreesWithTheAllowList:
     """FR-004, SC-002, US-1 scenario 4: the toolbar and the allow list agree.

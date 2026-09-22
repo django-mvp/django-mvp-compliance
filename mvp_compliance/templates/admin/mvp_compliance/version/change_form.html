@@ -15,6 +15,14 @@
       </a>
     </li>
     {% endif %}
+    {% if original.status == "current" %}
+    <li>
+      <a href="{% url 'admin:mvp_compliance_version_add' %}?document={{ original.document_id }}"
+         class="button">
+        {% translate "Start the next version" %}
+      </a>
+    </li>
+    {% endif %}
   {% endif %}
   {{ block.super }}
 {% endblock %}
