@@ -113,3 +113,31 @@ trailing newline rather than the assertion being weakened. `ruff check`/`ruff fo
 on both files; `mypy mvp_compliance/forms.py` clean.
 Next: T017, the admin.
 Watch: nothing.
+
+## 2026-09-22T12:06:00Z · Implementer US1 · T017
+
+Did: wrote `tests/test_admin.py::TestVersionAdmin` against a self-contained `urlpatterns`
+(`@pytest.mark.urls(__name__)`) mounting the admin for this module only — `tests/urls.py` is
+outside this story's scope. Then `mvp_compliance/admin.py` — `DocumentAdmin` and `VersionAdmin`,
+the latter with `form = VersionForm`, `readonly_fields` covering `number`/`status`/`published_at`/
+`html`, and list display of document/number/status/published time.
+Verified: red first — `NoReverseMatch` for all three admin URL names, since nothing was
+registered. Green after: `poetry run pytest tests/test_admin.py` — 3 passed, reaching the add page
+and a draft's change page as `editor` and finding the editor markup in both, and reading the
+changelist's document/number/status columns. `ruff check`/`ruff format --check` clean;
+`mypy mvp_compliance/admin.py` clean.
+Next: T005 — narrow the two FS-001 assertions this admin now contradicts.
+Watch: nothing.
+
+## 2026-09-22T12:07:00Z · Implementer US1 · T005
+
+Did: narrowed `tests/test_app.py`'s two FS-001 assertions per D11 (already recorded at plan time).
+`test_it_ships_no_admin_forms_views_or_urls` -> `test_it_registers_no_public_urls`, keeping only
+the half still true: `mvp_compliance.urls` does not exist (FR-008). `test_it_registers_nothing_in_
+the_admin` -> `test_it_registers_both_models_in_the_admin`, its opposite. Both carry a comment
+naming FS-002 as what superseded FS-001's D5.
+Verified: confirmed both assertions failed by design before the edit (admin.admin now exists and
+both models are registered) — the right reason. `poetry run pytest tests/test_app.py` — 4 passed
+after narrowing. `ruff check`/`ruff format --check` clean.
+Next: T018, the toolbar/allow-list agreement test.
+Watch: this is the one pre-existing test this story is authorised to change, and only this far.
