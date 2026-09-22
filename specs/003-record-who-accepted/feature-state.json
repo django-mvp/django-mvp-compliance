@@ -3,7 +3,7 @@
   "feature": "003-record-who-accepted",
   "branch": "003-record-who-accepted",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "PLAN",
@@ -19,6 +19,11 @@
       "state": "IMPLEMENT",
       "at": "2026-09-22T14:55:50Z",
       "note": "Design review green. US-1 dispatched on sonnet from verified base a9135f0."
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-22T17:10:13Z",
+      "note": "All five stories accepted and independently re-verified. Convergence done. Review approve at low risk; both findings closed, each fix checked against the defect. 201 tests green."
     }
   ],
   "gates": {
@@ -53,26 +58,12 @@
       ]
     },
     "review": {
-      "outcome": "approve",
-      "risk": "low",
+      "approved_by": "review-panel",
       "at": "2026-09-22T21:10:00Z",
-      "reviewer": "review panel, three lenses",
-      "findings": [
-        {
-          "id": "F1",
-          "severity": "medium",
-          "status": "fixed",
-          "note": "No test distinguished reading REMOTE_ADDR from reading a forwarded header. Confirmed: preferring X-Forwarded-For passed the entire suite. Test added and checked against that defect (D20)."
-        },
-        {
-          "id": "F2",
-          "severity": "low",
-          "status": "fixed",
-          "note": "Check-then-write gap in the update guard. Confirmed. Fixed by refusing unconditionally, matching delete() on the same queryset, rather than by a transaction that would not close it (D19)."
-        }
-      ],
       "self_resolved": [
-        "Both findings verified independently before fixing, and both fixes checked against the defect they close."
+        "Verdict approve, risk low, two findings, both verified independently before acting rather than accepted on the severity claimed.",
+        "F1 (medium) no test distinguished reading REMOTE_ADDR from reading a forwarded header; confirmed by changing record() to prefer X-Forwarded-For, which passed the entire suite. Test added covering three forwarded headers that disagree with the connection address, and checked against that defect. D20.",
+        "F2 (low) AcceptanceQuerySet.update() checked exists() and then wrote, leaving a gap a concurrent insert could land in. Confirmed. Fixed by refusing every update outright, matching delete() on the same queryset, rather than by a transaction that would not close the gap under read committed isolation. Nothing in this package updates an acceptance, so the narrower guard was protecting no legitimate call. D19."
       ]
     }
   },
