@@ -321,3 +321,22 @@ pytest module exercising the exact lines, removed afterwards) — both behaved e
 documented. `poetry run ruff check .` clean.
 Next: US-2's own §5 verify, then the completion report.
 Watch: nothing.
+
+## 2026-09-22T19:40:00+02:00 · Orchestrator · US-2 accepted
+
+Did: picked the story up at acceptance after the completion never registered — every task was
+committed through T036 and the report written, but the ledger still read the story as open. Ran the
+craft-skill receipt gate against the report and the brief it was dispatched with (both receipts
+matched), then re-verified independently rather than reading the report back: 89 tests pass with
+randomisation and parallelism off, lint after clearing the cache, types, dependency check, build and
+structure checks all green, and `makemigrations --check` clean across every app rather than just
+this one. Probed T034's race test against the defect it exists to catch, by reinstating the
+hand-rolled get/except/create pattern in `record()` — the test failed with the uncaught
+`IntegrityError`, so the test is load-bearing and not passing by construction. The guardrail flags
+one file for the US-2 range alone, `tests/test_models.py`, and the only line it removed is an import
+replaced by a wider one, so D13 covers it unchanged. Took the report's SC-002 concern as a real gap
+and closed it rather than recording it (D15).
+Verified: `forge verify` green end to end; `poetry run pytest tests/ -q` — 89 passed.
+Next: US-3.
+Watch: nothing. Everything from US-1's first task onward is still local — the branch on the remote
+is the S3 artifact commit, so the checks showing green on the pull request predate all of it.
