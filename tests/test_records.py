@@ -2,6 +2,7 @@
 
 import dataclasses
 from datetime import UTC, datetime
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -14,6 +15,27 @@ from tests.factories import (
     UserFactory,
     VersionFactory,
 )
+from tests.test_admin import FORBIDDEN_COMPLETENESS_CLAIMS, FORBIDDEN_REGULATION_NAMES
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DISCLOSURE_DOCS_PATH = REPO_ROOT / "docs" / "disclosure.md"
+README_PATH = REPO_ROOT / "README.md"
+
+
+def readme_disclosure_section() -> str:
+    """The README text this feature added: the status callout and the
+    documentation list entry, not everything the README says (T055).
+    """
+    text = README_PATH.read_text(encoding="utf-8")
+    status_start = text.index(
+        "the admin's **Everything held about a person** page is what calls it"
+    )
+    status_end = text.index("account-area page exists yet.", status_start) + len(
+        "account-area page exists yet."
+    )
+    doc_start = text.index("[docs/disclosure.md](docs/disclosure.md)")
+    doc_end = text.index("\n- [docs/adr]", doc_start)
+    return text[status_start:status_end] + "\n" + text[doc_start:doc_end]
 
 
 @pytest.mark.django_db
@@ -349,3 +371,16 @@ class TestCoverage:
 
         assert record.is_empty is True
         assert str(record.coverage) == EXPECTED_COVERAGE_STATEMENT
+
+    def test_the_documentation_claims_nothing_either(self):
+        """T055, FR-016, SC-007."""
+        text = (
+            DISCLOSURE_DOCS_PATH.read_text(encoding="utf-8")
+            + "\n"
+            + readme_disclosure_section()
+        ).lower()
+
+        for name in FORBIDDEN_REGULATION_NAMES:
+            assert name not in text, name
+        for claim in FORBIDDEN_COMPLETENESS_CLAIMS:
+            assert claim not in text, claim
