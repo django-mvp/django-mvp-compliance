@@ -290,3 +290,21 @@ Verified: `poetry run pytest tests/test_admin.py::TestPreview tests/test_admin.p
 the right reason (the URL does not exist yet). `poetry run pre-commit run --files
 tests/test_admin.py` — clean.
 Next: T031, the preview URL and view.
+
+## 2026-09-22T12:34:00Z · Implementer US3 · T031
+
+Did: `VersionAdmin.get_urls()` adds `<pk>/preview/`, wrapped in `admin_site.admin_view` and
+checking `has_view_permission(request, obj)`. `preview_view` renders a draft through
+`get_renderer()`, and reads the stored `html` field for a published version rather than
+rendering it again (Article XIII). Added
+`TestPreview::test_a_published_versions_preview_reads_the_stored_html_not_a_fresh_rendering` —
+publishes a version, changes `MVP_COMPLIANCE_RENDERER` with `override_settings`, and asserts the
+preview still shows the stored output rather than the new renderer's. A bare-bones
+`preview.html` shows the rendered output inside a marked container; its heading and link back to
+the version are T032's.
+Verified: `poetry run pytest tests/test_admin.py` — 29 passed, including
+`TestDraftPrivacy::test_staff_without_permissions_reaches_nothing[version preview]` returning 403
+and the anonymous/visitor cases redirecting. `poetry run pre-commit run --files
+mvp_compliance/admin.py mvp_compliance/templates/admin/mvp_compliance/version/preview.html
+tests/test_admin.py` — clean (ruff, mypy, deptry).
+Next: T032, the preview page's own heading and link back to the version.
