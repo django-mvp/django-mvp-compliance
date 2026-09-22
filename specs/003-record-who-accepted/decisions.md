@@ -192,3 +192,21 @@ to one primary key.
 flow in R4 calls on every page request. The narrowing costs a `filter(pk=...)` and an `exists()`, both
 of which the database was going to do anyway, and it means the query-count bound in SC-005 is proven
 once for both answers.
+
+## D12 — T015 landed before T014, not after
+
+**Decision**: `mvp_compliance/exceptions.py`'s `RecordError` and `RecordedAcceptanceError` were
+committed as T015 before `AcceptanceManager.record()` (T014), reversing the order `tasks.md` lists
+them in.
+
+**Why**: `record()`'s own acceptance criterion has it raising `RecordError` on a draft version, and
+T012's test (committed earlier, as designed) already asserts `pytest.raises(RecordError)`. Written
+in the order `tasks.md` lists, T014's commit would import a name `exceptions.py` does not yet
+define — the module fails to import, not for the reason any test intends. Landing T015 first makes
+every subsequent commit's failures, and eventual passes, about the behaviour each task claims.
+
+**Revisit if**: a later story's task list assumes `tasks.md`'s T014/T015 order matches commit
+order — it does not on this branch.
+
+**ADR:** none — commit sequencing within one story, not a design change. Both tasks' own file scope
+and acceptance criteria are exactly as `tasks.md` states.

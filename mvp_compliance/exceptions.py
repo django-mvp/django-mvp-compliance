@@ -12,3 +12,11 @@ class PublishedVersionError(Exception):
 
 class PublishError(Exception):
     """Raised when publishing is refused: already published, or nothing to publish (FR-010)."""
+
+
+class RecordedAcceptanceError(Exception):
+    """Raised for an attempt to change or delete an acceptance (FR-004, FR-006)."""
+
+
+class RecordError(Exception):
+    """Raised when recording an acceptance is refused: the version is a draft, or the user has no account to name (FR-003)."""

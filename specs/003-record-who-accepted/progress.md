@@ -41,3 +41,73 @@ attribute by analogy would break the default that says records survive. `researc
 and T052 all now say so, and US-4's T050 is the test that would notice.
 
 No re-plan: nothing reached the critical or high bar that forces one.
+
+## 2026-09-22T17:05:00+02:00 · Implementer US-1 · T001
+
+Did: added `UserFactory` over `get_user_model()`, `factory.Sequence` on `username`, and
+`TestUserFactory` asserting two builds don't collide.
+Verified: `poetry run pytest tests/test_factories.py::TestUserFactory` — collection error,
+`ImportError: cannot import name 'UserFactory'` (right reason). After adding the factory:
+`poetry run pytest tests/test_factories.py` — 3 passed. `poetry run ruff check` clean.
+Next: T002.
+Watch: nothing.
+
+## 2026-09-22T17:07:00+02:00 · Implementer US-1 · T002
+
+Did: added a `user` fixture in `conftest.py`, wrapping `UserFactory`.
+Verified: `poetry run pytest --fixtures tests/test_app.py` shows `user` registered.
+`poetry run pytest tests/` — 66 passed (unchanged from T001 plus the new factory test; no
+consumer of the fixture yet). `poetry run ruff check` clean.
+Next: T010.
+Watch: nothing.
+
+## 2026-09-22T17:10:00+02:00 · Implementer US-1 · T010
+
+Did: added `TestAcceptance` with the recording test, asserting the exact concrete field set
+`{"id", "user", "subject", "version", "accepted_at", "ip_address"}`.
+Verified: `poetry run pytest tests/test_models.py::TestAcceptance` — collection error,
+`ImportError: cannot import name 'Acceptance'` (right reason: the model doesn't exist yet).
+Next: T011.
+Watch: nothing.
+
+## 2026-09-22T17:12:00+02:00 · Implementer US-1 · T011
+
+Did: added `test_no_way_to_accept_a_document` — no `document` field, no
+`record_for_document` manager method, and `record(user, document)` raises `AttributeError`.
+Verified: same scope, same `ImportError` (unchanged — right reason).
+Next: T012.
+Watch: nothing.
+
+## 2026-09-22T17:14:00+02:00 · Implementer US-1 · T012
+
+Did: added `TestRecording` — a draft is refused with `RecordError` and writes nothing; a
+superseded version is accepted; a user with no primary key is refused the same way.
+Verified: same scope, collection error now `ImportError: cannot import name 'RecordError'`
+(right reason: neither `Acceptance` nor `RecordError` exist yet).
+Next: T013.
+Watch: nothing.
+
+## 2026-09-22T17:17:00+02:00 · Implementer US-1 · T013
+
+Did: built `Acceptance` — `user`, `subject`, `version`, `accepted_at`, `ip_address`, each
+with a translated `verbose_name` and `help_text`; `subject`'s carries the Article XV
+justification (D7); `Meta`, `__str__`, class docstring. No manager methods and no migration
+yet.
+Verified: `poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestRecording`
+— collection now fails on `ImportError: cannot import name 'RecordError' from
+'mvp_compliance.exceptions'` rather than on `Acceptance` (model import now succeeds).
+`poetry run ruff check mvp_compliance/models.py` and `poetry run mypy mvp_compliance/models.py`
+both clean.
+Next: T015 (moved ahead of T014 — see decisions.md D12).
+Watch: T010–T012 stay red until `RecordError` (T015) and `record()` (T014) both land; this
+is the correct order, not a defect.
+
+## 2026-09-22T17:20:00+02:00 · Implementer US-1 · T015
+
+Did: added `RecordError` and `RecordedAcceptanceError` to `exceptions.py`, each with a
+docstring naming its requirement; extended `TestExceptions` with the matching
+not-a-`ValidationError` and docstring assertions. Landed before T014 — D12.
+Verified: `poetry run pytest tests/test_exceptions.py` — 8 passed. `poetry run ruff check`
+and `poetry run mypy mvp_compliance/exceptions.py` both clean.
+Next: T014.
+Watch: nothing.
