@@ -1170,3 +1170,26 @@ class TestAccountRemoval:
             removed.delete()
 
         assert Acceptance.objects.filter(pk=survivor_acceptance.pk).exists()
+
+    def test_a_surviving_record_is_still_found_with_its_siblings(
+        self, user, document, monkeypatch
+    ):
+        """Scenario 3, FR-014: found together and in order, not scattered unreachably."""
+        earlier_version = VersionFactory(document=document)
+        earlier_version.publish()
+        later_version = VersionFactory(document=document)
+        later_version.publish()
+
+        later_moment = timezone.now()
+        earlier_moment = later_moment - timedelta(minutes=5)
+
+        monkeypatch.setattr(timezone, "now", lambda: earlier_moment)
+        earlier = Acceptance.objects.record(user, earlier_version)
+
+        monkeypatch.setattr(timezone, "now", lambda: later_moment)
+        later = Acceptance.objects.record(user, later_version)
+
+        subject = earlier.subject
+        user.delete()
+
+        assert list(Acceptance.objects.for_subject(subject)) == [earlier, later]

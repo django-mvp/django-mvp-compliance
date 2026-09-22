@@ -517,3 +517,16 @@ tests/test_models.py` clean. `poetry run mypy mvp_compliance/models.py` clean.
 — "No changes detected".
 Next: T053.
 Watch: nothing.
+
+## 2026-09-22T18:44:00+02:00 · Implementer US-4 · T053
+
+Did: added `test_a_surviving_record_is_still_found_with_its_siblings` to
+`TestAccountRemoval` — records two acceptances at distinct, controlled moments
+(`monkeypatch` on `timezone.now`, the same technique `TestRecording` already uses for
+ordering), removes the account, and asserts `Acceptance.objects.for_subject(subject)`
+returns both together and in the order they happened (scenario 3, FR-014).
+Verified: failed red for the right reason — `AttributeError: 'AcceptanceManager' object
+has no attribute 'for_subject'`, since neither the queryset method nor the manager
+forward exists yet. `poetry run ruff check tests/test_models.py` clean.
+Next: T054.
+Watch: nothing.
