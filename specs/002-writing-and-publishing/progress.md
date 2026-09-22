@@ -178,3 +178,26 @@ Verified: `poetry run pre-commit run --files README.md CHANGELOG.md CONTEXT.md` 
 for the role (US-1's framing, FS-002's context) for consistency.
 Next: full story verify.
 Watch: nothing.
+
+## 2026-09-22T12:16:00Z · Implementer US2 · T020
+
+Did: `tests/test_admin.py::TestDraftPrivacy` walks every address this feature serves that exists
+yet — version changelist, add, change; document changelist, change — against anonymous, a
+signed-in non-staff visitor, and staff holding no `mvp_compliance` permissions. All three reach
+nothing (302 for the first two, 403 for the third) and none of a draft's wording appears in any
+response. Preview and publish don't exist yet (US-3, US-4), so they are not covered; said so
+rather than working around it.
+Verified: this needed no production change — Django's own admin permission checks already refuse
+all three callers — so red/green was checked by mutation instead. Temporarily added
+`VersionAdmin.has_view_permission` returning `True` unconditionally: `poetry run pytest
+tests/test_admin.py::TestDraftPrivacy::test_staff_without_permissions_reaches_nothing` then failed
+on 2 of 5 addresses (`assert 200 == 403`, the version changelist and change pages). Reverted
+(`git checkout -- mvp_compliance/admin.py`, confirmed clean with `git status --short`) and reran:
+`poetry run pytest tests/test_admin.py::TestDraftPrivacy` — 15 passed. `ruff format` reformatted
+the new block once; `ruff check` clean after.
+Watch: the project's real 403 page (`mvp/403.html`, via the django-mvp shell) needs
+`EASY_ICONS` configured to render — `tests/settings.py` doesn't carry it, and no test before this
+one ever triggered a 403 to surface the gap. Worked around inside this module's own isolated
+urlconf (`handler403`) rather than touching `tests/settings.py`, which is outside this story's
+scope. Flagging in `concerns` for whoever owns that file next.
+Next: T021, `has_delete_permission` on a published version.
