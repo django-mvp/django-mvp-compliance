@@ -141,3 +141,15 @@ both models are registered) — the right reason. `poetry run pytest tests/test_
 after narrowing. `ruff check`/`ruff format --check` clean.
 Next: T018, the toolbar/allow-list agreement test.
 Watch: this is the one pre-existing test this story is authorised to change, and only this far.
+
+## 2026-09-22T14:00:00Z · Implementer US1 · demo-server observation
+
+Did: signed into the running demo server as `editor.user` and requested the version add page, per
+the brief's instruction to check the result there.
+Watch: the page 404s. The demo server's worker process started at 13:44:21, before
+`mvp_compliance/widgets.py` (13:53), `forms.py` (13:56) and `admin.py` (13:57) existed on disk —
+Django's `StatReloader` only watches modules already imported at process start, so brand-new files
+never trigger a restart the way an edit to an existing one does. This is an observation about the
+demo server's process lifecycle, not a claim about the code: `tests/test_admin.py` reaches the same
+add page through a fresh process per test run and finds the editor markup there. The brief says not
+to start or stop the server, so this is left for Forge rather than restarted here.
