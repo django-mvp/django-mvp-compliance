@@ -50,3 +50,26 @@ requirement in this feature depends on it, the behaviour it asks for is reachabl
 step, and building it would mean overriding Django's deletion collector to route around the guard
 that ADR exists to keep. Recorded as D13 and raised with Sam; the delivered behaviour stands
 meanwhile.
+
+## 2026-09-22T11:54:00Z · Implementer US1 · T010/T011
+
+Did: wrote `tests/test_widgets.py::TestMarkdownEditorWidget`, asserting the rendered widget
+carries a marker attribute, a `data-toolbar` of exactly the seven declared controls in order, and
+none of the forbidden ones (image, embed, table, tag, raw HTML).
+Verified: `poetry run pytest tests/test_widgets.py` failed on collection —
+`ModuleNotFoundError: No module named 'mvp_compliance.widgets'` — the right reason, since the
+widget did not exist yet.
+Next: T012, the widget itself.
+Watch: nothing.
+
+## 2026-09-22T11:55:00Z · Implementer US1 · T012
+
+Did: added `mvp_compliance/widgets.py` — `MarkdownEditorWidget(forms.Textarea)` with `TOOLBAR`
+(seven `(name, gettext_lazy label)` pairs), a marker attribute and the serialised toolbar on
+`data-toolbar`, and a `Media` naming the two vendored EasyMDE files before the package's own
+`markdown-editor.css`/`.js`.
+Verified: `poetry run pytest tests/test_widgets.py` — 5 passed. `poetry run ruff check` and
+`poetry run ruff format --check` on the two new files — clean. `poetry run mypy
+mvp_compliance/widgets.py` — no issues.
+Next: T013/T014, the JS and CSS that make the toolbar work in the browser.
+Watch: nothing.
