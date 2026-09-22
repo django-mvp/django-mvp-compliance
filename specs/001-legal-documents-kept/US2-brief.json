@@ -1,0 +1,124 @@
+{
+  "story": "US2",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 8,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-fs001",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-16/3c401f5e"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-08-05/d3dce07f"
+    }
+  ],
+  "tasks": [
+    "T020",
+    "T021",
+    "T022",
+    "T023",
+    "T024",
+    "T025",
+    "T026",
+    "T027",
+    "T028"
+  ],
+  "context": {
+    "why": "US-1 built Document and Version. A version currently has no lifecycle at all: it exists, it holds Markdown, and nothing distinguishes one that has been put in front of people from one that is still being written. This story adds that lifecycle and the single act that drives it. A version starts as a draft with no standing, publishing makes it the one in force, and whatever was in force before it becomes superseded. Publishing only goes one way \u2014 there is no route back to draft and no route that makes a superseded version current again, and the absence is asserted by name so a later convenience cannot be added quietly. Immutability of a published version's wording is the NEXT story; do not build it here.",
+    "environment": "Poetry. Run everything with `poetry run ...` from the worktree root. The virtualenv is already synced. Full verify (once, at the end): `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. Narrow test scope per task: `poetry run pytest tests/test_models.py::TestPublishing`. The lint gate is `poetry run pre-commit run --all-files`, never a bare `ruff check`.",
+    "spec_sections": [
+      "specs/001-legal-documents-kept/spec.md \u00a7 User Story 2 - Publishing puts exactly one version in force",
+      "specs/001-legal-documents-kept/spec.md \u00a7 Requirements \u2014 FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010",
+      "specs/001-legal-documents-kept/spec.md \u00a7 Edge Cases"
+    ],
+    "plan_sections": [
+      "specs/001-legal-documents-kept/plan.md \u00a7 Design \u2192 Data model",
+      "specs/001-legal-documents-kept/plan.md \u00a7 Design \u2192 Publishing",
+      "specs/001-legal-documents-kept/plan.md \u00a7 Design \u2192 Exceptions"
+    ],
+    "prior_decisions": [
+      "D3 \u2014 publication takes effect immediately. There is no scheduled or future-dated publish, and no field holding an effective date. The version in force is stored, never computed from a clock.",
+      "D4 \u2014 no rollback. Restoring earlier wording means publishing that wording again as a new version. Build no `unpublish`, `revert`, `rollback`, `restore` or `make_current`, on the model or on any queryset.",
+      "D9 \u2014 refusals raise this package's own exceptions, never `ValidationError`. `ValidationError` is what form and admin code catches broadly, and swallowing an invariant breach into a field error is the silent discard FR-012 forbids.",
+      "D11 \u2014 the partial unique constraint and the row lock are BOTH load-bearing and which one carries depends on the backend. MySQL and MariaDB do not support partial indexes and Django omits the constraint there rather than failing (models.W036), so on those backends the `select_for_update()` lock is the only thing holding FR-007. Ship both, and put a comment at the lock saying why it is not belt-and-braces."
+    ],
+    "acceptance": [
+      {
+        "task": "T020",
+        "given_when_then": "Given a newly created version, when it is inspected, then it is a draft, it is not the version in force, and it has no publication time; when its Markdown is changed and saved, then the change is kept; and when it is deleted, then it is gone."
+      },
+      {
+        "task": "T021",
+        "given_when_then": "Given a document with no published version, when its first draft is published, then that version is in force and the document has no superseded versions; given a document with a version in force, when a second version is published, then the second is in force and the first is superseded, and exactly one version answers as in force; given an already-published version, when publishing is attempted again, then it is refused with PublishError and nothing about the document changes."
+      },
+      {
+        "task": "T022",
+        "given_when_then": "Given the Version model, when a version is created, then its status is the draft value and its published_at is null; and when a row is forced into a state where the two disagree \u2014 a draft carrying a publication time, or a published version without one \u2014 then the database check constraint refuses it."
+      },
+      {
+        "task": "T023",
+        "given_when_then": "Given mvp_compliance/exceptions.py, when PublishError and PublishedVersionError are inspected, then each has a docstring naming the requirement it holds, and neither is a subclass of django.core.exceptions.ValidationError."
+      },
+      {
+        "task": "T024",
+        "given_when_then": "Given a draft, when publish() is called, then the whole act happens inside one transaction: the document's row is locked with select_for_update(), the previously current version becomes superseded, and this version becomes current with its publication time set."
+      },
+      {
+        "task": "T025",
+        "given_when_then": "Given a document with a version in force, when a second row is forced to the current status behind publish()'s back, then the database raises IntegrityError \u2014 the one-current-version-per-document rule is enforced by a constraint, not only by the method."
+      },
+      {
+        "task": "T026",
+        "given_when_then": "Given a document with two drafts, when both are published one after the other, then the document still reports exactly one version in force, and the test proves it without wall-clock timing or thread scheduling."
+      },
+      {
+        "task": "T027",
+        "given_when_then": "Given the Version model and its queryset, when they are inspected by name, then none of unpublish, revert, rollback, restore or make_current exists on either."
+      },
+      {
+        "task": "T028",
+        "given_when_then": "Given the model changes in this story, when makemigrations has run, then makemigrations --check is clean and migrate from an empty database reaches the same schema."
+      }
+    ],
+    "verified_base": {
+      "commit": "a08496c1548f3933655e5a2bc27575ef17b46974",
+      "verified_at": "2026-09-21T21:09:42Z",
+      "steps": [
+        "conformance",
+        "docs",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "note": "Green on this exact commit in this exact worktree, minutes before dispatch: conformance, docs, ruff lint and format, mypy, deptry, the full pytest suite and poetry build. If your HEAD is not this commit, stop and report blocked. If the suite cannot run at all, that is an environment fault: report it, do not work around it."
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 90
+  },
+  "rituals": [
+    "Load craft-tdd and craft-increments from the absolute paths in required_skills, and copy each RECEIPT line verbatim into skills_loaded.",
+    "Read this brief in full.",
+    "Read only the US-2 rows of specs/001-legal-documents-kept/tasks.md.",
+    "Read the plan.md sections named in context.plan_sections and stop there.",
+    "Read the CONTEXT.md glossary entries for Published, Draft, Current and Superseded, and use that vocabulary in code, tests and commit messages.",
+    "Read mvp_compliance/models.py as US-1 left it.",
+    "git log --oneline -10.",
+    "Do not run a baseline verify: context.verified_base is Forge's assurance and it has already been given."
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story. tests/test_models.py::TestDocument and ::TestVersion, tests/test_factories.py and tests/test_app.py are US-1's or pre-existing. If one genuinely must change, mark the task blocked and say why in concerns.",
+    "Do not build US-3, US-4 or US-5: no immutability guard on save/update/delete, no PUBLISHED_FROZEN_FIELDS, no use_in_migrations, no Markdown rendering, no renderer class, no MVP_COMPLIANCE_RENDERER setting, no published()/drafts()/current() queryset methods and no Document.current property. The html field belongs to US-4 \u2014 do not add it, and write this story's check constraint over status and published_at only.",
+    "Do not add a runtime dependency. markdown and nh3 arrive in US-4.",
+    "Do not register anything in the Django admin, and do not add forms, views or URLs (D5).",
+    "Never edit feature-state.json beyond flipping your own tasks' status, attempts and evidence.",
+    "No git merge, no push, no gh, no token minting. Your story ends at a clean committed worktree and a report.",
+    "Never weaken an assertion, add a skip or an xfail, or special-case code to make a test pass.",
+    "Never write a receipt you did not read from a file, and never claim a command you did not run."
+  ]
+}

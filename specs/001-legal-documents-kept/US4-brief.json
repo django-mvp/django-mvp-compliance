@@ -1,0 +1,118 @@
+{
+  "story": "US4",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 10,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-fs001",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-16/3c401f5e"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-08-05/d3dce07f"
+    }
+  ],
+  "tasks": ["T040", "T041", "T042", "T043", "T044", "T045", "T046", "T047", "T048"],
+  "context": {
+    "why": "US-3 froze what a published version says. This story freezes what a reader is served. The output a visitor sees is produced once, at publication, and stored on the row — never produced again on the way out. That is what makes the record evidence: a markup library upgrade, a change of renderer or a change of allow list cannot retroactively alter what a document said when someone agreed to it. Two things follow and both are this story: the output is rendered through an explicit allow list so stored markup can never carry script (it is stored, not reflected, so one mistake is permanent), and a draft carries no stored output at all, enforced by the database rather than by convention.",
+    "environment": "Poetry. Run everything with `poetry run ...` from the worktree root. The virtualenv is synced. Full verify (once, at the end): `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. Narrow scope per task: `poetry run pytest tests/test_rendering.py` or `poetry run pytest tests/test_models.py::TestPublishing`. The lint gate is `poetry run pre-commit run --all-files` — mypy, ruff and deptry all run there.",
+    "spec_sections": [
+      "specs/001-legal-documents-kept/spec.md § User Story 4 - What a reader will be served is fixed at publication",
+      "specs/001-legal-documents-kept/spec.md § Requirements — FR-016, FR-017, FR-018, FR-019",
+      "specs/001-legal-documents-kept/spec.md § Success Criteria — SC-004"
+    ],
+    "plan_sections": [
+      "specs/001-legal-documents-kept/plan.md § Design → Rendering",
+      "specs/001-legal-documents-kept/plan.md § Design → Publishing",
+      "specs/001-legal-documents-kept/plan.md § Design → Data model"
+    ],
+    "prior_decisions": [
+      "D7 — publication is refused when the authored markup produces empty output, and the refusal happens before anything is written, so the document is untouched afterwards.",
+      "D9 — refusals raise this package's own exceptions. `PublishError` for a refused publication, `PublishedVersionError` for a refused write to a published version. Both already exist in mvp_compliance/exceptions.py.",
+      "D15 — `publish()` does NOT translate a constraint `IntegrityError` into `PublishError`. plan.md's Publishing section still describes that translation; D15 supersedes it and the code as US-2 left it is correct. Do not add the catch clause.",
+      "D14 — `Version`'s constraints match `Status` values as string literals, not through the enum: a nested `Meta` class cannot see names bound in `Version`'s own class body. When you widen the check constraint in T044, follow that existing style rather than referencing `Version.Status`.",
+      "US-3's frozen-field set is `(\"document\", \"number\", \"markdown\", \"published_at\")`. T047 is where `html` joins it. `PUBLISHED_FROZEN_FIELDS` is a module-level constant in models.py and the guards read it, so adding the name there is the whole change — the four refusal routes need no edit.",
+      "The renderer is a class so a host project can subclass it and point the setting at the subclass. `get_renderer()` is a module-level function only because Article XI permits a thin wrapper that returns a class. Do not add a registry, a settings dict, or a setting per knob."
+    ],
+    "acceptance": [
+      {
+        "task": "T040",
+        "given_when_then": "Given authored markup containing headings, lists, emphasis, a link and a table, when it is rendered, then each survives in the output; and given markup containing a `<script>` element, a `<style>` element, an `<iframe>`, an `onclick` attribute and a link whose href is a `javascript:` URL, when it is rendered, then none of them appears in the output. Assert both presence and absence — a test that only checks the dangerous input is gone passes just as well against a renderer that returns the empty string."
+      },
+      {
+        "task": "T041",
+        "given_when_then": "Given pyproject.toml, when `markdown` and `nh3` are added to `[project] dependencies` with a comment saying what each is for and the lock file is regenerated, then `poetry run pre-commit run --all-files` is green — deptry reports neither a missing nor an unused dependency. This task lands with the module that imports them rather than earlier, because a declared dependency nothing imports is what deptry fails on."
+      },
+      {
+        "task": "T042",
+        "given_when_then": "Given mvp_compliance/rendering.py, when `MarkdownRenderer` is defined with `extensions`, `allowed_tags`, `allowed_attributes` and `allowed_url_schemes` as class attributes and a `render(source)` running the markup library then `nh3.clean`, then T040 passes. The module docstring says that rendering happens once, at publication, and never on the way out."
+      },
+      {
+        "task": "T043",
+        "given_when_then": "Given no `MVP_COMPLIANCE_RENDERER` setting, when `get_renderer()` is called, then it returns `MarkdownRenderer`; and given the setting pointing at another class by dotted path, when `get_renderer()` is called, then it returns that class, resolved with `import_string`. Cover both in tests/test_rendering.py::TestRendererSetting, using `override_settings`."
+      },
+      {
+        "task": "T044",
+        "given_when_then": "Given the `Version` model, when the `html` field is added as a `TextField(blank=True)` with help_text and verbose_name, `publish()` renders the authored markup into it before anything is written, and the existing check constraint is widened, then a draft's stored output is empty and a published version's is not, refused by the database on both sides. Cover both directions in tests/test_models.py::TestPublishing."
+      },
+      {
+        "task": "T045",
+        "given_when_then": "Given a draft whose authored markup produces output that is empty once whitespace is stripped, when it is published, then `PublishError` is raised, the row is untouched, the document still has no version in force, and the draft is still a draft. The refusal happens before the row lock is taken and before anything is written."
+      },
+      {
+        "task": "T046",
+        "given_when_then": "Given a published version, when `MVP_COMPLIANCE_RENDERER` is swapped with `override_settings` for a renderer producing visibly different output and the version is re-read from the database, then its stored output is byte-identical to what was stored at publication. The substitute renderer must produce output that genuinely differs, or the test passes for the wrong reason."
+      },
+      {
+        "task": "T047",
+        "given_when_then": "Given a published version, when its stored output is changed through save(), through a queryset update(), and through bulk_update(), then each is refused with `PublishedVersionError` and the stored output is unchanged when re-read — the same routes US-3 already closed for the wording, now covering `html` because it joined the frozen set."
+      },
+      {
+        "task": "T048",
+        "given_when_then": "Given the model changes in this story, when `poetry run python manage.py makemigrations mvp_compliance` is run, then a migration is generated and `poetry run python manage.py makemigrations --check --dry-run` is clean afterwards. Do not squash or renumber the branch's existing migrations — that happens later, outside this story."
+      }
+    ],
+    "verified_base": {
+      "commit": "c13c411bde3238304fbbb9c4b1ad51f0b7706bc0",
+      "verified_at": "2026-09-21T22:17:22Z",
+      "steps": [
+        "conformance",
+        "docs",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "note": "Green on this exact commit in this exact worktree, minutes before dispatch: conformance, docs, ruff lint and format, mypy, deptry, the full pytest suite (38 passed) and poetry build. If your HEAD is not this commit, stop and report blocked. If the suite cannot run at all, that is an environment fault: report it, do not work around it."
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 90
+  },
+  "rituals": [
+    "Load craft-tdd and craft-increments from the absolute paths in required_skills, and copy each RECEIPT line verbatim into skills_loaded.",
+    "Read this brief in full.",
+    "Read only the US-4 rows of specs/001-legal-documents-kept/tasks.md.",
+    "Read the plan.md sections named in context.plan_sections and stop there.",
+    "Read mvp_compliance/models.py, mvp_compliance/exceptions.py and tests/test_models.py as US-3 left them.",
+    "git log --oneline -10.",
+    "Do not run a baseline verify: context.verified_base is Forge's assurance and it has already been given."
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story. Everything in tests/ predates this story except what you add. If a pre-existing test genuinely must change, mark the task blocked and say why in concerns. T044 widens a constraint that T022's test covers — if that test needs to change rather than be joined by a new one, that is a blocked task, not an edit.",
+    "Do not add the `IntegrityError` to `PublishError` translation plan.md's Publishing section describes — see D15 in prior_decisions.",
+    "Do not build US-5: no `published()`, `drafts()` or `current()` queryset methods, no `Document.current` property, no README or CHANGELOG edits.",
+    "Do not write your own sanitiser, your own allow-list filter, or any regular expression over HTML. `nh3.clean` is the sanitiser and its allow list is configuration.",
+    "Do not render anywhere except inside `publish()`. No property, no template tag, no `__str__`, no model method that renders on read.",
+    "Do not add a runtime dependency beyond `markdown` and `nh3`.",
+    "Never edit feature-state.json beyond flipping your own tasks' status, attempts and evidence.",
+    "No git merge, no push, no gh, no token minting. Your story ends at a clean committed worktree and a report.",
+    "Never weaken an assertion, add a skip or an xfail, or special-case code to make a test pass.",
+    "Never write a receipt you did not read from a file, and never claim a command you did not run."
+  ],
+  "report_path": "/tmp/dmc-us4-report.json"
+}

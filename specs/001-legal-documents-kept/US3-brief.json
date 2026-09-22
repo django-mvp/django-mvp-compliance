@@ -1,0 +1,116 @@
+{
+  "story": "US3",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 9,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-fs001",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-16/3c401f5e"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-08-05/d3dce07f"
+    }
+  ],
+  "tasks": [
+    "T030",
+    "T031",
+    "T032",
+    "T033",
+    "T034",
+    "T035",
+    "T036"
+  ],
+  "context": {
+    "why": "This is the design centre of the whole package and the one property the existing packages in this space do not have. The reason these documents live in the database rather than the repository is evidence, and evidence that can be edited is not evidence. US-1 built the models and US-2 built publishing; a published version's wording is still, right now, as editable as any other row. This story closes that, on every route the package offers, and proves each route closed with its own test. SC-003 is explicit: one test per route, no route left untested.",
+    "environment": "Poetry. Run everything with `poetry run ...` from the worktree root. The virtualenv is synced. Full verify (once, at the end): `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. Narrow scope per task: `poetry run pytest tests/test_models.py::TestImmutability`. The lint gate is `poetry run pre-commit run --all-files`.",
+    "spec_sections": [
+      "specs/001-legal-documents-kept/spec.md \u00a7 User Story 3 - A published wording can never change",
+      "specs/001-legal-documents-kept/spec.md \u00a7 Requirements \u2014 FR-011, FR-012, FR-013, FR-014",
+      "specs/001-legal-documents-kept/spec.md \u00a7 Success Criteria \u2014 SC-003, SC-007"
+    ],
+    "plan_sections": [
+      "specs/001-legal-documents-kept/plan.md \u00a7 Design \u2192 Immutability",
+      "specs/001-legal-documents-kept/plan.md \u00a7 Design \u2192 Data model"
+    ],
+    "prior_decisions": [
+      "D6 \u2014 the package offers no way to delete a published version, and no way to delete a document holding any.",
+      "D8 \u2014 the version's foreign key to its document is already `on_delete=PROTECT`, which is how document deletion is refused. Do not add a `Document.delete()` override: PROTECT is enforced by Django's deletion collector on every route, including a queryset delete and a cascade from elsewhere, and an override on the model is not. Your work here is the tests that prove it and the guard on the Version side.",
+      "D9 \u2014 refusals raise this package's own exceptions. `PublishedVersionError` already exists in mvp_compliance/exceptions.py; this story is where it is first raised.",
+      "D10 \u2014 one route stays open by design: a data migration this package ships calling `save()` on a historical instance. Historical models do not carry a custom `save()`, so no model-layer guard reaches them. `use_in_migrations = True` on the manager closes the bulk routes inside a migration; the residue is closed by a test asserting no shipped migration contains a RunPython or RunSQL operation. Do not attempt database triggers.",
+      "ARC-001 from the design review \u2014 do NOT write a `bulk_update()` override. Django's `QuerySet.bulk_update` calls `self.filter(pk__in=pks).update(**update_kwargs)` internally (django/db/models/query.py:920-923), so the `update()` guard already catches it. It still gets a test, because that is a claim about Django's internals. One detail from the same lines: `update_kwargs` is keyed on `field.attname`, so the guard must compare against each frozen field's `name` AND its `attname`, or `document_id` slips past."
+    ],
+    "acceptance": [
+      {
+        "task": "T030",
+        "given_when_then": "Given a published version, when its wording is changed and saved; when it is changed through a queryset update(); when it is changed through bulk_update(); when the instance is deleted; and when a queryset holding it is deleted \u2014 then each of the five raises PublishedVersionError, and after each the stored wording is re-read from the database and is unchanged."
+      },
+      {
+        "task": "T031",
+        "given_when_then": "Given the Version model, when a published row is written through save(), update() or either delete route, then the write is refused with PublishedVersionError; and when the change touches only the status field, then it passes, because moving from current to superseded is the one change a published version ever undergoes (FR-013). The save() guard re-reads the stored row rather than trusting an in-memory snapshot, so it survives refresh_from_db and deferred loading. A draft is unaffected and stays freely editable and freely discardable."
+      },
+      {
+        "task": "T032",
+        "given_when_then": "Given a migration's historical model obtained through apps.get_model('mvp_compliance', 'Version'), when its default manager is inspected, then it is this package's manager rather than a plain models.Manager, so a bulk write inside a migration hits the same refusal."
+      },
+      {
+        "task": "T033",
+        "given_when_then": "Given every migration module under mvp_compliance/migrations/, when their operations are read, then none is a RunPython or a RunSQL \u2014 so no migration this package ships can write to a published version by the one route the model layer cannot reach. The test carries a comment saying what to do when a legitimate data migration is eventually needed."
+      },
+      {
+        "task": "T034",
+        "given_when_then": "Given a published version, when a later version of the same document is published and supersedes it, then the superseded version's wording is byte-identical to what it was before \u2014 becoming superseded is a change of standing, not of text."
+      },
+      {
+        "task": "T035",
+        "given_when_then": "Given a document holding any version, when it is deleted, then ProtectedError is raised and the document is still there; given a document holding none, when it is deleted, then it is gone; and given a document whose only version is a draft, when that draft is discarded, then the document is in the same state as a freshly created one and deletes normally."
+      },
+      {
+        "task": "T036",
+        "given_when_then": "Given a published version whose wording contains an error, when the error is corrected, then the correction exists as a new version of the same document and the erroneous version is still readable with its original wording (SC-007)."
+      }
+    ],
+    "verified_base": {
+      "commit": "4e2ddbdb59f337057d66692d58c9b873a6c5e9f7",
+      "verified_at": "2026-09-21T21:24:03Z",
+      "steps": [
+        "conformance",
+        "docs",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "note": "Green on this exact commit in this exact worktree, minutes before dispatch: conformance, docs, ruff lint and format, mypy, deptry, the full pytest suite and poetry build. If your HEAD is not this commit, stop and report blocked. If the suite cannot run at all, that is an environment fault: report it, do not work around it."
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 90
+  },
+  "rituals": [
+    "Load craft-tdd and craft-increments from the absolute paths in required_skills, and copy each RECEIPT line verbatim into skills_loaded.",
+    "Read this brief in full.",
+    "Read only the US-3 rows of specs/001-legal-documents-kept/tasks.md.",
+    "Read the plan.md sections named in context.plan_sections and stop there.",
+    "Read the CONTEXT.md glossary entries for Published, Draft, Current and Superseded.",
+    "Read mvp_compliance/models.py and mvp_compliance/exceptions.py as US-2 left them.",
+    "git log --oneline -10.",
+    "Do not run a baseline verify: context.verified_base is Forge's assurance and it has already been given."
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story. Everything in tests/ predates this story except what you add. If a pre-existing test genuinely must change, mark the task blocked and say why in concerns.",
+    "Do not write a `bulk_update()` override \u2014 see the ARC-001 entry in prior_decisions. Test it, do not guard it separately.",
+    "Do not write a `Document.delete()` or `DocumentQuerySet.delete()` override \u2014 see D8. PROTECT already does it.",
+    "Do not build US-4 or US-5: no `html` field, no Markdown rendering, no renderer class, no MVP_COMPLIANCE_RENDERER setting, no published()/drafts()/current() queryset methods, no Document.current property. The frozen-field set in this story is document, number, markdown and published_at \u2014 everything except status. US-4 adds `html` to it.",
+    "Do not attempt database triggers or raw DDL in a migration (D10).",
+    "Do not add a runtime dependency.",
+    "Never edit feature-state.json beyond flipping your own tasks' status, attempts and evidence.",
+    "No git merge, no push, no gh, no token minting. Your story ends at a clean committed worktree and a report.",
+    "Never weaken an assertion, add a skip or an xfail, or special-case code to make a test pass. In particular, a test that proves immutability must reinstate the defect and prove it raises, never prove the code is absent.",
+    "Never write a receipt you did not read from a file, and never claim a command you did not run."
+  ]
+}

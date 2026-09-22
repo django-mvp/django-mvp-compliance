@@ -1,0 +1,432 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "001-legal-documents-kept",
+  "branch": "feat/001-legal-documents-kept",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-21T20:47:00Z",
+      "note": "S3R: one reviewer, three lenses; both findings verified against installed Django and applied as plan edits"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-21T20:52:12Z",
+      "note": "Foundational phase committed; US-1 dispatched"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-21T22:50:31Z",
+      "note": "All five stories accepted after independent re-verification"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-21T22:58:35Z",
+      "note": "Convergence complete: migrations squashed, catalog added, ADR verdicts recorded, cleanup pass done"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-22T08:35:00Z",
+      "note": "Branch re-verified independently from a cleared lint cache: 65 tests pass, pre-commit clean across all files including ruff, format, mypy and deptry, makemigrations --check reports no changes, tamper-check clean against origin/main. Walkthrough approved by Sam on the message catalog wording. PR #19 taken out of draft for his merge gate."
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-21T17:29:28Z",
+      "self_resolved": [
+        "merge commit 77af27309df850c3e4c2c84338dc4317d8708977, pull request #6"
+      ]
+    },
+    "plan": {
+      "approved_by": "notified",
+      "at": "2026-09-21T21:05:00Z"
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-21T21:00:00Z",
+      "self_resolved": [
+        "SPC-001 (high, verified) research.md R1 claimed MySQL 8.0.13+ supports partial unique indexes; it does not, and Django omits the constraint with models.W036 rather than failing. R1 corrected with the Django source lines, plan.md now says which mechanism carries on which backend, T024 requires the row lock to carry a comment saying it is the only thing holding FR-007 on MySQL, and D11 records what a MySQL-backed host project is promised",
+        "ARC-001 (low, verified, removes work) the planned VersionQuerySet.bulk_update() override is redundant \u2014 Django's bulk_update calls .update() internally (query.py:920-923). Dropped from plan.md and T031; T030's bulk_update test stays as regression cover",
+        "carried from ARC-001's evidence: bulk_update keys update_kwargs on field.attname, so the frozen-field guard compares name and attname both, or document_id slips past. Written into plan.md and T031"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T08:31:46Z",
+      "self_resolved": [
+        "The message catalog wording: field labels, help text, the three standings and the five refusal messages. No page to show, because the package registers no admin and ships no forms, views, templates or URLs. Sam reviewed the wording, raised the stored html field rather than the labels, accepted the answer and approved as it stands."
+      ]
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 7,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T002",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T003",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T010",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T011",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T012",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T013",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T014",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T015",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T016",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T017",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 8,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T020",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T021",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T022",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T023",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T024",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T025",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T026",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T027",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T028",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P1",
+      "issue": 9,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T030",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T031",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T032",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T033",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T034",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T035",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T036",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P2",
+      "issue": 10,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T040",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T041",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T042",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T043",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T044",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T045",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T046",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T047",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T048",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US5",
+      "priority": "P2",
+      "issue": 11,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T050",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_published_history_comes_back_in_order_with_drafts_absent",
+              "tests/test_models.py::TestRetrieval::test_a_superseded_version_keeps_its_original_wording_and_html",
+              "tests/test_models.py::TestRetrieval::test_the_version_in_force_is_the_one_most_recently_published"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval -x"
+            ]
+          }
+        },
+        {
+          "id": "T051",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "mvp_compliance/models.py:56",
+              "mvp_compliance/models.py:82",
+              "mvp_compliance/models.py:94"
+            ],
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_published_history_comes_back_in_order_with_drafts_absent",
+              "tests/test_models.py::TestRetrieval::test_the_version_in_force_is_the_one_most_recently_published"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval",
+              "poetry run mypy mvp_compliance"
+            ]
+          }
+        },
+        {
+          "id": "T052",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_a_document_with_nothing_published_reports_no_version_in_force"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval"
+            ]
+          }
+        },
+        {
+          "id": "T053",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_one_version_by_its_number"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval"
+            ]
+          }
+        },
+        {
+          "id": "T054",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRetrieval::test_four_documents_do_not_interfere"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRetrieval"
+            ]
+          }
+        },
+        {
+          "id": "T055",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "README.md:29",
+              "docs/models.md:130"
+            ],
+            "commands": [
+              "poetry run pre-commit run --files README.md docs/models.md"
+            ]
+          }
+        },
+        {
+          "id": "T056",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "CHANGELOG.md:10"
+            ],
+            "commands": [
+              "poetry run pre-commit run --files CHANGELOG.md"
+            ]
+          }
+        },
+        {
+          "id": "T057",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_it_ships_no_admin_forms_views_or_urls",
+              "tests/test_app.py::TestPackagedApp::test_it_registers_nothing_in_the_admin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 19,
+    "draft": true
+  },
+  "escalations": []
+}

@@ -13,7 +13,12 @@ requires-python = ">=3.12,<4.0"
 # inside django-mvp's layout primitives and take their styling from the daisyUI
 # theme the host project already runs. Installed without it, every page this
 # package owns renders unstyled.
-dependencies = ["django>=5.2", "django-mvp>=0.23.0"]
+dependencies = [
+    "django>=5.2",
+    "django-mvp>=0.23.0",
+    "markdown>=3.7", # turns an authored version's wording into HTML at publication
+    "nh3>=0.2", # sanitises that HTML against an explicit allow list before it is stored
+]
 keywords = ["django", "gdpr", "privacy", "consent", "terms", "cookies"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -126,7 +131,11 @@ ignore_missing_model_attributes = "True"
 # subject is the Django app registry and the on-disk layout of the installed
 # package, so conforming to the mirror rule would mean inventing
 # mvp_compliance/app.py purely to give the test file something to point at.
-non-mirror-paths = ["tests/test_app.py"]
+#
+# test_migrations.py is the same shape one layer down: its subject is the set of
+# operations every migration in mvp_compliance/migrations/ performs, taken
+# together, and there is no mvp_compliance/migrations.py to mirror.
+non-mirror-paths = ["tests/test_app.py", "tests/test_migrations.py"]
 
 [tool.deptry]
 extend_exclude = ["tests/", "demo/", "docs/"]

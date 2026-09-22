@@ -1,0 +1,43 @@
+{
+  "stage": "design",
+  "lens": "spec-compliance",
+  "scope": "specs/001-legal-documents-kept/plan.md and tasks.md, reviewed against the approved spec.md, decisions.md, research.md, CONSTITUTION.md, CONTEXT.md, AGENTS.md, pyproject.toml, tests/settings.py, tests/test_app.py, mvp_compliance/apps.py, and .github/workflows/tests.yml. Spot-checked three load-bearing research.md claims (R1 partial unique index backend support, R2 use_in_migrations, R2/plan.md bulk_update interception) against the Django 5.2.17 source installed in this repo's own Poetry virtualenv (django-mvp-compliance-dF-QNZGc-py3.14).",
+  "skills_loaded": [
+    {
+      "name": "craft-review",
+      "receipt": "craft-review/2026-09-17/b773db2e",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-security",
+      "receipt": "craft-security/2026-08-04/ea3d6742",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-simplify",
+      "receipt": "craft-simplify/2026-08-04/69038ce1",
+      "loaded_via": "path-read"
+    }
+  ],
+  "findings": [
+    {
+      "id": "SPC-001",
+      "severity": "high",
+      "claim": "[spec-compliance] research.md R1's premise — that UniqueConstraint(condition=...) is supported \"on every backend the CI matrix runs (SQLite 3.8+, PostgreSQL, MySQL 8.0.13+)\" — is factually wrong for MySQL/MariaDB, and the CI matrix this repo actually runs never exercises MySQL at all, so the FR-007/SC-002 database-level guarantee that plan.md calls \"the guarantee\" (the row lock is only \"the ergonomics\") has zero backstop and zero test coverage on a backend host projects can legitimately choose.",
+      "evidence": "research.md R1 (line ~13-15) states MySQL 8.0.13+ supports partial unique indexes. Read against the installed Django source at $(poetry env info --path)/lib/python3.14/site-packages/django/db/backends/mysql/features.py:45 — `supports_partial_indexes = False`, with the comment 'Neither MySQL nor MariaDB support partial indexes.' django/db/backends/base/features.py:303 confirms the default is True (so SQLite and PostgreSQL do get it), and django/db/models/constraints.py:391-405 confirms that when condition is set and the backend lacks supports_partial_indexes, Django emits system check warning W036 ('A constraint won't be created') rather than an error — the partial index is silently absent, not refused at migrate time. Separately, .github/workflows/tests.yml:21-28 calls django-mvp/shared's tests.yml with only django-versions '[\"5.2\", \"6.0\"]' and no database matrix, and tests/settings.py:52-57 hard-codes sqlite3 `:memory:` — so the CI matrix this repo runs is SQLite only, never MySQL, regardless of what research.md claims about the CI matrix. plan.md's own T025 (tasks.md) proves the guarantee by forcing IntegrityError from the constraint — that proof only holds on the backend CI runs.",
+      "confidence": "verified",
+      "suggested_fix": "Correct research.md R1's claim to state accurately that MySQL/MariaDB do not support partial unique indexes (Django emits W036 and silently omits the constraint there) and that this repo's CI matrix (tests.yml + tests/settings.py) exercises SQLite only. Add one decisions.md entry recording that FR-007's database-level backstop is confirmed only on SQLite/PostgreSQL, and naming what a MySQL-backed host project loses (the constraint; only the select_for_update lock remains, which does not protect a future caller that writes status=\"current\" outside publish()). No plan.md task needs to change — this is a correction to a false premise plus the one-line decision it was missing, not a new mechanism."
+    },
+    {
+      "id": "ARC-001",
+      "severity": "low",
+      "claim": "[architecture] plan.md's Immutability section and tasks.md T031 plan a separate VersionQuerySet.bulk_update() override as its own interception point, but Django's own QuerySet.bulk_update() is implemented entirely in terms of QuerySet.update() — it does nothing but call self.filter(pk__in=pks).update(**update_kwargs) in a loop — so once VersionQuerySet.update() is overridden to refuse frozen-field writes on published rows, bulk_update() is already refused through that same override with no separate code needed.",
+      "evidence": "django/db/models/query.py:869-925 (installed Django 5.2.17 in the repo's Poetry venv) — QuerySet.bulk_update() builds update_kwargs keyed by each field's attname (e.g. \"markdown\", \"html\") and calls `queryset = self.using(self.db)` then, per batch, `queryset.filter(pk__in=pks).update(**update_kwargs)`. `.using()` and `.filter()` both preserve the calling queryset's class via the normal `_clone()` path, so the `.update()` call inside bulk_update() runs on a VersionQuerySet instance and hits the same override VersionQuerySet.update() already defines — with the same frozen-field kwarg keys the override checks for. plan.md lines ~193-196 and tasks.md T031 (US-3) list bulk_update() as a fourth route needing its own refusal logic alongside update(), delete() and Version.delete().",
+      "confidence": "verified",
+      "suggested_fix": "Drop the standalone VersionQuerySet.bulk_update() override from plan.md's Immutability section and from T031's scope; note in research.md R2 that bulk_update() is caught transitively because Django's own implementation routes through update(). Keep T030's bulk_update test as-is — it stays valid regression coverage proving the interception holds through the transitive path, per SC-003's one-test-per-route requirement — only the redundant override implementation is removed."
+    }
+  ],
+  "notes": [],
+  "verdict": "request_changes",
+  "risk": "high"
+}

@@ -1,0 +1,100 @@
+{
+  "story": "US1",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 7,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-fs001",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-16/3c401f5e"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-08-05/d3dce07f"
+    }
+  ],
+  "tasks": ["T010", "T011", "T012", "T013", "T014", "T015", "T016", "T017"],
+  "context": {
+    "why": "This is the first story of a greenfield data layer. Nothing in the package has a model yet. The story creates the two entities everything else in the package will hang off: a Document, which is a name with a lasting identity and holds no wording at all, and a Version, which belongs to one document and holds the Markdown its author wrote. Nothing about publishing, immutability, rendering or retrieval is in this story — they are US-2 to US-5, and they land on top of what you build here.",
+    "environment": "Poetry. Run everything with `poetry run ...` from the worktree root. The virtualenv is already synced. Full verify: `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. Narrow test scope: `poetry run pytest tests/test_models.py::TestDocument`. `poetry run pre-commit run --all-files` is the lint gate, never a bare `ruff check`.",
+    "spec_sections": [
+      "specs/001-legal-documents-kept/spec.md § User Story 1 - Several documents, each with its own history",
+      "specs/001-legal-documents-kept/spec.md § Requirements — FR-001, FR-002, FR-003"
+    ],
+    "plan_sections": [
+      "specs/001-legal-documents-kept/plan.md § Design → Data model",
+      "specs/001-legal-documents-kept/plan.md § Project Structure → Source code"
+    ],
+    "prior_decisions": [
+      "D2 — the package assigns a version's order and there is no author-supplied label. Do not add a `version_number`, a `label` or anything an author fills in: the number is assigned by the package as max+1 within the document. Two sources of truth for ordering is the exact defect this avoids.",
+      "D5 — no screens and no addresses. This feature ships no admin registration, no forms, no views and no URLs. Do not register either model in the admin, however convenient it would be to look at.",
+      "D8 — the version's foreign key to its document is `on_delete=models.PROTECT`. A document holding any version refuses deletion. This is deliberate and is not to be softened to CASCADE."
+    ],
+    "acceptance": [
+      {
+        "task": "T010",
+        "given_when_then": "Given an empty database, when three documents are created with distinct names, then all three exist side by side and each reports an empty sequence of versions; and when a fourth is created with a name one of them already has, then it is refused."
+      },
+      {
+        "task": "T011",
+        "given_when_then": "Given the Document model, when its concrete field names are read from _meta, then they are exactly {'id', 'name'} — so no text-bearing field can be added to Document without this test failing (FR-002, US-1 scenario 4)."
+      },
+      {
+        "task": "T012",
+        "given_when_then": "Given the Document model as built, when a document is created, then it has a name, a verbose_name and help_text on that field, a Meta verbose_name and verbose_name_plural, a __str__ returning the name, and no wording of any kind."
+      },
+      {
+        "task": "T013",
+        "given_when_then": "Given two documents, when versions are added to each one after another, then each document reports its own versions in the order they were added, numbered 1, 2, 3 within that document independently of the other, and adding a version to one leaves the other's sequence unchanged."
+      },
+      {
+        "task": "T014",
+        "given_when_then": "Given the Version model as built, when a new version is saved for a document, then its number is assigned by the package as one more than the highest that document already holds, and a second version cannot take a number the document already uses."
+      },
+      {
+        "task": "T015",
+        "given_when_then": "Given tests/factories.py, when DocumentFactory and VersionFactory are each built twice, then both builds succeed and do not collide on the unique name; and there is exactly one factory per model with no variant subclasses."
+      },
+      {
+        "task": "T016",
+        "given_when_then": "Given tests/conftest.py, when the `document` and `draft` fixtures are requested, then each returns an object built by its model's factory and nothing constructs models inline in a test module that a fixture could supply."
+      },
+      {
+        "task": "T017",
+        "given_when_then": "Given the two models, when `makemigrations mvp_compliance` has run, then `makemigrations --check` is clean and `migrate` from an empty database reaches the same schema."
+      }
+    ],
+    "verified_base": {
+      "commit": "d8869e29841d3ae880737812b013b2e5ec050b66",
+      "verified_at": "2026-09-21T21:20:00Z",
+      "steps": ["conformance", "docs", "lint", "typecheck", "test", "build"],
+      "note": "Green on this exact commit in this exact worktree, minutes before dispatch: conformance, docs, ruff lint and format, mypy, deptry, 2 tests passing, poetry build. If your HEAD is not d8869e2, stop and report blocked — the base moved under you. If the suite cannot run at all, that is an environment fault: report it, do not work around it."
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 90
+  },
+  "rituals": [
+    "Load craft-tdd and craft-increments from the absolute paths in required_skills, and copy each RECEIPT line verbatim into skills_loaded.",
+    "Read this brief in full.",
+    "Read only the US-1 rows of specs/001-legal-documents-kept/tasks.md.",
+    "Read the plan.md sections named in context.plan_sections and stop there.",
+    "Read the CONTEXT.md glossary entries for Document, Version and Draft, and use that vocabulary in code, tests and commit messages.",
+    "git log --oneline -10.",
+    "Do not run a baseline verify: context.verified_base is Forge's assurance and it has already been given."
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story. tests/test_app.py is pre-existing — extend it only if a task says so, and this story's tasks do not.",
+    "Do not touch files outside this story's scope: mvp_compliance/models.py, mvp_compliance/migrations/, tests/test_models.py, tests/factories.py, tests/test_factories.py, tests/conftest.py, and appends to specs/001-legal-documents-kept/progress.md and decisions.md.",
+    "Do not build anything from US-2 to US-5: no status field, no publish(), no immutability guard, no html field, no renderer, no queryset retrieval methods. They are later stories and building them here collides with them.",
+    "Do not register either model in the Django admin, and do not add forms, views or URLs (D5).",
+    "Do not add a runtime dependency. markdown and nh3 arrive in US-4, not here.",
+    "Never edit feature-state.json beyond flipping your own tasks' status, attempts and evidence.",
+    "No git merge, no push, no gh, no token minting. Your story ends at a clean committed worktree and a report.",
+    "Never weaken an assertion, add a skip or an xfail, or special-case code to make a test pass.",
+    "Never write a receipt you did not read from a file, and never claim a command you did not run."
+  ]
+}
