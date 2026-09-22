@@ -374,3 +374,93 @@ applies to prose; whitespace/EOF hooks passed). Read back against `mvp_complianc
 actual url name and permission check, and `mvp_compliance/templates/.../preview.html`'s actual
 heading, for accuracy.
 Next: full story verify.
+
+## 2026-09-22T15:15:00Z · Implementer US5 · T050
+
+Did: `TestDocumentAdmin::test_starting_the_next_version_opens_with_the_current_wording` — a
+document with a published version, requesting the version add page with `?document=<pk>`, asserts
+the current version's markdown appears in the response.
+Verified: `poetry run pytest tests/test_admin.py::TestDocumentAdmin -x` — failed first run (200 OK,
+markdown absent from the box), the right reason for a page that does not read the query string yet.
+Next: T051, `VersionAdmin.get_changeform_initial_data()`.
+
+## 2026-09-22T15:17:00Z · Implementer US5 · T051
+
+Did: `VersionAdmin.get_changeform_initial_data()` calls `super()` for Django's own query-string
+initial data, then, when a `document` id came through, reads `Document.current` (the property
+US-1's foundational work already carries and nothing had consumed yet) and adds its `markdown` to
+initial when a version is in force.
+Verified: `poetry run pytest tests/test_admin.py::TestDocumentAdmin` — T050's test passed.
+`poetry run pytest tests/test_admin.py::TestVersionAdmin tests/test_admin.py::TestPublish
+tests/test_admin.py::TestDraftPrivacy` — 37 passed, no regression. `poetry run ruff check
+mvp_compliance/admin.py tests/test_admin.py` and `poetry run mypy mvp_compliance/admin.py` — clean.
+Next: T052, the empty-box case.
+
+## 2026-09-22T15:19:00Z · Implementer US5 · T052
+
+Did: `TestDocumentAdmin::test_a_document_with_nothing_in_force_opens_empty` — a document holding
+only a draft (never published) opens the add page with that draft's markdown absent from the box,
+so a version that is not in force never leaks into the initial value.
+Verified: `poetry run pytest tests/test_admin.py::TestDocumentAdmin` — passed on the first run, as
+T051's design already covers it (no production change needed, matching the task's own "Done when:
+Passes"). `poetry run ruff check tests/test_admin.py` — clean.
+Next: T053, the link on the document's change form.
+
+## 2026-09-22T15:22:00Z · Implementer US5 · T053
+
+Did: `TestDocumentAdmin::test_the_document_page_offers_the_next_version` first, asserting the
+document's change page carries a link to `.../version/add/?document=<pk>`. Then
+`mvp_compliance/templates/admin/mvp_compliance/document/change_form.html`, mirroring the version
+template's `object-tools-items` override T035 used for Preview: a **Start the next version** link,
+guarded by `{% if change %}` so the add page (no `original`) never tries to render it, wrapped in
+`{% translate %}`.
+Verified: the test failed before the template (200 OK, link absent), passed after. `poetry run
+pytest tests/test_admin.py::TestDocumentAdmin tests/test_admin.py::TestDraftPrivacy
+tests/test_admin.py::TestVersionAdmin` — 28 passed. `poetry run djlint
+mvp_compliance/templates/admin/mvp_compliance/document/change_form.html --check` — one line-wrap
+needed on the long `href`/`class` pair, applied and reverified clean. `poetry run pre-commit run
+--files` on the template — clean.
+Next: T054, the copy leaves the source alone.
+
+## 2026-09-22T15:25:00Z · Implementer US5 · T054
+
+Did: `TestDocumentAdmin::test_editing_the_copy_leaves_the_published_version_alone` — publishes a
+version, starts a new one from the same document's add page, posts it with different wording, then
+re-reads the published version and asserts its markdown and html are exactly what they were before
+the post.
+Verified: needed no production change — the add view always creates a new row, and
+`Version.save()`'s existing frozen-field guard (Article XII, already in place before this story)
+would refuse a write to the published row even if something tried to reach it. `poetry run pytest
+tests/test_admin.py::TestDocumentAdmin` — passed first run. `poetry run ruff check
+tests/test_admin.py` — clean.
+Next: T055, README and docs/authoring.md.
+
+## 2026-09-22T15:30:00Z · Implementer US5 · T055
+
+Did: README gains a "Starting the next version from the one in force" section between Publishing
+and Scope & philosophy. `docs/authoring.md` gains the matching section between Publishing and Who
+can do what, naming `get_changeform_initial_data()` and the property it reads. CHANGELOG gains the
+Added entry.
+Verified: `poetry run pre-commit run --files README.md CHANGELOG.md docs/authoring.md` — clean.
+`/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main
+--step docs` — passed. Read back against `mvp_compliance/admin.py`'s actual method name and
+`DocumentAdmin`'s actual template for accuracy.
+Next: T056, makemessages.
+
+## 2026-09-22T15:35:00Z · Implementer US5 · T056
+
+Did: `DJANGO_SETTINGS_MODULE=tests.settings poetry run python manage.py makemessages -l en` from
+the repository root. Picked up "Start the next version" — first run marked it `#, fuzzy` against
+the similarly-worded existing "Back to this version" and copied that msgstr; corrected the msgstr
+to match its own msgid and dropped the fuzzy markers by hand, the way an editor resolving a fuzzy
+match would. Also stripped the `POT-Creation-Date` line both times it reappeared, matching the
+existing house convention (this feature's own prior commit, "Keep the message catalog's file
+references relative to the repository") of keeping that line out because it changes on every run
+and makes the file diff for a reason unrelated to any string in it.
+Verified: `poetry run pytest tests/test_admin.py::TestUserFacingStrings` — both tests passed
+against the regenerated catalog. Ran `makemessages` a second time against the committed file: the
+only line it wanted to add back was `POT-Creation-Date`, which was removed again, leaving `git
+diff` empty — the catalog is stable across repeated runs, T056's "Done when". Full story verify:
+`/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base
+origin/main` — conformance, docs, poetry:lint, poetry:typecheck, poetry:test (131 passed),
+poetry:build all passed. `git status --short` — clean.
