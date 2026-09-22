@@ -983,6 +983,16 @@ class TestAcceptanceImmutability:
         acceptance.refresh_from_db()
         assert acceptance.subject == original_subject
 
+    def test_an_update_matching_nothing_is_refused_too(self, published_version):
+        """The refusal does not depend on what the queryset matches right now.
+
+        A guard that checks first and writes afterwards would let this
+        through, and would also write to any record committed between the
+        two statements.
+        """
+        with pytest.raises(RecordedAcceptanceError):
+            Acceptance.objects.filter(subject="nobody").update(subject="tampered")
+
     def test_bulk_update_is_refused(self, user, published_version):
         acceptance = Acceptance.objects.record(user, published_version)
         original_subject = acceptance.subject
@@ -1256,6 +1266,31 @@ class TestOptionalEvidence:
     ):
         """Scenario 2, FR-016: turned on, with a request, the address is held too."""
         request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(
+                user, published_version, request=request
+            )
+
+        assert acceptance.ip_address == "203.0.113.5"
+
+    def test_a_forwarded_header_is_never_read_even_when_it_disagrees(
+        self, user, published_version
+    ):
+        """The address held is the one the connection came from, never a header.
+
+        A forwarded header is set by the client, so a package that read one
+        would have an evidence field the person the evidence is about can
+        fill in themselves. The two are deliberately different here, and the
+        held value has to be the connection's.
+        """
+        request = RequestFactory().post(
+            "/",
+            REMOTE_ADDR="203.0.113.5",
+            HTTP_X_FORWARDED_FOR="198.51.100.9",
+            HTTP_X_REAL_IP="198.51.100.9",
+            HTTP_FORWARDED="for=198.51.100.9",
+        )
 
         with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
             acceptance = Acceptance.objects.record(

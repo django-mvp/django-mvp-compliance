@@ -44,6 +44,36 @@
         "DR-001 (low, verified, architecture) the on_delete callable is safe under its default SET_NULL delegation only because it lacks Django's lazy_sub_objs marker (deletion.py:73, the gate at :343, the two update branches at :476-490). Verified independently against the resolved Django 5.2.17. research.md R1 now states the attribute must never be added, plan.md repeats it where the callable is designed, and T052 requires the comment on the callable itself. US-4's T050 is the test that would catch a regression.",
         "note swept: tasks.md T017 now names specs/001-legal-documents-kept/decisions.md D21 by file rather than by number alone"
       ]
+    },
+    "walkthrough": {
+      "approved_by": "not-applicable (no visible surface)",
+      "at": "2026-09-22T17:02:26Z",
+      "self_resolved": [
+        "Not shown. The check flagged one path, mvp_compliance/locale/en/LC_MESSAGES/django.po, and every string this feature added to it belongs to the Acceptance model or to exceptions this package raises to calling code. Acceptance is registered in no admin \u2014 admin.py registers Document and Version only \u2014 and the package exposes no URLs, which tests/test_app.py asserts. So none of those strings can reach a page, and the rest of the catalogue diff is line-number references for strings whose rendering is unchanged. This feature ships no surface a person can see, which is the specification's own scope."
+      ]
+    },
+    "review": {
+      "outcome": "approve",
+      "risk": "low",
+      "at": "2026-09-22T21:10:00Z",
+      "reviewer": "review panel, three lenses",
+      "findings": [
+        {
+          "id": "F1",
+          "severity": "medium",
+          "status": "fixed",
+          "note": "No test distinguished reading REMOTE_ADDR from reading a forwarded header. Confirmed: preferring X-Forwarded-For passed the entire suite. Test added and checked against that defect (D20)."
+        },
+        {
+          "id": "F2",
+          "severity": "low",
+          "status": "fixed",
+          "note": "Check-then-write gap in the update guard. Confirmed. Fixed by refusing unconditionally, matching delete() on the same queryset, rather than by a transaction that would not close it (D19)."
+        }
+      ],
+      "self_resolved": [
+        "Both findings verified independently before fixing, and both fixes checked against the defect they close."
+      ]
     }
   },
   "stories": [

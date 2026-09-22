@@ -737,3 +737,20 @@ on a cleared cache, `makemigrations --check` clean across every app.
 Next: convergence — squash this branch's migrations into one, regenerate the catalogue, cleanup pass,
 ADR verdicts. Then the review gate.
 Watch: nothing.
+
+## 2026-09-22T23:15:00+02:00 · Orchestrator · review gate, both findings closed
+
+Did: review returned approve at low risk with two findings, both verified before acting rather than
+taken on the severity claimed. The medium one is real and was the same shape as the gap found in
+US-5: no test in the suite ever built a request whose forwarded header disagreed with REMOTE_ADDR,
+so changing the implementation to prefer the header passed everything. Added the test and checked it
+against exactly that change. The low one is also real — the update guard checked `exists()` and then
+wrote, with a gap between the two statements. Fixed by refusing unconditionally rather than by
+wrapping the pair in a transaction, which would not close it under read committed isolation and
+would only look like a fix. That also removes an inconsistency: `delete()` on the same queryset was
+already unconditional, and nothing in this package updates an acceptance for the narrower guard to
+have been protecting. D19 and D20 record both.
+Verified: 201 tests pass with randomisation and parallelism off; both new tests fail when their
+defect is reinstated and pass when it is not; `pre-commit run --all-files` green on a cleared cache.
+Next: mark the pull request ready and hand Sam the merge.
+Watch: nothing.

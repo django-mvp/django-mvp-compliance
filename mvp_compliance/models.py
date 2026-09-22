@@ -428,11 +428,16 @@ class AcceptanceQuerySet(models.QuerySet):
     """Refuses every route that would change or delete a recorded acceptance (Article XII)."""
 
     def update(self, **kwargs) -> int:
-        if self.exists():
-            raise RecordedAcceptanceError(
-                _("An acceptance cannot be changed once it is recorded.")
-            )
-        return super().update(**kwargs)
+        # Refused outright rather than only when the queryset currently
+        # matches something, which is the shape ``delete()`` below already
+        # has. Checking first and updating afterwards leaves a gap between
+        # the two statements: a record committed in that gap is one the
+        # check did not see and the update would write to anyway. Nothing
+        # in this package updates an acceptance, so the narrower guard was
+        # not letting anything through for a good reason.
+        raise RecordedAcceptanceError(
+            _("An acceptance cannot be changed once it is recorded.")
+        )
 
     def delete(self):
         raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))

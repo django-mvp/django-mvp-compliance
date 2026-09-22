@@ -386,3 +386,48 @@ passes for a reason other than the behaviour it names is not covering that behav
 to find the input that separates them.
 
 **ADR:** none — one test added to cover a criterion already specified.
+
+## D19 — The update refusal is unconditional, which is also how the review's race closes
+
+**Decision**: `AcceptanceQuerySet.update()` refuses every call rather than only those whose queryset
+currently matches a row. The review raised the check-then-write gap as a low finding; this is the
+fix, and it is a simplification rather than an addition.
+
+**Why**: the guard read `if self.exists(): raise` and otherwise fell through to `super().update()`,
+two statements with a gap between them. A record committed in that gap is one the check did not see
+and the update would write to, which is a recorded acceptance changed after the fact — the single
+thing this model exists to prevent.
+
+Wrapping the pair in `transaction.atomic()` would look like a fix and would not be one: under read
+committed isolation another transaction can still insert between the check and the write, so the
+gap survives the transaction. Closing it properly with `select_for_update()` means taking locks on
+every call to guard against a case that should not be reachable at all.
+
+The reachable case is nil. Nothing in this package updates an acceptance: `record()` goes through
+`get_or_create`, and the delete collector works through the plain base manager rather than this
+queryset (D17). So the condition was never letting a legitimate call through — it was only
+narrowing a refusal that has no reason to be narrow. `delete()` on this queryset was already
+unconditional, so this also removes an inconsistency between two guards expressing the same rule.
+
+**Revisit if**: something in this package ever needs to update an acceptance. It would be a change
+to what an acceptance is, and this guard is the right place to stop it.
+
+**ADR:** none — a guard tightened to match the rule it already expressed, and its sibling. The rule
+itself is the constitution's, not this feature's.
+
+## D20 — The refusal to read a forwarded header now has a test
+
+**Decision**: `TestOptionalEvidence::test_a_forwarded_header_is_never_read_even_when_it_disagrees`
+records with `REMOTE_ADDR` and three forwarded headers all naming a different address, and asserts
+the held value is the connection's.
+
+**Why**: the review found that every request the suite built set `REMOTE_ADDR` alone, so no test
+distinguished reading it from reading a header. The implementation was correct and undefended:
+changing it to prefer `X-Forwarded-For` — the convenience ADR 0010 predicts a later contributor
+reaching for — would have passed the whole suite. A security position with no test is a position
+held by whoever edits the line next.
+
+**Revisit if**: nothing. The test is checked against the defect, and fails when the implementation
+prefers the header.
+
+**ADR:** none — a test covering a position [ADR 0010](../../docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md) already records.
