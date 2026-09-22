@@ -236,3 +236,12 @@ check tests/test_models.py` clean; `poetry run mypy tests/test_models.py` clean.
 Next: T031.
 Watch: nothing.
 
+## 2026-09-22T18:16:00+02:00 · Implementer US-2 · T031
+
+Did: `TestRecording::test_the_same_version_twice_leaves_one_record` — scenario 3, D3.
+Verified: fails — `record()` still calls `create()` unconditionally, so the repeat
+writes a second row and `again == first` is false. `poetry run ruff check` and `mypy`
+clean.
+Next: T032.
+Watch: nothing.
+

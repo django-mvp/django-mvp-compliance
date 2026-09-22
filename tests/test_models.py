@@ -771,6 +771,20 @@ class TestRecording:
         assert alice_acceptance.subject != bob_acceptance.subject
         assert Acceptance.objects.filter(version=published_version).count() == 2
 
+    def test_the_same_version_twice_leaves_one_record(self, user, published_version):
+        """Scenario 3, FR-009, D3: a repeat succeeds and returns the record that already exists."""
+        first = Acceptance.objects.record(user, published_version)
+
+        again = Acceptance.objects.record(user, published_version)
+
+        assert again == first
+        assert (
+            Acceptance.objects.filter(
+                subject=Acceptance.subject_of(user), version=published_version
+            ).count()
+            == 1
+        )
+
 
 @pytest.mark.django_db
 class TestAcceptanceImmutability:

@@ -270,8 +270,16 @@
         },
         {
           "id": "T031",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_the_same_version_twice_leaves_one_record"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording::test_the_same_version_twice_leaves_one_record -v"
+            ]
+          }
         },
         {
           "id": "T032",
