@@ -139,3 +139,18 @@ with `OperationalError: no such table: mvp_compliance_acceptance` (right reason:
 migration yet, T021). `poetry run ruff check tests/test_models.py` clean.
 Next: T017.
 Watch: nothing.
+
+## 2026-09-22T17:35:00+02:00 · Implementer US-1 · T017
+
+Did: added `AcceptanceQuerySet` (`update()` refuses whenever it matches anything,
+`delete()` refuses outright); `AcceptanceManager.get_queryset()` returns it and
+`use_in_migrations = True`; `Acceptance.save()` refuses when the row already exists in the
+database (asked of the database, not Django's adding flag) and `Acceptance.delete()` refuses
+outright.
+Verified: `poetry run pytest tests/test_models.py::TestAcceptanceImmutability` — still 5
+failed, all `OperationalError: no such table` (unchanged from T016 — the guard logic never
+gets a chance to run before the missing table does; the migration is T021).
+`poetry run ruff check mvp_compliance/models.py` and `poetry run mypy mvp_compliance/models.py`
+both clean.
+Next: T018.
+Watch: nothing.

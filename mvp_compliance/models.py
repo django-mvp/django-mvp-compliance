@@ -7,7 +7,12 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from mvp_compliance.exceptions import PublishedVersionError, PublishError, RecordError
+from mvp_compliance.exceptions import (
+    PublishedVersionError,
+    PublishError,
+    RecordedAcceptanceError,
+    RecordError,
+)
 from mvp_compliance.rendering import get_renderer
 
 #: Everything a published version carries except its standing (FR-013) — the
@@ -304,8 +309,33 @@ class Version(models.Model):
         return super().delete(*args, **kwargs)
 
 
+class AcceptanceQuerySet(models.QuerySet):
+    """Refuses every route that would change or delete a recorded acceptance (Article XII)."""
+
+    def update(self, **kwargs) -> int:
+        if self.exists():
+            raise RecordedAcceptanceError(
+                _("An acceptance cannot be changed once it is recorded.")
+            )
+        return super().update(**kwargs)
+
+    def delete(self):
+        raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
+
+
 class AcceptanceManager(models.Manager["Acceptance"]):
-    """Where an acceptance is written — see ``record()``."""
+    """Where an acceptance is written — see ``record()``.
+
+    Gives a historical model in a migration the same guards (``use_in_migrations``).
+    Overrides ``get_queryset()`` rather than being built with
+    ``Manager.from_queryset()`` — the latter is a dynamic base class mypy
+    refuses to type-check (specs/001-legal-documents-kept/decisions.md D21).
+    """
+
+    use_in_migrations = True
+
+    def get_queryset(self) -> AcceptanceQuerySet:
+        return AcceptanceQuerySet(self.model, using=self._db)
 
     def record(self, user, version, request=None) -> "Acceptance":
         """Record ``user``'s acceptance of ``version``.
@@ -412,3 +442,13 @@ class Acceptance(models.Model):
                 _("Cannot record an acceptance for a user with no primary key.")
             )
         return str(user.pk)
+
+    def save(self, *args, **kwargs) -> None:
+        if self.pk is not None and Acceptance.objects.filter(pk=self.pk).exists():
+            raise RecordedAcceptanceError(
+                _("An acceptance cannot be changed once it is recorded.")
+            )
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
