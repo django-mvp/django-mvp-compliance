@@ -149,3 +149,20 @@ class TestProduce:
         """
         field_names = {field.name for field in dataclasses.fields(PersonalRecord)}
         assert field_names == {"subject", "sections"}
+
+
+@pytest.mark.django_db
+class TestWording:
+    """Each entry carries the wording served for the version it names (FR-007)."""
+
+    def test_the_wording_is_what_was_stored_at_publication(self):
+        """Scenarios 1, 3; FR-007, SC-002."""
+        version = VersionFactory(markdown="# Privacy policy\n\nSome wording.")
+        version.publish()
+        someone = UserFactory()
+        AcceptanceFactory(user=someone, version=version)
+
+        record = produce(str(someone.pk))
+
+        entry = record.sections[0].entries[0]
+        assert entry.wording == version.html
