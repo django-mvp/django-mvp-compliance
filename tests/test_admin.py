@@ -790,12 +790,21 @@ class TestDocumentAdmin:
 
         assert response.status_code == 200
 
-    def test_the_document_page_offers_the_next_version(
+    def test_the_document_page_offers_its_current_version_and_history(
         self, client, editor, document
     ) -> None:
-        """T053."""
+        """T063: the control that used to start the next version moves to
+        the version page (T061) and is gone from here.
+        """
         client.force_login(editor)
-        expected_url = (
+        current = VersionFactory(document=document, markdown="Current wording")
+        current.publish()
+        current_url = reverse("admin:mvp_compliance_version_change", args=[current.pk])
+        history_url = (
+            f"{reverse('admin:mvp_compliance_version_changelist')}"
+            f"?document__id__exact={document.pk}"
+        )
+        add_url = (
             f"{reverse('admin:mvp_compliance_version_add')}?document={document.pk}"
         )
 
@@ -804,7 +813,34 @@ class TestDocumentAdmin:
         )
 
         assert response.status_code == 200
-        assert expected_url.encode() in response.content
+        content = response.content.decode()
+        assert current_url in content
+        assert history_url in content
+        assert add_url not in content
+
+    @pytest.mark.parametrize("with_draft", [False, True])
+    def test_a_document_with_nothing_in_force_offers_no_current_version_control(
+        self, client, editor, document, with_draft
+    ) -> None:
+        """T064: asserted for a document with no versions and one with only
+        a draft. The history control is still offered either way.
+        """
+        client.force_login(editor)
+        if with_draft:
+            VersionFactory(document=document, markdown="Unpublished wording")
+        history_url = (
+            f"{reverse('admin:mvp_compliance_version_changelist')}"
+            f"?document__id__exact={document.pk}"
+        )
+
+        response = client.get(
+            reverse("admin:mvp_compliance_document_change", args=[document.pk])
+        )
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert history_url in content
+        assert "View current version" not in content
 
     def test_editing_the_copy_leaves_the_published_version_alone(
         self, client, editor, document

@@ -161,7 +161,15 @@ msgstr "Publishing this would produce no output."
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
 
-#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:9
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
+msgid "View current version"
+msgstr "View current version"
+
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:17
+msgid "Version history"
+msgstr "Version history"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:22
 msgid "Start the next version"
 msgstr "Start the next version"
 

@@ -3,10 +3,18 @@
 
 {% block object-tools-items %}
   {% if change %}
+    {% if original.current %}
     <li>
-      <a href="{% url 'admin:mvp_compliance_version_add' %}?document={{ original.pk }}"
+      <a href="{% url 'admin:mvp_compliance_version_change' original.current.pk %}"
          class="button">
-        {% translate "Start the next version" %}
+        {% translate "View current version" %}
+      </a>
+    </li>
+    {% endif %}
+    <li>
+      <a href="{% url 'admin:mvp_compliance_version_changelist' %}?document__id__exact={{ original.pk }}"
+         class="button">
+        {% translate "Version history" %}
       </a>
     </li>
   {% endif %}

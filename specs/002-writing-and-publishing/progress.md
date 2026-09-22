@@ -486,3 +486,43 @@ own header, which is the file somebody about to regenerate it has open.
 
 One decision graduated to an architecture record: vendoring the editor rather than depending on it
 or fetching it (ADR 0007). The other fifteen stay where they are, each with its reason.
+
+## 2026-09-22T14:58:00Z · Implementer FIX-1 · T060
+
+Did: `VersionForm.clean_markdown()` refuses an add whose wording is identical to `self.initial`'s
+markdown, only when `self.instance.pk is None` — a change form's own initial is the instance's own
+saved wording, not the document's version in force, so resaving an untouched draft stays unaffected.
+No initial markdown at all (nothing published yet) leaves nothing to compare against, so a
+document's first version is never refused.
+Verified: `poetry run pytest tests/test_forms.py tests/test_admin.py::TestUserFacingStrings` —
+9 passed. `poetry run pre-commit run --files mvp_compliance/forms.py tests/test_forms.py` — clean
+after adding a `cast(str, ...)` mypy wanted on `cleaned_data["markdown"]`.
+`poetry run python manage.py makemessages -l en --no-obsolete` from the repository root picked up
+the new refusal message; stripped `POT-Creation-Date` and set the new entry's `msgstr` to match its
+`msgid`, matching the catalog's own house convention.
+Next: T061, the version page's own "Start the next version" control.
+
+## 2026-09-22T15:05:00Z · Implementer FIX-1 · T061
+
+Did: `templates/admin/mvp_compliance/version/change_form.html` gains a "Start the next version"
+object-tool, next to Preview, shown when `original.status == "current"` — the same link the
+document page already offered, now reachable from the version that is actually in force.
+Verified: `poetry run pytest tests/test_admin.py::TestVersionAdmin` — 5 passed (was 3, RED first:
+the new "in force" test failed against the served page before the template change, 200 + no
+"Start the next version" link). `poetry run pre-commit run --files
+mvp_compliance/templates/admin/mvp_compliance/version/change_form.html tests/test_admin.py` — clean.
+No new translatable string — reuses the existing "Start the next version" msgid.
+Next: T062, list_filter.
+
+## 2026-09-22T15:12:00Z · Implementer FIX-1 · T062
+
+Did: `VersionAdmin.list_filter` gains `document`, alongside `status`.
+Verified: `poetry run pytest tests/test_admin.py::TestVersionAdmin` — 7 passed. RED first: with a
+single document in the database Django's `RelatedFieldListFilter.has_output()` returns `False`
+(`len(lookup_choices) + extra > 1` needs a second value to be worth showing at all), so the first
+version of the sidebar test needed a second `VersionFactory()` before it exercised anything —
+confirmed the corrected test failed against `list_filter = ["status"]` alone before the change, by
+temporarily setting `mvp_compliance/admin.py` aside with a tagged `git stash` and restoring it with
+`git stash apply` afterward, never a bare `stash pop`, since the stash stack is shared with other
+worktrees. `poetry run pre-commit run --files mvp_compliance/admin.py tests/test_admin.py` — clean.
+Next: T063, the document page's View current version and Version history controls.
