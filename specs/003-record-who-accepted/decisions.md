@@ -26,6 +26,8 @@ The cost is named rather than hidden: under the default, closing an account does
 held about that person here, and a project that assumed it did would be wrong. That belongs in the
 documentation this feature ships, not only in a setting's docstring.
 
+**ADR:** docs/adr/0008-an-acceptance-outlives-the-account-it-names.md — the default, the setting, and the cost of the default, together with D5, D7 and D8.
+
 ## D2 — An acceptance can name any published version, not only the one in force
 
 **Ambiguous**: whether the record may point at a superseded version. The obvious reading is that
@@ -43,6 +45,8 @@ against the version in force, so that person is simply asked again, which is the
 Drafts are refused because a draft has no legal standing at all and accepting one would create a
 record pointing at something that can still be edited.
 
+**ADR:** none — a stated behaviour of `record()` rather than a structural choice. It is documented in `docs/models.md` where the method is described, and pinned by the tests that accept a superseded version and refuse a draft. Nothing downstream has to know it as a rule separate from the method.
+
 ## D3 — Accepting the same version twice leaves one record and does not fail
 
 **Ambiguous**: append-only could be read as meaning every submission produces a row, which would
@@ -57,6 +61,8 @@ agreed once, so two records would misrepresent what happened as much as an overw
 would push the problem into the flow in R4, where a person meeting an error after agreeing has no
 idea whether it worked. Concurrency matters here: two simultaneous submissions have to end at one
 record, which is a constraint on the data rather than a check the calling code performs.
+
+**ADR:** none — the same as D2. It is what `record()` does, documented where the method is, and held by a database constraint rather than by a convention anybody could depart from.
 
 ## D4 — The outstanding question is answered for every document, and R5 filters it
 
@@ -73,6 +79,8 @@ picture in R10 both want the unfiltered answer, so filtering here would force tw
 consumers to work around it. R5 owns the per-document enforcement decision and applies it to the
 answer this feature gives.
 
+**ADR:** docs/adr/0009-outstanding-is-answered-for-every-published-document.md — the unfiltered scope and where enforcement belongs instead, with D11.
+
 ## D5 — A surviving record still has to name its person
 
 **Ambiguous**: "the records survive" is only half a statement. A record whose account is gone and
@@ -88,6 +96,8 @@ It is a property of the record rather than a design, so it belongs in the specif
 mechanism is exactly the kind of decision that should be made with the data model in front of you.
 Article XV bears on it directly, because whatever is held for this purpose is personal data that
 outlives the account, and it has to be justified where it is defined.
+
+**ADR:** docs/adr/0008-an-acceptance-outlives-the-account-it-names.md — not separable from the decision that a record outlives its account: a record that survives and cannot say whose it is would be evidence of nothing.
 
 ## D6 — Configured removal carries no audit trail, and erasure on request is a separate problem
 
@@ -116,6 +126,8 @@ whose original wording may not be available raises questions this specification 
 *Entries below were settled at planning, after the specification merged. Each one is an ambiguity
 the specification deliberately left to the design.*
 
+**ADR:** none — a scope boundary rather than a design decision. It records what this feature does not do and points at the issue that would do it, which is what an issue is for.
+
 ## D7 — The person is held twice: a foreign key and a copied identifier
 
 **Ambiguous**: D5 requires a surviving record to still name its person and to still be findable with
@@ -137,6 +149,8 @@ justification sits in the field's own `help_text`.
 The cost is one denormalised column that the database will not join on. That is the point: a foreign
 key is a pointer to a row that may be gone, and this column has to outlive it.
 
+**ADR:** docs/adr/0008-an-acceptance-outlives-the-account-it-names.md — holding the person twice exists only because the record outlives the account, and read apart from that it looks like redundancy.
+
 ## D8 — A callable `on_delete`, not a signal receiver
 
 **Ambiguous**: FR-013 asks for a setting deciding what happens to acceptances when an account is
@@ -152,6 +166,8 @@ two mechanisms deciding one thing, running in an order nothing guarantees, and i
 the bulk deletion paths an administrator tidying up accounts is most likely to use. One decision,
 one mechanism, on the path every delete already goes through.
 
+**ADR:** docs/adr/0008-an-acceptance-outlives-the-account-it-names.md — the mechanism that lets a setting reach an `on_delete` argument at all.
+
 ## D9 — `accepted_at` is a value the record carries, not a write behaviour
 
 **Ambiguous**: `auto_now_add=True` is the ordinary Django idiom for "when this happened" and is
@@ -164,6 +180,8 @@ and it rewrites on every save — the exact behaviour Article XII forbids for a 
 the moment it exists. Setting it once, where the fact is recorded, also means the one field that says
 *when* can be supplied by a caller importing history it already holds, should issue #22's neighbour
 ever be built.
+
+**ADR:** none — a field's definition, visible in the model and in the migration. Nothing outside this package depends on it having been decided rather than simply being so.
 
 ## D10 — The package reads `REMOTE_ADDR` and will not parse a forwarded header
 
@@ -180,6 +198,8 @@ stand in front, and which of them are trusted — so this is a case where the pa
 know and must not guess. Making `REMOTE_ADDR` correct is ordinary Django deployment work with
 well-understood middleware, and it is where the knowledge lives.
 
+**ADR:** docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md — the refusal to read a forwarded header is a security position a later contributor might otherwise reverse as a convenience.
+
 ## D11 — One expression of "outstanding", narrowed for the single-document question
 
 **Ambiguous**: FR-011 asks about one document and FR-012 about all of them, which reads like two
@@ -192,6 +212,8 @@ to one primary key.
 flow in R4 calls on every page request. The narrowing costs a `filter(pk=...)` and an `exists()`, both
 of which the database was going to do anyway, and it means the query-count bound in SC-005 is proven
 once for both answers.
+
+**ADR:** docs/adr/0009-outstanding-is-answered-for-every-published-document.md — the other half of answering the question once rather than twice.
 
 ## D12 — T015 landed before T014, not after
 
