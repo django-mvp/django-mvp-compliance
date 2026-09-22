@@ -362,3 +362,38 @@ class TestPreview:
 
         assert response.status_code == 200
         assert preview_url.encode() in response.content
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPublish:
+    """FR-013 to FR-020, SC-005 to SC-008, US-4 scenarios 1-8: publishing is
+    deliberate, confirmed, and the one act in the package there is no way
+    back from.
+    """
+
+    def test_a_caller_without_publish_version_is_refused_both_verbs(
+        self, client, editor, draft
+    ) -> None:
+        """T040, FR-014, US-4 scenario 1."""
+        client.force_login(editor)
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+
+        get_response = client.get(publish_url)
+        post_response = client.post(publish_url)
+
+        draft.refresh_from_db()
+        assert get_response.status_code == 403
+        assert post_response.status_code == 403
+        assert draft.status == draft.Status.DRAFT
+
+    def test_a_caller_with_publish_version_reaches_the_publish_address(
+        self, client, publisher, draft
+    ) -> None:
+        """T040, FR-014, US-4 scenario 1."""
+        client.force_login(publisher)
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+
+        response = client.get(publish_url)
+
+        assert response.status_code == 200
