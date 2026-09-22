@@ -102,7 +102,25 @@ MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = True  # the default
 Set it to `False` and removing an account takes that person's acceptances with it.
 `Acceptance.objects.for_subject(subject)` finds a person's records by the identifier
 that survives their account being removed, once `user` itself is no longer there to
-find them by. See [docs/models.md](docs/models.md) for the full surface.
+find them by.
+
+By default an acceptance holds nothing about a person beyond who they are, which
+version, and when. A site that wants the address a request came from too, because it
+makes a record harder to dispute, turns that on and passes the request along:
+
+```python
+# settings.py
+MVP_COMPLIANCE_RECORD_IP_ADDRESS = False  # the default
+
+# a view
+Acceptance.objects.record(user, privacy.current, request=request)
+```
+
+Off by default, because it is personal data about somebody who did not ask for it to
+be kept. On, and recorded from a call that supplies no request, the field stays empty
+rather than inventing a value. Turning the setting on or off only ever affects
+acceptances recorded afterwards — an existing record keeps whatever it held when it
+was written. See [docs/models.md](docs/models.md) for the full surface.
 
 ## Writing a version
 

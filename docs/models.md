@@ -303,3 +303,39 @@ about which records belong to whom.
 A new account created with a username an old, removed account once had inherits
 nothing: `subject` is derived from the account's primary key, never its username, so
 the two accounts are never mistaken for one another.
+
+### Optional evidence
+
+An acceptance holds three facts by default: who accepted, which version, and when.
+Nothing else — it is personal data about somebody who did not ask for it to be kept,
+so the package holds none of it unless a project says so:
+
+```python
+# settings.py
+MVP_COMPLIANCE_RECORD_IP_ADDRESS = False  # the default
+```
+
+Turned on, `record()` also holds the address the request came from, provided a request
+is passed to it:
+
+```python
+Acceptance.objects.record(user, version, request=request)
+```
+
+Only `request.META["REMOTE_ADDR"]` is ever read, and never a forwarded header such as
+`X-Forwarded-For`. That header is set by the client, so a package that trusted it would
+have an evidence field the person the evidence concerns could fill in themselves — worse
+than holding nothing. A project running behind a proxy or a load balancer is responsible
+for making `REMOTE_ADDR` correct, which is ordinary Django deployment advice and is
+solved by middleware the project chooses, not by this package guessing which of several
+headers to trust.
+
+`record()` called with no `request` — from a management command, a shell session, or a
+caller that has no request to hand it — leaves `ip_address` empty even with the setting
+on, so nothing has to be invented to satisfy it.
+
+Turning the setting on or off never changes an existing record: `ip_address` is filled
+in only at the moment `record()` creates a new row, and an acceptance is never edited
+afterwards. A record made before the setting was turned on still holds nothing for that
+field, and a record made while it was on still holds what it held once the setting is
+turned off again.

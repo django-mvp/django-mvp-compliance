@@ -699,3 +699,26 @@ run python -m django makemigrations` (without `--dry-run`, to be sure nothing wa
 suppressed) — "No changes detected", exit 0.
 Next: T065.
 Watch: nothing.
+
+## 2026-09-22T19:05:00+02:00 · Implementer US-5 · T065
+
+Did: added an *Optional evidence* subsection to `docs/models.md` under `Acceptance`,
+naming `MVP_COMPLIANCE_RECORD_IP_ADDRESS`, its default of `False`, what it holds, that
+only `REMOTE_ADDR` is ever read and why `X-Forwarded-For` and every other forwarded
+header is refused, the empty-field behaviour with no request supplied, and that a
+setting change never touches an existing record. Extended the README's `Acceptance`
+paragraph with the same setting, its default, and the call shape. Neither story before
+this one had added a CHANGELOG entry for this feature, so this task wrote the whole
+`### Added` block for it — the `Acceptance` model and `record()`, immutability,
+`outstanding_for()`, the account-removal setting, and this story's optional-evidence
+setting, each in plain language, with the IP setting's entry naming the personal data
+it holds and stating that it is off unless a project deliberately turns it on.
+Verified: both new documented examples (the request-supplied and no-request calls under
+the setting) executed against a real test database — a scratch pytest module
+(`tests/test_docs_scratch.py`) covering both as documented; passed, removed afterwards.
+Diffed the whole story's changes against the verified base (`c0ee7e0`) and confirmed no
+new `gettext_lazy` string was introduced anywhere, so the message catalogue needs no
+regeneration. `poetry run pytest tests/ -q` — 198 passed (193 at the base plus this
+story's 5 new tests). `poetry run ruff check .` clean.
+Next: this story's own completion report.
+Watch: nothing.
