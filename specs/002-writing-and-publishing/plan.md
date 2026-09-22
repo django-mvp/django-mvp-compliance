@@ -164,7 +164,12 @@ Each button gets a `className` of the form `mvp-compliance-toolbar-<name>`, and
 `markdown-editor.css` draws the icon as an inline SVG background on that class. EasyMDE's own
 Font Awesome class names are not used and Font Awesome is not shipped (`research.md` R3).
 
-`VersionForm` puts the widget on `markdown` and is `VersionAdmin.form`.
+`VersionForm` puts the widget on `markdown` and is `VersionAdmin.form`. Its `Meta.fields` is the
+explicit allow list `["document", "markdown"]` — the only two fields an author supplies. `html` is
+produced by `Version.publish()` and is evidence under Article XIII, so it never appears on a form
+an author can post to, and `number`, `status` and `published_at` are already `editable=False`.
+`VersionAdmin.readonly_fields` carries those three plus `html` so a version's full state is
+readable on the page without any of it being writable.
 
 **Agreement with the allow list (FR-004)** is a test, not a promise: one Markdown sample per
 toolbar control, each rendered through `MarkdownRenderer`, each asserted to keep the element it
@@ -210,9 +215,11 @@ and assert the stored `html` is identical.
 - GET renders the confirmation, which names the document and version, shows the rendering that is
   about to go live, and states that the wording cannot be changed afterwards and that a correction
   means another version.
-- POST calls `Version.publish()`. `PublishError` and `PublishedVersionError` are caught and
-  rendered as `messages.error` on the redirect back to the change page (FR-018) — the exception's
-  own message, which FS-001 already wrote as a sentence for a person.
+- POST calls `Version.publish()`, catching `PublishError` and rendering it as `messages.error` on
+  the redirect back to the change page (FR-018) — the exception's own message, which FS-001 already
+  wrote as a sentence for a person. `PublishError` is the only exception that call can raise:
+  both refusals FR-018 names are `PublishError`, and the `save()` inside `publish()` runs while the
+  stored row is still a draft, so the immutability guard returns before it can raise.
 - Both verbs require `mvp_compliance.publish_version`. Without it the response is a 403, and the
   link is not rendered on the change page at all.
 - Declining is the absence of a POST: the confirmation page's other control is a link back, and

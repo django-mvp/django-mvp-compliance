@@ -26,3 +26,27 @@ is the only design under which SC-004 is true by construction.
 
 `decisions.md` gained D8 to D12 and ADR verdicts for D1 to D7, which the specification run left
 open.
+
+## 2026-09-22 — S3R DESIGN_REVIEW
+
+One reviewer, three lenses, one round. Verdict `request_changes`: one high, two medium, one low,
+all `verified`. Every finding checked against its own stated evidence before it was applied.
+
+Three became plan edits:
+
+- The version form had no declared field list, and `html` — the evidence `publish()` produces —
+  carries no `editable=False`, so it could have been exposed as a postable field. `VersionForm`
+  now declares `fields = ["document", "markdown"]` and the admin marks the rest read-only, with a
+  test asserting the form's field names are exactly those two.
+- All five stories add to the same `admin.py`, so they are sequentially dependent. `tasks.md` now
+  says so rather than leaving it to be discovered at convergence.
+- The publish view planned to catch an exception `publish()` cannot raise. Verified against the
+  model: both refusals raise `PublishError`, and the save inside `publish()` runs while the stored
+  row is still a draft, so the immutability guard returns first. The second branch is gone.
+
+The high finding is not a plan fault and was not applied. This specification's edge case about
+deleting a document that holds only drafts contradicts FS-001's D8 and its accepted ADR 0002. No
+requirement in this feature depends on it, the behaviour it asks for is reachable in one extra
+step, and building it would mean overriding Django's deletion collector to route around the guard
+that ADR exists to keep. Recorded as D13 and raised with Sam; the delivered behaviour stands
+meanwhile.

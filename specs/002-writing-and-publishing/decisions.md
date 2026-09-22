@@ -122,6 +122,10 @@ The compliance editor these refusals will reach is by assumption not a developer
 the whole of what this surface adds over calling the model directly, so leaving it out would mean
 shipping the surface without the part that makes it a surface.
 
+Both refusals raise the same exception. `publish()` raises `PublishError` on each of them, and the
+save it performs runs while the stored row is still a draft, so the immutability guard returns
+before it can raise anything. One `except` branch covers both, and a second would be unreachable.
+
 **ADR:** none — local to this surface. Catching two named exceptions in one view inherits nothing downstream.
 
 ## D8 — EasyMDE, vendored into the package
@@ -237,3 +241,42 @@ write nothing, with no special handling anywhere.
 
 **ADR:** none — one line on a model `Meta`, documented in the README where a site administrator will
 look for it.
+
+## D13 — The edge case about deleting a document holding only drafts is left to Sam
+
+**Ambiguous**: this specification's Edge Cases section says that deleting a document while it holds
+only drafts is "permitted, because nothing has been put in front of anybody". FS-001 delivered the
+opposite, deliberately: `Version.document` is `on_delete=PROTECT`, so a document holding any version
+at all refuses deletion, and a document created by mistake is removed by discarding its drafts
+first and then deleting it. That choice is FS-001's D8 and it carries an accepted architecture
+decision record, `docs/adr/0002-document-deletion-is-refused-by-the-foreign-key.md`.
+
+The two cannot both be true.
+
+**Chosen**: nothing is built here, the delivered behaviour stands, and the conflict goes to Sam as
+a question rather than being settled inside this run.
+
+**Why defensible**: this is not a gap in the plan, it is a later specification contradicting an
+accepted architecture decision, and overturning one of those is not a plan edit. Three things
+decide which way to lean while he answers.
+
+Nothing in this feature is measured by it. No functional requirement, no acceptance scenario and no
+success criterion mentions deleting a document — every requirement FS-002 will be judged against is
+untouched whichever way it goes.
+
+The behaviour the edge case asks for is already reachable, at the cost of one step: discard the
+drafts, then delete the document. FS-001 ships a passing test for exactly that path.
+
+Building it means routing around the guard rather than relaxing it. `PROTECT` is enforced by
+Django's deletion collector, which refuses before a confirmation page is ever offered, so the
+admin would need to override both the collection and the deletion to get past it — two overrides
+reintroducing precisely the route ADR 0002 records as the one that must not exist to be missed.
+
+**What would change if he rules the other way**: a `DocumentAdmin` that overrides
+`get_deleted_objects()` and `delete_model()` to remove a document's drafts before the document, a
+test that a document holding a published version is still refused, an ADR superseding 0002, and
+the amendment of FS-001's `test_deleting_a_document_holding_a_version_is_refused`. Small work,
+and cheaper once he has said which behaviour he wants than after the wrong one is built.
+
+**ADR:** none — this decision builds nothing. The architectural record that governs the question is
+ADR 0002, which stands unamended; if Sam overturns it, that is a new ADR superseding it.
