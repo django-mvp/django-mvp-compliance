@@ -277,3 +277,20 @@ class TestSurvivingRecords:
         assert entry.version == version.number
         assert entry.accepted_at == acceptance.accepted_at
         assert entry.wording == version.html
+
+    def test_the_other_setting_leaves_nothing_to_produce(self):
+        """Scenario 3."""
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        acceptance = AcceptanceFactory(user=someone, version=version)
+        subject = acceptance.subject
+
+        with override_settings(
+            MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL=False
+        ):
+            someone.delete()
+
+        record = produce(subject)
+
+        assert record.is_empty is True
