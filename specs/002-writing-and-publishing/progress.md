@@ -266,3 +266,14 @@ Verified: `poetry run pytest tests/test_app.py::TestPackagedApp::test_it_registe
 — failed (`find_spec(...) is None` no longer true, module spec resolved). Deleted the file
 (`git status --short` confirmed clean) and reran: `poetry run pytest tests/test_app.py` — 4 passed.
 Next: T026, README permissions section and CHANGELOG line.
+
+## 2026-09-22T12:38:00Z · Implementer US2 · T026
+
+Did: README gains a "Permissions" section — what `view_version`/`change_version` mean for
+reaching a version at all, `add_version`/`delete_version` for writing and discarding drafts, and
+that deleting a published version is refused regardless of who asks. CHANGELOG gains the matching
+Added entry.
+Verified: `poetry run pre-commit run --files README.md CHANGELOG.md` — clean (whitespace/EOF
+hooks; no lint step applies to prose). Read back against the permissions actually granted in
+`tests/conftest.py`'s `editor`/`publisher` fixtures and `Version.Meta.permissions` for accuracy.
+Next: full story verify.
