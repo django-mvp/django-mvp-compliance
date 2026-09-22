@@ -46,3 +46,22 @@ belonging to anybody else), FR-001/002/003.
 and the `{subject, sections}` field-name guarantee.
 
 **Watch**: none.
+
+## 2026-09-22T22:34:37Z · Implementer US-1 · T005-T008
+
+**Did**: Added four more assertions against the `produce()` built in T004, none of which needed a
+production-code change: `test_a_person_with_no_records_gets_an_answer` (an unknown subject gets
+`is_empty is True` and an empty entries tuple, never an exception), `test_the_same_answer_twice`
+(patches `django.utils.timezone.now` mid-test and asserts both `first == second` and
+`now.call_count == 0` — proof, not inference, that `produce()` reads no clock, D11),
+`test_it_costs_a_fixed_number_of_queries` (`django_assert_num_queries(1)` at two documents and
+again at ten, same count both times), and `test_a_further_kind_of_record_would_not_change_the_answer`
+(`dataclasses.fields(PersonalRecord)` names exactly `{"subject", "sections"}`).
+
+**Verified**: `poetry run pytest tests/test_records.py -v` → 7 passed. `poetry run ruff check
+tests/test_records.py mvp_compliance/records.py` → all checks passed. `poetry run mypy
+mvp_compliance/records.py` → no issues found. Demonstrates FR-005/SC-005, FR-006, SC-008, FR-017.
+
+**Next**: T009 — `docs/models.md` and `README.md`.
+
+**Watch**: none.
