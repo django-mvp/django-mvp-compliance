@@ -110,3 +110,85 @@ acceptance history already, most often from `django-termsandconditions`. Those a
 happened, and appending them breaks no rule here. It is covered by no roadmap item, and it was
 raised at intake as a possible gap rather than folded into this feature, because importing records
 whose original wording may not be available raises questions this specification does not answer.
+
+---
+
+*Entries below were settled at planning, after the specification merged. Each one is an ambiguity
+the specification deliberately left to the design.*
+
+## D7 — The person is held twice: a foreign key and a copied identifier
+
+**Ambiguous**: D5 requires a surviving record to still name its person and to still be findable with
+that person's others, and leaves the mechanism open. A foreign key alone cannot do it, because under
+the default in D1 the foreign key is precisely what gets cleared.
+
+**Chosen**: a nullable foreign key to the host project's user model for the ordinary relationship,
+plus a `subject` column holding that account's primary key as text, written when the record is.
+
+**Why defensible**: the two alternatives both fail on a stated requirement. An email address or login
+name reattaches a person's old records to a recreated account with the same name, which the spec's
+own edge case says must not happen — and it fails by looking correct. A random per-record identifier
+survives but groups nothing, so issue #21 could not produce a person's records as a set and issue #22
+could not erase them. The account's primary key is stable for the life of the account, is new for a
+recreated one, and is already shared by every record belonging to that person. Article XV is
+satisfied by it being the least that can be held and still answer whose record this is, and the
+justification sits in the field's own `help_text`.
+
+The cost is one denormalised column that the database will not join on. That is the point: a foreign
+key is a pointer to a row that may be gone, and this column has to outlive it.
+
+## D8 — A callable `on_delete`, not a signal receiver
+
+**Ambiguous**: FR-013 asks for a setting deciding what happens to acceptances when an account is
+removed, and `on_delete` is fixed when the model class is built. The obvious workaround is a
+`post_delete` or `pre_delete` receiver that removes the records when the setting says so.
+
+**Chosen**: a callable in the `on_delete` position that reads the setting when the delete runs.
+
+**Why defensible**: `on_delete` takes any callable with the collector's signature — that is all
+Django's own `CASCADE` and `SET_NULL` are — so the setting can be read at deletion time rather than
+at import time, which is what makes it a setting a project can change. A signal instead would mean
+two mechanisms deciding one thing, running in an order nothing guarantees, and it would be skipped by
+the bulk deletion paths an administrator tidying up accounts is most likely to use. One decision,
+one mechanism, on the path every delete already goes through.
+
+## D9 — `accepted_at` is a value the record carries, not a write behaviour
+
+**Ambiguous**: `auto_now_add=True` is the ordinary Django idiom for "when this happened" and is
+shorter than setting the field.
+
+**Chosen**: the recording method sets `accepted_at`.
+
+**Why defensible**: `auto_now_add` makes the field a property of the write rather than of the fact,
+and it rewrites on every save — the exact behaviour Article XII forbids for a row that is finished
+the moment it exists. Setting it once, where the fact is recorded, also means the one field that says
+*when* can be supplied by a caller importing history it already holds, should issue #22's neighbour
+ever be built.
+
+## D10 — The package reads `REMOTE_ADDR` and will not parse a forwarded header
+
+**Ambiguous**: FR-016's additional evidence means the address a request came from, and behind a proxy
+`REMOTE_ADDR` is the proxy rather than the person.
+
+**Chosen**: read `request.META["REMOTE_ADDR"]` only. A project behind a proxy is responsible for
+making that value correct.
+
+**Why defensible**: `X-Forwarded-For` is a header, so the client can set it. A package that reads it
+when present has an evidence field that the person the evidence is about can fill in, which is worse
+than holding nothing. Resolving it correctly needs facts only the deployment has — how many proxies
+stand in front, and which of them are trusted — so this is a case where the package genuinely cannot
+know and must not guess. Making `REMOTE_ADDR` correct is ordinary Django deployment work with
+well-understood middleware, and it is where the knowledge lives.
+
+## D11 — One expression of "outstanding", narrowed for the single-document question
+
+**Ambiguous**: FR-011 asks about one document and FR-012 about all of them, which reads like two
+methods.
+
+**Chosen**: one queryset answering FR-012, and the single-document answer is that queryset narrowed
+to one primary key.
+
+**Why defensible**: two implementations of one rule drift, and the one that drifts is the one the
+flow in R4 calls on every page request. The narrowing costs a `filter(pk=...)` and an `exists()`, both
+of which the database was going to do anyway, and it means the query-count bound in SC-005 is proven
+once for both answers.
