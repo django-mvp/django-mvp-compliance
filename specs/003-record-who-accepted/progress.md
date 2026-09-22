@@ -154,3 +154,18 @@ gets a chance to run before the missing table does; the migration is T021).
 both clean.
 Next: T018.
 Watch: nothing.
+
+## 2026-09-22T17:40:00+02:00 · Implementer US-1 · T018
+
+Did: added `test_a_historical_model_inherits_the_guard`, asserting a historical `Acceptance`
+from migration state carries `AcceptanceManager`; broadened `test_migrations.py`'s module
+docstring and its `RunPython`/`RunSQL` comment to name `Acceptance` alongside `Version` — the
+assertion itself already covers every migration in the package generically and needed no
+logic change.
+Verified: `poetry run pytest tests/test_migrations.py tests/test_models.py::TestAcceptanceImmutability::test_a_historical_model_inherits_the_guard`
+— the migrations test passes (1 passed), the historical-model test fails with
+`LookupError: App 'mvp_compliance' doesn't have a 'Acceptance' model` (right reason: no
+migration includes it yet, T021). `poetry run ruff check` clean (one import-ordering
+auto-fix applied on `tests/test_models.py`).
+Next: T019.
+Watch: nothing.

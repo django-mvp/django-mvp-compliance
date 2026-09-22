@@ -14,7 +14,13 @@ from mvp_compliance.exceptions import (
     RecordedAcceptanceError,
     RecordError,
 )
-from mvp_compliance.models import Acceptance, Document, Version, VersionManager
+from mvp_compliance.models import (
+    Acceptance,
+    AcceptanceManager,
+    Document,
+    Version,
+    VersionManager,
+)
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
 
@@ -752,3 +758,12 @@ class TestAcceptanceImmutability:
             Acceptance.objects.filter(pk=acceptance.pk).delete()
 
         assert Acceptance.objects.filter(pk=acceptance.pk).exists()
+
+    def test_a_historical_model_inherits_the_guard(self):
+        """A migration's historical model gets the same guards (scenario 3, FR-004)."""
+        loader = MigrationLoader(connection)
+        (leaf,) = loader.graph.leaf_nodes(app="mvp_compliance")
+        state = loader.project_state(leaf)
+        historical_acceptance = state.apps.get_model("mvp_compliance", "Acceptance")
+
+        assert isinstance(historical_acceptance.objects, AcceptanceManager)
