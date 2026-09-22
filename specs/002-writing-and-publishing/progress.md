@@ -167,3 +167,14 @@ confirmed clean) and reran: `poetry run pytest tests/test_admin.py` — 5 passed
 `ruff check`/`ruff format --check` clean.
 Next: T019, documentation.
 Watch: nothing.
+
+## 2026-09-22T14:10:00Z · Implementer US1 · T019
+
+Did: README's status line updated (admin now exists) and a new "Writing a version" section
+documents the toolbar and the vendoring choice. CHANGELOG gains an Added entry for the admin
+registration and the widget. CONTEXT.md gains the **Compliance editor** glossary entry.
+Verified: `poetry run pre-commit run --files README.md CHANGELOG.md CONTEXT.md` — clean
+(whitespace/EOF hooks; no lint step applies to prose). Read back against the spec's own wording
+for the role (US-1's framing, FS-002's context) for consistency.
+Next: full story verify.
+Watch: nothing.
