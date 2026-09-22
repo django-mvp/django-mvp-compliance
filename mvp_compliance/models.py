@@ -388,9 +388,7 @@ def acceptances_survive_account_removal() -> bool:
     ``MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`` takes effect on the
     next account removal rather than needing a restart (research.md R1).
     """
-    return getattr(
-        settings, "MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL", True
-    )
+    return getattr(settings, "MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL", True)
 
 
 def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
@@ -410,13 +408,15 @@ def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
     callable that only delegates to ``SET_NULL`` and will not flag a missing
     ``null=True`` the way it would for the real thing.
 
-    This callable must never be given a ``lazy_sub_objs`` attribute the way
-    Django's own ``SET_NULL`` is. Its absence is what makes the collector
-    evaluate ``sub_objs`` before calling in, which sends the resulting field
-    update down the raw ``UpdateQuery`` path rather than
-    ``AcceptanceQuerySet.update()`` — where it would hit that queryset's
-    refusal and turn every account deletion under the package's default into
-    an unhandled error.
+    This callable is not given the ``lazy_sub_objs`` attribute Django's own
+    ``SET_NULL`` carries. Two things together would route the resulting field
+    update into ``AcceptanceQuerySet.update()`` and have account removal
+    refused: that attribute, which leaves ``sub_objs`` unevaluated so the
+    collector updates through the queryset rather than a raw ``UpdateQuery``,
+    and ``Meta.base_manager_name`` naming ``AcceptanceManager``, which is what
+    would put the guarded queryset in the collector's path at all. Neither is
+    present, and neither alone does anything — the pair is what a later change
+    has to avoid recreating.
     """
     if acceptances_survive_account_removal():
         models.SET_NULL(collector, field, sub_objs, using)

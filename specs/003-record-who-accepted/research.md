@@ -38,15 +38,29 @@ and says why.
 `override_settings`, and it means a project that changes its mind changes what happens next rather
 than needing a migration.
 
-**The callable must never be given a `lazy_sub_objs = True` attribute, even though Django's own
-`SET_NULL` has one** (`db/models/deletion.py:73`). The collector checks it at
+**The callable is deliberately not given a `lazy_sub_objs = True` attribute, even though Django's
+own `SET_NULL` has one** (`db/models/deletion.py:73`). The collector checks it at
 `db/models/deletion.py:343` — `if getattr(on_delete, "lazy_sub_objs", False) or sub_objs:` — and an
-ordinary callable without it has its `sub_objs` queryset evaluated before the call. That is what
-sends the resulting field update down the `objs.extend(instances)` branch and a raw
-`sql.UpdateQuery.update_batch()` (`deletion.py:476-490`) instead of `combined_updates.update(...)`,
-which would land on `AcceptanceQuerySet.update()` and be refused by the guard in R2. Copying the
-attribute across by analogy with Django's own `SET_NULL` would therefore turn every account deletion
-under the package's default into an unhandled refusal. The callable carries a comment saying so.
+ordinary callable without it has its `sub_objs` queryset evaluated before the call, which sends the
+resulting field update down the `objs.extend(instances)` branch and a raw
+`sql.UpdateQuery.update_batch()` rather than `combined_updates.update(...)` (`deletion.py:476-490`).
+
+That routing is not on its own what decides whether this package's guard fires, and an earlier
+reading of this section said it was. The collector builds `sub_objs` from `Acceptance._base_manager`,
+and `base_manager_name` is unset, so that is a plain `Manager` producing a plain `QuerySet` — not
+`AcceptanceQuerySet`, and therefore a queryset with no `update()` override to reach. Measured on
+Django 5.2.17, each condition alone is harmless:
+
+| `lazy_sub_objs` on the callable | `base_manager_name` → `AcceptanceManager` | Removing an account |
+|---|---|---|
+| absent | unset | succeeds — this is the shipped state |
+| present | unset | succeeds; record survives, user cleared |
+| absent | set | succeeds |
+| present | set | refused with the guard's error |
+
+So the attribute is left off because it buys nothing here, rather than because adding it breaks the
+default. What a later change has to avoid is recreating the pair: the attribute puts the update on
+the queryset path, and `base_manager_name` is what makes that queryset the guarded one.
 
 ## R2 — Enforcing "never changed" on a row where nothing may change
 

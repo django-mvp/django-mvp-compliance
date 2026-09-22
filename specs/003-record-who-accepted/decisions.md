@@ -315,3 +315,33 @@ reads as quiet rather than broken, so "no failing checks" and "checks passing" h
 by looking.
 
 **ADR:** none — a record of one integration on one branch.
+
+## D17 — The stated reason for leaving `lazy_sub_objs` off the callable was wrong, and is corrected
+
+**Decision**: `research.md` R1, `plan.md`, `tasks.md` T052 and the callable's own docstring said that
+giving `keep_or_remove_acceptances` a `lazy_sub_objs` attribute would route the field update into
+`AcceptanceQuerySet.update()` and turn every account removal under the default into an unhandled
+refusal. It would not. All four now say what actually happens, and a test pins it.
+
+**Why**: measured on Django 5.2.17 rather than reasoned from the deletion module. The collector
+builds `sub_objs` from `Acceptance._base_manager`, and `base_manager_name` is unset, so that is a
+plain manager and a plain queryset with no `update()` override to reach. Adding the attribute by hand
+leaves account removal working exactly as it does without it — the record survives, its user is
+cleared, nothing is raised. The refusal appears only when the attribute is present *and*
+`base_manager_name` names `AcceptanceManager`, putting the guarded queryset in the collector's path.
+Either alone is inert.
+
+The original reading was right about the routing and wrong about the destination, which is an easy
+mistake to make from the deletion module alone: the branch at `deletion.py:476-490` genuinely does
+choose between `combined_updates.update(...)` and a raw `UpdateQuery`, but which queryset class
+`combined_updates` belongs to is settled somewhere else entirely.
+
+**What changed as a result**: the prohibition stands, because the attribute buys nothing here, but it
+is no longer stated as a load-bearing safety property. `TestAccountRemoval::test_the_collector_does_
+not_update_through_the_guarded_queryset` asserts both halves of the pair, and was checked against the
+defect — reintroducing the attribute fails it.
+
+**Revisit if**: `Meta.base_manager_name` is ever set on `Acceptance`. That is the change that makes
+the other half matter.
+
+**ADR:** none — a correction to this feature's own research, with nothing outside it affected.

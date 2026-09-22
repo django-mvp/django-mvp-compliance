@@ -23,6 +23,7 @@ from mvp_compliance.models import (
     Document,
     Version,
     VersionManager,
+    keep_or_remove_acceptances,
 )
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, UserFactory, VersionFactory
@@ -1129,7 +1130,9 @@ class TestAccountRemoval:
         assert acceptance.version == published_version
         assert acceptance.user_id is None
 
-    def test_acceptances_removed_when_the_setting_says_so(self, user, published_version):
+    def test_acceptances_removed_when_the_setting_says_so(
+        self, user, published_version
+    ):
         """Scenario 4, FR-013, SC-007: the other setting takes the records with the account."""
         Acceptance.objects.record(user, published_version)
         subject = Acceptance.subject_of(user)
@@ -1203,3 +1206,17 @@ class TestAccountRemoval:
         recreated = UserFactory(username="alex")
 
         assert list(Acceptance.objects.for_person(recreated)) == []
+
+    def test_the_collector_does_not_update_through_the_guarded_queryset(self):
+        """Removing an account must not meet the refusal that protects a record.
+
+        Two things together would put it there: a ``lazy_sub_objs`` attribute
+        on the ``on_delete`` callable, which leaves the collector updating
+        through a queryset rather than a raw query, and ``base_manager_name``
+        naming the manager whose queryset refuses updates. Neither alone does
+        anything, which is why neither alone is worth asserting — this pins
+        the pair.
+        """
+        assert not hasattr(keep_or_remove_acceptances, "lazy_sub_objs")
+        assert Acceptance._meta.base_manager_name is None
+        assert not isinstance(Acceptance._base_manager.all(), AcceptanceQuerySet)
