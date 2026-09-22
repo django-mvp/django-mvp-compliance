@@ -339,3 +339,42 @@ in only at the moment `record()` creates a new row, and an acceptance is never e
 afterwards. A record made before the setting was turned on still holds nothing for that
 field, and a record made while it was on still holds what it held once the setting is
 turned off again.
+
+### Producing what is held
+
+Everything the package holds about one person, assembled into one answer rather than a
+query per document:
+
+```python
+from mvp_compliance.records import produce
+
+record = produce(subject)
+```
+
+`subject` is the same identifier `Acceptance.objects.for_subject()` takes — an account's
+primary key while it still exists, or the identifier a record still carries once it is
+gone.
+
+`produce()` returns a frozen `PersonalRecord`. Its `sections` is a tuple of `Section`
+objects, one per kind of record the package holds about that person — there is one
+today, the acceptances — and each section's `entries` is a tuple of `AcceptanceEntry`
+objects, each naming the document, the version accepted and the moment it happened:
+
+```python
+entry = record.sections[0].entries[0]
+entry.document       # "Privacy policy" — the document's current name
+entry.version         # 1 — Version.number
+entry.accepted_at     # the moment this acceptance was recorded
+entry.ip_address      # the address the request came from, or None
+```
+
+Every acceptance held for that person appears, including several acceptances of the same
+document over time, and nothing belonging to anybody else. A person the package holds
+nothing about still gets a normal answer rather than an error or an empty screen:
+
+```python
+produce("nobody-the-package-has-ever-heard-of").is_empty  # True
+```
+
+Producing an answer only reads — it writes nothing, and it reads no clock, so producing
+the same answer twice with no change to the records gives an equal answer back.
