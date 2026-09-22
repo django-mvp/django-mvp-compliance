@@ -11,12 +11,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:93
+#: mvp_compliance/admin.py:111
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:127
+#: mvp_compliance/admin.py:145
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Publish"
@@ -145,6 +145,10 @@ msgstr "Publishing this would produce no output."
 #: mvp_compliance/models.py:257
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
+
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:9
+msgid "Start the next version"
+msgstr "Start the next version"
 
 #: mvp_compliance/templates/admin/mvp_compliance/version/preview.html:5
 msgid "This is what a reader will be served"
