@@ -240,3 +240,17 @@ failed — `assert 403 == 302`, delete refused and the row still present. Revert
 (`git checkout -- mvp_compliance/admin.py`, confirmed clean) and reran: `poetry run pytest
 tests/test_admin.py` — 23 passed. `ruff check`/`ruff format --check` clean.
 Next: T024, several drafts of one document all listed and separately editable.
+
+## 2026-09-22T12:32:00Z · Implementer US2 · T024
+
+Did: `TestDraftPrivacy::test_every_draft_of_a_document_is_listed_and_separately_editable` — three
+drafts of one document all appear on the version changelist, and each change page carries that
+version's own wording and none of the other two's.
+Verified: needed no production change (the admin's own default changelist and change views), so
+checked by mutation. Temporarily added `get_queryset` excluding `status="draft"` to `VersionAdmin`:
+`poetry run pytest tests/test_admin.py::TestDraftPrivacy::test_every_draft_of_a_document_is_listed_and_separately_editable`
+failed — the change pages 404'd through to a redirect (`assert 302 == 200`), the drafts no longer
+resolving through the admin's own queryset. Reverted (`git checkout -- mvp_compliance/admin.py`,
+confirmed clean) and reran: `poetry run pytest tests/test_admin.py` — 24 passed. `ruff
+check`/`ruff format --check` clean.
+Next: T025, the packaged app's existing URL-surface assertion, exercised rather than rewritten.
