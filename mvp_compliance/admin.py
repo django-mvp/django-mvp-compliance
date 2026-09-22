@@ -25,3 +25,13 @@ class VersionAdmin(admin.ModelAdmin):
     list_filter = ["status"]
     search_fields = ["document__name"]
     ordering = ["document", "-number"]
+
+    def has_delete_permission(self, request, obj=None):
+        """Offer no delete action for a version ``Version.delete()`` would refuse.
+
+        Everything else about view, add, change and delete is left to
+        Django's own model permissions.
+        """
+        if obj is not None and obj.is_published:
+            return False
+        return super().has_delete_permission(request, obj)

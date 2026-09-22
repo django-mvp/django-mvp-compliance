@@ -162,3 +162,21 @@ class TestDraftPrivacy:
 
         assert response.status_code == 403
         assert draft.markdown.encode() not in response.content
+
+    def test_a_published_version_offers_no_delete_action(
+        self, client, editor, published_version
+    ) -> None:
+        """T021: the admin offers nothing that ``Version.delete()`` would refuse."""
+        client.force_login(editor)
+        change_url = reverse(
+            "admin:mvp_compliance_version_change", args=[published_version.pk]
+        )
+        delete_url = reverse(
+            "admin:mvp_compliance_version_delete", args=[published_version.pk]
+        )
+
+        change_response = client.get(change_url)
+        delete_response = client.get(delete_url)
+
+        assert delete_url.encode() not in change_response.content
+        assert delete_response.status_code == 403
