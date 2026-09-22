@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 from django.contrib import admin
+from django.contrib.auth.models import Permission
 from django.test import override_settings
 from django.urls import path, reverse
 
@@ -19,7 +20,7 @@ import mvp_compliance
 from mvp_compliance.models import Version
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
-from tests.factories import VersionFactory
+from tests.factories import UserFactory, VersionFactory
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
@@ -977,6 +978,44 @@ class TestDocumentAdmin:
         assert response.status_code == 302
         assert current.markdown == original_markdown
         assert current.html == original_html
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDisclosureRefusals:
+    """FR-011 to FR-013, SC-003, SC-004, US-3 scenarios 2-5: nobody without
+    ``produce_disclosure`` reaches an answer by any route this feature adds,
+    and a refusal reveals nothing about whether the named person has
+    records.
+    """
+
+    def test_not_signed_in_is_refused(self, client) -> None:
+        """T023, scenario 3, FR-012."""
+        response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
+
+        assert response.status_code == 302
+
+    def test_signed_in_and_not_staff_is_refused(self, client, visitor) -> None:
+        """T023, scenario 2, FR-012."""
+        client.force_login(visitor)
+
+        response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
+
+        assert response.status_code == 302
+
+    def test_staff_holding_every_other_permission_is_refused(self, client) -> None:
+        """T023, scenario 2, FR-012: including the proxy's own routine ``view_disclosure``."""
+        person = UserFactory(is_staff=True)
+        person.user_permissions.add(
+            *Permission.objects.filter(
+                content_type__app_label="mvp_compliance"
+            ).exclude(codename="produce_disclosure")
+        )
+        client.force_login(person)
+
+        response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
+
+        assert response.status_code == 403
 
 
 class TestUserFacingStrings:
