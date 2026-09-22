@@ -316,3 +316,36 @@ class TestSurvivingRecords:
         entries = record.sections[0].entries
         assert record.subject == gone_subject
         assert [entry.document for entry in entries] == ["Gone's document"]
+
+
+#: FR-015: the exact statement every answer carries, whether or not it holds
+#: anything.
+EXPECTED_COVERAGE_STATEMENT = (
+    "This covers what this package holds about this person. The project may "
+    "hold further records about them elsewhere that are not included here."
+)
+
+
+@pytest.mark.django_db
+class TestCoverage:
+    """FR-015, SC-005: every answer carries a plain statement of what it
+    covers, the same whether or not anything is held.
+    """
+
+    def test_a_full_answer_carries_the_statement(self):
+        """Scenario 1."""
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+
+        record = produce(str(someone.pk))
+
+        assert str(record.coverage) == EXPECTED_COVERAGE_STATEMENT
+
+    def test_an_empty_answer_carries_the_same_statement(self):
+        """Scenario 2."""
+        record = produce("nobody-the-package-has-ever-heard-of")
+
+        assert record.is_empty is True
+        assert str(record.coverage) == EXPECTED_COVERAGE_STATEMENT
