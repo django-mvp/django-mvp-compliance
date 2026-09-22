@@ -283,8 +283,14 @@
         },
         {
           "id": "T032",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording -v",
+              "poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestAcceptanceImmutability tests/test_migrations.py -q"
+            ]
+          }
         },
         {
           "id": "T033",

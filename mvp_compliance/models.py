@@ -341,7 +341,10 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         """Record ``user``'s acceptance of ``version``.
 
         Refuses a version that has never been published (FR-003) before
-        anything is written. ``request`` is accepted for a later story's use
+        anything is written. Recording the same person's acceptance of the
+        same version again, including when two attempts race, returns the
+        record that already exists rather than raising or writing a second
+        one (FR-009, FR-010). ``request`` is accepted for a later story's use
         and is not read here.
         """
         if not version.is_published:
@@ -351,12 +354,11 @@ class AcceptanceManager(models.Manager["Acceptance"]):
                 )
             )
         subject = Acceptance.subject_of(user)
-        return self.create(
-            user=user,
+        return self.get_or_create(
             subject=subject,
             version=version,
-            accepted_at=timezone.now(),
-        )
+            defaults={"user": user, "accepted_at": timezone.now()},
+        )[0]
 
 
 class Acceptance(models.Model):
@@ -426,6 +428,17 @@ class Acceptance(models.Model):
     class Meta:
         verbose_name = _("acceptance")
         verbose_name_plural = _("acceptances")
+        ordering = ["accepted_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subject", "version"],
+                # Over `subject` rather than `user`: a later story clears the
+                # user foreign key when that account is removed, and a
+                # constraint over `user` would stop holding at exactly the
+                # moment nobody is watching.
+                name="one_acceptance_per_person_per_version",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.subject} accepted {self.version}"

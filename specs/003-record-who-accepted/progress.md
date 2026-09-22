@@ -245,3 +245,18 @@ clean.
 Next: T032.
 Watch: nothing.
 
+## 2026-09-22T18:22:00+02:00 · Implementer US-2 · T032
+
+Did: `one_acceptance_per_person_per_version` unique constraint over `subject` and
+`version` (comment on why `subject` rather than `user`); `Meta.ordering = ["accepted_at",
+"id"]`; `record()` switched from `create()` to `get_or_create()` over that constraint.
+Verified: `poetry run pytest tests/test_models.py::TestRecording -v` — 7 passed (T030
+and T031 both green — `Meta.ordering` is query-time, not schema, so it took effect
+without a migration). `poetry run pytest tests/test_models.py::TestAcceptance
+tests/test_models.py::TestAcceptanceImmutability tests/test_migrations.py -q` — 10
+passed, nothing else moved. `poetry run ruff check mvp_compliance/models.py` and `mypy`
+clean.
+Next: T033.
+Watch: the unique constraint itself isn't in the applied schema yet — `makemigrations
+--check` is dirty until T035.
+
