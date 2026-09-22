@@ -71,6 +71,20 @@ produced again at this point, so an answer never shows something the person was
 never actually served. A person the package holds nothing about gets a page
 saying so, which is a normal result rather than an error.
 
+## Asking about somebody whose account is gone
+
+A request about somebody who closed their account is the ordinary case, not the
+exotic one, and it is often exactly the person who makes it. Where an account is
+gone, there is no username or email to type, so the field takes the identifier
+the acceptance records themselves carry — the third case in
+[Naming a person](#naming-a-person) above. Whether an acceptance still exists to
+be found this way is not this page's decision: it is
+`MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`, decided once, when the
+account is removed. With the package's default, the acceptances survive and the
+answer contains them, complete with their wording. With that setting off, they
+are gone along with the account, and the answer says nothing is held — the same
+page, behaving exactly as it does for anybody else it holds nothing about.
+
 ## What it does not do
 
 Nothing here is recorded. Producing an answer leaves no trace of having been
