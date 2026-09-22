@@ -41,8 +41,7 @@ class TestProduce:
         by_document = {entry.document: entry for entry in entries}
         assert by_document["Privacy policy"].version == privacy_v1.number
         assert (
-            by_document["Privacy policy"].accepted_at
-            == privacy_acceptance.accepted_at
+            by_document["Privacy policy"].accepted_at == privacy_acceptance.accepted_at
         )
         assert by_document["Terms"].version == terms_v1.number
         assert by_document["Terms"].accepted_at == terms_acceptance.accepted_at
