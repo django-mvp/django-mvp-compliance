@@ -260,3 +260,15 @@ Next: T033.
 Watch: the unique constraint itself isn't in the applied schema yet — `makemigrations
 --check` is dirty until T035.
 
+## 2026-09-22T18:30:00+02:00 · Implementer US-2 · T033
+
+Did: `TestRecording::test_a_second_row_is_refused_by_the_database` — forces a duplicate
+past `record()` with `bulk_create()` and asserts `IntegrityError`, so FR-009 is shown to
+be held by the constraint rather than by the method.
+Verified: fails on this commit — `DID NOT RAISE IntegrityError` — for the reason noted
+at T032: the constraint is on `Meta` but not yet in the applied schema. Same sequencing
+T021 used for the table itself (T010–T020 stayed red on a missing table until the
+migration landed). `poetry run ruff check` and `mypy` clean.
+Next: T034.
+Watch: nothing new.
+

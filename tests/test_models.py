@@ -785,6 +785,22 @@ class TestRecording:
             == 1
         )
 
+    def test_a_second_row_is_refused_by_the_database(self, user, published_version):
+        """The constraint holds even for a row that bypasses record() (FR-009)."""
+        Acceptance.objects.record(user, published_version)
+
+        with pytest.raises(IntegrityError):
+            Acceptance.objects.bulk_create(
+                [
+                    Acceptance(
+                        user=user,
+                        subject=Acceptance.subject_of(user),
+                        version=published_version,
+                        accepted_at=timezone.now(),
+                    )
+                ]
+            )
+
 
 @pytest.mark.django_db
 class TestAcceptanceImmutability:
