@@ -634,3 +634,19 @@ assertion is load-bearing. Reverted with `git checkout -- mvp_compliance/models.
 committing. `poetry run ruff check tests/test_models.py` clean.
 Next: T061.
 Watch: nothing.
+
+## 2026-09-22T18:52:00+02:00 · Implementer US-5 · T061
+
+Did: added the two `TestOptionalEvidence` tests scenarios 3 and 4 need — a record made
+before `MVP_COMPLIANCE_RECORD_IP_ADDRESS` was turned on stays unchanged once it is, and
+a record made while it was on still holds the address once it is turned off again.
+Verified: `poetry run pytest tests/test_models.py::TestOptionalEvidence -v` — the
+turned-off-again test failed for the right reason (`assert None == '203.0.113.5'`,
+`record()` still never reads `request`). The turned-on-later test passed on first run for
+the same reason T060's default test did — `ip_address` is already `None` by construction.
+Probed it the same way: temporarily added a literal `"ip_address": "9.9.9.9"` to
+`record()`'s `defaults` and reran — failed (`assert '9.9.9.9' is None`), confirming the
+assertion is load-bearing. Reverted with `git checkout -- mvp_compliance/models.py` before
+committing. `poetry run ruff check tests/test_models.py` clean.
+Next: T062.
+Watch: nothing.

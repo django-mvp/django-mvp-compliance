@@ -1246,3 +1246,28 @@ class TestOptionalEvidence:
             )
 
         assert acceptance.ip_address == "203.0.113.5"
+
+    def test_a_record_made_before_the_setting_was_on_is_unchanged_afterwards(
+        self, user, published_version
+    ):
+        """Scenario 3, FR-017: turning it on later never edits what an earlier record holds."""
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance.refresh_from_db()
+
+        assert acceptance.ip_address is None
+
+    def test_a_record_made_while_the_setting_was_on_still_holds_it_once_turned_off(
+        self, user, published_version
+    ):
+        """Scenario 4, FR-017: turning it off again never edits what an earlier record holds."""
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(
+                user, published_version, request=request
+            )
+
+        acceptance.refresh_from_db()
+        assert acceptance.ip_address == "203.0.113.5"
