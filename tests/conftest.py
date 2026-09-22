@@ -2,7 +2,13 @@
 
 import pytest
 
-from tests.factories import DocumentFactory, VersionFactory
+from tests.factories import DocumentFactory, UserFactory, VersionFactory
+
+
+@pytest.fixture
+def user(db):
+    """A saved instance of the configured user model."""
+    return UserFactory()
 
 
 @pytest.fixture
