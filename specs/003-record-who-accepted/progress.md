@@ -617,3 +617,20 @@ Verified: 193 tests pass with randomisation and parallelism off, `pre-commit run
 on a cleared cache, `makemigrations --check` clean across every app.
 Next: US-5.
 Watch: nothing new.
+
+## 2026-09-22T18:48:00+02:00 · Implementer US-5 · T060
+
+Did: added `TestOptionalEvidence` to `tests/test_models.py` with the two tests scenarios 1
+and 2 need — the package's defaults hold no address at all, and turning
+`MVP_COMPLIANCE_RECORD_IP_ADDRESS` on with a request supplied holds it alongside the three
+facts.
+Verified: `poetry run pytest tests/test_models.py::TestOptionalEvidence -v` — the
+setting-on test failed for the right reason (`assert None == '203.0.113.5'`, `record()`
+never reads `request`). The defaults test passed on first run because `ip_address` is
+already `None` by construction and nothing writes it yet, so per craft-tdd it needed
+probing rather than trusting: temporarily added a literal `"ip_address": "9.9.9.9"` to
+`record()`'s `defaults` and reran — failed (`assert '9.9.9.9' is None`), confirming the
+assertion is load-bearing. Reverted with `git checkout -- mvp_compliance/models.py` before
+committing. `poetry run ruff check tests/test_models.py` clean.
+Next: T061.
+Watch: nothing.

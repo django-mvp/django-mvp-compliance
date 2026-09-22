@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.utils import timezone
 
 from mvp_compliance.exceptions import (
@@ -1220,3 +1220,29 @@ class TestAccountRemoval:
         assert not hasattr(keep_or_remove_acceptances, "lazy_sub_objs")
         assert Acceptance._meta.base_manager_name is None
         assert not isinstance(Acceptance._base_manager.all(), AcceptanceQuerySet)
+
+
+@pytest.mark.django_db
+class TestOptionalEvidence:
+    """What ``record()`` holds beyond the three facts, and only when asked (FR-016, FR-017)."""
+
+    def test_holds_nothing_beyond_the_three_facts_by_default(
+        self, user, published_version
+    ):
+        """Scenario 1, SC-008: the package's own defaults hold no address at all."""
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.ip_address is None
+
+    def test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied(
+        self, user, published_version
+    ):
+        """Scenario 2, FR-016: turned on, with a request, the address is held too."""
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(
+                user, published_version, request=request
+            )
+
+        assert acceptance.ip_address == "203.0.113.5"
