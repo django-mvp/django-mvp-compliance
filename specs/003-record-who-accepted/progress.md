@@ -685,3 +685,17 @@ exists to catch. Reverted with `git checkout -- mvp_compliance/models.py` before
 committing. `poetry run ruff check tests/test_models.py` clean.
 Next: T064.
 Watch: nothing.
+
+## 2026-09-22T19:01:00+02:00 · Implementer US-5 · T064
+
+Did: nothing to generate. `ip_address` was added to `Acceptance` by this feature's first
+story, with its `verbose_name` and `help_text` already carrying the Article XV
+justification, and this story's own change to `record()` is behavioural only — no field,
+option or constraint changed. There is no schema for a migration to capture.
+Verified: `DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django
+makemigrations --check --dry-run` — "No changes detected", exit 0, checked across every
+installed app, not `mvp_compliance` alone. `DJANGO_SETTINGS_MODULE=tests.settings poetry
+run python -m django makemigrations` (without `--dry-run`, to be sure nothing was merely
+suppressed) — "No changes detected", exit 0.
+Next: T065.
+Watch: nothing.
