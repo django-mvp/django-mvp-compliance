@@ -19,17 +19,18 @@ class TestPackagedApp:
         """
         assert apps.get_app_config("mvp_compliance").label == "mvp_compliance"
 
-    def test_it_ships_no_admin_forms_views_or_urls(self) -> None:
-        """D5: this package registers no admin, ships no forms, no views and no URLs."""
-        for module_name in ("admin", "forms", "views", "urls"):
-            assert importlib.util.find_spec(f"mvp_compliance.{module_name}") is None, (
-                f"mvp_compliance.{module_name} should not exist"
-            )
+    def test_it_registers_no_public_urls(self) -> None:
+        """D11: FS-002 supersedes FS-001's D5. The model layer's scope is gone —
+        FS-002 is the authoring surface — but the package still serves no
+        address a visitor can reach directly (FR-008)."""
+        assert importlib.util.find_spec("mvp_compliance.urls") is None
 
-    def test_it_registers_nothing_in_the_admin(self) -> None:
+    def test_it_registers_both_models_in_the_admin(self) -> None:
+        """D11: replaces FS-001's assertion that no admin exists — FS-002 is
+        the feature that adds one."""
         from django.contrib import admin
 
         from mvp_compliance.models import Document, Version
 
-        assert Document not in admin.site._registry
-        assert Version not in admin.site._registry
+        assert Document in admin.site._registry
+        assert Version in admin.site._registry
