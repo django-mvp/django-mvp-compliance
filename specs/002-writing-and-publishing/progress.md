@@ -98,3 +98,18 @@ both new static files (D8 only excludes the vendored ones) and made one formatti
 green afterwards.
 Next: T015/T016, the form.
 Watch: same as T013 — icon rendering itself is a demo-server observation, not a test result.
+
+## 2026-09-22T12:03:00Z · Implementer US1 · T015/T016
+
+Did: wrote `tests/test_forms.py::TestVersionForm` (widget used, field names exactly `document` and
+`markdown`, hand-typed Markdown round-trips unchanged), then `mvp_compliance/forms.py` —
+`VersionForm(forms.ModelForm)` with `Meta.fields = ["document", "markdown"]` as an explicit allow
+list and `markdown` on `MarkdownEditorWidget`.
+Verified: red first — `ModuleNotFoundError: No module named 'mvp_compliance.forms'` on all three.
+Green after: `poetry run pytest tests/test_forms.py` — 3 passed. One test fix along the way: the
+round-trip sample's trailing newline was stripped by `CharField`'s default `strip=True`, which is
+ordinary Django behaviour and not a reformatting the requirement is about, so the sample lost its
+trailing newline rather than the assertion being weakened. `ruff check`/`ruff format --check` clean
+on both files; `mypy mvp_compliance/forms.py` clean.
+Next: T017, the admin.
+Watch: nothing.
