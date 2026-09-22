@@ -54,6 +54,24 @@ class VersionAdmin(admin.ModelAdmin):
             return False
         return super().has_change_permission(request, obj)
 
+    def get_changeform_initial_data(self, request):
+        """Carry the in-force version's wording when starting the next one.
+
+        The document named in the query string is Django's own default
+        initial data (FR-021). With no version in force the box stays
+        empty — the ordinary case for a new document (US-5 scenario 3).
+        Nothing here opens the in-force version for writing: its markdown
+        is read once and handed to a new, unsaved form as a starting
+        point (D6, Article XII).
+        """
+        initial = super().get_changeform_initial_data(request)
+        document_id = initial.get("document")
+        if document_id:
+            document = Document.objects.filter(pk=document_id).first()
+            if document is not None and document.current is not None:
+                initial["markdown"] = document.current.markdown
+        return initial
+
     def get_urls(self):
         urls = [
             path(
