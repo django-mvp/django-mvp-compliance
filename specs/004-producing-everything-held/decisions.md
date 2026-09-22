@@ -25,6 +25,8 @@ What this deliberately does not mean: no abstraction is built today for records 
 The requirement is that adding a kind of record does not change what the answer is, which is a
 constraint on the design rather than a licence to build a plugin system for one caller.
 
+**ADR:** none — the requirement it settles is in the specification; ADR 0012 records the design that delivers it.
+
 ## D2 — Producing an answer is a privileged act with a permission of its own
 
 **Ambiguous**: R3 says nothing about who may produce the answer, and the obvious reading is that
@@ -40,6 +42,8 @@ nobody by default because a permission that arrives switched on is one nobody de
 
 Refusals reveal nothing about whether the named person has records (FR-013), because a refusal that
 distinguishes the two turns the surface into a way of confirming that a given person uses the site.
+
+**ADR:** docs/adr/0011-producing-what-is-held-is-an-admin-page-behind-its-own-permission.md
 
 ## D3 — The wording travels with the answer, in full
 
@@ -58,6 +62,8 @@ that says "the wording is at this address" has answered nothing.
 The size cost is real and accepted. An abridged answer is not evidence, so there is no version of
 this that is both smaller and correct.
 
+**ADR:** none — carrying the wording in full is a requirement of the specification, not a choice this feature made.
+
 ## D4 — Producing an answer leaves no trace
 
 **Ambiguous**: erasure in issue #22 is audited, so producing could be read as needing the same. A
@@ -75,6 +81,8 @@ this package.
 Raised with Sam at the spec gate as a possible separate feature rather than folded in here, because
 an access log over consent data is a real want and is not this feature.
 
+**ADR:** none — settled at the spec gate; the half a future reader would relitigate is in ADR 0013.
+
 ## D5 — No hooks for the host project's own data
 
 **Ambiguous**: the README and Article XIV both mention exposing hooks so a project can join its own
@@ -87,6 +95,8 @@ them now would mean this feature's correctness depends on host projects implemen
 correctly, and a host project that implements it badly produces an answer that looks complete and
 is not. Article XIV names that as worse than no answer. The statement of coverage in FR-015 is the
 honest version of the same thing at a hundredth of the cost.
+
+**ADR:** none — the specification forbids hooks here; ADR 0012 records what was built instead.
 
 ## D6 — The answer's form is left to planning
 
@@ -101,6 +111,8 @@ permission.
 choice of mechanism, while the choice itself depends on things best decided with the data model in
 front of you. Fixing it here would be specification drifting into planning, and the properties are
 what a reviewer would check either way.
+
+**ADR:** none — superseded inside this feature by D7 and D8, which fix the form the specification deferred.
 
 ## D7 — The page is in the admin, on a proxy model that carries no table
 
@@ -126,6 +138,8 @@ The alternative was a `urls.py` for host projects to include. It would add the f
 package serves, contradict a test on main, and leave every consuming project responsible for
 mounting it behind something.
 
+**ADR:** docs/adr/0011-producing-what-is-held-is-an-admin-page-behind-its-own-permission.md
+
 ## D8 — One route, and it is a GET
 
 **Ambiguous**: an answer could be a page, a downloadable file, or both, and the request could be a
@@ -145,6 +159,8 @@ address already does.
 A management command was considered and rejected. It has no request and no signed-in user, so
 there is nothing for FR-012 to refuse and no honest way to satisfy SC-003 for it.
 
+**ADR:** none — the route's shape is in ADR 0011; the choice of verb is local to one view.
+
 ## D9 — The answer holds sections, not a list of acceptances
 
 **Ambiguous**: FR-017 requires a further kind of record to join without the answer's shape
@@ -159,6 +175,8 @@ and the partial that renders them. Today exactly one section is built.
 that walked it — the retrofit the requirement exists to prevent. What D1 forbids is a registry, a
 hook or an entry point, and there is none: the function that builds the answer names each kind it
 knows about, nothing can register into it, and FR-018 is the reason.
+
+**ADR:** docs/adr/0012-the-answer-is-sections-not-a-list-of-acceptances.md
 
 ## D10 — A person is named by free text, resolved to a subject
 
@@ -177,6 +195,8 @@ The ambiguity is real and small — an account whose login name is another accou
 resolves as the account — so the answer reports the subject it was produced for, and a reader can
 see which reading was taken.
 
+**ADR:** none — local to the one page that looks a person up; nothing else in the package resolves free text.
+
 ## D11 — The answer carries no time of its own
 
 **Ambiguous**: a printed answer handed to somebody normally says when it was produced, and FR-006
@@ -189,6 +209,8 @@ the requirement that lets anybody trust the answer at all — an answer that dif
 readings cannot be evidence of anything. Whoever hands an answer over knows when they produced it,
 and a site that needs that recorded needs a record of the request and its response, which D4
 already established is a process it runs rather than a gap in this package.
+
+**ADR:** docs/adr/0013-an-answer-carries-no-time-of-its-own.md
 
 ## D12 — The optional client address is part of the answer
 
@@ -203,6 +225,8 @@ presented as a complete one, which Article XIV names as worse than no answer. No
 setting at produce time — what governs the page is whether the record in front of it holds an
 address, which is also what keeps records written before it was turned on looking exactly as they
 did.
+
+**ADR:** none — local to what one entry carries, and it follows from producing everything held.
 
 ## D13 — The form field is named `subject`, even though it holds free text
 
@@ -221,6 +245,8 @@ sees; the internal name is not user-facing text.
 **Revisit if**: a future story adds a second free-text input this page reads (unlikely — D8 keeps
 this to one field), where two fields both plausibly named "subject" would collide.
 
+**ADR:** none — a name inside one form and one query string.
+
 ## D14 — Two pre-existing test modules were extended, and the guardrail flagged them
 
 **Ambiguous**: the modification guard flags any change to a test file that existed at the story's
@@ -237,6 +263,8 @@ exists to prevent.
 
 **Revisit if**: a flag ever covers a removed or altered assertion rather than an addition, which is
 a different finding and not one to approve here.
+
+**ADR:** none — a record of a guardrail triage rather than a decision anything inherits.
 
 ## D15 — The coverage statement's exact wording, and the sweep's two lists
 
@@ -265,6 +293,8 @@ drifting apart, the same reasoning T049a/T049b already applied to the catalog it
 
 **Revisit if**: a real string needs "in full" in a context this sweep would wrongly catch, at which
 point the phrase list needs a narrower entry rather than dropping the check.
+
+**ADR:** none — the wording of one string, reviewed where it is defined.
 
 ## Scope raised and left out
 

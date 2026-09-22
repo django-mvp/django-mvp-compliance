@@ -92,6 +92,11 @@ EASY_ICONS = {
     }
 }
 
+# On, so the demo shows the state a site that wants the address an agreement
+# came from would produce. The package's own default is off, because it is
+# personal data about somebody who did not ask for it to be kept.
+MVP_COMPLIANCE_RECORD_IP_ADDRESS = True
+
 STATIC_URL = "/static/"
 
 USE_TZ = True

@@ -300,3 +300,27 @@ completion report — its result is in that report, not repeated here.
 
 **Watch**: `feature-state.json`'s story status is left as Forge set it, per the brief's
 prohibitions.
+
+## 2026-09-23T00:05:00Z · Forge · S5 convergence
+
+**Did**: One migration was added by this branch and there is nothing to squash. Confirmed the
+catalog carries every string the feature added with no fuzzy entry left holding another string's
+text. Seeded the demo so every state the page can be in is reachable: somebody with a history
+across documents, somebody with one record, somebody the package holds nothing about, an account
+holding the produce permission and nothing else, and a person whose account was removed and whose
+records outlived it — the seeding prints that person's identifier, because there is no email
+address left to ask for them by. The demo also turns the optional address evidence on, so the page
+has that state to show. Cleanup pass: folded the duplicated permission expression on the admin into
+one, and labelled the identifier the answer was produced for, which had been rendered bare.
+
+**Verified**: `makemigrations --check` clean, migrate-from-zero reaches the same final state, and
+the permission exists after it. The page exercised against the demo database as each caller:
+produced for a person with records, for a person whose account is gone, and for a stranger; refused
+for somebody holding every other permission this package defines, and for somebody not signed in.
+
+**Decided**: four decisions graduated to ADRs — the admin page and its permission (0011), the
+answer's sections (0012), and the absence of a time of its own (0013). The remaining eleven are
+recorded as declined with their reasons: each is either a requirement the specification already
+fixed or a choice sealed inside one view, one form or one string.
+
+**Next**: S6 review.

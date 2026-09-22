@@ -7,12 +7,14 @@
 
 {% block content %}
   <form method="get">
-  {{ form.as_p }}
+    {{ form.as_p }}
     <input type="submit" value="{% translate 'Produce' %}">
   </form>
 
   {% if record %}
-    <h2>{{ record.subject }}</h2>
+    {# The identifier asked about, not the text typed: the two differ whenever #}
+    {# a login name or an email address was resolved to an account. #}
+    <h2>{% translate "Produced for" %} {{ record.subject }}</h2>
     <p>{{ record.coverage }}</p>
     {% if record.is_empty %}
       <p>{% translate "Nothing is held about this person." %}</p>

@@ -222,7 +222,7 @@ class DisclosureAdmin(admin.ModelAdmin):
         return request.user.has_perm("mvp_compliance.produce_disclosure")
 
     def has_module_permission(self, request):
-        return request.user.has_perm("mvp_compliance.produce_disclosure")
+        return self.has_view_permission(request)
 
     def has_add_permission(self, request):
         return False
