@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content_title %}
+  <h1>{% translate "Everything held about a person" %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="get">
+  {{ form.as_p }}
+    <input type="submit" value="{% translate 'Produce' %}">
+  </form>
+
+  {% if record %}
+    <h2>{{ record.subject }}</h2>
+    {% if record.is_empty %}
+      <p>{% translate "Nothing is held about this person." %}</p>
+    {% else %}
+      {% for section in record.sections %}
+        <section>
+          <h3>{{ section.heading }}</h3>
+          {% include section.template with entries=section.entries %}
+        </section>
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+{% endblock %}

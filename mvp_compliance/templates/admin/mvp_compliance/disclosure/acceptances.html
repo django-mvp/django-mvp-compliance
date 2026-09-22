@@ -1,0 +1,12 @@
+{% load i18n %}
+<ul>
+  {% for entry in entries %}
+    <li>
+      <p>
+      {{ entry.document }} — {% translate "version" %} {{ entry.version }} —
+      {{ entry.accepted_at|date:"DATETIME_FORMAT" }}
+      </p>
+      <div>{{ entry.wording|safe }}</div>
+    </li>
+  {% endfor %}
+</ul>

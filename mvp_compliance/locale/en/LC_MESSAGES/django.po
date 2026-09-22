@@ -34,6 +34,7 @@ msgid "Publish"
 msgstr "Publish"
 
 #: mvp_compliance/admin.py:257
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:5
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
 
@@ -150,6 +151,7 @@ msgstr ""
 "published."
 
 #: mvp_compliance/models.py:216 mvp_compliance/models.py:552
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
 
@@ -283,6 +285,14 @@ msgstr "Can produce everything held about a person"
 #: mvp_compliance/records.py:130
 msgid "Acceptances"
 msgstr "Acceptances"
+
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:11
+msgid "Produce"
+msgstr "Produce"
+
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:17
+msgid "Nothing is held about this person."
+msgstr "Nothing is held about this person."
 
 #: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
 msgid "View current version"

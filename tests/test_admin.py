@@ -15,7 +15,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Permission
 from django.test import override_settings
 from django.urls import path, reverse
-from django.utils import formats
+from django.utils import formats, timezone
 
 import mvp_compliance
 from mvp_compliance.models import Version
@@ -1074,7 +1074,10 @@ class TestDisclosurePage:
         content = response.content.decode()
         assert "Privacy policy" in content
         assert str(version.number) in content
-        assert formats.date_format(acceptance.accepted_at, "DATETIME_FORMAT") in content
+        expected_moment = formats.date_format(
+            timezone.localtime(acceptance.accepted_at), "DATETIME_FORMAT"
+        )
+        assert expected_moment in content
         assert version.html in content
 
     def test_a_person_with_no_records_gets_a_page_saying_so(
