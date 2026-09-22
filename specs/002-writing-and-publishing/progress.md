@@ -201,3 +201,15 @@ one ever triggered a 403 to surface the gap. Worked around inside this module's 
 urlconf (`handler403`) rather than touching `tests/settings.py`, which is outside this story's
 scope. Flagging in `concerns` for whoever owns that file next.
 Next: T021, `has_delete_permission` on a published version.
+
+## 2026-09-22T12:20:00Z · Implementer US2 · T021
+
+Did: `VersionAdmin.has_delete_permission` returns `False` once a version has been published, so
+the admin offers no delete link on its change page and refuses the delete view directly, matching
+what `Version.delete()` already refuses at the model layer.
+Verified: `poetry run pytest tests/test_admin.py::TestDraftPrivacy::test_a_published_version_offers_no_delete_action`
+failed before the change — `assert b'.../delete/' not in <change page content>` — the delete link
+was present and `GET` on the delete view returned 200. After the change: `poetry run pytest
+tests/test_admin.py` — 21 passed. `ruff check`/`ruff format --check` clean on both files, `mypy
+mvp_compliance/admin.py` — no issues.
+Next: T022, a draft surviving being left alone.
