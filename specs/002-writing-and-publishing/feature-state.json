@@ -53,28 +53,68 @@
       "id": "US1",
       "priority": "P1",
       "issue": 14,
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
           "id": "T001",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "sha256sum mvp_compliance/static/mvp_compliance/vendor/easymde/easymde.min.js easymde.min.css",
+              "poetry build"
+            ],
+            "code": [
+              "mvp_compliance/static/mvp_compliance/vendor/easymde/VERSION.md:1"
+            ]
+          }
         },
         {
           "id": "T002",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_factories.py::TestUserFactory"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_factories.py"
+            ],
+            "code": [
+              "tests/factories.py:36"
+            ]
+          }
         },
         {
           "id": "T003",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ],
+            "code": [
+              "tests/conftest.py:28"
+            ]
+          }
         },
         {
           "id": "T004",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python -m django makemigrations --check --dry-run --settings tests.settings"
+            ],
+            "code": [
+              "mvp_compliance/models.py:171",
+              "mvp_compliance/migrations/0002_version_publish_permission.py:1"
+            ]
+          }
         },
         {
           "id": "T005",
@@ -92,8 +132,18 @@
         },
         {
           "id": "T006",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python manage.py seed_demo",
+              "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8021/admin/"
+            ],
+            "code": [
+              "demo/management/commands/seed_demo.py:1",
+              "demo/urls.py:9"
+            ]
+          }
         },
         {
           "id": "T010",
