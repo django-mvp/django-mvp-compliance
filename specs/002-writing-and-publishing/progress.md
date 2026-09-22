@@ -320,3 +320,18 @@ tests/test_admin.py` — 31 passed. `poetry run pre-commit run --files
 mvp_compliance/templates/admin/mvp_compliance/version/preview.html tests/test_admin.py` — clean
 (one ruff-format line-wrap applied and reverified).
 Next: T033, previewed content the allow list strips shows as stripped.
+
+## 2026-09-22T12:44:00Z · Implementer US3 · T033
+
+Did: `TestPreview::test_the_preview_shows_stripped_content_as_stripped` — a draft holding a
+`<script>` tag previews with it removed, using a distinctive marker string so the assertion
+cannot be satisfied by the admin chrome's own legitimate `<script src=...>` tags.
+Verified: needed no production change — T031's `preview_view` already calls `get_renderer()` for
+a draft, which sanitises. `poetry run pytest
+tests/test_admin.py::TestPreview::test_the_preview_shows_stripped_content_as_stripped` passed
+first run. Probed it can fail: temporarily had `preview_view` read `version.markdown` directly
+instead of `get_renderer()().render(...)` — failed (`mvp-compliance-preview-test` string appeared
+unstripped in the response). Reverted (`git checkout -- mvp_compliance/admin.py`, confirmed
+clean) and reran: `poetry run pytest tests/test_admin.py` — 32 passed. `poetry run pre-commit run
+--files tests/test_admin.py` — clean.
+Next: T034, what was previewed is what publication stores (SC-004).
