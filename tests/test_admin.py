@@ -661,6 +661,27 @@ class TestDocumentAdmin:
         assert response.status_code == 200
         assert expected_url.encode() in response.content
 
+    def test_editing_the_copy_leaves_the_published_version_alone(
+        self, client, editor, document
+    ) -> None:
+        """T054, FR-022, US-5 scenario 2."""
+        client.force_login(editor)
+        current = VersionFactory(document=document, markdown="Original wording")
+        current.publish()
+        original_markdown = current.markdown
+        original_html = current.html
+        add_url = reverse("admin:mvp_compliance_version_add")
+
+        response = client.post(
+            add_url,
+            data={"document": document.pk, "markdown": "Rewritten wording"},
+        )
+
+        current.refresh_from_db()
+        assert response.status_code == 302
+        assert current.markdown == original_markdown
+        assert current.html == original_html
+
 
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
