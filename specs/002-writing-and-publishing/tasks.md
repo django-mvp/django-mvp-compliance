@@ -93,3 +93,18 @@ add to.
 | T054 | `tests/test_admin.py::TestDocumentAdmin::test_editing_the_copy_leaves_the_published_version_alone` — save the new version with different wording, then assert the version it was copied from still holds its original Markdown and its original stored HTML (FR-022, US-5 scenario 2) | Passes |
 | T055 | README gains the starting-point behaviour. CHANGELOG line | Docs step green |
 | T056 | `makemessages` over the package, so `locale/en/LC_MESSAGES/django.po` holds every string this feature added | `makemessages` reports no change on a second run |
+
+## Walkthrough fixes (issue #17)
+
+Asked for by the repository owner after using the running admin, at the walkthrough that precedes
+the merge gate. Task ids continue the sequence.
+
+| Id | Task | Done when |
+|---|---|---|
+| T060 | `mvp_compliance/forms.py` — `VersionForm.clean_markdown()` refuses a save whose wording is identical to the version the form started from, with a message saying so. A version that says exactly what the one before it said is a version that changes nothing, and publishing it would supersede a wording with its own duplicate | A save with no character changed is refused and creates nothing; a save with one character changed succeeds |
+| T061 | `templates/admin/mvp_compliance/version/change_form.html` — a control starting the next version of this version's document, offered on a version that is in force | Present on a current version's page, leads to the add form for that document |
+| T062 | `mvp_compliance/admin.py` — `VersionAdmin.list_filter` gains the document, so the versions list narrows to one | Narrowing shows that document's versions and no others |
+| T063 | `templates/admin/mvp_compliance/document/change_form.html` — **View current version** and **Version history** controls, the second leading to the versions list already narrowed to this document. The control that started the next version moves to the version page (T061) and is gone from here | Both present; the history control lands on a list showing only this document |
+| T064 | The current-version control is absent for a document with nothing in force, and the history control is still offered | Asserted for a document with no versions and one with only a draft |
+| T065 | `mvp_compliance/admin.py` — a version can only be added from a document. `has_add_permission()` is false for a request that names no document, so the list offers no add control and a bare request for the add form is refused. The add form offers no save-and-add-another, which would return to a form naming no document | Reaching the form from a document works; reaching it with nothing named is refused |
+| T066 | `static/mvp_compliance/markdown-editor.css` — the editor fills the width available to it instead of sitting in a narrow column | Measured against the served page, not by eye |
