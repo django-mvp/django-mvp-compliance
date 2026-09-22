@@ -221,6 +221,23 @@ sees; the internal name is not user-facing text.
 **Revisit if**: a future story adds a second free-text input this page reads (unlikely — D8 keeps
 this to one field), where two fields both plausibly named "subject" would collide.
 
+## D14 — Two pre-existing test modules were extended, and the guardrail flagged them
+
+**Ambiguous**: the modification guard flags any change to a test file that existed at the story's
+base, and US-3 changed `tests/test_admin.py` and `tests/test_records.py`.
+
+**Chosen**: approved. Both changes are additions.
+
+**Why defensible**: the whole diff of both files across that range is new classes, new methods, and
+one import line each. No assertion in either file was weakened, relaxed, skipped or deleted —
+checked by reading every removed line in the range, of which there are two, both imports. Article X
+ties one source module to one test module, so a story that adds a route to the admin has nowhere
+else to put its tests, and the alternative — a test module per story — is the thing that article
+exists to prevent.
+
+**Revisit if**: a flag ever covers a removed or altered assertion rather than an addition, which is
+a different finding and not one to approve here.
+
 ## Scope raised and left out
 
 **An access log over consent data.** Whether a site can see who produced whose records, and when.

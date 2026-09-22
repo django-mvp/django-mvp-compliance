@@ -1092,6 +1092,27 @@ class TestDisclosurePage:
         assert response.status_code == 200
         assert b"Nothing is held" in response.content
 
+    def test_the_answer_carries_the_address_a_record_holds(
+        self, client, disclosure_producer
+    ) -> None:
+        """D12: a site that turned the optional evidence on holds the address, so
+        the answer carries it. A record without one shows nothing in its place.
+        """
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        with_address = VersionFactory()
+        with_address.publish()
+        without_address = VersionFactory()
+        without_address.publish()
+        AcceptanceFactory(user=someone, version=with_address, ip_address="198.51.100.7")
+        AcceptanceFactory(user=someone, version=without_address)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        content = client.get(url, {"subject": someone.username}).content.decode()
+
+        assert "198.51.100.7" in content
+        assert content.count("Recorded from") == 1
+
     def test_the_page_offers_no_way_to_change_anything(
         self, client, disclosure_producer, everything_else
     ) -> None:

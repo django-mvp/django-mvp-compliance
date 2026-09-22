@@ -286,6 +286,10 @@ msgstr "Can produce everything held about a person"
 msgid "Acceptances"
 msgstr "Acceptances"
 
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:12
+msgid "Recorded from"
+msgstr "Recorded from"
+
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:11
 msgid "Produce"
 msgstr "Produce"

@@ -211,3 +211,17 @@ at the end, before the completion report.
 
 **Watch**: `feature-state.json`'s story status is left as Forge set it, per the brief's
 prohibitions.
+
+## 2026-09-22T23:15:00Z · Forge · US-3 acceptance
+
+**Did**: The page showed the document, the version, the moment and the wording, and left out the
+address a record holds where a site turned that on — D12 and `plan.md` § The page both put it
+there, and the story's own criteria enumerated the other four without it. Wrote the failing test,
+confirmed it failed on the missing address, added the block to `acceptances.html` and regenerated
+the catalog. Approved the two guardrail flags as D14: every removed line across both flagged test
+modules is an import, and no assertion was weakened.
+
+**Verified**: `forge verify --base ee871bf` green on every step. The new test fails without the
+template block and passes with it.
+
+**Next**: US-4 — an answer for a person whose account is gone.
