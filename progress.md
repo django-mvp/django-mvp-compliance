@@ -34,3 +34,33 @@ Did: `publish_view`'s POST branch calls `Version.publish()` in a `try`, catches 
 Verified: `poetry run pytest tests/test_admin.py::TestPublish -q` — 4 passed.
 Next: T046.
 Watch: only `PublishError` is caught, per D7 — `PublishedVersionError` cannot be raised by `publish()`.
+
+## 2026-09-22T15:45:00+02:00 · Implementer US-4 · T046
+Did: Added `test_both_refusals_reach_the_author_as_a_message` covering an empty-rendering draft and an already-published version.
+Verified: `poetry run pytest tests/test_admin.py::TestPublish::test_both_refusals_reach_the_author_as_a_message -x` passed immediately (T045 already implements the redirect path).
+Next: T047.
+Watch: nothing.
+
+## 2026-09-22T15:50:00+02:00 · Implementer US-4 · T047
+Did: Added `test_saving_a_draft_publishes_nothing`, checking the change form's save, the get response body and the changelist body for any publish control.
+Verified: passed immediately — nothing in the admin currently offers publication outside the confirmation page.
+Next: T048.
+Watch: nothing.
+
+## 2026-09-22T15:55:00+02:00 · Implementer US-4 · T048
+Did: Added `test_a_published_version_has_no_editable_form`.
+Verified: failed on `name="markdown"` still present (RED, correct reason — the change form was still fully editable).
+Next: T049.
+Watch: nothing.
+
+## 2026-09-22T16:00:00+02:00 · Implementer US-4 · T049
+Did: `VersionAdmin.has_change_permission()` returns `False` for a published object, so Django serves its own read-only detail page.
+Verified: `poetry run pytest tests/test_admin.py -q` — 44 passed. Along the way, corrected T048's `type="submit"` assertion (it was tripping on the site chrome's unrelated log-out button) to `name="_save"`, the admin's actual save control.
+Next: T041a (see decisions.md), then T049a/T049b.
+Watch: nothing.
+
+## 2026-09-22T16:05:00+02:00 · Implementer US-4 · T041a (unnumbered — decisions.md)
+Did: Added a Publish link to the change form's object tools, matching T035's forward reference and the pattern of the existing Preview link. Visible only for a draft to a caller holding `publish_version`.
+Verified: `poetry run pytest tests/test_admin.py -q` — 46 passed.
+Next: T049a.
+Watch: flagged in the completion report's concerns — this addition has no task ID of its own.
