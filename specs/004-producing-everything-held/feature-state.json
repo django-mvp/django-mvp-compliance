@@ -173,8 +173,17 @@
         },
         {
           "id": "T009",
-          "status": "in_progress",
-          "attempts": 1
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python /home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --steps docs --base ee871bf"
+            ],
+            "code": [
+              "docs/models.md:343",
+              "README.md:15"
+            ]
+          }
         }
       ]
     },

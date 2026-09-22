@@ -65,3 +65,22 @@ mvp_compliance/records.py` → no issues found. Demonstrates FR-005/SC-005, FR-0
 **Next**: T009 — `docs/models.md` and `README.md`.
 
 **Watch**: none.
+
+## 2026-09-22T22:36:38Z · Implementer US-1 · T009
+
+**Did**: Added a "Producing what is held" subsection to `docs/models.md`, after `## \`Acceptance\``'s
+existing subsections: `produce(subject)`, what `PersonalRecord`, `Section` and `AcceptanceEntry`
+name, that a person with no records gets a normal answer, and that nothing is stored. Added one
+sentence to README.md's status callout naming `mvp_compliance.records.produce(subject)`.
+
+**Verified**: `poetry run python <kit>/forge verify --repo . --steps docs --base ee871bf` →
+`[verify] docs: passed (0s)`. This is the mechanical check named in T009's "Done when" — it flags a
+public name a branch adds that no page quotes as code, and confirmed all four (`AcceptanceEntry`,
+`Section`, `PersonalRecord`, `produce`) are covered.
+
+**Next**: US-1 complete (T001-T009). Ran the story's full narrow scope
+(`poetry run pytest tests/test_records.py -v`) once more: 7 passed. The full repo verify runs once,
+at the end of the story, per the Implementer protocol.
+
+**Watch**: `feature-state.json`'s `stories[].status` for US1 is left `"todo"` — flipping it is
+Forge's, not this Implementer's, per the brief's prohibitions.
