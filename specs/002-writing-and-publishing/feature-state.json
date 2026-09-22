@@ -59,16 +59,31 @@
         "DR-002 (medium, verified) VersionForm declared no field list and Version.html carries no editable=False, so the rendered output publish() produces could have been exposed as a postable field. plan.md and T016 now declare fields = [document, markdown] with a test asserting exactly those two, and T017 marks number, status, published_at and html read-only",
         "DR-003 (medium, verified) all five stories add to one admin.py, so they are sequentially dependent. tasks.md now states it rather than leaving it to surface at convergence",
         "DR-004 (low, verified, removes work) the planned except branch for PublishedVersionError in the publish view is unreachable: both refusals raise PublishError, and the save inside publish() runs while the stored row is still a draft so the immutability guard returns first. Dropped from plan.md, T045 and D7",
-        "DR-001 (high, verified) NOT applied \u2014 not a plan fault. This spec's edge case permitting deletion of a document holding only drafts contradicts FS-001's D8 and accepted ADR 0002. No FR, scenario or SC in FS-002 depends on it; recorded as D13 and put to Sam. Delivered behaviour stands meanwhile"
+        "DR-001 (high, verified) NOT applied — not a plan fault. This spec's edge case permitting deletion of a document holding only drafts contradicts FS-001's D8 and accepted ADR 0002. No FR, scenario or SC in FS-002 depends on it; recorded as D13 and put to Sam. Delivered behaviour stands meanwhile"
       ]
     },
     "review": {
       "approved_by": "reviewer",
       "at": "2026-09-22T14:10:00Z",
       "self_resolved": [
-        "REV-001 (high, verified) remedied \u2014 the document identifier from the query string was handed to the database unchecked, so a value that is not a number raised and served a 500 instead of an empty form. Reproduced against the running application first; my own first probe reported no crash because it ran against a urlconf with nothing mounted. Guarded, D18, with a parametrised test that goes red when the guard is removed",
-        "REV-002 (medium, verified) remedied \u2014 the approver fixture built for the specification's publish-without-write case was never used by any test, leaving the whole justification for two permissions uncovered. Test added, D19",
+        "REV-001 (high, verified) remedied — the document identifier from the query string was handed to the database unchecked, so a value that is not a number raised and served a 500 instead of an empty form. Reproduced against the running application first; my own first probe reported no crash because it ran against a urlconf with nothing mounted. Guarded, D18, with a parametrised test that goes red when the guard is removed",
+        "REV-002 (medium, verified) remedied — the approver fixture built for the specification's publish-without-write case was never used by any test, leaving the whole justification for two permissions uncovered. Test added, D19",
         "Reviewer note on README wording (preview permission) applied: the check is satisfied by view_version or change_version, not view_version alone"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T15:44:06Z",
+      "self_resolved": [
+        "Reject saving a version whose wording has not changed — built at save time, then moved to publication on his question. Saving a duplicate draft is harmless and the answer can go stale while a draft waits; publishing is the act that would supersede a wording with its own copy",
+        "A control to start the next version when viewing the version in force — added to the version's own page",
+        "A document filter on the versions list — added",
+        "Replace the document page's start-the-next-version control with View current version and Version history — done, history lands on the list already narrowed to that document",
+        "A new version should never begin from nothing — adding one is now only reachable from a document, enforced on the request rather than by hiding a button",
+        "The editor was too narrow with no way to widen it — it was the admin's flex row sizing the field to its own content; fixed there",
+        "Summary columns on the documents list — needs its own specification, filed as #39",
+        "A year-based version number format — same change as the numbering gaps below, filed together as #38",
+        "Version numbers leave gaps when several drafts exist and a later one is published — numbers are allocated when a draft is written rather than when one is published; filed as #38"
       ]
     }
   },
