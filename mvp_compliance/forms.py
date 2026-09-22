@@ -26,9 +26,9 @@ def same_wording(submitted: str, stored: str) -> bool:
     completely untouched never equals the one it came from, which is how
     this rule shipped refusing nothing at all.
     """
-    return submitted.replace("\r\n", "\n").strip() == stored.replace(
-        "\r\n", "\n"
-    ).strip()
+    return (
+        submitted.replace("\r\n", "\n").strip() == stored.replace("\r\n", "\n").strip()
+    )
 
 
 class VersionForm(forms.ModelForm):
