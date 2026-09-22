@@ -1,10 +1,10 @@
-"""No shipped migration writes to a published version (D10).
+"""No shipped migration writes to a published version or a recorded acceptance (D10).
 
-``VersionManager.use_in_migrations`` closes every bulk route a migration could
-take, but a historical model has no custom ``save()`` — so a data migration
-that called ``save()`` directly on one would still slip past. This asserts
-the residue stays closed the only other way it can be: no shipped migration
-performs a data write at all.
+``VersionManager.use_in_migrations`` and ``AcceptanceManager.use_in_migrations``
+close every bulk route a migration could take, but a historical model has no
+custom ``save()`` — so a data migration that called ``save()`` directly on one
+would still slip past. This asserts the residue stays closed the only other
+way it can be: no shipped migration performs a data write at all.
 """
 
 import importlib
@@ -20,9 +20,10 @@ class TestMigrationOperations:
 
     def test_no_shipped_migration_uses_runpython_or_runsql(self):
         # If a legitimate data migration is ever needed, write it as a
-        # RunPython that loads Version through the historical model's own
-        # manager and calls publish()/save() — never raw SQL or an
-        # unguarded save() on a row this package would otherwise refuse.
+        # RunPython that loads Version or Acceptance through the historical
+        # model's own manager and calls publish()/save()/record() — never raw
+        # SQL or an unguarded save() on a row this package would otherwise
+        # refuse.
         for module_info in pkgutil.iter_modules(migrations_package.__path__):
             module = importlib.import_module(
                 f"{migrations_package.__name__}.{module_info.name}"

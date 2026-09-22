@@ -6,30 +6,9 @@ instead of hand-constructing documents, versions and users.
 
 import factory
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
-from mvp_compliance.models import Document, Version
-
-
-class DocumentFactory(factory.django.DjangoModelFactory):
-    """Build a saved :class:`Document` with an app-wide-unique name."""
-
-    class Meta:
-        model = Document
-
-    name = factory.Sequence(lambda n: f"Document {n}")
-
-
-class VersionFactory(factory.django.DjangoModelFactory):
-    """Build a saved :class:`Version`, auto-creating its owning document.
-
-    ``number`` is left unset — the model assigns it in ``save()``.
-    """
-
-    class Meta:
-        model = Version
-
-    document = factory.SubFactory(DocumentFactory)
-    markdown = factory.Sequence(lambda n: f"Wording {n}")
+from mvp_compliance.models import Acceptance, Document, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -57,3 +36,37 @@ class UserFactory(factory.django.DjangoModelFactory):
             return
         self.set_password(extracted or "password")
         self.save(update_fields=["password"])
+
+
+class DocumentFactory(factory.django.DjangoModelFactory):
+    """Build a saved :class:`Document` with an app-wide-unique name."""
+
+    class Meta:
+        model = Document
+
+    name = factory.Sequence(lambda n: f"Document {n}")
+
+
+class VersionFactory(factory.django.DjangoModelFactory):
+    """Build a saved :class:`Version`, auto-creating its owning document.
+
+    ``number`` is left unset — the model assigns it in ``save()``.
+    """
+
+    class Meta:
+        model = Version
+
+    document = factory.SubFactory(DocumentFactory)
+    markdown = factory.Sequence(lambda n: f"Wording {n}")
+
+
+class AcceptanceFactory(factory.django.DjangoModelFactory):
+    """Build a saved :class:`Acceptance`, auto-creating its user and version."""
+
+    class Meta:
+        model = Acceptance
+
+    user = factory.SubFactory(UserFactory)
+    subject = factory.LazyAttribute(lambda o: str(o.user.pk))
+    version = factory.SubFactory(VersionFactory)
+    accepted_at = factory.LazyFunction(timezone.now)

@@ -3,7 +3,24 @@
 import pytest
 from django.contrib.auth.models import Permission
 
-from tests.factories import DocumentFactory, UserFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
+
+
+@pytest.fixture
+def user(db):
+    """A saved instance of the configured user model."""
+    return UserFactory()
+
+
+@pytest.fixture
+def acceptance(db):
+    """A saved :class:`Acceptance`, with its user and version auto-created."""
+    return AcceptanceFactory()
 
 
 @pytest.fixture

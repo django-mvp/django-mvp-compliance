@@ -1,0 +1,698 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "003-record-who-accepted",
+  "branch": "003-record-who-accepted",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "PLAN",
+      "at": "2026-09-22T14:35:00Z",
+      "note": "Queue verdict ready. FS-001 delivered since this spec landed; re-read spec against spec found no contradiction \u2014 FS-001 ships the published/current/superseded standing and the stored output this spec assumes."
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-22T14:44:04Z",
+      "note": "S3 artifacts committed (6ef8c78) and pushed; draft pull request 37 open with the closing block seeded. One design reviewer dispatched on sonnet, three lenses."
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-22T14:55:50Z",
+      "note": "Design review green. US-1 dispatched on sonnet from verified base a9135f0."
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-22T17:10:13Z",
+      "note": "All five stories accepted and independently re-verified. Convergence done. Review approve at low risk; both findings closed, each fix checked against the defect. 201 tests green."
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-21T21:22:12Z",
+      "self_resolved": [
+        "merge commit beb2cd95595b6089d482256239a7c4f39a02eaf1, pull request #23"
+      ]
+    },
+    "plan": {
+      "approved_by": "notified",
+      "at": "2026-09-22T14:55:00Z"
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-22T14:51:00Z",
+      "self_resolved": [
+        "DR-001 (low, verified, architecture) the on_delete callable is safe under its default SET_NULL delegation only because it lacks Django's lazy_sub_objs marker (deletion.py:73, the gate at :343, the two update branches at :476-490). Verified independently against the resolved Django 5.2.17. research.md R1 now states the attribute must never be added, plan.md repeats it where the callable is designed, and T052 requires the comment on the callable itself. US-4's T050 is the test that would catch a regression.",
+        "note swept: tasks.md T017 now names specs/001-legal-documents-kept/decisions.md D21 by file rather than by number alone"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "not-applicable (no visible surface)",
+      "at": "2026-09-22T17:02:26Z",
+      "self_resolved": [
+        "Not shown. The check flagged one path, mvp_compliance/locale/en/LC_MESSAGES/django.po, and every string this feature added to it belongs to the Acceptance model or to exceptions this package raises to calling code. Acceptance is registered in no admin \u2014 admin.py registers Document and Version only \u2014 and the package exposes no URLs, which tests/test_app.py asserts. So none of those strings can reach a page, and the rest of the catalogue diff is line-number references for strings whose rendering is unchanged. This feature ships no surface a person can see, which is the specification's own scope."
+      ]
+    },
+    "review": {
+      "approved_by": "review-panel",
+      "at": "2026-09-22T21:10:00Z",
+      "self_resolved": [
+        "Verdict approve, risk low, two findings, both verified independently before acting rather than accepted on the severity claimed.",
+        "F1 (medium) no test distinguished reading REMOTE_ADDR from reading a forwarded header; confirmed by changing record() to prefer X-Forwarded-For, which passed the entire suite. Test added covering three forwarded headers that disagree with the connection address, and checked against that defect. D20.",
+        "F2 (low) AcceptanceQuerySet.update() checked exists() and then wrote, leaving a gap a concurrent insert could land in. Confirmed. Fixed by refusing every update outright, matching delete() on the same queryset, rather than by a transaction that would not close the gap under read committed isolation. Nothing in this package updates an acceptance, so the narrower guard was protecting no legitimate call. D19."
+      ]
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 24,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_factories.py::TestUserFactory::test_two_builds_do_not_collide"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_factories.py::TestUserFactory -q"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest --fixtures tests/test_app.py"
+            ]
+          }
+        },
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptance::test_recording_creates_a_record_naming_the_user_version_and_moment"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_recording_creates_a_record_naming_the_user_version_and_moment -q"
+            ]
+          }
+        },
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptance::test_no_way_to_accept_a_document"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_no_way_to_accept_a_document -q"
+            ]
+          }
+        },
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_recording_against_a_never_published_version_is_refused",
+              "tests/test_models.py::TestRecording::test_recording_against_a_superseded_version_is_accepted",
+              "tests/test_models.py::TestRecording::test_recording_for_a_user_with_no_primary_key_is_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording -q"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run ruff check mvp_compliance/models.py",
+              "poetry run mypy mvp_compliance/models.py"
+            ]
+          }
+        },
+        {
+          "id": "T014",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_recording_creates_a_record_naming_the_user_version_and_moment tests/test_models.py::TestRecording -q"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_exceptions.py::TestExceptions::test_record_error_is_not_a_validation_error",
+              "tests/test_exceptions.py::TestExceptions::test_recorded_acceptance_error_is_not_a_validation_error",
+              "tests/test_exceptions.py::TestExceptions::test_record_error_has_a_docstring_naming_its_requirement",
+              "tests/test_exceptions.py::TestExceptions::test_recorded_acceptance_error_has_a_docstring_naming_its_requirement"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_exceptions.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T016",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptanceImmutability::test_saving_an_existing_row_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_updating_through_the_queryset_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_bulk_update_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_deleting_the_instance_is_refused",
+              "tests/test_models.py::TestAcceptanceImmutability::test_deleting_through_the_queryset_is_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptanceImmutability -k 'not historical' -q"
+            ]
+          }
+        },
+        {
+          "id": "T017",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptanceImmutability -k 'not historical' -q"
+            ]
+          }
+        },
+        {
+          "id": "T018",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptanceImmutability::test_a_historical_model_inherits_the_guard"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptanceImmutability::test_a_historical_model_inherits_the_guard tests/test_migrations.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T019",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAcceptance::test_record_still_points_at_the_version_it_named"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAcceptance::test_record_still_points_at_the_version_it_named -q"
+            ]
+          }
+        },
+        {
+          "id": "T020",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_factories.py::TestAcceptanceFactory::test_it_builds_a_valid_saved_acceptance"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_factories.py::TestAcceptanceFactory -q"
+            ]
+          }
+        },
+        {
+          "id": "T021",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance --pythonpath .",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance --check --dry-run --pythonpath ."
+            ]
+          }
+        },
+        {
+          "id": "T022",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/ -q"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 25,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T030",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_accepting_a_later_version_of_the_same_document_creates_a_second_record",
+              "tests/test_models.py::TestRecording::test_acceptances_are_listed_in_the_order_they_happened",
+              "tests/test_models.py::TestRecording::test_two_people_accepting_the_same_version_each_get_their_own_record"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording -v"
+            ]
+          }
+        },
+        {
+          "id": "T031",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_the_same_version_twice_leaves_one_record"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording::test_the_same_version_twice_leaves_one_record -v"
+            ]
+          }
+        },
+        {
+          "id": "T032",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording -v",
+              "poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestAcceptanceImmutability tests/test_migrations.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T033",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_a_second_row_is_refused_by_the_database"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording::test_a_second_row_is_refused_by_the_database -v"
+            ]
+          }
+        },
+        {
+          "id": "T034",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording::test_two_recordings_leave_one_record"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestRecording::test_two_recordings_leave_one_record -v"
+            ]
+          }
+        },
+        {
+          "id": "T035",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run",
+              "poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestRecording tests/test_models.py::TestAcceptanceImmutability tests/test_migrations.py tests/test_factories.py tests/test_exceptions.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T036",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v",
+              "poetry run ruff check ."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P1",
+      "issue": 26,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T040",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_once_the_version_in_force_is_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_nothing_has_ever_been_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_the_accepted_version_has_been_superseded",
+              "tests/test_models.py::TestOutstanding::test_not_outstanding_when_nothing_has_ever_been_published"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding -v"
+            ]
+          }
+        },
+        {
+          "id": "T041",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_outstanding_for_names_exactly_the_unaccepted_documents",
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_is_an_empty_result_not_an_error"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding -v"
+            ]
+          }
+        },
+        {
+          "id": "T042",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_once_the_version_in_force_is_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_nothing_has_ever_been_accepted",
+              "tests/test_models.py::TestOutstanding::test_outstanding_when_the_accepted_version_has_been_superseded",
+              "tests/test_models.py::TestOutstanding::test_not_outstanding_when_nothing_has_ever_been_published",
+              "tests/test_models.py::TestOutstanding::test_outstanding_for_names_exactly_the_unaccepted_documents",
+              "tests/test_models.py::TestOutstanding::test_nothing_outstanding_is_an_empty_result_not_an_error"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding -v",
+              "poetry run pytest tests/test_models.py -q",
+              "poetry run ruff check mvp_compliance/models.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run"
+            ]
+          }
+        },
+        {
+          "id": "T043",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOutstanding::test_the_answer_costs_a_fixed_number_of_queries"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOutstanding::test_the_answer_costs_a_fixed_number_of_queries -v"
+            ]
+          }
+        },
+        {
+          "id": "T044",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v (scratch module exercising both doc examples, removed after passing)",
+              "poetry run ruff check ."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P2",
+      "issue": 27,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T050",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_survive_by_default"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
+        },
+        {
+          "id": "T051",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_removed_when_the_setting_says_so",
+              "tests/test_models.py::TestAccountRemoval::test_removing_one_account_does_not_touch_anyone_elses_records_by_default",
+              "tests/test_models.py::TestAccountRemoval::test_removing_one_account_does_not_touch_anyone_elses_records_when_the_setting_says_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
+        },
+        {
+          "id": "T052",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_survive_by_default",
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_removed_when_the_setting_says_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v",
+              "poetry run pytest tests/ -q",
+              "poetry run ruff check mvp_compliance/models.py mvp_compliance/migrations/0005_alter_acceptance_user.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run"
+            ]
+          }
+        },
+        {
+          "id": "T053",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_a_surviving_record_is_still_found_with_its_siblings"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
+        },
+        {
+          "id": "T054",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_a_surviving_record_is_still_found_with_its_siblings"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v",
+              "poetry run pytest tests/test_models.py -q",
+              "poetry run ruff check mvp_compliance/models.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run"
+            ]
+          }
+        },
+        {
+          "id": "T055",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_a_recreated_account_inherits_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
+        },
+        {
+          "id": "T056",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django migrate --plan"
+            ]
+          }
+        },
+        {
+          "id": "T057",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v (scratch module exercising the docs examples, removed after passing)",
+              "poetry run pytest tests/ -q",
+              "poetry run ruff check .",
+              "poetry run mypy mvp_compliance/models.py"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US5",
+      "priority": "P2",
+      "issue": 28,
+      "worktree": null,
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T060",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_holds_nothing_beyond_the_three_facts_by_default",
+              "tests/test_models.py::TestOptionalEvidence::test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence -v"
+            ]
+          }
+        },
+        {
+          "id": "T061",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_before_the_setting_was_on_is_unchanged_afterwards",
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_while_the_setting_was_on_still_holds_it_once_turned_off"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence -v"
+            ]
+          }
+        },
+        {
+          "id": "T062",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_holds_nothing_beyond_the_three_facts_by_default",
+              "tests/test_models.py::TestOptionalEvidence::test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied",
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_before_the_setting_was_on_is_unchanged_afterwards",
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_while_the_setting_was_on_still_holds_it_once_turned_off"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence -v",
+              "poetry run pytest tests/test_models.py::TestRecording tests/test_models.py::TestAccountRemoval tests/test_models.py::TestAcceptanceImmutability -v",
+              "poetry run ruff check mvp_compliance/models.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py"
+            ]
+          }
+        },
+        {
+          "id": "T063",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_no_request_holds_no_address"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence::test_no_request_holds_no_address -v"
+            ]
+          }
+        },
+        {
+          "id": "T064",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations"
+            ]
+          }
+        },
+        {
+          "id": "T065",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v (scratch module exercising the README/docs examples, removed after passing)",
+              "poetry run pytest tests/ -q",
+              "poetry run ruff check ."
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 0,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 37,
+    "draft": true
+  },
+  "escalations": []
+}

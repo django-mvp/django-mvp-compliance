@@ -2,17 +2,54 @@
 
 from typing import cast
 
+from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from mvp_compliance.exceptions import PublishedVersionError, PublishError
+from mvp_compliance.exceptions import (
+    PublishedVersionError,
+    PublishError,
+    RecordedAcceptanceError,
+    RecordError,
+)
 from mvp_compliance.rendering import get_renderer
 
 #: Everything a published version carries except its standing (FR-013) — the
 #: one change a published version ever undergoes is draft -> current ->
 #: superseded, never a change to what it says.
 PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "html", "published_at")
+
+
+class DocumentQuerySet(models.QuerySet):
+    """Answers what a person has outstanding, without a query per document."""
+
+    def outstanding_for(self, user) -> "DocumentQuerySet":
+        """Every document in this queryset whose version in force ``user`` has not accepted.
+
+        One query with a subquery rather than a loop, so the cost does not
+        grow with the number of documents (FR-012, FR-018, SC-005;
+        research.md R4). A document with no version in force is excluded by
+        the first filter rather than counted as outstanding — there is
+        nothing in force for anybody to accept.
+        """
+        subject = Acceptance.subject_of(user)
+        accepted = Acceptance.objects.filter(
+            subject=subject, version__status=Version.Status.CURRENT
+        )
+        return self.filter(versions__status=Version.Status.CURRENT).exclude(
+            pk__in=accepted.values("version__document_id")
+        )
+
+
+class DocumentManager(models.Manager["Document"]):
+    """Forwards ``DocumentQuerySet``'s methods, the same shape as ``VersionManager``."""
+
+    def get_queryset(self) -> DocumentQuerySet:
+        return DocumentQuerySet(self.model, using=self._db)
+
+    def outstanding_for(self, user) -> DocumentQuerySet:
+        return self.get_queryset().outstanding_for(user)
 
 
 class Document(models.Model):
@@ -29,6 +66,8 @@ class Document(models.Model):
         help_text=_("The name this document is known by, such as “Privacy policy”."),
     )
 
+    objects = DocumentManager()
+
     class Meta:
         verbose_name = _("document")
         verbose_name_plural = _("documents")
@@ -40,6 +79,15 @@ class Document(models.Model):
     def current(self) -> "Version | None":
         """The version in force, or ``None`` when nothing has been published."""
         return self.versions.current().first()
+
+    def is_outstanding_for(self, user) -> bool:
+        """Whether ``user`` has not accepted the version currently in force (FR-011).
+
+        The ``outstanding_for`` queryset narrowed to this document's primary
+        key, rather than a second expression of the rule (D11). ``False``
+        when nothing is in force — a normal answer, not an error.
+        """
+        return Document.objects.outstanding_for(user).filter(pk=self.pk).exists()
 
 
 class VersionQuerySet(models.QuerySet):
@@ -331,3 +379,244 @@ class Version(models.Model):
         if self.is_published:
             raise PublishedVersionError(_("A published version cannot be deleted."))
         return super().delete(*args, **kwargs)
+
+
+def acceptances_survive_account_removal() -> bool:
+    """Whether the package's default is to keep a person's acceptances (FR-013).
+
+    Read at the point of use, not cached, so a change to
+    ``MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`` takes effect on the
+    next account removal rather than needing a restart (research.md R1).
+    """
+    return getattr(settings, "MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL", True)
+
+
+def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
+    """The ``on_delete`` callable on ``Acceptance.user`` (D8, research.md R1).
+
+    ``on_delete`` accepts any callable with this signature — it is all
+    ``SET_NULL`` and ``CASCADE`` are — so this one reads
+    ``acceptances_survive_account_removal()`` at the moment a delete runs and
+    delegates to Django's own implementation of whichever the setting names.
+    Reading the setting here rather than at import time is what makes it a
+    setting rather than a constant baked in when the model class was built,
+    and what makes it testable with ``override_settings``.
+
+    ``Acceptance.user`` stays ``null=True`` even though this callable is not
+    literally ``SET_NULL``: ``ForeignKey._check_on_delete`` compares
+    ``on_delete == SET_NULL`` by identity, so it does not recognise a
+    callable that only delegates to ``SET_NULL`` and will not flag a missing
+    ``null=True`` the way it would for the real thing.
+
+    This callable is not given the ``lazy_sub_objs`` attribute Django's own
+    ``SET_NULL`` carries. Two things together would route the resulting field
+    update into ``AcceptanceQuerySet.update()`` and have account removal
+    refused: that attribute, which leaves ``sub_objs`` unevaluated so the
+    collector updates through the queryset rather than a raw ``UpdateQuery``,
+    and ``Meta.base_manager_name`` naming ``AcceptanceManager``, which is what
+    would put the guarded queryset in the collector's path at all. Neither is
+    present, and neither alone does anything — the pair is what a later change
+    has to avoid recreating.
+    """
+    if acceptances_survive_account_removal():
+        models.SET_NULL(collector, field, sub_objs, using)
+    else:
+        models.CASCADE(collector, field, sub_objs, using)
+
+
+class AcceptanceQuerySet(models.QuerySet):
+    """Refuses every route that would change or delete a recorded acceptance (Article XII)."""
+
+    def update(self, **kwargs) -> int:
+        # Refused outright rather than only when the queryset currently
+        # matches something, which is the shape ``delete()`` below already
+        # has. Checking first and updating afterwards leaves a gap between
+        # the two statements: a record committed in that gap is one the
+        # check did not see and the update would write to anyway. Nothing
+        # in this package updates an acceptance, so the narrower guard was
+        # not letting anything through for a good reason.
+        raise RecordedAcceptanceError(
+            _("An acceptance cannot be changed once it is recorded.")
+        )
+
+    def delete(self):
+        raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
+
+    def for_subject(self, subject) -> "AcceptanceQuerySet":
+        """This queryset narrowed to one person's records, by the identifier that
+        survives their account being removed (FR-014).
+        """
+        return self.filter(subject=subject)
+
+
+class AcceptanceManager(models.Manager["Acceptance"]):
+    """Where an acceptance is written — see ``record()``.
+
+    Gives a historical model in a migration the same guards (``use_in_migrations``).
+    Overrides ``get_queryset()`` rather than being built with
+    ``Manager.from_queryset()`` — the latter is a dynamic base class mypy
+    refuses to type-check (specs/001-legal-documents-kept/decisions.md D21).
+    """
+
+    use_in_migrations = True
+
+    def get_queryset(self) -> AcceptanceQuerySet:
+        return AcceptanceQuerySet(self.model, using=self._db)
+
+    def for_subject(self, subject) -> AcceptanceQuerySet:
+        return self.get_queryset().for_subject(subject)
+
+    def for_person(self, user) -> AcceptanceQuerySet:
+        """That person's acceptances, in the order they happened.
+
+        A thin call through ``subject_of()`` into ``for_subject()``, not a
+        second query — the same identifier ``record()`` writes.
+        """
+        return self.for_subject(Acceptance.subject_of(user))
+
+    def record(self, user, version, request=None) -> "Acceptance":
+        """Record ``user``'s acceptance of ``version``.
+
+        Refuses a version that has never been published (FR-003) before
+        anything is written. Recording the same person's acceptance of the
+        same version again, including when two attempts race, returns the
+        record that already exists rather than raising or writing a second
+        one (FR-009, FR-010). ``request`` is read only when
+        ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on, and only to fill
+        ``ip_address`` on a record being newly created — an existing record
+        is returned untouched, so turning the setting on or off never
+        changes what an earlier record holds (FR-016, FR-017).
+        """
+        if not version.is_published:
+            raise RecordError(
+                _(
+                    "Cannot record an acceptance of a version that has never been published."
+                )
+            )
+        ip_address = None
+        if request is not None and getattr(
+            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
+        ):
+            # Only REMOTE_ADDR, never X-Forwarded-For or any other forwarded
+            # header: a forwarded header is set by the client, so reading one
+            # would make this evidence field something the person it is
+            # about can fill in themselves. Only the deployment knows which
+            # proxies to trust, and making REMOTE_ADDR correct behind one is
+            # its responsibility, not this package's (research.md R6, D10).
+            ip_address = request.META.get("REMOTE_ADDR")
+        subject = Acceptance.subject_of(user)
+        return self.get_or_create(
+            subject=subject,
+            version=version,
+            defaults={
+                "user": user,
+                "accepted_at": timezone.now(),
+                "ip_address": ip_address,
+            },
+        )[0]
+
+
+class Acceptance(models.Model):
+    """The record that one person accepted one published version, at one moment.
+
+    Once written, this record is finished: nothing in this package will ever
+    change it or delete it.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("user"),
+        help_text=_(
+            "The account that accepted this version, at the time it accepted "
+            "it. Null only ever means the account has since been removed — "
+            "never that the acceptor was unknown."
+        ),
+        null=True,
+        blank=True,
+        on_delete=keep_or_remove_acceptances,
+        related_name="compliance_acceptances",
+    )
+    subject = models.CharField(
+        _("subject"),
+        max_length=255,
+        editable=False,
+        help_text=_(
+            "The accepted user's primary key, held as text and written once, "
+            "when this record is made. The `user` foreign key is cleared when "
+            "that account is removed, so without this field the record could "
+            "no longer say whose it is or be found among that person's others."
+        ),
+    )
+    version = models.ForeignKey(
+        Version,
+        verbose_name=_("version"),
+        help_text=_(
+            "The published version this acceptance names. Never a draft — "
+            "recording an acceptance of one is refused."
+        ),
+        on_delete=models.PROTECT,
+        related_name="acceptances",
+    )
+    accepted_at = models.DateTimeField(
+        _("accepted at"),
+        editable=False,
+        db_index=True,
+        help_text=_(
+            "The moment this acceptance was recorded. Set once, when the "
+            "record is made, and never rewritten."
+        ),
+    )
+    ip_address = models.GenericIPAddressField(
+        _("IP address"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "The address the request came from when this acceptance was "
+            "recorded. Held only when the host project has turned that on and "
+            "supplied the request — personal data about someone who did not "
+            "ask for it to be kept, so it is the host project's decision."
+        ),
+    )
+
+    objects = AcceptanceManager()
+
+    class Meta:
+        verbose_name = _("acceptance")
+        verbose_name_plural = _("acceptances")
+        ordering = ["accepted_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["subject", "version"],
+                # Over `subject` rather than `user`: a later story clears the
+                # user foreign key when that account is removed, and a
+                # constraint over `user` would stop holding at exactly the
+                # moment nobody is watching.
+                name="one_acceptance_per_person_per_version",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.subject} accepted {self.version}"
+
+    @staticmethod
+    def subject_of(user) -> str:
+        """The identifier ``record()`` writes and a later story's lookups read back.
+
+        The single place the identifier is derived, so writing and reading
+        cannot disagree about what identifies a person.
+        """
+        if user.pk is None:
+            raise RecordError(
+                _("Cannot record an acceptance for a user with no primary key.")
+            )
+        return str(user.pk)
+
+    def save(self, *args, **kwargs) -> None:
+        if self.pk is not None and Acceptance.objects.filter(pk=self.pk).exists():
+            raise RecordedAcceptanceError(
+                _("An acceptance cannot be changed once it is recorded.")
+            )
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))

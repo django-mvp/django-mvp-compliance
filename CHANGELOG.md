@@ -66,3 +66,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   yet to compare it against.
 - The Markdown editor fills the width available to it, at any window
   width, instead of sitting in a narrow column.
+- `Acceptance`, the record that one user agreed to one published version, at
+  one moment: `Acceptance.objects.record(user, version)`. It names the
+  user, the version and when it happened, is refused against a version
+  that has never been published, and is never editable or deletable once
+  written — every route that could change or delete one, including
+  through the queryset and inside a migration, raises instead. Recording
+  the same person's acceptance of the same version again, including two
+  attempts racing each other, returns the record that already exists
+  rather than writing a second one.
+- `Document.objects.outstanding_for(user)` and
+  `document.is_outstanding_for(user)` answer which documents a person has
+  not accepted the version in force of, in one query regardless of how
+  many documents exist, so the question is cheap enough to ask on an
+  ordinary page.
+- Removing an account leaves that person's acceptances in place by
+  default — closing an account is not a statement about the evidence, and
+  `Acceptance.objects.for_person(user)` /
+  `Acceptance.objects.for_subject(subject)` still find them by the
+  identifier that survives the account's removal. A project bound by a
+  stricter erasure requirement sets
+  `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = False`, and
+  removing an account then takes that person's acceptances with it;
+  either way, removing one account never touches anyone else's records.
+- By default an acceptance holds nothing about the person beyond who they
+  are, which version, and when. A project that turns
+  `MVP_COMPLIANCE_RECORD_IP_ADDRESS` on also gets the IP address the
+  request came from, provided the request is passed to `record()` —
+  personal data about someone who did not ask for it to be kept, so it is
+  held only when a project has deliberately chosen to hold it. Turning
+  the setting on or off only ever affects acceptances recorded
+  afterwards; an existing record keeps whatever it held when it was
+  written.

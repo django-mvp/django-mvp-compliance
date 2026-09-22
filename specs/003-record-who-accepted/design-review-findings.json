@@ -1,0 +1,25 @@
+{
+  "lens": "spec-compliance",
+  "stage": "design",
+  "verdict": "approve",
+  "risk": "low",
+  "scope": "specs/003-record-who-accepted/plan.md, research.md and tasks.md, reviewed against spec.md, decisions.md and CONSTITUTION.md, with targeted reads of mvp_compliance/models.py, mvp_compliance/exceptions.py, and the existing test suite. No diff exists; nothing has been implemented.",
+  "skills_loaded": [
+    { "name": "craft-review", "receipt": "craft-review/2026-09-17/b773db2e", "loaded_via": "skill-tool" },
+    { "name": "craft-security", "receipt": "craft-security/2026-08-04/ea3d6742", "loaded_via": "skill-tool" },
+    { "name": "craft-simplify", "receipt": "craft-simplify/2026-08-04/69038ce1", "loaded_via": "skill-tool" }
+  ],
+  "findings": [
+    {
+      "id": "DR-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[architecture] The plan's `keep_or_remove_acceptances` on_delete callable (R1, plan.md \"What happens when an account is removed\") is safe under the default SET_NULL delegation only because it lacks Django's `lazy_sub_objs` marker — an implementation detail neither research.md nor plan.md documents, and one a plausible future edit would silently undo, breaking FR-013's default (survive) behaviour with an unhandled `RecordedAcceptanceError` on every account deletion.",
+      "evidence": "django/db/models/deletion.py:343 gates whether the collector evaluates `sub_objs` before invoking the on_delete callable: `if getattr(on_delete, \"lazy_sub_objs\", False) or sub_objs:`. Django's own `SET_NULL` sets `SET_NULL.lazy_sub_objs = True` (deletion.py:73) so its sub_objs queryset stays unevaluated. The plan's custom callable is an ordinary function with no such attribute, so `getattr(...)` is False and `bool(sub_objs)` is evaluated at line 343, populating `sub_objs._result_cache`. That is what routes the later update through the `objs.extend(instances)` branch and a raw `sql.UpdateQuery.update_batch()` call (deletion.py:472-488) instead of `combined_updates.update(**{field.name: value})` (deletion.py:485), which would otherwise land on `AcceptanceQuerySet.update()` and raise per T017's refuse-whenever-it-matches-anything guard. I confirmed this against the resolved Django 5.2.17 with a standalone reproduction (a minimal model with a custom on_delete callable delegating to SET_NULL, and a QuerySet.update() override that raises): deleting the parent succeeded and nulled the FK without the override firing, and the callable received `sub_objs` with `_result_cache` already populated — exactly the mechanism above. research.md R1/R2 verify the *delete* path's bypass (`_raw_delete`/`delete_batch`) but say nothing about this *update* path, which is the one FR-013's default actually exercises.",
+      "suggested_fix": "Add one sentence to research.md R1 stating that `keep_or_remove_acceptances` must never be given a `lazy_sub_objs = True` attribute (unlike Django's own `SET_NULL`), because doing so would leave `sub_objs` unevaluated and route the delegation through `AcceptanceQuerySet.update()`'s refusal instead of Django's raw `UpdateQuery.update_batch()`, breaking FR-013's default. A matching one-line code comment on the callable itself (already planned for T052) is the cheapest place to stop a future cleanup pass from adding the attribute by analogy with Django's own SET_NULL."
+    }
+  ],
+  "notes": [
+    "tasks.md T017 cites \"D21's reason\" for forwarding queryset methods explicitly on AcceptanceManager; D21 lives in specs/001-legal-documents-kept/decisions.md, not this feature's decisions.md — worth a one-word file reference so a reader landing on 003/tasks.md alone isn't left searching."
+  ]
+}

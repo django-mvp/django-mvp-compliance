@@ -12,8 +12,8 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > text, authored in Markdown and published with an immutable record — are
 > built, and both are registered in the Django admin for writing,
 > previewing and publishing them, behind a confirmation step and a
-> permission of its own. No consent recording and no account-area page
-> exist yet.
+> permission of its own. So is `Acceptance` — recording who accepted which
+> version, and when. No account-area page exists yet.
 
 ## Why
 
@@ -74,6 +74,53 @@ MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"  # optional
 `MVP_COMPLIANCE_RENDERER` is a dotted path to the renderer class, and
 defaults to `MarkdownRenderer` when unset. A host project that wants a
 different HTML allow list points it at a subclass.
+
+`Acceptance` is the record that one user agreed to one published version, at
+one moment. It names the user, the version and when it happened, and once
+written it is finished — nothing in this package will edit it or delete it.
+
+```python
+from mvp_compliance.models import Acceptance
+
+Acceptance.objects.record(user, privacy.current)
+Document.objects.outstanding_for(user)
+```
+
+Recording against a version that has never been published is refused; there
+is no way to record an acceptance of a `Document`, only of one of its
+versions. `outstanding_for()` answers which documents have a version in force
+that this user has not accepted.
+
+By default an acceptance survives the removal of the account it names — closing an
+account does not remove what this package holds about that person:
+
+```python
+# settings.py
+MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = True  # the default
+```
+
+Set it to `False` and removing an account takes that person's acceptances with it.
+`Acceptance.objects.for_subject(subject)` finds a person's records by the identifier
+that survives their account being removed, once `user` itself is no longer there to
+find them by.
+
+By default an acceptance holds nothing about a person beyond who they are, which
+version, and when. A site that wants the address a request came from too, because it
+makes a record harder to dispute, turns that on and passes the request along:
+
+```python
+# settings.py
+MVP_COMPLIANCE_RECORD_IP_ADDRESS = False  # the default
+
+# a view
+Acceptance.objects.record(user, privacy.current, request=request)
+```
+
+Off by default, because it is personal data about somebody who did not ask for it to
+be kept. On, and recorded from a call that supplies no request, the field stays empty
+rather than inventing a value. Turning the setting on or off only ever affects
+acceptances recorded afterwards — an existing record keeps whatever it held when it
+was written. See [docs/models.md](docs/models.md) for the full surface.
 
 ## Writing a version
 

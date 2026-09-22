@@ -163,3 +163,179 @@ document.versions.published()  # every version that has ever been current, in or
 never been published — and `.current()`, the queryset `document.current` is built on
 top of. All three are available both as `Version.objects.<method>()` and as
 `document.versions.<method>()`.
+
+## `Acceptance`
+
+The record that one person accepted one published version, at one moment. It names
+the user, the version and when it happened, and points at a version — never at a
+document, because a document has said different things at different times and a
+record naming only the document couldn't say which of them the person saw.
+
+```python
+from mvp_compliance.models import Acceptance
+
+acceptance = Acceptance.objects.record(user, privacy.current)
+acceptance.user        # the user
+acceptance.version     # the exact Version they accepted
+acceptance.accepted_at # the moment it happened
+```
+
+`Acceptance.objects.record(user, version)` is the only route that writes one.
+Recording against a version that has never been published — `version.is_published`
+is `False` — is refused:
+
+```python
+Acceptance.objects.record(user, draft_version)  # raises RecordError; writes nothing
+```
+
+A superseded version is accepted; only a draft is refused, because a draft has no
+standing for anybody to agree to. There is no way to record an acceptance of a
+`Document` — `Acceptance` has no field and no manager method that takes one.
+
+Accepting a later version of the same document is a second record, not a change to
+the first: the earlier acceptance is left exactly as it was, and both stand.
+
+```python
+version_one = Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...")
+version_one.publish()
+first = Acceptance.objects.record(user, version_one)
+
+version_two = Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...v2")
+version_two.publish()  # supersedes version_one
+second = Acceptance.objects.record(user, version_two)
+
+first.version  # still version_one — unchanged
+Acceptance.objects.filter(subject=Acceptance.subject_of(user)).count()  # 2
+```
+
+Recording the same person's acceptance of the same version again — including two
+attempts at once — succeeds and returns the record that already exists. It does not
+raise and it does not write a second row:
+
+```python
+again = Acceptance.objects.record(user, version_two)
+again == second  # True — the record that already existed, not a new one
+Acceptance.objects.filter(version=version_two).count()  # still 1
+```
+
+A person's acceptances always come back in the order they happened, oldest first.
+
+### Immutability
+
+Once written, an acceptance is finished. Every route the package offers to change
+or delete one is refused:
+
+```python
+acceptance.subject = "tampered"
+acceptance.save()  # raises RecordedAcceptanceError; the stored row is untouched
+
+Acceptance.objects.filter(pk=acceptance.pk).update(subject="tampered")  # same
+Acceptance.objects.bulk_update([acceptance], ["subject"])  # same
+acceptance.delete()  # raises RecordedAcceptanceError; an acceptance can't be deleted
+Acceptance.objects.filter(pk=acceptance.pk).delete()  # same
+```
+
+The guard lives on `Acceptance`'s default manager, `AcceptanceManager`, and the
+queryset behind it, `AcceptanceQuerySet` — both importable from
+`mvp_compliance.models`. `AcceptanceManager.use_in_migrations` is set, so a
+historical `Acceptance` model inside a migration inherits the same guard, and no
+migration this package ships writes to one.
+
+When a version an acceptance names is later superseded, the acceptance is
+unaffected — it keeps pointing at the exact version the person saw.
+
+`mvp_compliance.exceptions.RecordedAcceptanceError` is what every route above
+raises; `mvp_compliance.exceptions.RecordError` is what recording itself raises
+when it is refused.
+
+### Outstanding
+
+Whether a person has accepted what is currently in force is a plain question,
+asked two ways:
+
+```python
+document.is_outstanding_for(user)        # one document
+Document.objects.outstanding_for(user)   # every document, as a queryset
+```
+
+`is_outstanding_for` is `True` when `user` has not accepted the version currently
+in force for that document — whether they never accepted anything for it, or
+accepted a version that has since been superseded. `outstanding_for` names every
+document in that state, in one query regardless of how many documents exist.
+
+A document with no published version is never outstanding for anybody, because
+there is nothing in force to accept.
+
+This answer is deliberately unfiltered by whether a site chooses to enforce a
+document — that decision belongs elsewhere, and this method does not carry it.
+
+### Account removal
+
+Closing an account is an administrative act, not a statement about the evidence, so by
+default an acceptance survives the removal of the account it names:
+
+```python
+# settings.py
+MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = True  # the default
+```
+
+Under the default, deleting a user leaves their acceptances in place — `user` is
+cleared to `None`, and `subject` still says whose the record is. **The cost of that
+default is real and worth stating plainly: closing an account does not remove what
+this package holds about that person.** A project bound by a stricter erasure
+requirement sets the setting to `False`, and removing an account then takes that
+person's acceptances with it. Either way, removing one account never affects anyone
+else's records.
+
+Because the `user` foreign key is cleared on the surviving path, a person's records are
+found afterwards by the identifier that outlives it, not by their (now gone) account:
+
+```python
+Acceptance.objects.for_person(user)      # while the account still exists
+Acceptance.objects.for_subject(subject)  # the same records, by the stored identifier —
+                                          # what still works once the account is gone
+```
+
+Both come back in the order the acceptances happened. `for_person(user)` is a thin call
+through `Acceptance.subject_of(user)` into `for_subject()`, so the two never disagree
+about which records belong to whom.
+
+A new account created with a username an old, removed account once had inherits
+nothing: `subject` is derived from the account's primary key, never its username, so
+the two accounts are never mistaken for one another.
+
+### Optional evidence
+
+An acceptance holds three facts by default: who accepted, which version, and when.
+Nothing else — it is personal data about somebody who did not ask for it to be kept,
+so the package holds none of it unless a project says so:
+
+```python
+# settings.py
+MVP_COMPLIANCE_RECORD_IP_ADDRESS = False  # the default
+```
+
+Turned on, `record()` also holds the address the request came from, provided a request
+is passed to it:
+
+```python
+Acceptance.objects.record(user, version, request=request)
+```
+
+Only `request.META["REMOTE_ADDR"]` is ever read, and never a forwarded header such as
+`X-Forwarded-For`. That header is set by the client, so a package that trusted it would
+have an evidence field the person the evidence concerns could fill in themselves — worse
+than holding nothing. A project running behind a proxy or a load balancer is responsible
+for making `REMOTE_ADDR` correct, which is ordinary Django deployment advice and is
+solved by middleware the project chooses, not by this package guessing which of several
+headers to trust.
+
+`record()` called with no `request` — from a management command, a shell session, or a
+caller that has no request to hand it — leaves `ip_address` empty even with the setting
+on, so nothing has to be invented to satisfy it.
+
+Turning the setting on or off never changes an existing record: `ip_address` is filled
+in only at the moment `record()` creates a new row, and an acceptance is never edited
+afterwards. A record made before the setting was turned on still holds nothing for that
+field, and a record made while it was on still holds what it held once the setting is
+turned off again.

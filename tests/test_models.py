@@ -1,16 +1,32 @@
 """Tests for mvp_compliance.models."""
 
+from datetime import timedelta
+
 import pytest
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.utils import timezone
 
-from mvp_compliance.exceptions import PublishedVersionError, PublishError
-from mvp_compliance.models import Document, Version, VersionManager
+from mvp_compliance.exceptions import (
+    PublishedVersionError,
+    PublishError,
+    RecordedAcceptanceError,
+    RecordError,
+)
+from mvp_compliance.models import (
+    Acceptance,
+    AcceptanceManager,
+    AcceptanceQuerySet,
+    Document,
+    Version,
+    VersionManager,
+    keep_or_remove_acceptances,
+)
 from mvp_compliance.rendering import MarkdownRenderer
-from tests.factories import DocumentFactory, VersionFactory
+from tests.factories import DocumentFactory, UserFactory, VersionFactory
 
 
 class UppercaseRenderer(MarkdownRenderer):
@@ -719,3 +735,600 @@ class TestPublishingRefusesADuplicateOfTheVersionInForce:
 
         assert duplicate.pk is not None
         assert duplicate.status == Version.Status.DRAFT
+
+
+@pytest.mark.django_db
+class TestAcceptance:
+    """Recording an acceptance names a user, a version and a moment (FR-001)."""
+
+    def test_recording_creates_a_record_naming_the_user_version_and_moment(
+        self, user, published_version
+    ):
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.user == user
+        assert acceptance.version == published_version
+        assert acceptance.accepted_at is not None
+
+        field_names = {
+            field.name for field in Acceptance._meta.get_fields() if field.concrete
+        }
+        assert field_names == {
+            "id",
+            "user",
+            "subject",
+            "version",
+            "accepted_at",
+            "ip_address",
+        }
+
+    def test_no_way_to_accept_a_document(self, user, document):
+        field_names = {field.name for field in Acceptance._meta.get_fields()}
+        assert "document" not in field_names
+        assert not hasattr(Acceptance.objects, "record_for_document")
+
+        with pytest.raises(AttributeError):
+            Acceptance.objects.record(user, document)
+
+    def test_record_still_points_at_the_version_it_named(self, user, document):
+        first = VersionFactory(document=document)
+        first.publish()
+        acceptance = Acceptance.objects.record(user, first)
+
+        second = VersionFactory(document=document)
+        second.publish()
+
+        acceptance.refresh_from_db()
+        assert acceptance.version == first
+        assert acceptance.version.status == Version.Status.SUPERSEDED
+
+
+@pytest.mark.django_db
+class TestRecording:
+    """``record()`` refuses a draft version and a user with no primary key (FR-003, D2)."""
+
+    def test_recording_against_a_never_published_version_is_refused(self, user, draft):
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, draft)
+
+        assert not Acceptance.objects.exists()
+
+    def test_recording_against_a_superseded_version_is_accepted(self, user, document):
+        first = VersionFactory(document=document)
+        first.publish()
+        second = VersionFactory(document=document)
+        second.publish()
+        first.refresh_from_db()
+        assert first.status == Version.Status.SUPERSEDED
+
+        acceptance = Acceptance.objects.record(user, first)
+
+        assert acceptance.version == first
+
+    def test_recording_for_a_user_with_no_primary_key_is_refused(
+        self, published_version
+    ):
+        unsaved_user = get_user_model()(username="not-saved")
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(unsaved_user, published_version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_accepting_a_later_version_of_the_same_document_creates_a_second_record(
+        self, user, document
+    ):
+        """Scenario 1, FR-008, SC-002: three records, and the first two are unchanged."""
+        first_version = VersionFactory(document=document)
+        first_version.publish()
+        first = Acceptance.objects.record(user, first_version)
+        first_accepted_at = first.accepted_at
+
+        second_version = VersionFactory(document=document)
+        second_version.publish()
+        second = Acceptance.objects.record(user, second_version)
+        second_accepted_at = second.accepted_at
+
+        third_version = VersionFactory(document=document)
+        third_version.publish()
+        Acceptance.objects.record(user, third_version)
+
+        first.refresh_from_db()
+        assert first.version == first_version
+        assert first.accepted_at == first_accepted_at
+
+        second.refresh_from_db()
+        assert second.version == second_version
+        assert second.accepted_at == second_accepted_at
+
+        assert (
+            Acceptance.objects.filter(subject=Acceptance.subject_of(user)).count() == 3
+        )
+
+    def test_acceptances_are_listed_in_the_order_they_happened(
+        self, user, document, monkeypatch
+    ):
+        """Scenario 2, FR-008: listed in the order they happened, not the order of their rows."""
+        later_version = VersionFactory(document=document)
+        later_version.publish()
+        earlier_version = VersionFactory(document=document)
+        earlier_version.publish()
+
+        later_moment = timezone.now()
+        earlier_moment = later_moment - timedelta(minutes=5)
+
+        monkeypatch.setattr(timezone, "now", lambda: later_moment)
+        later = Acceptance.objects.record(user, later_version)
+
+        monkeypatch.setattr(timezone, "now", lambda: earlier_moment)
+        earlier = Acceptance.objects.record(user, earlier_version)
+
+        ordered = list(Acceptance.objects.filter(subject=Acceptance.subject_of(user)))
+        assert ordered == [earlier, later]
+
+    def test_two_people_accepting_the_same_version_each_get_their_own_record(
+        self, published_version
+    ):
+        """Scenario 4, FR-008: neither person's record can be mistaken for the other's."""
+        alice = UserFactory()
+        bob = UserFactory()
+
+        alice_acceptance = Acceptance.objects.record(alice, published_version)
+        bob_acceptance = Acceptance.objects.record(bob, published_version)
+
+        assert alice_acceptance.subject != bob_acceptance.subject
+        assert Acceptance.objects.filter(version=published_version).count() == 2
+
+    def test_the_same_version_twice_leaves_one_record(self, user, published_version):
+        """Scenario 3, FR-009, D3: a repeat succeeds and returns the record that already exists."""
+        first = Acceptance.objects.record(user, published_version)
+
+        again = Acceptance.objects.record(user, published_version)
+
+        assert again == first
+        assert (
+            Acceptance.objects.filter(
+                subject=Acceptance.subject_of(user), version=published_version
+            ).count()
+            == 1
+        )
+
+    def test_a_second_row_is_refused_by_the_database(self, user, published_version):
+        """The constraint holds even for a row that bypasses record() (FR-009)."""
+        Acceptance.objects.record(user, published_version)
+
+        with pytest.raises(IntegrityError):
+            Acceptance.objects.bulk_create(
+                [
+                    Acceptance(
+                        user=user,
+                        subject=Acceptance.subject_of(user),
+                        version=published_version,
+                        accepted_at=timezone.now(),
+                    )
+                ]
+            )
+
+    def test_two_recordings_leave_one_record(
+        self, user, published_version, monkeypatch
+    ):
+        """Scenario 5, FR-010, SC-003: the constraint's IntegrityError path
+        returns the winner's row without raising, deterministically and
+        without threads or wall-clock timing.
+
+        The first lookup is genuine and finds nothing, exactly like an
+        uncontended call. As a side effect of that miss, it inserts and
+        commits a competing row as a sibling operation rather than a nested
+        one, so it survives when record()'s own create() collides on the
+        constraint and its own attempt is rolled back — the same interleaving
+        two genuinely concurrent attempts would produce.
+        """
+        subject = Acceptance.subject_of(user)
+        original_get = AcceptanceQuerySet.get
+        seen_a_lookup = []
+
+        def get_with_a_concurrent_writer_on_the_first_miss(self, *args, **kwargs):
+            if seen_a_lookup:
+                return original_get(self, *args, **kwargs)
+            seen_a_lookup.append(True)
+            try:
+                return original_get(self, *args, **kwargs)
+            except Acceptance.DoesNotExist:
+                with transaction.atomic():
+                    Acceptance(
+                        user=user,
+                        subject=subject,
+                        version=published_version,
+                        accepted_at=timezone.now(),
+                    ).save()
+                raise
+
+        monkeypatch.setattr(
+            AcceptanceQuerySet, "get", get_with_a_concurrent_writer_on_the_first_miss
+        )
+
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.subject == subject
+        assert (
+            Acceptance.objects.filter(
+                subject=subject, version=published_version
+            ).count()
+            == 1
+        )
+
+
+@pytest.mark.django_db
+class TestAcceptanceImmutability:
+    """An acceptance, once written, cannot be changed or deleted (Article XII, FR-004 to FR-006)."""
+
+    def test_saving_an_existing_row_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+        original_subject = acceptance.subject
+
+        acceptance.subject = "tampered"
+        with pytest.raises(RecordedAcceptanceError):
+            acceptance.save()
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == original_subject
+
+    def test_updating_through_the_queryset_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+        original_subject = acceptance.subject
+
+        with pytest.raises(RecordedAcceptanceError):
+            Acceptance.objects.filter(pk=acceptance.pk).update(subject="tampered")
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == original_subject
+
+    def test_an_update_matching_nothing_is_refused_too(self, published_version):
+        """The refusal does not depend on what the queryset matches right now.
+
+        A guard that checks first and writes afterwards would let this
+        through, and would also write to any record committed between the
+        two statements.
+        """
+        with pytest.raises(RecordedAcceptanceError):
+            Acceptance.objects.filter(subject="nobody").update(subject="tampered")
+
+    def test_bulk_update_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+        original_subject = acceptance.subject
+        acceptance.subject = "tampered"
+
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False); without our own savepoint here, the raised error
+        # would leave the connection unusable for the rest of the test.
+        with pytest.raises(RecordedAcceptanceError), transaction.atomic():
+            Acceptance.objects.bulk_update([acceptance], ["subject"])
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == original_subject
+
+    def test_deleting_the_instance_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        with pytest.raises(RecordedAcceptanceError):
+            acceptance.delete()
+
+        assert Acceptance.objects.filter(pk=acceptance.pk).exists()
+
+    def test_deleting_through_the_queryset_is_refused(self, user, published_version):
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        with pytest.raises(RecordedAcceptanceError):
+            Acceptance.objects.filter(pk=acceptance.pk).delete()
+
+        assert Acceptance.objects.filter(pk=acceptance.pk).exists()
+
+    def test_a_historical_model_inherits_the_guard(self):
+        """A migration's historical model gets the same guards (scenario 3, FR-004)."""
+        loader = MigrationLoader(connection)
+        (leaf,) = loader.graph.leaf_nodes(app="mvp_compliance")
+        state = loader.project_state(leaf)
+        historical_acceptance = state.apps.get_model("mvp_compliance", "Acceptance")
+
+        assert isinstance(historical_acceptance.objects, AcceptanceManager)
+
+
+@pytest.mark.django_db
+class TestOutstanding:
+    """Whether a person has accepted what is currently in force (FR-011, FR-012)."""
+
+    def test_nothing_outstanding_once_the_version_in_force_is_accepted(
+        self, user, published_version
+    ):
+        """Scenario 1."""
+        document = published_version.document
+        Acceptance.objects.record(user, published_version)
+
+        assert not document.is_outstanding_for(user)
+
+    def test_outstanding_when_nothing_has_ever_been_accepted(
+        self, user, published_version
+    ):
+        """Scenario 2."""
+        document = published_version.document
+
+        assert document.is_outstanding_for(user)
+
+    def test_outstanding_when_the_accepted_version_has_been_superseded(
+        self, user, document
+    ):
+        """Scenario 3: what is in force is not what they accepted."""
+        first = VersionFactory(document=document)
+        first.publish()
+        Acceptance.objects.record(user, first)
+
+        second = VersionFactory(document=document)
+        second.publish()
+
+        assert document.is_outstanding_for(user)
+
+    def test_not_outstanding_when_nothing_has_ever_been_published(self, user, document):
+        """Scenario 5: nothing in force means nothing to accept."""
+        assert not document.is_outstanding_for(user)
+
+    def test_outstanding_for_names_exactly_the_unaccepted_documents(self, user):
+        """Scenario 4, FR-012, SC-004: exactly the unaccepted documents, no others."""
+        accepted_document = DocumentFactory()
+        accepted_version = VersionFactory(document=accepted_document)
+        accepted_version.publish()
+        Acceptance.objects.record(user, accepted_version)
+
+        superseded_document = DocumentFactory()
+        superseded_version = VersionFactory(document=superseded_document)
+        superseded_version.publish()
+        Acceptance.objects.record(user, superseded_version)
+        VersionFactory(document=superseded_document).publish()
+
+        never_accepted_document = DocumentFactory()
+        VersionFactory(document=never_accepted_document).publish()
+
+        DocumentFactory()  # never published — must not appear either way
+
+        outstanding = Document.objects.outstanding_for(user)
+
+        assert set(outstanding) == {superseded_document, never_accepted_document}
+
+    def test_nothing_outstanding_is_an_empty_result_not_an_error(
+        self, user, published_version
+    ):
+        """Scenario 6: empty is a normal result, not an error."""
+        Acceptance.objects.record(user, published_version)
+
+        outstanding = Document.objects.outstanding_for(user)
+
+        assert list(outstanding) == []
+
+    def test_the_answer_costs_a_fixed_number_of_queries(
+        self, user, django_assert_num_queries
+    ):
+        """Scenario 7, FR-018, SC-005: the cost does not move with the count."""
+        for _ in range(2):
+            VersionFactory().publish()
+
+        with django_assert_num_queries(1) as at_two_documents:
+            list(Document.objects.outstanding_for(user))
+
+        for _ in range(8):  # ten documents total
+            VersionFactory().publish()
+
+        with django_assert_num_queries(1) as at_ten_documents:
+            list(Document.objects.outstanding_for(user))
+
+        assert len(at_two_documents.captured_queries) == len(
+            at_ten_documents.captured_queries
+        )
+
+
+@pytest.mark.django_db
+class TestAccountRemoval:
+    """What happens to an acceptance when the account it names is removed (FR-013 to FR-015)."""
+
+    def test_acceptances_survive_by_default(self, user, published_version):
+        """Scenarios 1, 2, SC-006: the default leaves the record in place and legible."""
+        acceptance = Acceptance.objects.record(user, published_version)
+        subject = acceptance.subject
+
+        user.delete()
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == subject
+        assert acceptance.version == published_version
+        assert acceptance.user_id is None
+
+    def test_acceptances_removed_when_the_setting_says_so(
+        self, user, published_version
+    ):
+        """Scenario 4, FR-013, SC-007: the other setting takes the records with the account."""
+        Acceptance.objects.record(user, published_version)
+        subject = Acceptance.subject_of(user)
+
+        with override_settings(
+            MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL=False
+        ):
+            user.delete()
+
+        assert not Acceptance.objects.filter(subject=subject).exists()
+
+    def test_removing_one_account_does_not_touch_anyone_elses_records_by_default(
+        self, published_version
+    ):
+        """Scenario 5, FR-015: only the removed account's own records move."""
+        survivor = UserFactory()
+        survivor_acceptance = Acceptance.objects.record(survivor, published_version)
+        removed = UserFactory()
+        Acceptance.objects.record(removed, published_version)
+
+        removed.delete()
+
+        survivor_acceptance.refresh_from_db()
+        assert survivor_acceptance.user_id == survivor.pk
+
+    def test_removing_one_account_does_not_touch_anyone_elses_records_when_the_setting_says_so(
+        self, published_version
+    ):
+        """Scenario 5, FR-015: the other setting still scopes removal to one account."""
+        survivor = UserFactory()
+        survivor_acceptance = Acceptance.objects.record(survivor, published_version)
+        removed = UserFactory()
+        Acceptance.objects.record(removed, published_version)
+
+        with override_settings(
+            MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL=False
+        ):
+            removed.delete()
+
+        assert Acceptance.objects.filter(pk=survivor_acceptance.pk).exists()
+
+    def test_a_surviving_record_is_still_found_with_its_siblings(
+        self, user, document, monkeypatch
+    ):
+        """Scenario 3, FR-014: found together and in order, not scattered unreachably."""
+        earlier_version = VersionFactory(document=document)
+        earlier_version.publish()
+        later_version = VersionFactory(document=document)
+        later_version.publish()
+
+        later_moment = timezone.now()
+        earlier_moment = later_moment - timedelta(minutes=5)
+
+        monkeypatch.setattr(timezone, "now", lambda: earlier_moment)
+        earlier = Acceptance.objects.record(user, earlier_version)
+
+        monkeypatch.setattr(timezone, "now", lambda: later_moment)
+        later = Acceptance.objects.record(user, later_version)
+
+        subject = earlier.subject
+        user.delete()
+
+        assert list(Acceptance.objects.for_subject(subject)) == [earlier, later]
+
+    def test_a_recreated_account_inherits_nothing(self, published_version):
+        """Spec edge case: `subject` is the primary key, which a reused username cannot replay."""
+        original = UserFactory(username="alex")
+        Acceptance.objects.record(original, published_version)
+        original.delete()
+
+        recreated = UserFactory(username="alex")
+
+        assert list(Acceptance.objects.for_person(recreated)) == []
+
+    def test_the_collector_does_not_update_through_the_guarded_queryset(self):
+        """Removing an account must not meet the refusal that protects a record.
+
+        Two things together would put it there: a ``lazy_sub_objs`` attribute
+        on the ``on_delete`` callable, which leaves the collector updating
+        through a queryset rather than a raw query, and ``base_manager_name``
+        naming the manager whose queryset refuses updates. Neither alone does
+        anything, which is why neither alone is worth asserting — this pins
+        the pair.
+        """
+        assert not hasattr(keep_or_remove_acceptances, "lazy_sub_objs")
+        assert Acceptance._meta.base_manager_name is None
+        assert not isinstance(Acceptance._base_manager.all(), AcceptanceQuerySet)
+
+
+@pytest.mark.django_db
+class TestOptionalEvidence:
+    """What ``record()`` holds beyond the three facts, and only when asked (FR-016, FR-017)."""
+
+    def test_holds_nothing_beyond_the_three_facts_by_default(
+        self, user, published_version
+    ):
+        """Scenario 1, SC-008: the package's own defaults hold no address at all."""
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.ip_address is None
+
+    def test_a_request_under_the_defaults_still_holds_no_address(
+        self, user, published_version
+    ):
+        """Scenario 1, SC-008, with the request a real page would supply.
+
+        The test above records without one, so it says nothing about the
+        setting — it would pass just as well if the address were read
+        unconditionally. This is the case that decides it, and the one an
+        ordinary sign-in flow produces: a request is to hand, and the project
+        has not asked for the address to be kept.
+        """
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        acceptance = Acceptance.objects.record(user, published_version, request)
+
+        assert acceptance.ip_address is None
+
+    def test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied(
+        self, user, published_version
+    ):
+        """Scenario 2, FR-016: turned on, with a request, the address is held too."""
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(
+                user, published_version, request=request
+            )
+
+        assert acceptance.ip_address == "203.0.113.5"
+
+    def test_a_forwarded_header_is_never_read_even_when_it_disagrees(
+        self, user, published_version
+    ):
+        """The address held is the one the connection came from, never a header.
+
+        A forwarded header is set by the client, so a package that read one
+        would have an evidence field the person the evidence is about can
+        fill in themselves. The two are deliberately different here, and the
+        held value has to be the connection's.
+        """
+        request = RequestFactory().post(
+            "/",
+            REMOTE_ADDR="203.0.113.5",
+            HTTP_X_FORWARDED_FOR="198.51.100.9",
+            HTTP_X_REAL_IP="198.51.100.9",
+            HTTP_FORWARDED="for=198.51.100.9",
+        )
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(
+                user, published_version, request=request
+            )
+
+        assert acceptance.ip_address == "203.0.113.5"
+
+    def test_a_record_made_before_the_setting_was_on_is_unchanged_afterwards(
+        self, user, published_version
+    ):
+        """Scenario 3, FR-017: turning it on later never edits what an earlier record holds."""
+        acceptance = Acceptance.objects.record(user, published_version)
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance.refresh_from_db()
+
+        assert acceptance.ip_address is None
+
+    def test_a_record_made_while_the_setting_was_on_still_holds_it_once_turned_off(
+        self, user, published_version
+    ):
+        """Scenario 4, FR-017: turning it off again never edits what an earlier record holds."""
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(
+                user, published_version, request=request
+            )
+
+        acceptance.refresh_from_db()
+        assert acceptance.ip_address == "203.0.113.5"
+
+    def test_no_request_holds_no_address(self, user, published_version):
+        """With the setting on and no request, a shell or management command needs
+        no invented value — the field is empty and recording still succeeds.
+        """
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            acceptance = Acceptance.objects.record(user, published_version)
+
+        assert acceptance.ip_address is None
