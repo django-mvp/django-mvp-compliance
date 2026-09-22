@@ -924,3 +924,44 @@ class TestAcceptanceImmutability:
         historical_acceptance = state.apps.get_model("mvp_compliance", "Acceptance")
 
         assert isinstance(historical_acceptance.objects, AcceptanceManager)
+
+
+@pytest.mark.django_db
+class TestOutstanding:
+    """Whether a person has accepted what is currently in force (FR-011, FR-012)."""
+
+    def test_nothing_outstanding_once_the_version_in_force_is_accepted(
+        self, user, published_version
+    ):
+        """Scenario 1."""
+        document = published_version.document
+        Acceptance.objects.record(user, published_version)
+
+        assert not document.is_outstanding_for(user)
+
+    def test_outstanding_when_nothing_has_ever_been_accepted(
+        self, user, published_version
+    ):
+        """Scenario 2."""
+        document = published_version.document
+
+        assert document.is_outstanding_for(user)
+
+    def test_outstanding_when_the_accepted_version_has_been_superseded(
+        self, user, document
+    ):
+        """Scenario 3: what is in force is not what they accepted."""
+        first = VersionFactory(document=document)
+        first.publish()
+        Acceptance.objects.record(user, first)
+
+        second = VersionFactory(document=document)
+        second.publish()
+
+        assert document.is_outstanding_for(user)
+
+    def test_not_outstanding_when_nothing_has_ever_been_published(
+        self, user, document
+    ):
+        """Scenario 5: nothing in force means nothing to accept."""
+        assert not document.is_outstanding_for(user)
