@@ -545,3 +545,21 @@ regressions. `poetry run ruff check mvp_compliance/models.py tests/test_models.p
 — "No changes detected" (no field changed, as expected).
 Next: T055.
 Watch: nothing.
+
+## 2026-09-22T18:50:00+02:00 · Implementer US-4 · T055
+
+Did: added `test_a_recreated_account_inherits_nothing` to `TestAccountRemoval` — removes
+an account, creates a new one with the same username, and asserts
+`Acceptance.objects.for_person(recreated)` is empty (the spec's own edge case; what
+holding `subject` as the primary key buys).
+Verified: passed on first run, as tasks.md's own criterion for this task expects
+("Passes", not "Fails before"), since T054's machinery already gives the right answer by
+construction. Probed anyway per craft-tdd: temporarily changed `Acceptance.subject_of`
+to derive the identifier from `user.username` instead of `user.pk` and reran — failed,
+returning the original account's acceptance to the recreated one, confirming the
+assertion is load-bearing against exactly the regression the edge case exists to catch.
+Reverted with `git checkout -- mvp_compliance/models.py`. `poetry run pytest
+tests/test_models.py::TestAccountRemoval -v` — 6 passed. `poetry run ruff check
+tests/test_models.py` clean.
+Next: T056.
+Watch: nothing.

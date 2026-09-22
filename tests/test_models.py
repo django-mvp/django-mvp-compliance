@@ -1193,3 +1193,13 @@ class TestAccountRemoval:
         user.delete()
 
         assert list(Acceptance.objects.for_subject(subject)) == [earlier, later]
+
+    def test_a_recreated_account_inherits_nothing(self, published_version):
+        """Spec edge case: `subject` is the primary key, which a reused username cannot replay."""
+        original = UserFactory(username="alex")
+        Acceptance.objects.record(original, published_version)
+        original.delete()
+
+        recreated = UserFactory(username="alex")
+
+        assert list(Acceptance.objects.for_person(recreated)) == []
