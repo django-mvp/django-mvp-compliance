@@ -210,3 +210,23 @@ order — it does not on this branch.
 
 **ADR:** none — commit sequencing within one story, not a design change. Both tasks' own file scope
 and acceptance criteria are exactly as `tasks.md` states.
+
+## D13 — Six pre-existing test files were extended, and that is what the guardrail flagged
+
+**Decision**: the guardrail that flags modifications to tests written before this branch raised six
+flags — `tests/conftest.py`, `factories.py`, `test_exceptions.py`, `test_factories.py`,
+`test_migrations.py` and `test_models.py`. All six are accepted.
+
+**Why**: the repository's test layout ties one test module to one source module, so a second model
+in `models.py` has nowhere to go but `tests/test_models.py`, and a second factory has nowhere to go
+but `tests/factories.py`. Extending those files is the layout working as intended rather than a
+sign of a test being worked around. The whole of what was removed across the six files is five
+import lines and one module docstring sentence, each replaced by a wider version of itself; no
+assertion was changed, weakened or deleted, and the suite grew from 65 tests to 83.
+`tests/test_migrations.py` reads as the one that deserves a second look, and its diff is a docstring
+and a comment — the assertion itself is untouched and now covers acceptances as well as versions.
+
+**Revisit if**: a story ever needs to change what a pre-existing test asserts, rather than to add
+beside it. That is a different act and does not belong in this entry.
+
+**ADR:** none — a record of one triage decision on one branch, with nothing downstream inheriting it.

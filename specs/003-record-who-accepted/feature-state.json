@@ -3,7 +3,7 @@
   "feature": "003-record-who-accepted",
   "branch": "003-record-who-accepted",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "PLAN",
@@ -14,6 +14,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-09-22T14:44:04Z",
       "note": "S3 artifacts committed (6ef8c78) and pushed; draft pull request 37 open with the closing block seeded. One design reviewer dispatched on sonnet, three lenses."
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-22T14:55:50Z",
+      "note": "Design review green. US-1 dispatched on sonnet from verified base a9135f0."
     }
   ],
   "gates": {
@@ -52,77 +57,77 @@
       "tasks": [
         {
           "id": "T001",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T002",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T010",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T011",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T012",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T013",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T014",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T015",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T016",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T017",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T018",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T019",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T020",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T021",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         },
         {
           "id": "T022",
-          "status": "todo",
+          "status": "done",
           "attempts": 0
         }
       ]
