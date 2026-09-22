@@ -721,21 +721,31 @@ class TestRecording:
     def test_accepting_a_later_version_of_the_same_document_creates_a_second_record(
         self, user, document
     ):
-        """Scenario 1, FR-008, SC-002: two records, and the earlier one is unchanged."""
+        """Scenario 1, FR-008, SC-002: three records, and the first two are unchanged."""
         first_version = VersionFactory(document=document)
         first_version.publish()
         first = Acceptance.objects.record(user, first_version)
-        original_accepted_at = first.accepted_at
+        first_accepted_at = first.accepted_at
 
         second_version = VersionFactory(document=document)
         second_version.publish()
-        Acceptance.objects.record(user, second_version)
+        second = Acceptance.objects.record(user, second_version)
+        second_accepted_at = second.accepted_at
+
+        third_version = VersionFactory(document=document)
+        third_version.publish()
+        Acceptance.objects.record(user, third_version)
 
         first.refresh_from_db()
         assert first.version == first_version
-        assert first.accepted_at == original_accepted_at
+        assert first.accepted_at == first_accepted_at
+
+        second.refresh_from_db()
+        assert second.version == second_version
+        assert second.accepted_at == second_accepted_at
+
         assert (
-            Acceptance.objects.filter(subject=Acceptance.subject_of(user)).count() == 2
+            Acceptance.objects.filter(subject=Acceptance.subject_of(user)).count() == 3
         )
 
     def test_acceptances_are_listed_in_the_order_they_happened(

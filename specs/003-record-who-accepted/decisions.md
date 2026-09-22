@@ -256,3 +256,23 @@ intermediate commit as expected rather than as a guardrail trip, the same way it
 T010–T020.
 
 **ADR:** none — commit sequencing within one story, matching D12 and the precedent T021 already set.
+
+## D15 — SC-002's third version was added at acceptance, not left as a noted gap
+
+**Decision**: `test_accepting_a_later_version_of_the_same_document_creates_a_second_record` now
+records three successive versions and asserts the first two are untouched, rather than two versions
+with only the first checked.
+
+**Why**: SC-002 states the outcome in terms of three successive versions and the first two being
+exactly what they were when written. The story's own report raised the shortfall as a concern and
+argued the mechanism — per-row uniqueness plus `Meta.ordering` — has no version-count-dependent
+behaviour, which is true and is why nothing was broken. It is still the wrong test to leave behind:
+a criterion that names a cardinality should be read back by a test that reproduces it, so the test
+fails if anyone later introduces a behaviour that only shows up past the second record. The cost was
+six lines.
+
+**Revisit if**: never as stated — but the general rule is worth keeping, that a success criterion
+naming a specific count is reproduced at that count rather than at the smallest count that exercises
+the same branch.
+
+**ADR:** none — a test brought up to the criterion it already cited.
