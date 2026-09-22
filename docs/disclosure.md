@@ -12,6 +12,11 @@ this package adds for producing one. There is no download and no management
 command: every route this act is reachable by needs its own permission test, and
 each one adds is another to keep green.
 
+The page hangs off `Disclosure`, a proxy of `Acceptance` with no fields and no
+table of its own. It exists only so the admin has something to register: an
+index entry, an address, and the permission below. `Acceptance` itself stays
+unregistered, so nobody gets a changelist of every person's consent history.
+
 ## The permission
 
 Reaching the page needs `mvp_compliance.produce_disclosure`, and nobody holds it
@@ -44,8 +49,9 @@ user.user_permissions.add(
 
 ## Naming a person
 
-The page asks for free text, not a picker, because a record can outlive the
-account it names. What is typed is resolved in order:
+The page asks for free text through `DisclosureForm`'s one field, not a picker,
+because a record can outlive the account it names. What is typed is passed to
+`mvp_compliance.records.resolve_subject()`, which resolves it in order:
 
 1. An account whose login name matches exactly.
 2. Otherwise, an account whose email address matches, case-insensitively — only
