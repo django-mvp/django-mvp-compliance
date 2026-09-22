@@ -405,7 +405,7 @@
       "id": "US3",
       "priority": "P1",
       "issue": 16,
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
