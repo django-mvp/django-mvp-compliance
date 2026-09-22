@@ -86,3 +86,10 @@ class TestProduce:
             v2.number,
             v3.number,
         }
+
+    def test_a_person_with_no_records_gets_an_answer(self):
+        """Scenario 5; FR-005, SC-005."""
+        record = produce("nobody-the-package-has-ever-heard-of")
+
+        assert record.is_empty is True
+        assert record.sections[0].entries == ()
