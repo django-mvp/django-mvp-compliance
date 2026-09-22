@@ -350,3 +350,15 @@ class TestPreview:
         draft.publish()
 
         assert draft.html == previewed_html
+
+    def test_the_change_form_offers_the_preview(self, client, editor, draft) -> None:
+        """T035: any version the caller may view offers a way to its preview."""
+        client.force_login(editor)
+        preview_url = reverse("admin:mvp_compliance_version_preview", args=[draft.pk])
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert preview_url.encode() in response.content
