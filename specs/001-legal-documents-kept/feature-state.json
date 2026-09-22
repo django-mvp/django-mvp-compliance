@@ -3,7 +3,7 @@
   "feature": "001-legal-documents-kept",
   "branch": "feat/001-legal-documents-kept",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "DESIGN_REVIEW",
@@ -24,6 +24,11 @@
       "state": "REVIEW",
       "at": "2026-09-21T22:58:35Z",
       "note": "Convergence complete: migrations squashed, catalog added, ADR verdicts recorded, cleanup pass done"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-22T04:39:51Z",
+      "note": "Branch re-verified from a cleared lint cache: 65 tests pass, pre-commit clean across all files, mypy clean, makemigrations --check clean, the single migration applies from empty, coverage 96%. All five review findings confirmed closed by re-running the reviewer's own reproductions. Tamper-check clean against origin/main. Walkthrough gate flagged the message catalog only and closed with nothing to show. PR #19 body reconciled and marked ready for Sam's merge gate."
     }
   ],
   "gates": {
@@ -49,6 +54,13 @@
         "SPC-001 (high, verified) research.md R1 claimed MySQL 8.0.13+ supports partial unique indexes; it does not, and Django omits the constraint with models.W036 rather than failing. R1 corrected with the Django source lines, plan.md now says which mechanism carries on which backend, T024 requires the row lock to carry a comment saying it is the only thing holding FR-007 on MySQL, and D11 records what a MySQL-backed host project is promised",
         "ARC-001 (low, verified, removes work) the planned VersionQuerySet.bulk_update() override is redundant \u2014 Django's bulk_update calls .update() internally (query.py:920-923). Dropped from plan.md and T031; T030's bulk_update test stays as regression cover",
         "carried from ARC-001's evidence: bulk_update keys update_kwargs on field.attname, so the frozen-field guard compares name and attname both, or document_id slips past. Written into plan.md and T031"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "forge",
+      "at": "2026-09-22T04:37:30Z",
+      "self_resolved": [
+        "Nothing shown: the only flagged path is the English message catalog, whose every msgstr is empty or identical to its msgid, and the package ships no admin, forms, views, templates or URLs (asserted by tests/test_app.py). The branch changes no template, static file or demo page. Nothing a person sees differs."
       ]
     }
   },
