@@ -335,3 +335,17 @@ unstripped in the response). Reverted (`git checkout -- mvp_compliance/admin.py`
 clean) and reran: `poetry run pytest tests/test_admin.py` — 32 passed. `poetry run pre-commit run
 --files tests/test_admin.py` — clean.
 Next: T034, what was previewed is what publication stores (SC-004).
+
+## 2026-09-22T12:48:00Z · Implementer US3 · T034
+
+Did: `TestPreview::test_what_was_previewed_is_what_publication_stores` — previews a draft,
+extracts the rendered content from the response with a regex over the marked container, publishes
+the draft, and asserts `Version.html` is identical to what the preview showed.
+Verified: needed no production change — D10's design already makes this true by construction.
+`poetry run pytest tests/test_admin.py::TestPreview::test_what_was_previewed_is_what_publication_stores`
+passed first run. Probed it can fail: temporarily had `Version.publish()` append `<p>tampered</p>`
+to its rendered html — failed (`assert '<p>Wording 0</p><p>tampered</p>' ==
+'<p>Wording 0</p>'`). Reverted (`git checkout -- mvp_compliance/models.py`, confirmed clean) and
+reran: `poetry run pytest tests/test_admin.py` — 33 passed. `poetry run pre-commit run --files
+tests/test_admin.py` — clean.
+Next: T035, a Preview control on the change form.
