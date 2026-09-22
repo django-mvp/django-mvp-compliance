@@ -465,3 +465,24 @@ only the new test. `poetry run pytest tests/test_models.py::TestAccountRemoval -
 passed. `poetry run ruff check tests/test_models.py` clean.
 Next: T051.
 Watch: nothing.
+
+## 2026-09-22T18:34:00+02:00 · Implementer US-4 · T051
+
+Did: added three tests to `TestAccountRemoval` — `test_acceptances_removed_when_the_setting_says_so`
+(scenario 4, SC-007: with the setting off, removing the account leaves none of that
+person's acceptances) and two isolation tests, one per setting, asserting a survivor's
+acceptance is untouched when a different account is removed (scenario 5, FR-015).
+Verified: `test_acceptances_removed_when_the_setting_says_so` failed red for the right
+reason — `AssertionError: assert not True`, because the field is still the hardcoded
+`on_delete=models.SET_NULL` placeholder and ignores the setting entirely. The two
+isolation tests passed on first run: cross-account isolation on a `ForeignKey` delete is
+scoped by Django's own collector to the rows referencing the deleted instance,
+independent of which branch (`SET_NULL`/`CASCADE`) is chosen, so there is no wrong
+production behaviour available to reproduce red against before T052 exists — probing
+would exercise Django's collector rather than anything this story writes. Kept both:
+they are the regression tests that would catch T052's callable breaking that scoping
+(for example by issuing an unscoped delete or update). `poetry run pytest
+tests/test_models.py::TestAccountRemoval -v` — 1 failed (as expected), 3 passed.
+`poetry run ruff check tests/test_models.py` clean.
+Next: T052.
+Watch: nothing.

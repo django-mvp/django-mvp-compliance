@@ -1128,3 +1128,45 @@ class TestAccountRemoval:
         assert acceptance.subject == subject
         assert acceptance.version == published_version
         assert acceptance.user_id is None
+
+    def test_acceptances_removed_when_the_setting_says_so(self, user, published_version):
+        """Scenario 4, FR-013, SC-007: the other setting takes the records with the account."""
+        Acceptance.objects.record(user, published_version)
+        subject = Acceptance.subject_of(user)
+
+        with override_settings(
+            MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL=False
+        ):
+            user.delete()
+
+        assert not Acceptance.objects.filter(subject=subject).exists()
+
+    def test_removing_one_account_does_not_touch_anyone_elses_records_by_default(
+        self, published_version
+    ):
+        """Scenario 5, FR-015: only the removed account's own records move."""
+        survivor = UserFactory()
+        survivor_acceptance = Acceptance.objects.record(survivor, published_version)
+        removed = UserFactory()
+        Acceptance.objects.record(removed, published_version)
+
+        removed.delete()
+
+        survivor_acceptance.refresh_from_db()
+        assert survivor_acceptance.user_id == survivor.pk
+
+    def test_removing_one_account_does_not_touch_anyone_elses_records_when_the_setting_says_so(
+        self, published_version
+    ):
+        """Scenario 5, FR-015: the other setting still scopes removal to one account."""
+        survivor = UserFactory()
+        survivor_acceptance = Acceptance.objects.record(survivor, published_version)
+        removed = UserFactory()
+        Acceptance.objects.record(removed, published_version)
+
+        with override_settings(
+            MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL=False
+        ):
+            removed.delete()
+
+        assert Acceptance.objects.filter(pk=survivor_acceptance.pk).exists()
