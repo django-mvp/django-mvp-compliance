@@ -97,17 +97,27 @@ fields, and not one whose save is silently refused.
 ## Starting the next version from the one in force
 
 Most rewordings are edits to what is already there rather than a rewrite from nothing, so a
-document's change page offers a **Start the next version** link, next to the document's name.
-It opens the version add form with that document already chosen.
+version that is currently in force offers a **Start the next version** link on its own change
+page, next to Preview. It opens the version add form with that document already chosen.
 
-When the document has a version in force, `VersionAdmin.get_changeform_initial_data()` reads
-its Markdown and hands it to the form as an initial value, so the new draft opens with the
-current wording already in the box, ready to be edited. A document with nothing published yet
-opens the box empty, which is the ordinary case for a new document.
+`VersionAdmin.get_changeform_initial_data()` reads the document named in the query string and,
+when it has a version in force, hands that version's Markdown to the form as an initial value,
+so the new draft opens with the current wording already in the box, ready to be edited. A
+document with nothing published yet opens the box empty, which is the ordinary case for a new
+document.
 
 The version the wording came from is never opened for writing. The initial value populates a
 new, unsaved form; nothing on the server writes to the version it was read from, and
 `Version.save()` would refuse a write to a published row regardless.
+
+A document's own change page offers **View current version**, leading to that page when one
+exists, and **Version history**, leading to the versions list narrowed to this document with
+`VersionAdmin.list_filter`.
+
+`VersionForm.clean_markdown()` refuses to save a new version whose wording is identical to the
+one it started from — only on an add, and only when that starting wording came from a document's
+version in force, so resaving an existing draft untouched is unaffected and a document's first
+version is never refused.
 
 ## Who can do what
 
@@ -115,6 +125,11 @@ Reaching any of this needs the permissions on `Version` that Django creates — 
 and `change_version` for reading and writing, `add_version` to start one. A request without
 them reaches nothing at any address the package serves, and a document with no published
 version is invisible to a visitor.
+
+A version can only be added from a document: `VersionAdmin.has_add_permission()` refuses a
+request that names none, so the versions list offers no add control and a bare request for the
+add form is refused regardless of `add_version`. Reaching the add form from a document, the way
+both change pages above do, still works.
 
 See [Permissions](../README.md#permissions) in the README for `publish_version`, which is
 deliberately separate from the permissions above.

@@ -157,14 +157,28 @@ whose fields are disabled, and not one whose save is silently refused.
 
 ## Starting the next version from the one in force
 
-A document's change page offers a **Start the next version** link. It
-opens the version add form with the document already chosen and, when the
-document has a version in force, that version's Markdown already in the
-box — a correction usually changes one clause, not the whole text, so
-starting from what is already there is the ordinary case.
+A version that is currently in force offers a **Start the next version**
+link on its own change page, next to Preview. It opens the version add
+form with the document already chosen and that version's Markdown already
+in the box — a correction usually changes one clause, not the whole text,
+so starting from what is already there is the ordinary case.
 
-A document with nothing published yet opens the add form empty, which is
-the ordinary case for a new document.
+A document's own change page offers **View current version**, leading to
+that page, and **Version history**, leading to the versions list already
+narrowed to this document. **View current version** is absent for a
+document with nothing in force — no versions at all, or only a draft —
+and **Version history** is offered either way.
+
+A version can only be added from a document: neither control above hands
+somebody a form with nothing chosen to write into, a bare request for the
+add form is refused, and the versions list itself offers no way to add
+one.
+
+Saving a next version whose wording says exactly what the one in force
+already says is refused, with a message saying so — a version that
+changes nothing would supersede a wording with its own duplicate. A
+document's first version is never refused this way: there is nothing
+published yet to compare it against.
 
 Nothing is copied on the server: the wording is read once and handed to a
 new, unsaved form as a starting point. The version it came from is never

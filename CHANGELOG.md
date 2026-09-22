@@ -48,8 +48,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   message rather than an error page. A published version's change page
   offers no editable form at all — Django serves its own read-only page
   in its place.
-- A document's change page offers a Start the next version link, which
-  opens the version add form with that document chosen and, when the
-  document has a version in force, that version's Markdown already in the
-  box. A document with nothing published yet opens the box empty. The
-  version the wording came from is never opened for writing.
+- A version that is currently in force offers a Start the next version
+  link on its own change page, which opens the version add form with its
+  document chosen and that version's Markdown already in the box. A
+  document with nothing published yet opens the box empty. The version
+  the wording came from is never opened for writing.
+- A document's change page offers View current version, leading to the
+  version in force when one exists, and Version history, leading to the
+  versions list narrowed to that document. The versions list can be
+  narrowed to one document from its own filter sidebar too.
+- A version can only be added from a document: the versions list offers
+  no add control, and a request for the add form that names none is
+  refused, whatever permissions it carries.
+- Saving a next version whose wording says exactly what the version in
+  force already says is refused, with a message saying so. A document's
+  first version is never refused this way — there is nothing published
+  yet to compare it against.
+- The Markdown editor fills the width available to it, at any window
+  width, instead of sitting in a narrow column.

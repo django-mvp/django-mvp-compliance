@@ -526,3 +526,60 @@ temporarily setting `mvp_compliance/admin.py` aside with a tagged `git stash` an
 `git stash apply` afterward, never a bare `stash pop`, since the stash stack is shared with other
 worktrees. `poetry run pre-commit run --files mvp_compliance/admin.py tests/test_admin.py` — clean.
 Next: T063, the document page's View current version and Version history controls.
+
+## 2026-09-22T15:25:00Z · Implementer FIX-1 · T063, T064
+
+Did: `templates/admin/mvp_compliance/document/change_form.html`'s object-tools drop "Start the next
+version" (moved to the version page in force, T061) and gain "View current version" (only when
+`original.current` is not `None`) and "Version history" (`?document__id__exact=<pk>` on the
+versions changelist, always offered).
+Verified: `poetry run pytest tests/test_admin.py::TestDocumentAdmin` — 12 passed, including two
+parametrised T064 cases (no versions at all, and only a draft). RED first against the served page.
+`poetry run pytest tests/test_admin.py` (whole file) — 64 passed, confirming nothing else moved.
+`poetry run python manage.py makemessages -l en --no-obsolete` from the repository root picked up
+"View current version" and "Version history"; the second came back `#, fuzzy` copied from the
+existing "versions" msgid — corrected both msgstrs by hand and stripped `POT-Creation-Date`.
+`poetry run pre-commit run --files mvp_compliance/templates/admin/mvp_compliance/document/change_form.html
+tests/test_admin.py mvp_compliance/locale/en/LC_MESSAGES/django.po` — clean after ruff-format
+reflowed one line in the test file.
+Deviation: deleted the T053 test that asserted the old "Start the next version" control on the
+document page — T063 explicitly moves it away, so the assertion it made is no longer true.
+Next: T065, has_add_permission.
+
+## 2026-09-22T15:40:00Z · Implementer FIX-1 · T065
+
+Did: `VersionAdmin.has_add_permission()` refuses a request naming no document, reusing
+`document_from()`. `render_change_form()` sets `show_save_and_add_another` to `False`
+unconditionally — see decisions.md D20 for why one override does both jobs and why the button has
+to go rather than just the button being hidden.
+Verified: `poetry run pytest tests/test_admin.py` — 68 passed, RED first (7 failures: the new
+`TestAddingAVersion` class, and four parametrised cases of the renamed mistyped-identifier test).
+`poetry run pytest` (whole suite) — 151 passed. `poetry run pre-commit run --files
+mvp_compliance/admin.py tests/test_admin.py` — clean after ruff-format reflowed one line.
+Deviation: two pre-existing tests reached the add view without a document query string and needed
+updating — `test_the_add_page_carries_the_editor_widget` now passes one, and the mistyped-identifier
+test (renamed `..._is_refused`) now expects 403. A third, `test_editing_the_copy_leaves_the_published
+_version_alone`, posted straight to the add URL with no query string; updated to post to
+`?document=<pk>` instead, matching what a browser's own empty-action form submission actually sends
+back to the page it was loaded from. All three are T065 explicitly changing this behaviour.
+No new translatable string.
+Next: T066, the editor's width.
+
+## 2026-09-22T15:50:00Z · Implementer FIX-1 · T066
+
+Did: `.field-markdown .EasyMDEContainer` gains `flex: 1; min-width: 0;` in
+`markdown-editor.css` — the field sits in a `.flex-container` (Django's own
+`admin/css/forms.css`), and a flex item defaults to its own content's width unless told to grow,
+and never shrinks below that width unless told it may. Read the rendered add page's markup
+directly (`document_from`-style Django test client script, not the running demo server) to confirm
+the actual DOM: `<div class="flex-container"><label>...</label><textarea cols="40" .../></div>`,
+and confirmed no vLargeTextField class reaches this textarea (MarkdownEditorWidget declares its
+own widgets in VersionForm.Meta, bypassing the admin's default textarea class) and no width rule
+in either forms.css or easymde.min.css already handled it.
+Verified: `poetry run pytest tests/test_admin.py::TestMarkdownEditorWidth tests/test_widgets.py` —
+10 passed, RED first (no rule for the selector at all). `poetry run pytest` (whole suite) — 153
+passed. `poetry run pre-commit run --files mvp_compliance/static/mvp_compliance/markdown-editor.css
+tests/test_admin.py` — clean. No JavaScript runtime is reachable from this suite, so the assertion
+reads the stylesheet's declarations rather than a rendered layout, matching the brief's own
+instruction to assert against the served page or the stylesheet rather than by eye.
+Next: documentation (README, CHANGELOG, docs/authoring.md), then the full story verify.
