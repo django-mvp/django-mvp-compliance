@@ -247,3 +247,24 @@ unaffected — it keeps pointing at the exact version the person saw.
 `mvp_compliance.exceptions.RecordedAcceptanceError` is what every route above
 raises; `mvp_compliance.exceptions.RecordError` is what recording itself raises
 when it is refused.
+
+### Outstanding
+
+Whether a person has accepted what is currently in force is a plain question,
+asked two ways:
+
+```python
+document.is_outstanding_for(user)        # one document
+Document.objects.outstanding_for(user)   # every document, as a queryset
+```
+
+`is_outstanding_for` is `True` when `user` has not accepted the version currently
+in force for that document — whether they never accepted anything for it, or
+accepted a version that has since been superseded. `outstanding_for` names every
+document in that state, in one query regardless of how many documents exist.
+
+A document with no published version is never outstanding for anybody, because
+there is nothing in force to accept.
+
+This answer is deliberately unfiltered by whether a site chooses to enforce a
+document — that decision belongs elsewhere, and this method does not carry it.
