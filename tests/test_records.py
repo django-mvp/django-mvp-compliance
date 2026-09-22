@@ -114,3 +114,26 @@ class TestProduce:
 
         assert first == second
         assert now.call_count == 0
+
+    def test_it_costs_a_fixed_number_of_queries(self, django_assert_num_queries):
+        """SC-008: the cost does not move with the number of documents."""
+        someone = UserFactory()
+        for _ in range(2):
+            version = VersionFactory()
+            version.publish()
+            AcceptanceFactory(user=someone, version=version)
+
+        with django_assert_num_queries(1) as at_two_documents:
+            produce(str(someone.pk))
+
+        for _ in range(8):  # ten documents total
+            version = VersionFactory()
+            version.publish()
+            AcceptanceFactory(user=someone, version=version)
+
+        with django_assert_num_queries(1) as at_ten_documents:
+            produce(str(someone.pk))
+
+        assert len(at_two_documents.captured_queries) == len(
+            at_ten_documents.captured_queries
+        )
