@@ -190,3 +190,19 @@ import-ordering auto-fixes, on `tests/conftest.py` and `tests/test_factories.py`
 run mypy tests/factories.py` clean.
 Next: T021.
 Watch: nothing.
+
+## 2026-09-22T17:52:00+02:00 · Implementer US-1 · T021
+
+Did: `DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations
+mvp_compliance` — generated `0002_acceptance.py` (depends on `0001_initial` and
+`settings.AUTH_USER_MODEL`'s swappable dependency).
+Verified: `--check --dry-run` reports no changes. Full narrow scope —
+`poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestRecording
+tests/test_models.py::TestAcceptanceImmutability tests/test_migrations.py
+tests/test_factories.py tests/test_exceptions.py` — 25 passed (every test that was red on
+the missing table across T010–T020 is now green; pytest-django's in-memory database is
+migrated from zero on every run, so this is also the migrate-from-zero proof). `poetry run
+ruff check mvp_compliance/migrations/0002_acceptance.py` clean (one quoting auto-fix);
+`poetry run mypy mvp_compliance/migrations/0002_acceptance.py` clean.
+Next: T022.
+Watch: nothing.
