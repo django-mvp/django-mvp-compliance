@@ -399,3 +399,23 @@ class TestPublish:
         response = client.get(publish_url)
 
         assert response.status_code == 200
+
+    def test_a_get_confirms_and_publishes_nothing(
+        self, client, publisher, draft
+    ) -> None:
+        """T042, FR-015, US-4 scenario 2."""
+        client.force_login(publisher)
+        expected_html = get_renderer()().render(draft.markdown)
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+
+        response = client.get(publish_url)
+
+        draft.refresh_from_db()
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert str(draft.document) in content
+        assert str(draft.number) in content
+        assert expected_html in content
+        assert "cannot be changed" in content
+        assert "another version" in content
+        assert draft.status == draft.Status.DRAFT
