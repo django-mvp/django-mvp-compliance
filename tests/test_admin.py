@@ -552,15 +552,16 @@ class TestPublish:
         a word of it.
         """
         client.force_login(approver)
-        publish_url = reverse(
-            "admin:mvp_compliance_version_publish", args=[draft.pk]
-        )
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
 
         confirmation = client.get(publish_url)
         published = client.post(publish_url)
         refused_write = client.post(
             reverse("admin:mvp_compliance_version_change", args=[draft.pk]),
-            data={"document": draft.document_id, "markdown": "Rewritten by the approver"},
+            data={
+                "document": draft.document_id,
+                "markdown": "Rewritten by the approver",
+            },
         )
 
         draft.refresh_from_db()
