@@ -632,6 +632,19 @@ class TestDocumentAdmin:
         assert response.status_code == 200
         assert current.markdown.encode() in response.content
 
+    def test_a_document_with_nothing_in_force_opens_empty(
+        self, client, editor, document
+    ) -> None:
+        """T052, US-5 scenario 3."""
+        client.force_login(editor)
+        draft = VersionFactory(document=document, markdown="Unpublished wording")
+        add_url = reverse("admin:mvp_compliance_version_add")
+
+        response = client.get(add_url, {"document": document.pk})
+
+        assert response.status_code == 200
+        assert draft.markdown.encode() not in response.content
+
 
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
