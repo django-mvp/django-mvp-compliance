@@ -349,3 +349,16 @@ to its rendered html — failed (`assert '<p>Wording 0</p><p>tampered</p>' ==
 reran: `poetry run pytest tests/test_admin.py` — 33 passed. `poetry run pre-commit run --files
 tests/test_admin.py` — clean.
 Next: T035, a Preview control on the change form.
+
+## 2026-09-22T12:52:00Z · Implementer US3 · T035
+
+Did: `mvp_compliance/templates/admin/mvp_compliance/version/change_form.html` overrides
+`object-tools-items` to add a Preview link (only on the change page, not add), leaving the
+default History/View-on-site tools via `{{ block.super }}`. Added
+`TestPreview::test_the_change_form_offers_the_preview`.
+Verified: `poetry run pytest tests/test_admin.py::TestPreview::test_the_change_form_offers_the_preview`
+— failed before the template (`preview_url` absent from the change page), passed after. `poetry
+run pytest tests/test_admin.py` — 34 passed. `poetry run pre-commit run --files
+mvp_compliance/templates/admin/mvp_compliance/version/change_form.html tests/test_admin.py` —
+clean (one ruff-format line-wrap applied and reverified).
+Next: T036, README and CHANGELOG.
