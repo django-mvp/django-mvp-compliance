@@ -277,3 +277,16 @@ Verified: `poetry run pre-commit run --files README.md CHANGELOG.md` — clean (
 hooks; no lint step applies to prose). Read back against the permissions actually granted in
 `tests/conftest.py`'s `editor`/`publisher` fixtures and `Version.Meta.permissions` for accuracy.
 Next: full story verify.
+
+## 2026-09-22T12:30:59Z · Implementer US3 · T030
+
+Did: extended `DRAFT_PRIVACY_ADDRESSES` with the preview URL, so the address-sweep tests already
+proving draft privacy for every other address (`test_anonymous_reaches_nothing`,
+`test_a_signed_in_non_staff_visitor_reaches_nothing`, `test_staff_without_permissions_reaches_nothing`)
+parametrize over it too. Added `TestPreview::test_editor_receives_the_rendering_of_the_drafts_markdown`
+— an editor's preview of a draft shows the HTML `get_renderer()` produces for its Markdown.
+Verified: `poetry run pytest tests/test_admin.py::TestPreview tests/test_admin.py::TestDraftPrivacy`
+— 4 failed, 19 passed, all four failures `NoReverseMatch` for `mvp_compliance_version_preview`,
+the right reason (the URL does not exist yet). `poetry run pre-commit run --files
+tests/test_admin.py` — clean.
+Next: T031, the preview URL and view.
