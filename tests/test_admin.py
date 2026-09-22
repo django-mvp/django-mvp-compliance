@@ -15,12 +15,18 @@ from django.contrib import admin
 from django.contrib.auth.models import Permission
 from django.test import override_settings
 from django.urls import path, reverse
+from django.utils import formats
 
 import mvp_compliance
 from mvp_compliance.models import Version
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
-from tests.factories import AcceptanceFactory, UserFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
@@ -1039,6 +1045,49 @@ class TestDisclosureRefusals:
             content_type__app_label="mvp_compliance",
             codename="produce_disclosure",
         ).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDisclosurePage:
+    """FR-001, FR-005, FR-007, US-3 scenario 1: somebody holding
+    ``produce_disclosure`` reaches the page and gets an answer.
+    """
+
+    def test_the_answer_names_every_acceptance_in_full(
+        self, client, disclosure_producer
+    ) -> None:
+        """T028."""
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        document = DocumentFactory(name="Privacy policy")
+        version = VersionFactory(
+            document=document, markdown="# Privacy policy\n\nSome wording."
+        )
+        version.publish()
+        acceptance = AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url, {"subject": someone.username})
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Privacy policy" in content
+        assert str(version.number) in content
+        assert formats.date_format(acceptance.accepted_at, "DATETIME_FORMAT") in content
+        assert version.html in content
+
+    def test_a_person_with_no_records_gets_a_page_saying_so(
+        self, client, disclosure_producer
+    ) -> None:
+        """T028, FR-005."""
+        client.force_login(disclosure_producer)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url, {"subject": "nobody-the-package-has-ever-heard-of"})
+
+        assert response.status_code == 200
+        assert b"Nothing is held" in response.content
 
 
 class TestUserFacingStrings:
