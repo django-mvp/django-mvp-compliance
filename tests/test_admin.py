@@ -611,6 +611,28 @@ class TestPublish:
         assert publish_url.encode() not in response.content
 
 
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDocumentAdmin:
+    """FR-021, FR-022, US-5 scenarios 1-3: starting the next version from the
+    one in force.
+    """
+
+    def test_starting_the_next_version_opens_with_the_current_wording(
+        self, client, editor, document
+    ) -> None:
+        """T050, FR-021, US-5 scenario 1."""
+        client.force_login(editor)
+        current = VersionFactory(document=document, markdown="The current wording")
+        current.publish()
+        add_url = reverse("admin:mvp_compliance_version_add")
+
+        response = client.get(add_url, {"document": document.pk})
+
+        assert response.status_code == 200
+        assert current.markdown.encode() in response.content
+
+
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
     person claims compliance, and every string it shows is translatable.
