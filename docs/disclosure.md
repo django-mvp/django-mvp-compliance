@@ -71,6 +71,11 @@ produced again at this point, so an answer never shows something the person was
 never actually served. A person the package holds nothing about gets a page
 saying so, which is a normal result rather than an error.
 
+Every answer, whichever of those two it is, carries a plain statement next to it:
+that it covers what this package holds, and not data the project holds elsewhere.
+"Nothing is held" is an answer about this package, not about the project as a
+whole, so it carries the same statement as an answer with acceptances in it.
+
 ## Asking about somebody whose account is gone
 
 A request about somebody who closed their account is the ordinary case, not the
