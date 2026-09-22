@@ -169,3 +169,13 @@ migration includes it yet, T021). `poetry run ruff check` clean (one import-orde
 auto-fix applied on `tests/test_models.py`).
 Next: T019.
 Watch: nothing.
+
+## 2026-09-22T17:44:00+02:00 · Implementer US-1 · T019
+
+Did: added `test_record_still_points_at_the_version_it_named` — an acceptance of a version
+that is later superseded still points at that version afterwards (scenario 7, FR-007).
+Verified: `poetry run pytest tests/test_models.py::TestAcceptance::test_record_still_points_at_the_version_it_named`
+— fails with `OperationalError: no such table` (right reason, T021). `poetry run ruff check
+tests/test_models.py` clean.
+Next: T020.
+Watch: nothing.

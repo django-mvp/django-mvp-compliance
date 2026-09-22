@@ -670,6 +670,18 @@ class TestAcceptance:
         with pytest.raises(AttributeError):
             Acceptance.objects.record(user, document)
 
+    def test_record_still_points_at_the_version_it_named(self, user, document):
+        first = VersionFactory(document=document)
+        first.publish()
+        acceptance = Acceptance.objects.record(user, first)
+
+        second = VersionFactory(document=document)
+        second.publish()
+
+        acceptance.refresh_from_db()
+        assert acceptance.version == first
+        assert acceptance.version.status == Version.Status.SUPERSEDED
+
 
 @pytest.mark.django_db
 class TestRecording:
