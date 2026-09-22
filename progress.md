@@ -64,3 +64,15 @@ Did: Added a Publish link to the change form's object tools, matching T035's for
 Verified: `poetry run pytest tests/test_admin.py -q` — 46 passed.
 Next: T049a.
 Watch: flagged in the completion report's concerns — this addition has no task ID of its own.
+
+## 2026-09-22T16:15:00+02:00 · Implementer US-4 · T049a
+Did: Added `catalog_entries()`, `python_translatable_strings()`, `template_translatable_strings()` helpers, parsing the shipped `.po` catalog and the package's own `.py`/`.html` source rather than a hand-kept list. Added `TestUserFacingStrings::test_nothing_claims_compliance`.
+Verified: `poetry run pytest tests/test_admin.py::TestUserFacingStrings -x` — `test_nothing_claims_compliance` passed immediately; `test_every_string_is_translatable` failed, showing every string this story (and two earlier ones) had shipped without ever running `makemessages` on it.
+Next: T049b.
+Watch: nothing.
+
+## 2026-09-22T16:20:00+02:00 · Implementer US-4 · T049b
+Did: Ran `makemessages -l en` from `mvp_compliance/` and filled each new entry's `msgstr` to match its `msgid`, per this catalog's existing English-base convention. Cleared the fuzzy match `msgmerge` guessed between "Publish" and the pre-existing "published at". This closed a pre-existing gap: `preview.html`'s and `widgets.py`'s strings had never been added to the catalog by any earlier story.
+Verified: `poetry run pytest tests/test_admin.py::TestUserFacingStrings -q` — 2 passed. `poetry run pytest tests/test_admin.py -q` — 48 passed.
+Next: T049c.
+Watch: none of my new commands touched `mvp_compliance/apps.py`, `models.py` or `widgets.py` themselves — only their catalog entries, which is in scope (`mvp_compliance/locale/`).
