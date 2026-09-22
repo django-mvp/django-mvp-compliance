@@ -476,8 +476,11 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         anything is written. Recording the same person's acceptance of the
         same version again, including when two attempts race, returns the
         record that already exists rather than raising or writing a second
-        one (FR-009, FR-010). ``request`` is accepted for a later story's use
-        and is not read here.
+        one (FR-009, FR-010). ``request`` is read only when
+        ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on, and only to fill
+        ``ip_address`` on a record being newly created — an existing record
+        is returned untouched, so turning the setting on or off never
+        changes what an earlier record holds (FR-016, FR-017).
         """
         if not version.is_published:
             raise RecordError(
@@ -485,11 +488,26 @@ class AcceptanceManager(models.Manager["Acceptance"]):
                     "Cannot record an acceptance of a version that has never been published."
                 )
             )
+        ip_address = None
+        if request is not None and getattr(
+            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
+        ):
+            # Only REMOTE_ADDR, never X-Forwarded-For or any other forwarded
+            # header: a forwarded header is set by the client, so reading one
+            # would make this evidence field something the person it is
+            # about can fill in themselves. Only the deployment knows which
+            # proxies to trust, and making REMOTE_ADDR correct behind one is
+            # its responsibility, not this package's (research.md R6, D10).
+            ip_address = request.META.get("REMOTE_ADDR")
         subject = Acceptance.subject_of(user)
         return self.get_or_create(
             subject=subject,
             version=version,
-            defaults={"user": user, "accepted_at": timezone.now()},
+            defaults={
+                "user": user,
+                "accepted_at": timezone.now(),
+                "ip_address": ip_address,
+            },
         )[0]
 
 

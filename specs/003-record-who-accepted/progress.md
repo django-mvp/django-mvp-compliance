@@ -650,3 +650,22 @@ assertion is load-bearing. Reverted with `git checkout -- mvp_compliance/models.
 committing. `poetry run ruff check tests/test_models.py` clean.
 Next: T062.
 Watch: nothing.
+
+## 2026-09-22T18:56:00+02:00 · Implementer US-5 · T062
+
+Did: `record()` now reads `request.META.get("REMOTE_ADDR")` into `ip_address` when
+`MVP_COMPLIANCE_RECORD_IP_ADDRESS` is on and a request was supplied, and leaves it `None`
+otherwise. The address is only ever placed in `get_or_create()`'s `defaults`, so it applies
+solely to a record being newly created — a repeat call against an existing record returns
+it untouched, which is what keeps T061's two scenarios true without any code written for
+them specifically. The comment above the read states plainly that only `REMOTE_ADDR` is
+read and `X-Forwarded-For` and every other forwarded header are refused, and why (a
+forwarded header is client-set, so reading one hands the evidence field to the person it
+is evidence about; research.md R6, D10).
+Verified: `poetry run pytest tests/test_models.py::TestOptionalEvidence -v` — 4 passed.
+`poetry run pytest tests/test_models.py::TestRecording tests/test_models.py::TestAccountRemoval
+tests/test_models.py::TestAcceptanceImmutability -v` — 22 passed, confirming the shared
+`record()` path is unaffected. `poetry run ruff check mvp_compliance/models.py
+tests/test_models.py` and `poetry run mypy mvp_compliance/models.py` clean.
+Next: T063.
+Watch: nothing.
