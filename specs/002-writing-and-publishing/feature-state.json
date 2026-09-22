@@ -3,7 +3,7 @@
   "feature": "002-writing-and-publishing",
   "branch": "002-writing-and-publishing",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "PLAN",
@@ -14,6 +14,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-09-22T11:30:39Z",
       "note": "S3 artefacts committed, draft PR #36 open, design reviewer dispatched"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-22T11:47:54Z",
+      "note": "Foundational phase committed at 54e50e1 and verified green; US-1 dispatched"
     }
   ],
   "gates": {
@@ -73,8 +78,17 @@
         },
         {
           "id": "T005",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_it_registers_no_public_urls",
+              "tests/test_app.py::TestPackagedApp::test_it_registers_both_models_in_the_admin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py"
+            ]
+          }
         },
         {
           "id": "T006",
@@ -83,53 +97,148 @@
         },
         {
           "id": "T010",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorWidget"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ]
+          }
         },
         {
           "id": "T011",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorWidget::test_it_offers_no_forbidden_control"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ]
+          }
         },
         {
           "id": "T012",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorWidget"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py",
+              "poetry run mypy mvp_compliance/widgets.py"
+            ],
+            "code": [
+              "mvp_compliance/widgets.py:9"
+            ]
+          }
         },
         {
           "id": "T013",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorStaticAssets::test_every_toolbar_control_is_wired_in_the_script"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ],
+            "code": [
+              "mvp_compliance/static/mvp_compliance/markdown-editor.js:1"
+            ]
+          }
         },
         {
           "id": "T014",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_widgets.py::TestMarkdownEditorStaticAssets::test_every_toolbar_control_has_a_css_icon_rule"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_widgets.py"
+            ],
+            "code": [
+              "mvp_compliance/static/mvp_compliance/markdown-editor.css:1"
+            ]
+          }
         },
         {
           "id": "T015",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_forms.py::TestVersionForm::test_markdown_typed_by_hand_round_trips_unchanged"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_forms.py"
+            ]
+          }
         },
         {
           "id": "T016",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_forms.py::TestVersionForm::test_it_exposes_only_what_an_author_supplies"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_forms.py",
+              "poetry run mypy mvp_compliance/forms.py"
+            ],
+            "code": [
+              "mvp_compliance/forms.py:9"
+            ]
+          }
         },
         {
           "id": "T017",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestVersionAdmin"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py",
+              "poetry run mypy mvp_compliance/admin.py"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:14"
+            ]
+          }
         },
         {
           "id": "T018",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestToolbarAgreesWithTheAllowList"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
         },
         {
           "id": "T019",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pre-commit run --files README.md CHANGELOG.md CONTEXT.md"
+            ]
+          }
         }
       ]
     },
