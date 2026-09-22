@@ -1136,6 +1136,36 @@ class TestDisclosurePage:
         everyone_elses_index = client.get(reverse("admin:index"))
         assert b"Everything held about a person" not in everyone_elses_index.content
 
+    def test_a_person_whose_account_is_gone(self, client, disclosure_producer) -> None:
+        """T043, US-4, research.md R3: asked for by the identifier the records
+        carry, which is the only way that person can be named once their
+        account is gone.
+        """
+        someone = UserFactory()
+        document = DocumentFactory(name="Privacy policy")
+        version = VersionFactory(
+            document=document, markdown="# Privacy policy\n\nSome wording."
+        )
+        version.publish()
+        acceptance = AcceptanceFactory(user=someone, version=version)
+        subject = acceptance.subject
+        someone.delete()
+
+        client.force_login(disclosure_producer)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url, {"subject": subject})
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Privacy policy" in content
+        assert str(version.number) in content
+        expected_moment = formats.date_format(
+            timezone.localtime(acceptance.accepted_at), "DATETIME_FORMAT"
+        )
+        assert expected_moment in content
+        assert version.html in content
+
 
 class TestUserFacingStrings:
     """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
