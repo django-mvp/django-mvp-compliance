@@ -34,3 +34,22 @@ class TestPackagedApp:
 
         assert Document in admin.site._registry
         assert Version in admin.site._registry
+
+    def test_the_disclosure_proxy_is_registered_and_acceptance_is_not(self) -> None:
+        """T031, decisions.md D7: no changelist of anybody's records.
+
+        ``Disclosure`` gets the admin index entry, an address and a
+        permission; registering ``Acceptance`` itself would hand everyone
+        holding ``view_acceptance`` a changelist of every person's consent
+        history.
+        """
+        from django.contrib import admin
+
+        from mvp_compliance.models import Acceptance, Disclosure
+
+        assert Disclosure in admin.site._registry
+        assert Acceptance not in admin.site._registry
+
+    def test_it_still_registers_no_public_urls(self) -> None:
+        """T031: US-3 adds no address of its own either."""
+        assert importlib.util.find_spec("mvp_compliance.urls") is None
