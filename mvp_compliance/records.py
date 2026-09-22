@@ -35,6 +35,11 @@ class AcceptanceEntry:
     version: int
     accepted_at: datetime
     ip_address: str | None
+    #: The HTML stored on the version at publication (``Version.html``), never
+    #: produced again here — the renderer is never called on this path,
+    #: because a renderer upgrade or an allow-list change would make the
+    #: answer show something nobody was served (Article XIII, FR-010).
+    wording: str
 
 
 @dataclass(frozen=True)
@@ -84,6 +89,7 @@ def produce(subject: str) -> PersonalRecord:
             version=acceptance.version.number,
             accepted_at=acceptance.accepted_at,
             ip_address=acceptance.ip_address,
+            wording=acceptance.version.html,
         )
         for acceptance in acceptances
     )
