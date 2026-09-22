@@ -1111,3 +1111,20 @@ class TestOutstanding:
         assert len(at_two_documents.captured_queries) == len(
             at_ten_documents.captured_queries
         )
+
+
+@pytest.mark.django_db
+class TestAccountRemoval:
+    """What happens to an acceptance when the account it names is removed (FR-013 to FR-015)."""
+
+    def test_acceptances_survive_by_default(self, user, published_version):
+        """Scenarios 1, 2, SC-006: the default leaves the record in place and legible."""
+        acceptance = Acceptance.objects.record(user, published_version)
+        subject = acceptance.subject
+
+        user.delete()
+
+        acceptance.refresh_from_db()
+        assert acceptance.subject == subject
+        assert acceptance.version == published_version
+        assert acceptance.user_id is None

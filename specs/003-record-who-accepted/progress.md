@@ -447,3 +447,21 @@ reaches the constraint through a single chain.
 Next: US-4.
 Watch: T070's squash target moved to `0003_*`, and T001's recorded evidence names a test that the
 merge renamed.
+
+## 2026-09-22T18:29:00+02:00 · Implementer US-4 · T050
+
+Did: added `TestAccountRemoval::test_acceptances_survive_by_default` to
+`tests/test_models.py` — records an acceptance, deletes the account, and asserts the
+acceptance still exists with its `subject` and `version` unchanged and `user_id` cleared
+(scenarios 1, 2, SC-006).
+Verified: passed on first run, because the field's current placeholder is a plain
+`on_delete=models.SET_NULL` that happens to match the default setting's target
+behaviour — nothing wrong yet for it to be red about. Per craft-tdd's rule to probe
+rather than trust an assertion that passes without new production code, mutated the
+field to `on_delete=models.CASCADE` and reran: failed with `Acceptance.DoesNotExist`,
+confirming the assertion is load-bearing and would catch the record actually being
+removed. Reverted the mutation with `git checkout -- mvp_compliance/models.py`, leaving
+only the new test. `poetry run pytest tests/test_models.py::TestAccountRemoval -v` — 1
+passed. `poetry run ruff check tests/test_models.py` clean.
+Next: T051.
+Watch: nothing.
