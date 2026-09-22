@@ -11,8 +11,10 @@ from django.contrib import admin
 from django.http import HttpResponseForbidden
 from django.urls import path, reverse
 
+from mvp_compliance.models import Version
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
+from tests.factories import VersionFactory
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
@@ -198,3 +200,20 @@ class TestDraftPrivacy:
         assert post_response.status_code == 302
         assert draft.markdown == original_markdown
         assert draft.status == draft.Status.DRAFT
+
+    def test_discarding_a_draft_leaves_other_versions_alone(
+        self, client, editor, document
+    ) -> None:
+        """T023, US-2 scenario 2: deleting one draft touches no other version."""
+        client.force_login(editor)
+        keeper = VersionFactory(document=document)
+        keeper.publish()
+        victim = VersionFactory(document=document)
+        delete_url = reverse("admin:mvp_compliance_version_delete", args=[victim.pk])
+
+        response = client.post(delete_url, data={"post": "yes"})
+
+        assert response.status_code == 302
+        assert not Version.objects.filter(pk=victim.pk).exists()
+        keeper.refresh_from_db()
+        assert keeper.status == Version.Status.CURRENT
