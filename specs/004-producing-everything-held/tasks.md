@@ -86,7 +86,7 @@ to confirm the claim holds in the code.
 | Id | Task | Done when |
 |---|---|---|
 | T060 | Squash the branch's migrations into one `0004_*` file. `0001`–`0003` are on main and are not touched | `makemigrations --check` clean, migrate-from-zero reaches the same final state, full suite green |
-| T061 | Regenerate `mvp_compliance/locale/en/LC_MESSAGES/django.po` over the new strings, from the repository root with `--no-obsolete` | `makemessages` clean, no fuzzy entry left carrying another string's text |
+| T061 | Confirm `mvp_compliance/locale/en/LC_MESSAGES/django.po` carries every string this feature added, with no fuzzy entry left carrying another string's text. The regeneration itself belongs to the story that adds the string — `tests/test_admin.py::TestUserFacingStrings` reads the shipped catalog, so a story that leaves it alone hands back a red suite | The catalog is complete and unfuzzied; nothing to regenerate here |
 | T062 | `demo/management/commands/seed_demo.py` — seed acceptances, including one whose account is then removed, and an account holding `produce_disclosure`, so every state the page can be in is reachable on the demo | Seeding twice changes nothing; every state in the walkthrough is reachable |
 | T063 | Cleanup pass over the feature diff (`craft-simplify`), inside this feature's blast radius | The touched code is no noisier than it was |
 | T064 | ADR verdict recorded in place for every `## D<n>` in `decisions.md` | `forge check-adrs` green |

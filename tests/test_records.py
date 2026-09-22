@@ -47,22 +47,27 @@ class TestProduce:
         assert by_document["Terms"].accepted_at == terms_acceptance.accepted_at
 
     def test_it_contains_nothing_belonging_to_anybody_else(self):
-        """Scenario 3; FR-004, SC-001."""
-        version = VersionFactory()
-        version.publish()
+        """Scenario 3; FR-004, SC-001.
 
-        first = UserFactory()
-        second = UserFactory()
-        third = UserFactory()
-        AcceptanceFactory(user=first, version=version)
-        AcceptanceFactory(user=second, version=version)
-        AcceptanceFactory(user=third, version=version)
+        Each person accepts a different document, so an entry that leaked from
+        somebody else is visible rather than indistinguishable from a correct
+        one.
+        """
+        people_and_documents = {}
+        for name in ("Privacy policy", "Terms", "Cookie policy"):
+            document = DocumentFactory(name=name)
+            version = VersionFactory(document=document)
+            version.publish()
+            person = UserFactory()
+            AcceptanceFactory(user=person, version=version)
+            people_and_documents[name] = person
 
+        second = people_and_documents["Terms"]
         record = produce(str(second.pk))
 
         entries = record.sections[0].entries
-        assert len(entries) == 1
         assert record.subject == str(second.pk)
+        assert [entry.document for entry in entries] == ["Terms"]
 
     def test_every_acceptance_of_one_document_appears(self):
         """Scenario 4; FR-002."""

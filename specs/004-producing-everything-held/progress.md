@@ -84,3 +84,24 @@ at the end of the story, per the Implementer protocol.
 
 **Watch**: `feature-state.json`'s `stories[].status` for US1 is left `"todo"` — flipping it is
 Forge's, not this Implementer's, per the brief's prohibitions.
+
+## 2026-09-22T22:52:00Z · Forge · US-1 acceptance
+
+**Did**: Regenerated `mvp_compliance/locale/en/LC_MESSAGES/django.po` over the one string this
+story adds, stripped the `POT-Creation-Date` line and un-fuzzied the entry `makemessages` had
+guessed was a rewording of `acceptances` and filled with that entry's text. Strengthened
+`test_it_contains_nothing_belonging_to_anybody_else` so each person accepts a different document —
+as written, three people accepting the same version produced indistinguishable entries, so a leak
+would have passed the count assertion.
+
+**Verified**: `forge verify --base ee871bf` green on every step. `forge tamper-check --base
+ee871bf` clean. Reinstated the defect the isolation test guards (dropped the `for_subject` filter)
+and confirmed the test fails, then restored and confirmed 7 pass.
+
+**Decided**: the catalog is regenerated in the story that adds a string, not at convergence. The
+sweep in `tests/test_admin.py::TestUserFacingStrings` reads the shipped catalog, so a story that
+adds a translatable string and leaves the catalog alone hands back a red suite. The US-1 brief said
+the opposite and was wrong; `tasks.md` T061 is now a check rather than the work, and every brief
+from US-2 on carries the correction.
+
+**Next**: US-2 — the wording served, alongside each record.
