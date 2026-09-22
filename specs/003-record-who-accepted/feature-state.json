@@ -565,33 +565,88 @@
       "tasks": [
         {
           "id": "T060",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_holds_nothing_beyond_the_three_facts_by_default",
+              "tests/test_models.py::TestOptionalEvidence::test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence -v"
+            ]
+          }
         },
         {
           "id": "T061",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_before_the_setting_was_on_is_unchanged_afterwards",
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_while_the_setting_was_on_still_holds_it_once_turned_off"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence -v"
+            ]
+          }
         },
         {
           "id": "T062",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_holds_nothing_beyond_the_three_facts_by_default",
+              "tests/test_models.py::TestOptionalEvidence::test_holds_the_address_when_the_setting_is_on_and_a_request_is_supplied",
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_before_the_setting_was_on_is_unchanged_afterwards",
+              "tests/test_models.py::TestOptionalEvidence::test_a_record_made_while_the_setting_was_on_still_holds_it_once_turned_off"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence -v",
+              "poetry run pytest tests/test_models.py::TestRecording tests/test_models.py::TestAccountRemoval tests/test_models.py::TestAcceptanceImmutability -v",
+              "poetry run ruff check mvp_compliance/models.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py"
+            ]
+          }
         },
         {
           "id": "T063",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestOptionalEvidence::test_no_request_holds_no_address"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestOptionalEvidence::test_no_request_holds_no_address -v"
+            ]
+          }
         },
         {
           "id": "T064",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations"
+            ]
+          }
         },
         {
           "id": "T065",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v (scratch module exercising the README/docs examples, removed after passing)",
+              "poetry run pytest tests/ -q",
+              "poetry run ruff check ."
+            ]
+          }
         }
       ]
     }
