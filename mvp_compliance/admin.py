@@ -100,4 +100,17 @@ class VersionAdmin(admin.ModelAdmin):
         if not request.user.has_perm("mvp_compliance.publish_version"):
             raise PermissionDenied
 
-        return HttpResponse()
+        if request.method == "POST":
+            return HttpResponse()
+
+        html = get_renderer()().render(version.markdown)
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Publish"),
+            "opts": self.opts,
+            "original": version,
+            "html": html,
+        }
+        return TemplateResponse(
+            request, "admin/mvp_compliance/version/publish_confirmation.html", context
+        )
