@@ -6,6 +6,8 @@ admin for this module only (``@pytest.mark.urls(__name__)``); the shared ``tests
 empty because this package serves no address of its own.
 """
 
+import re
+
 import pytest
 from django.contrib import admin
 from django.test import override_settings
@@ -327,3 +329,24 @@ class TestPreview:
         assert response.status_code == 200
         assert "Safe wording" in content
         assert "mvp-compliance-preview-test" not in content
+
+    def test_what_was_previewed_is_what_publication_stores(
+        self, client, editor, draft
+    ) -> None:
+        """T034, SC-004, US-3 scenario 2."""
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_preview", args=[draft.pk])
+        )
+        content = response.content.decode()
+        match = re.search(
+            r'<div id="mvp-compliance-preview-content">(.*?)</div>',
+            content,
+            re.DOTALL,
+        )
+        previewed_html = match.group(1)
+
+        draft.publish()
+
+        assert draft.html == previewed_html
