@@ -277,7 +277,7 @@
       "priority": "P1",
       "issue": 32,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
