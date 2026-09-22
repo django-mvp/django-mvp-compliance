@@ -305,3 +305,25 @@ class TestPreview:
 
         assert response.status_code == 200
         assert change_url.encode() in response.content
+
+    def test_the_preview_shows_stripped_content_as_stripped(
+        self, client, editor, document
+    ) -> None:
+        """T033, FR-011, US-3 scenario 3, US-1 scenario 5: what the allow
+        list removes is visibly gone before publication, not discovered
+        after.
+        """
+        client.force_login(editor)
+        version = VersionFactory(
+            document=document,
+            markdown="Safe wording\n\n<script>alert('mvp-compliance-preview-test')</script>",
+        )
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_preview", args=[version.pk])
+        )
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "Safe wording" in content
+        assert "mvp-compliance-preview-test" not in content
