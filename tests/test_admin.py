@@ -18,8 +18,8 @@ from tests.factories import VersionFactory
 urlpatterns = [path("admin/", admin.site.urls)]
 
 #: Every address this feature serves that exists yet, and how to reach one
-#: given a draft to address it with. The preview and publish addresses are
-#: not built until US-3 and US-4, so they are not walked here (T020).
+#: given a draft to address it with. The publish address is not built until
+#: US-4, so it is not walked here (T020).
 DRAFT_PRIVACY_ADDRESSES = {
     "version changelist": lambda draft: reverse(
         "admin:mvp_compliance_version_changelist"
@@ -27,6 +27,9 @@ DRAFT_PRIVACY_ADDRESSES = {
     "version add": lambda draft: reverse("admin:mvp_compliance_version_add"),
     "version change": lambda draft: reverse(
         "admin:mvp_compliance_version_change", args=[draft.pk]
+    ),
+    "version preview": lambda draft: reverse(
+        "admin:mvp_compliance_version_preview", args=[draft.pk]
     ),
     "document changelist": lambda draft: reverse(
         "admin:mvp_compliance_document_changelist"
@@ -226,3 +229,26 @@ class TestDraftPrivacy:
             assert response.status_code == 200
             assert version.markdown in content
             assert all(other.markdown not in content for other in others)
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPreview:
+    """FR-010 to FR-012, SC-004, US-3 scenarios 1-5: the preview is the
+    rendering a reader will actually be served, not the editor's own
+    approximation of it.
+    """
+
+    def test_editor_receives_the_rendering_of_the_drafts_markdown(
+        self, client, editor, draft
+    ) -> None:
+        """T030, FR-010, US-3 scenario 1."""
+        client.force_login(editor)
+        expected_html = get_renderer()().render(draft.markdown)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_preview", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert expected_html in response.content.decode()
