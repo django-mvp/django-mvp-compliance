@@ -419,3 +419,28 @@ class TestPublish:
         assert "cannot be changed" in content
         assert "another version" in content
         assert draft.status == draft.Status.DRAFT
+
+    def test_a_post_publishes_and_declining_does_not(
+        self, client, publisher, document
+    ) -> None:
+        """T044, FR-016, US-4 scenario 3."""
+        client.force_login(publisher)
+        previous = VersionFactory(document=document)
+        previous.publish()
+        draft = VersionFactory(document=document)
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+
+        # Declining is the absence of a POST: reading the confirmation and
+        # following its back link is a GET, and nothing is written.
+        client.get(publish_url)
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.DRAFT
+
+        response = client.post(publish_url)
+
+        draft.refresh_from_db()
+        previous.refresh_from_db()
+        assert response.status_code == 302
+        assert draft.status == draft.Status.CURRENT
+        assert draft.published_at is not None
+        assert previous.status == previous.Status.SUPERSEDED
