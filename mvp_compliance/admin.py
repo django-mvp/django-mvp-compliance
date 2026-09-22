@@ -29,7 +29,7 @@ class VersionAdmin(admin.ModelAdmin):
     form = VersionForm
     readonly_fields = ["number", "status", "published_at", "html"]
     list_display = ["document", "number", "status", "published_at"]
-    list_filter = ["status"]
+    list_filter = ["document", "status"]
     search_fields = ["document__name"]
     ordering = ["document", "-number"]
 

@@ -198,6 +198,41 @@ class TestVersionAdmin:
         assert response.status_code == 200
         assert b"Start the next version" not in response.content
 
+    def test_the_changelist_offers_a_filter_by_document(self, client, editor) -> None:
+        """T062: list_filter gains the document, so the list can be narrowed
+        to one from its own filter sidebar rather than only by a link
+        arriving from elsewhere. Django's filter offers no output for a
+        relation with only one value, so a second document is needed to
+        see it at all.
+        """
+        client.force_login(editor)
+        wanted = VersionFactory()
+        VersionFactory()
+
+        response = client.get(reverse("admin:mvp_compliance_version_changelist"))
+
+        assert response.status_code == 200
+        filter_link = f"?document__id__exact={wanted.document_id}"
+        assert filter_link.encode() in response.content
+
+    def test_narrowing_by_document_shows_only_that_documents_versions(
+        self, client, editor
+    ) -> None:
+        """T062."""
+        client.force_login(editor)
+        wanted = VersionFactory()
+        other = VersionFactory()
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_changelist"),
+            {"document__id__exact": wanted.document_id},
+        )
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert str(wanted) in content
+        assert str(other) not in content
+
 
 class TestToolbarAgreesWithTheAllowList:
     """FR-004, SC-002, US-1 scenario 4: the toolbar and the allow list agree.
