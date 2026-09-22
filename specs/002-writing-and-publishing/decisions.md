@@ -459,3 +459,34 @@ nothing observable changes there.
 page, which would need a different way of naming one, not just a different permission check.
 
 **ADR:** none — one method doing the one job it was already positioned to do.
+
+## D21 — Four pre-existing tests changed because the walkthrough fixes changed what they asserted
+
+**Ambiguous**: the walkthrough fixes (issue #17) moved and removed controls a handful of existing
+tests were built against, and refuse-unless-instructed is the default for a test this work did not
+author.
+
+**Chosen**: four tests updated in place rather than left red or worked around:
+
+- `test_the_document_page_offers_the_next_version` (T053) asserted the document page carried a
+  link to the version add form. T063 moves that control to the version page and says so in its own
+  "Done when": deleted, and its replacement (`test_the_document_page_offers_its_current_version_and
+  _history`) asserts the add link is now absent from that page.
+- `test_the_add_page_carries_the_editor_widget` reached the add view with no document named.
+  T065 refuses that request outright, so the test now names one.
+- `test_a_document_the_query_string_cannot_name_opens_empty` (renamed `..._is_refused`) asserted a
+  mistyped or hostile identifier opened an empty form. `document_from()` already treated such an
+  identifier the same as no document at all (D18); T065 extends that to `has_add_permission()`, so
+  the same identifiers are now refused rather than shown an empty page, and the test's assertion is
+  the inverse of what it was.
+- `test_editing_the_copy_leaves_the_published_version_alone` (T054) posted straight to the add
+  URL with no query string. A real browser's empty-action form submits back to the page it loaded
+  from, query string included, which is what let the original GET past `has_add_permission()` in
+  the first place; the test now posts to that same address instead of a bare one.
+
+**Why defensible**: each task in the brief's own table names the exact behaviour that made the old
+assertion wrong — T063 says the control "is gone from there", T065 says a nameless request "is
+refused". These are not tests weakened or special-cased to pass; each now asserts the behaviour the
+task itself specifies, in the same place it asserted the old one.
+
+**ADR:** none — four assertions brought into line with a behaviour the tasks table itself changed.
