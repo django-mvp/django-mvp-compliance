@@ -213,3 +213,17 @@ was present and `GET` on the delete view returned 200. After the change: `poetry
 tests/test_admin.py` — 21 passed. `ruff check`/`ruff format --check` clean on both files, `mypy
 mvp_compliance/admin.py` — no issues.
 Next: T022, a draft surviving being left alone.
+
+## 2026-09-22T12:24:00Z · Implementer US2 · T022
+
+Did: `TestDraftPrivacy::test_a_draft_survives_being_left_alone` — a draft fetched through the
+change page and saved again through it keeps its wording and stays a draft.
+Verified: needed no production change (Django's own `ModelForm` round trip already does this), so
+checked by mutation. First mutation (`VersionForm.Meta.fields = ["document"]`, dropping
+`markdown`) passed for the wrong reason — a field missing from the form just leaves the stored
+value alone, proving nothing. Reverted, then added `clean_markdown` returning the value with `"!"`
+appended: `poetry run pytest tests/test_admin.py::TestDraftPrivacy::test_a_draft_survives_being_left_alone`
+failed — `assert 'Wording 0!' == 'Wording 0'`. Reverted (`git checkout -- mvp_compliance/forms.py`,
+confirmed clean) and reran: `poetry run pytest tests/test_admin.py` — 22 passed. `ruff
+check`/`ruff format --check` clean.
+Next: T023, discarding a draft leaves other versions alone.
