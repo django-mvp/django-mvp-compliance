@@ -55,3 +55,29 @@ class TestProduce:
         entries = record.sections[0].entries
         assert len(entries) == 1
         assert record.subject == str(second.pk)
+
+    def test_every_acceptance_of_one_document_appears(self):
+        """Scenario 4; FR-002."""
+        privacy = DocumentFactory(name="Privacy policy")
+        v1 = VersionFactory(document=privacy)
+        v1.publish()
+        someone = UserFactory()
+        AcceptanceFactory(user=someone, version=v1)
+
+        v2 = VersionFactory(document=privacy)
+        v2.publish()
+        AcceptanceFactory(user=someone, version=v2)
+
+        v3 = VersionFactory(document=privacy)
+        v3.publish()
+        AcceptanceFactory(user=someone, version=v3)
+
+        record = produce(str(someone.pk))
+
+        entries = record.sections[0].entries
+        assert len(entries) == 3
+        assert {entry.version for entry in entries} == {
+            v1.number,
+            v2.number,
+            v3.number,
+        }
