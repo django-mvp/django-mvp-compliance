@@ -20,7 +20,7 @@ import mvp_compliance
 from mvp_compliance.models import Version
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
-from tests.factories import UserFactory, VersionFactory
+from tests.factories import AcceptanceFactory, UserFactory, VersionFactory
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
@@ -1016,6 +1016,27 @@ class TestDisclosureRefusals:
         response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
 
         assert response.status_code == 403
+
+    def test_a_refusal_reveals_nothing(self, client) -> None:
+        """T024, scenario 4, FR-013, SC-004."""
+        person = UserFactory(is_staff=True)
+        person.user_permissions.add(
+            *Permission.objects.filter(
+                content_type__app_label="mvp_compliance"
+            ).exclude(codename="produce_disclosure")
+        )
+        client.force_login(person)
+        with_records = AcceptanceFactory()
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        has_records_response = client.get(url, {"subject": with_records.subject})
+        no_records_response = client.get(
+            url, {"subject": "nobody-the-package-has-ever-heard-of"}
+        )
+
+        assert has_records_response.status_code == 403
+        assert no_records_response.status_code == 403
+        assert has_records_response.content == no_records_response.content
 
 
 class TestUserFacingStrings:
