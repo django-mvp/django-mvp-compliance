@@ -6,19 +6,90 @@ admin for this module only (``@pytest.mark.urls(__name__)``); the shared ``tests
 empty because this package serves no address of its own.
 """
 
+import ast
 import re
+from pathlib import Path
 
 import pytest
 from django.contrib import admin
 from django.test import override_settings
 from django.urls import path, reverse
 
+import mvp_compliance
 from mvp_compliance.models import Version
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
 from tests.factories import VersionFactory
 
 urlpatterns = [path("admin/", admin.site.urls)]
+
+PACKAGE_DIR = Path(mvp_compliance.__file__).parent
+CATALOG_PATH = PACKAGE_DIR / "locale" / "en" / "LC_MESSAGES" / "django.po"
+
+#: Matches one ``msgid``/``msgstr`` pair, each possibly split across several
+#: quoted continuation lines the way ``makemessages`` wraps a long string.
+PO_ENTRY_RE = re.compile(
+    r'^msgid((?:\s*"(?:[^"\\]|\\.)*")+)\s*\n^msgstr((?:\s*"(?:[^"\\]|\\.)*")+)',
+    re.MULTILINE,
+)
+PO_LINE_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+
+
+def catalog_entries() -> list[tuple[str, str]]:
+    """Every ``(msgid, msgstr)`` pair in the shipped English catalog.
+
+    Parsed straight from the ``.po`` file rather than kept as a second,
+    hand-maintained list — a string added anywhere in the package is swept
+    without anyone remembering to list it here (T049a, T049b).
+    """
+    text = CATALOG_PATH.read_text(encoding="utf-8")
+    entries = []
+    for msgid_block, msgstr_block in PO_ENTRY_RE.findall(text):
+        msgid = "".join(PO_LINE_RE.findall(msgid_block))
+        msgstr = "".join(PO_LINE_RE.findall(msgstr_block))
+        entries.append((msgid, msgstr))
+    return entries
+
+
+def python_translatable_strings() -> set[str]:
+    """Every string literal passed to ``_``/``gettext_lazy``/``gettext`` in the package."""
+    strings: set[str] = set()
+    for path_ in PACKAGE_DIR.rglob("*.py"):
+        if "migrations" in path_.parts or "vendor" in path_.parts:
+            continue
+        tree = ast.parse(path_.read_text(encoding="utf-8"), filename=str(path_))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            name = None
+            if isinstance(node.func, ast.Name):
+                name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                name = node.func.attr
+            if name not in ("_", "gettext_lazy", "gettext"):
+                continue
+            if (
+                node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                strings.add(node.args[0].value)
+    return strings
+
+
+TEMPLATE_TAG_RE = re.compile(r'{%\s*(?:translate|trans)\s+(["\'])((?:(?!\1).)*)\1')
+
+
+def template_translatable_strings() -> set[str]:
+    """Every ``{% translate %}``/``{% trans %}`` string literal in the package's templates."""
+    strings: set[str] = set()
+    for path_ in PACKAGE_DIR.rglob("*.html"):
+        if "vendor" in path_.parts:
+            continue
+        for match in TEMPLATE_TAG_RE.finditer(path_.read_text(encoding="utf-8")):
+            strings.add(match.group(2))
+    return strings
+
 
 #: Every address this feature serves, and how to reach one given a draft to
 #: address it with.
@@ -538,3 +609,36 @@ class TestPublish:
 
         assert response.status_code == 200
         assert publish_url.encode() not in response.content
+
+
+class TestUserFacingStrings:
+    """FR-019, FR-020, SC-008, US-4 scenario 8: nothing this feature shows a
+    person claims compliance, and every string it shows is translatable.
+
+    Both tests sweep the shipped catalog itself, never a hand-kept list of
+    strings this test file maintains — a string added later is covered
+    without anybody remembering to add it (D14-style, one walk).
+    """
+
+    def test_nothing_claims_compliance(self) -> None:
+        """T049a, FR-019, SC-008, US-4 scenario 8."""
+        entries = catalog_entries()
+        shown_strings = [msgstr for msgid, msgstr in entries if msgid]
+        assert shown_strings
+
+        for text in shown_strings:
+            lowered = text.lower()
+            assert "compliant" not in lowered, text
+            assert "complies" not in lowered, text
+
+    def test_every_string_is_translatable(self) -> None:
+        """T049b, FR-020, SC-008."""
+        shipped_strings = (
+            python_translatable_strings() | template_translatable_strings()
+        )
+        assert shipped_strings
+
+        catalog_msgids = {msgid for msgid, _msgstr in catalog_entries() if msgid}
+        missing = shipped_strings - catalog_msgids
+
+        assert not missing
