@@ -166,3 +166,20 @@ class TestWording:
 
         entry = record.sections[0].entries[0]
         assert entry.wording == version.html
+
+    def test_a_superseded_versions_wording_is_the_superseded_one(self):
+        """Scenario 2; FR-008."""
+        document = DocumentFactory()
+        v1 = VersionFactory(document=document, markdown="Original wording")
+        v1.publish()
+        someone = UserFactory()
+        AcceptanceFactory(user=someone, version=v1)
+
+        v2 = VersionFactory(document=document, markdown="Revised wording")
+        v2.publish()
+
+        record = produce(str(someone.pk))
+
+        entry = record.sections[0].entries[0]
+        assert entry.wording == v1.html
+        assert entry.wording != v2.html
