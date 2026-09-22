@@ -10,7 +10,7 @@ import mvp_compliance.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mvp_compliance', '0001_initial'),
+        ('mvp_compliance', '0002_version_publish_permission'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

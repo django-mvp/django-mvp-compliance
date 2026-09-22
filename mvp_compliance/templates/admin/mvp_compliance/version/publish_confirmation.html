@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content_title %}
+<h1>{% translate "Publish this version?" %}</h1>
+{% endblock %}
+
+{% block content %}
+<p>{{ original }}</p>
+<p>
+  {% translate "This will make it the version in force. Once published, the wording cannot be changed — a correction is published as another version." %}
+</p>
+<div id="mvp-compliance-publish-preview">{{ html|safe }}</div>
+<form method="post">
+  {% csrf_token %}
+  <input type="submit" value="{% translate 'Publish' %}">
+</form>
+<p>
+  <a href="{% url 'admin:mvp_compliance_version_change' original.pk %}">
+    {% translate "Back" %}
+  </a>
+</p>
+{% endblock %}

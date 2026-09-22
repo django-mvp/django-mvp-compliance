@@ -82,7 +82,7 @@ only at the last one.
 
 | Id | Task | Done when |
 |---|---|---|
-| T070 | Squash the branch's migrations into one `0002_*` file. `0001_initial.py` is on main and is not touched | `makemigrations --check` clean, migrate-from-zero reaches the same final state, full suite green |
-| T071 | Regenerate `mvp_compliance/locale/en/LC_MESSAGES/django.po` over the new strings | `makemessages` clean |
+| T070 | Squash the branch's migrations into one `0003_*` file. `0001_initial.py` and `0002_version_publish_permission.py` are on main and are not touched | `makemigrations --check` clean, migrate-from-zero reaches the same final state, full suite green |
+| T071 | Regenerate `mvp_compliance/locale/en/LC_MESSAGES/django.po` over the new strings, from the repository root with `--no-obsolete` | `makemessages` clean, no fuzzy entry left carrying another string's text |
 | T072 | Cleanup pass over the feature diff (`craft-simplify`), inside this feature's blast radius | The touched code is no noisier than it was |
 | T073 | ADR verdict recorded in place for every `## D<n>` in `decisions.md` | `forge check-adrs` green |

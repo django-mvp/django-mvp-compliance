@@ -276,3 +276,42 @@ naming a specific count is reproduced at that count rather than at the smallest 
 the same branch.
 
 **ADR:** none — a test brought up to the criterion it already cited.
+
+## D16 — Main was integrated mid-feature, because the pull request was running no checks at all
+
+**Decision**: `origin/main` was merged into this branch after US-3 rather than at convergence, and
+the conflicts were resolved as described below.
+
+**Why**: the authoring and publishing feature merged to main while this branch was being built, and
+the two branches touched the same five files. A conflicted pull request has no merge commit for
+GitHub to build, so no `pull_request` workflow runs at all — the branch was not failing its checks,
+it had stopped having any. Every green check on the pull request predated the whole of this feature's
+code. Waiting until convergence would have meant three more stories with no continuous integration
+and a larger conflict to resolve at the point where the margin for error is smallest.
+
+**What the resolution decided**:
+
+- **Both branches added a `UserFactory`.** Main's is kept and this branch's is dropped. Main's
+  carries an email, staff and superuser flags and a usable password, which the admin tests need and
+  which nothing here is harmed by. Two factories for one model is what the testing standard exists
+  to prevent. This branch's `test_two_builds_do_not_collide` is therefore gone, replaced by main's
+  `test_two_builds_do_not_collide_on_username`, which asserts the same thing under the name the
+  sibling factories already use. T001's evidence in `feature-state.json` names the old test, which
+  no longer exists.
+- **Both branches took migration `0002`.** This branch's two migrations are renumbered to `0003` and
+  `0004` and now depend on main's `0002_version_publish_permission`, because two leaf nodes on one
+  app is a state Django refuses to migrate at all. T070's squash target moves to `0003_*`
+  accordingly.
+- **The catalogue had to be regenerated now rather than at T071.** Main added a test that every
+  translatable string this package ships appears in the shipped catalogue, and this feature's
+  strings did not. Regenerating it turned up exactly the failure the catalogue's own header warns
+  about: the entry for "An acceptance cannot be deleted." was marked fuzzy and given "A published
+  version cannot be deleted." as its text. It is corrected.
+- **The README's claim that the package registers nothing in the admin is deleted**, because main
+  made it false.
+
+**Revisit if**: nothing here. The general point worth keeping is that a conflicted pull request
+reads as quiet rather than broken, so "no failing checks" and "checks passing" have to be told apart
+by looking.
+
+**ADR:** none — a record of one integration on one branch.

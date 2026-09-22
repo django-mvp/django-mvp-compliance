@@ -1,0 +1,22 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  {% if change %}
+    {% if original.current %}
+    <li>
+      <a href="{% url 'admin:mvp_compliance_version_change' original.current.pk %}"
+         class="button">
+        {% translate "View current version" %}
+      </a>
+    </li>
+    {% endif %}
+    <li>
+      <a href="{% url 'admin:mvp_compliance_version_changelist' %}?document__id__exact={{ original.pk }}"
+         class="button">
+        {% translate "Version history" %}
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

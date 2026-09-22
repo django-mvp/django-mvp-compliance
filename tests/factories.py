@@ -1,7 +1,7 @@
-"""factory_boy factories for the document/version models and the test user.
+"""factory_boy factories for the models the test suite builds.
 
 One factory per model. Downstream tests build their fixtures on these
-instead of hand-constructing documents and versions.
+instead of hand-constructing documents, versions and users.
 """
 
 import factory
@@ -12,12 +12,30 @@ from mvp_compliance.models import Acceptance, Document, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):
-    """Build a saved instance of the configured user model."""
+    """Build a saved user of the project's own user model.
+
+    Staff status and permissions are overridden at the call site rather than
+    by subclassing this — ``UserFactory(is_staff=True)``, and permissions
+    added afterwards. The admin tests need several permission sets and a
+    factory per set would be a factory per test.
+    """
 
     class Meta:
         model = get_user_model()
+        skip_postgeneration_save = True
 
-    username = factory.Sequence(lambda n: f"user-{n}")
+    username = factory.Sequence(lambda n: f"person{n}")
+    email = factory.LazyAttribute(lambda user: f"{user.username}@example.com")
+    is_staff = False
+    is_superuser = False
+
+    @factory.post_generation
+    def password(self, create, extracted, **kwargs):
+        """Set a usable password, so the test client can sign this user in."""
+        if not create:
+            return
+        self.set_password(extracted or "password")
+        self.save(update_fields=["password"])
 
 
 class DocumentFactory(factory.django.DjangoModelFactory):

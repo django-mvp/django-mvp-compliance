@@ -19,3 +19,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before it is stored. The renderer used is configurable with one setting,
   `MVP_COMPLIANCE_RENDERER`, a dotted path to a renderer class, defaulting
   to the one this package ships.
+- `Document` and `Version` registered in the Django admin, so a compliance
+  editor can write a version without a developer. The `markdown` field uses
+  a formatting-control editor — headings, bold, italics, lists, links and
+  block quotes, and nothing else — over an ordinary textarea, built on
+  [EasyMDE](https://github.com/Ionaru/easy-markdown-editor), vendored into
+  the package with its own icons. Stored content is ordinary Markdown either
+  way, and every control the toolbar offers survives publication intact.
+- A draft is reachable in the admin only by someone holding `view_version`
+  and `change_version`, and the package still serves no address a visitor
+  can reach directly. Deleting a version needs `delete_version` and is
+  refused once that version has been published, matching what the model
+  layer already refuses.
+- A Preview link on a version's change page shows the rendering the
+  published page will actually use, distinct from the toolbar's own
+  inline display: a fresh rendering for a draft, and the HTML stored at
+  publication for a published version, never rendered again. Content the
+  sanitiser's allow list strips previews as stripped, so the loss is
+  visible before publication.
+- Publishing is a distinct action behind its own permission,
+  `publish_version`, held separately from the permissions writing a draft
+  needs. A version's change page offers a Publish link, which leads to a
+  confirmation page naming the document and version, showing the
+  rendering about to go live, and stating plainly that the wording cannot
+  be changed afterwards and that a correction is published as another
+  version. Publishing happens only when that page is posted. Both
+  refusals `Version.publish()` can raise reach the author as a readable
+  message rather than an error page. A published version's change page
+  offers no editable form at all — Django serves its own read-only page
+  in its place.
+- A version that is currently in force offers a Start the next version
+  link on its own change page, which opens the version add form with its
+  document chosen and that version's Markdown already in the box. A
+  document with nothing published yet opens the box empty. The version
+  the wording came from is never opened for writing.
+- A document's change page offers View current version, leading to the
+  version in force when one exists, and Version history, leading to the
+  versions list narrowed to that document. The versions list can be
+  narrowed to one document from its own filter sidebar too.
+- A version can only be added from a document: the versions list offers
+  no add control, and a request for the add form that names none is
+  refused, whatever permissions it carries.
+- Saving a next version whose wording says exactly what the version in
+  force already says is refused, with a message saying so. A document's
+  first version is never refused this way — there is nothing published
+  yet to compare it against.
+- The Markdown editor fills the width available to it, at any window
+  width, instead of sitting in a narrow column.

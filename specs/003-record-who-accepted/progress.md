@@ -430,3 +430,20 @@ Next: US-4.
 Watch: the branch still conflicts with main, which moved when FS-002 merged at 15:55. Until that is
 resolved the pull request runs no checks at all, because the merge ref cannot be built — it reads as
 quiet rather than failing. Integrate before the review gate.
+
+## 2026-09-22T20:55:00+02:00 · Orchestrator · integrated main
+
+Did: merged `origin/main` into the branch now rather than at convergence, because the pull request
+had stopped running checks entirely — the authoring and publishing feature merged at 15:55, the two
+branches conflicted in five files, and a conflicted pull request gives GitHub no merge commit to
+build. Resolved all five: kept main's richer `UserFactory` and dropped this branch's, renumbered
+this branch's two migrations to `0003` and `0004` behind main's `0002` so the app has one leaf again,
+regenerated the message catalogue (main added a test that every shipped string is in it), and
+rewrote the README's status and models sections to describe both features rather than either one.
+Fixed the fuzzy catalogue entry that had been given another message's text. D16 records the lot.
+Verified: 186 tests pass with randomisation and parallelism off, `pre-commit run --all-files` green
+on a cleared cache, `makemigrations --check` clean across every app, and `migrate --plan` from zero
+reaches the constraint through a single chain.
+Next: US-4.
+Watch: T070's squash target moved to `0003_*`, and T001's recorded evidence names a test that the
+merge renamed.
