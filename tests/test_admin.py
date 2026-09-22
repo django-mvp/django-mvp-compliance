@@ -491,3 +491,21 @@ class TestPublish:
         assert b'name="publish"' not in get_response.content
         assert b'value="publish"' not in get_response.content
         assert b'value="publish"' not in changelist_response.content
+
+    def test_a_published_version_has_no_editable_form(
+        self, client, editor, published_version
+    ) -> None:
+        """T048, FR-017, SC-006, US-4 scenario 5."""
+        client.force_login(editor)
+        change_url = reverse(
+            "admin:mvp_compliance_version_change", args=[published_version.pk]
+        )
+
+        response = client.get(change_url)
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert published_version.markdown in content
+        assert 'name="markdown"' not in content
+        assert "<textarea" not in content
+        assert 'type="submit"' not in content
