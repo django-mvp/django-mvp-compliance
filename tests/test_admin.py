@@ -278,3 +278,30 @@ class TestPreview:
         assert response.status_code == 200
         assert stored_html in content
         assert stored_html.upper() not in content
+
+    def test_the_preview_page_states_what_a_reader_will_be_served(
+        self, client, editor, draft
+    ) -> None:
+        """T032, US-3 scenario 5: the distinction from the editor's inline
+        display is on the page, not only in the specification.
+        """
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_preview", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert b"This is what a reader will be served" in response.content
+
+    def test_the_preview_links_back_to_the_version(self, client, editor, draft) -> None:
+        """T032."""
+        client.force_login(editor)
+        change_url = reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_preview", args=[draft.pk])
+        )
+
+        assert response.status_code == 200
+        assert change_url.encode() in response.content
