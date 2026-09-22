@@ -960,9 +960,7 @@ class TestOutstanding:
 
         assert document.is_outstanding_for(user)
 
-    def test_not_outstanding_when_nothing_has_ever_been_published(
-        self, user, document
-    ):
+    def test_not_outstanding_when_nothing_has_ever_been_published(self, user, document):
         """Scenario 5: nothing in force means nothing to accept."""
         assert not document.is_outstanding_for(user)
 
