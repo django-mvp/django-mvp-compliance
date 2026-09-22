@@ -439,43 +439,119 @@
       "tasks": [
         {
           "id": "T050",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_survive_by_default"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
         },
         {
           "id": "T051",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_removed_when_the_setting_says_so",
+              "tests/test_models.py::TestAccountRemoval::test_removing_one_account_does_not_touch_anyone_elses_records_by_default",
+              "tests/test_models.py::TestAccountRemoval::test_removing_one_account_does_not_touch_anyone_elses_records_when_the_setting_says_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
         },
         {
           "id": "T052",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_survive_by_default",
+              "tests/test_models.py::TestAccountRemoval::test_acceptances_removed_when_the_setting_says_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v",
+              "poetry run pytest tests/ -q",
+              "poetry run ruff check mvp_compliance/models.py mvp_compliance/migrations/0005_alter_acceptance_user.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run"
+            ]
+          }
         },
         {
           "id": "T053",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_a_surviving_record_is_still_found_with_its_siblings"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
         },
         {
           "id": "T054",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_a_surviving_record_is_still_found_with_its_siblings"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v",
+              "poetry run pytest tests/test_models.py -q",
+              "poetry run ruff check mvp_compliance/models.py tests/test_models.py",
+              "poetry run mypy mvp_compliance/models.py",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run"
+            ]
+          }
         },
         {
           "id": "T055",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestAccountRemoval::test_a_recreated_account_inherits_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestAccountRemoval -v"
+            ]
+          }
         },
         {
           "id": "T056",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations mvp_compliance",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django makemigrations --check --dry-run",
+              "DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django migrate --plan"
+            ]
+          }
         },
         {
           "id": "T057",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [],
+            "commands": [
+              "poetry run pytest tests/test_docs_scratch.py -v (scratch module exercising the docs examples, removed after passing)",
+              "poetry run pytest tests/ -q",
+              "poetry run ruff check .",
+              "poetry run mypy mvp_compliance/models.py"
+            ]
+          }
         }
       ]
     },
