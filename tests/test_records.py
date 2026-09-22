@@ -3,7 +3,12 @@
 import pytest
 
 from mvp_compliance.records import produce
-from tests.factories import AcceptanceFactory, DocumentFactory, UserFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 
 
 @pytest.mark.django_db
