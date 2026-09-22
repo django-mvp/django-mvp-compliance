@@ -750,6 +750,29 @@ class TestPublish:
         assert stored_html in content
         assert stored_html.upper() not in content
 
+    def test_a_duplicate_of_the_version_in_force_is_refused_readably(
+        self, client, publisher, document
+    ) -> None:
+        """The third refusal reaches the author the way the other two do.
+
+        Saving the draft was never refused — it is publishing it that
+        would supersede a wording with its own copy, and that is where the
+        rule lives.
+        """
+        client.force_login(publisher)
+        current = VersionFactory(document=document, markdown="The current wording")
+        current.publish()
+        duplicate = VersionFactory(document=document, markdown="The current wording")
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[duplicate.pk]),
+            follow=True,
+        )
+
+        duplicate.refresh_from_db()
+        assert b"exactly what the version in force already says" in response.content
+        assert duplicate.status == duplicate.Status.DRAFT
+
     def test_saving_a_draft_publishes_nothing(self, client, editor, draft) -> None:
         """T047, FR-013, US-4 scenario 4."""
         client.force_login(editor)

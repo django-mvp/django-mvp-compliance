@@ -623,3 +623,99 @@ class TestRetrieval:
             agreement_v2,
             agreement_v3,
         ]
+
+
+@pytest.mark.django_db
+class TestPublishingRefusesADuplicateOfTheVersionInForce:
+    """A version that says what the one in force says changes nothing.
+
+    The rule lives here rather than on the form that happens to submit it.
+    A draft duplicating the current wording is harmless while it sits
+    unpublished — publishing it is the act that would supersede a wording
+    with its own copy. It is also the only moment the question has a
+    stable answer: a draft that duplicates today's version in force is not
+    a duplicate once somebody publishes another one.
+    """
+
+    def test_publishing_a_duplicate_of_the_version_in_force_is_refused(self, document):
+        current = VersionFactory(document=document, markdown="The current wording")
+        current.publish()
+        duplicate = VersionFactory(document=document, markdown="The current wording")
+
+        with pytest.raises(PublishError):
+            duplicate.publish()
+
+        duplicate.refresh_from_db()
+        current.refresh_from_db()
+        assert duplicate.status == Version.Status.DRAFT
+        assert current.status == Version.Status.CURRENT
+
+    def test_a_duplicate_differing_only_in_line_endings_is_refused(self, document):
+        """Neither difference is one a reader would see.
+
+        A draft written in a browser carries a carriage return before every
+        newline, and a trailing newline is present or absent depending on
+        how each wording was entered.
+        """
+        current = VersionFactory(
+            document=document, markdown="## Heading\n\nA clause.\n"
+        )
+        current.publish()
+        duplicate = VersionFactory(
+            document=document, markdown="## Heading\r\n\r\nA clause."
+        )
+
+        with pytest.raises(PublishError):
+            duplicate.publish()
+
+        duplicate.refresh_from_db()
+        assert duplicate.status == Version.Status.DRAFT
+
+    def test_a_changed_wording_publishes(self, document):
+        current = VersionFactory(document=document, markdown="The current wording")
+        current.publish()
+        revised = VersionFactory(
+            document=document, markdown="The current wording, revised"
+        )
+
+        revised.publish()
+
+        revised.refresh_from_db()
+        assert revised.status == Version.Status.CURRENT
+
+    def test_a_documents_first_version_is_never_refused(self, document):
+        """Nothing in force, so there is nothing it could duplicate."""
+        first = VersionFactory(document=document, markdown="First wording")
+
+        first.publish()
+
+        first.refresh_from_db()
+        assert first.status == Version.Status.CURRENT
+
+    def test_a_duplicate_of_a_superseded_version_publishes(self, document):
+        """Restoring an earlier wording is how the package says "go back".
+
+        The comparison is against the version in force and nothing else,
+        so republishing what a superseded version said is allowed — that
+        is the only route this package offers back to an earlier wording.
+        """
+        first = VersionFactory(document=document, markdown="The original wording")
+        first.publish()
+        second = VersionFactory(document=document, markdown="A rewording")
+        second.publish()
+        restoration = VersionFactory(document=document, markdown="The original wording")
+
+        restoration.publish()
+
+        restoration.refresh_from_db()
+        assert restoration.status == Version.Status.CURRENT
+
+    def test_a_draft_duplicating_the_current_wording_still_saves(self, document):
+        """Saving one is harmless. Only publishing it is refused."""
+        current = VersionFactory(document=document, markdown="The current wording")
+        current.publish()
+
+        duplicate = VersionFactory(document=document, markdown="The current wording")
+
+        assert duplicate.pk is not None
+        assert duplicate.status == Version.Status.DRAFT

@@ -521,4 +521,44 @@ Reinstating either of the two earlier comparisons turns a test red.
 **Revisit if**: a document's wording ever becomes something where trailing whitespace carries
 meaning. It does not for Markdown prose.
 
-**ADR:** none — a comparison inside one method, with the reasoning beside it.
+**ADR:** none — a comparison inside one method, with the reasoning beside it. Where that method
+lives moved once more, in D23.
+
+
+## D23 — The duplicate-wording rule is enforced at publication, not at save
+
+**Ambiguous**: "reject a version whose wording has not changed" does not say at which point. It was
+built as a form rule, refusing the save. Sam asked whether publication was the better moment.
+
+**Chosen**: publication. `Version.publish()` raises alongside the two refusals it already makes,
+and the form carries no rule at all.
+
+**Why defensible**, three reasons, of which the second is the one that settles it.
+
+A draft that duplicates the current wording harms nobody. It has no standing, it is invisible, and
+it can be edited or discarded — and being able to park one untouched is exactly the freedom US-2
+exists to protect. Publishing it is the act that would supersede a wording with its own copy, so
+publishing is the act to refuse.
+
+**A save-time answer can be wrong by the time it matters.** A draft is judged against the version
+in force when it is saved, and then sits unpublished for weeks while somebody else publishes
+another version. The draft that was a duplicate is now a distinct wording, and the draft that was
+distinct may now be a duplicate. Only publication can ask the question and act on the answer in the
+same breath, which is why the check reads the current version under the same lock that holds "one
+version in force".
+
+And it puts the rule where the other two live. `publish()` already refuses a version that is not a
+draft and one that renders to nothing, in the model layer, so a shell session and a management
+command meet the same wall. A form rule met none of them — a hole this run reported at the
+walkthrough and this decision closes.
+
+**Cost**: the author finds out later than they would have. That is acceptable because the page
+they find out on is the confirmation, whose whole job is to say what is about to happen, and
+because the two refusals already arriving there set the expectation.
+
+**Revisit if**: somebody reports that discovering it at publication wasted real work. The answer
+then is a warning while writing, which is a different thing from a refusal and would not replace
+this one.
+
+**ADR:** none — a third refusal beside two existing ones in the same method, with its reasoning in
+the comment above it.

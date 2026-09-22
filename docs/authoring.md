@@ -114,15 +114,22 @@ A document's own change page offers **View current version**, leading to that pa
 exists, and **Version history**, leading to the versions list narrowed to this document with
 `VersionAdmin.list_filter`.
 
-A new version whose wording is identical to the one in force is refused: it would supersede a
-wording with its own duplicate and change nothing. The comparison is against the document's
-current version, read when the form is submitted, and it ignores the two differences that a
-round trip through a form produces on its own — the carriage returns a browser adds to a text
-area's content, and the trailing newline a form strips from what is sent.
+A new version whose wording is identical to the one in force is refused **at publication**, not
+when it is saved. Saving such a draft is harmless — it has no standing and can be edited or
+thrown away. Publishing it is the act that would supersede a wording with its own copy.
 
-It applies only when adding. Re-saving a draft you are still working on is not refused, a
-wording identical to an unpublished sibling is not refused, and a document with nothing in force
-has nothing its first version could duplicate.
+Publication is also the only moment the question has a settled answer. A draft that duplicates
+today's version in force is not a duplicate once somebody else publishes another one, so a draft
+saved weeks ago is judged against whatever is in force when it goes live rather than against
+whatever was in force when it was written.
+
+The comparison ignores two differences neither of which a reader would see: the carriage returns
+a browser stores with a text area's content, and a trailing newline. Restoring an earlier wording
+is still allowed, because the comparison is against the version in force and nothing else — that
+is how this package goes back to something a superseded version said.
+
+The refusal reaches whoever is publishing as a message on the page they return to, alongside the
+two `Version.publish()` already raises.
 
 ## Who can do what
 
