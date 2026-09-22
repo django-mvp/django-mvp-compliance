@@ -135,10 +135,15 @@ TOOLBAR_SAMPLES = {
 class TestVersionAdmin:
     """T017: the editor reaches the add and change pages and finds the editor markup."""
 
-    def test_the_add_page_carries_the_editor_widget(self, client, editor) -> None:
+    def test_the_add_page_carries_the_editor_widget(
+        self, client, editor, document
+    ) -> None:
+        """T065: a version can only be added from a document."""
         client.force_login(editor)
 
-        response = client.get(reverse("admin:mvp_compliance_version_add"))
+        response = client.get(
+            reverse("admin:mvp_compliance_version_add"), {"document": document.pk}
+        )
 
         assert response.status_code == 200
         assert b"data-mvp-compliance-markdown-editor" in response.content
@@ -232,6 +237,54 @@ class TestVersionAdmin:
         content = response.content.decode()
         assert str(wanted) in content
         assert str(other) not in content
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestAddingAVersion:
+    """T065: a version can only be added from a document."""
+
+    def test_the_changelist_offers_no_way_to_add_a_version(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_version_changelist"))
+
+        assert response.status_code == 200
+        add_url = reverse("admin:mvp_compliance_version_add")
+        assert add_url.encode() not in response.content
+
+    def test_a_bare_request_for_the_add_form_is_refused(self, client, editor) -> None:
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_version_add"))
+
+        assert response.status_code == 403
+
+    def test_reaching_the_add_form_from_a_document_still_works(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_add"), {"document": document.pk}
+        )
+
+        assert response.status_code == 200
+
+    def test_the_add_form_offers_no_save_and_add_another(
+        self, client, editor, document
+    ) -> None:
+        """That path would redirect back to a form naming no document."""
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_add"), {"document": document.pk}
+        )
+
+        assert response.status_code == 200
+        assert b'name="_addanother"' not in response.content
 
 
 class TestToolbarAgreesWithTheAllowList:
@@ -772,11 +825,13 @@ class TestDocumentAdmin:
     @pytest.mark.parametrize(
         "document_id", ["not-a-number", "", "1 OR 1=1", "999999999"]
     )
-    def test_a_document_the_query_string_cannot_name_opens_empty(
+    def test_a_document_the_query_string_cannot_name_is_refused(
         self, client, editor, document_id
     ) -> None:
-        """A mistyped or hostile link opens an empty form, never a server error.
+        """A mistyped or hostile link is refused, never a server error.
 
+        T065: a version can only be added from a document, so a query
+        string that cannot be resolved to one is the same as naming none.
         The value comes straight off the query string, and asking the
         database for a document whose identifier is not a number raises
         rather than returning nothing. Anything the identifier cannot be is
@@ -788,7 +843,7 @@ class TestDocumentAdmin:
             reverse("admin:mvp_compliance_version_add"), {"document": document_id}
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 403
 
     def test_the_document_page_offers_its_current_version_and_history(
         self, client, editor, document
@@ -845,7 +900,12 @@ class TestDocumentAdmin:
     def test_editing_the_copy_leaves_the_published_version_alone(
         self, client, editor, document
     ) -> None:
-        """T054, FR-022, US-5 scenario 2."""
+        """T054, FR-022, US-5 scenario 2.
+
+        Posted to the add page's own address, document named in the query
+        string the way a browser's empty-action form actually submits back
+        to the page it was loaded from (T065).
+        """
         client.force_login(editor)
         current = VersionFactory(document=document, markdown="Original wording")
         current.publish()
@@ -854,7 +914,7 @@ class TestDocumentAdmin:
         add_url = reverse("admin:mvp_compliance_version_add")
 
         response = client.post(
-            add_url,
+            f"{add_url}?document={document.pk}",
             data={"document": document.pk, "markdown": "Rewritten wording"},
         )
 

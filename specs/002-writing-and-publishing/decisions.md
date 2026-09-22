@@ -429,3 +429,33 @@ sign that a requirement was read and not built, which is what it turned out to b
 behaviour was already correct, and nothing would have said so if it stopped being.
 
 **ADR:** none — a missing test, now present.
+
+## D20 — has_add_permission does both jobs T065 asks of it
+
+**Ambiguous**: T065 wants a version reachable only from a document — no add control on the
+changelist, and a bare request for the add form refused. Those look like two separate things: a
+button to hide and a view to guard.
+
+**Chosen**: one override, `VersionAdmin.has_add_permission(request)`, returning `False` whenever
+the request names no document the same `document_from()` helper `get_changeform_initial_data()`
+already uses to read one. Django calls this single method to decide both the changelist's add
+control and the add view's own permission check, so nothing else has to.
+
+**Why defensible**: a second, template-level check hiding only the button would leave the address
+itself open to anyone who typed it — the button is not the boundary, the permission is. Reusing
+`document_from()` means a mistyped or hostile identifier is refused the same way it is already
+treated as "no document" elsewhere on this admin (D18), rather than inventing a second rule for
+what counts as naming one.
+
+The one thing this method cannot fix on its own is "Save and add another": its own request carries
+the document correctly (a real, resolvable one is exactly what got it past this check), but
+Django's `response_add()` redirects that button's *next* page to `request.path`, dropping the query
+string. `render_change_form()` sets `show_save_and_add_another` to `False` unconditionally, which
+also means a change form never offers it — already true in practice, since a change page's own
+query string never names a document and this same permission check would refuse it anyway, so
+nothing observable changes there.
+
+**Revisit if**: a future surface needs to add a version from somewhere that is not a document's own
+page, which would need a different way of naming one, not just a different permission check.
+
+**ADR:** none — one method doing the one job it was already positioned to do.

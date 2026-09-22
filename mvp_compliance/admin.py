@@ -54,6 +54,33 @@ class VersionAdmin(admin.ModelAdmin):
             return False
         return super().has_change_permission(request, obj)
 
+    def has_add_permission(self, request):
+        """A version can only be added from a document (T065).
+
+        Gates the changelist's add control and the add view itself in one
+        place — the query string names the document the same way
+        ``get_changeform_initial_data()`` reads it, so a request naming
+        none, or one nothing can be resolved from, is refused rather than
+        opening a form with nowhere for its wording to belong.
+        """
+        if not super().has_add_permission(request):
+            return False
+        return self.document_from(request.GET.get("document")) is not None
+
+    def render_change_form(
+        self, request, context, add=False, change=False, form_url="", obj=None
+    ):
+        """No Save and add another (T065).
+
+        Its redirect drops the query string that names the document
+        (``response_add()`` sends it to ``request.path``), which would
+        land back on a form ``has_add_permission()`` above refuses.
+        """
+        context["show_save_and_add_another"] = False
+        return super().render_change_form(
+            request, context, add=add, change=change, form_url=form_url, obj=obj
+        )
+
     def get_changeform_initial_data(self, request):
         """Carry the in-force version's wording when starting the next one.
 
