@@ -233,6 +233,26 @@ class DisclosureAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def get_urls(self):
+        """One address, and no way round it — ``super()`` is never called.
+
+        Django's own ``ModelAdmin`` registers add, change, delete and
+        history addresses for every model it is given, and its change view
+        loads the row before it checks anything. Left in place here they
+        would let somebody holding ``produce_disclosure`` read any
+        acceptance by guessing its primary key: one at a time, without
+        naming a person, and without the statement of coverage an answer
+        carries. Refusing them through the permission hooks above is not
+        enough, because the row is fetched first.
+        """
+        return [
+            path(
+                "",
+                self.admin_site.admin_view(self.changelist_view),
+                name="mvp_compliance_disclosure_changelist",
+            )
+        ]
+
     def changelist_view(self, request, extra_context=None):
         """Replaces the changelist outright — never calls ``super()``.
 

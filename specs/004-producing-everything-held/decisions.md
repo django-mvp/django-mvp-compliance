@@ -296,6 +296,30 @@ point the phrase list needs a narrower entry rather than dropping the check.
 
 **ADR:** none — the wording of one string, reviewed where it is defined.
 
+## D16 — The page is the only address its model serves
+
+**Ambiguous**: registering a model with the admin gets it Django's whole set of addresses — add,
+change, delete and history — and the feature only ever meant to serve one.
+
+**Chosen**: `get_urls()` returns the one address and never calls `super()`.
+
+**Why defensible**: refusing the others through the permission hooks is not enough, and the review
+proved it rather than argued it. Django's change view fetches the row before it checks anything, so
+somebody holding only the produce permission could read any acceptance by guessing its number: one
+at a time, without naming a person, without the statement of coverage an answer carries, and
+without any of it passing through the function that assembles an answer. That is the browsable
+history of everybody's consent that registering a proxy rather than the record itself was chosen to
+prevent, handed back through a door nobody had looked at.
+
+The permission hooks stay as they are. They are correct, and they are why somebody *without* the
+permission was refused at those addresses all along — the hole was only ever open to holders.
+
+**ADR:** none — ADR 0011 records the surface and its permission, and this is the mechanism that
+makes what it says true.
+
+**Revisit if**: a later feature needs a second address on this model, at which point the set is
+declared here rather than inherited.
+
 ## Scope raised and left out
 
 **An access log over consent data.** Whether a site can see who produced whose records, and when.

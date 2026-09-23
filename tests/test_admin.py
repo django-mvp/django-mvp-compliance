@@ -14,7 +14,7 @@ import pytest
 from django.contrib import admin
 from django.contrib.auth.models import Permission
 from django.test import override_settings
-from django.urls import path, reverse
+from django.urls import NoReverseMatch, path, reverse
 from django.utils import formats, timezone
 
 import mvp_compliance
@@ -1023,6 +1023,30 @@ class TestDisclosureRefusals:
     and a refusal reveals nothing about whether the named person has
     records.
     """
+
+    def test_the_page_is_the_only_address_the_proxy_serves(
+        self, client, disclosure_producer
+    ) -> None:
+        """The answer is the one route, and there is no way round it.
+
+        Django's own ``ModelAdmin`` registers add, change, delete and history
+        addresses for every model it is given, and its change view loads the
+        row before it checks anything. Left in place, they let somebody
+        holding only ``produce_disclosure`` read any acceptance by guessing
+        its primary key — one at a time, without naming a person, and
+        without the statement of coverage the answer carries (FR-012,
+        SC-003, decisions.md D8).
+        """
+        acceptance = AcceptanceFactory(ip_address="203.0.113.9")
+        client.force_login(disclosure_producer)
+
+        for name in ("add", "change", "delete", "history"):
+            with pytest.raises(NoReverseMatch):
+                reverse(f"admin:mvp_compliance_disclosure_{name}", args=[acceptance.pk])
+
+        page = reverse("admin:mvp_compliance_disclosure_changelist")
+        for guessed in (f"{page}{acceptance.pk}/change/", f"{page}add/"):
+            assert client.get(guessed).status_code == 404, guessed
 
     def test_not_signed_in_is_refused(self, client) -> None:
         """T023, scenario 3, FR-012."""

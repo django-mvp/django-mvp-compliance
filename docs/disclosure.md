@@ -17,6 +17,12 @@ table of its own. It exists only so the admin has something to register: an
 index entry, an address, and the permission below. `Acceptance` itself stays
 unregistered, so nobody gets a changelist of every person's consent history.
 
+That address is the only one `Disclosure` serves. The add, change, delete and
+history addresses Django registers for a model by default are not there: its
+change view loads a row before it checks anything, which would let somebody
+holding the permission read any acceptance by guessing its number rather than
+by naming a person.
+
 ## The permission
 
 Reaching the page needs `mvp_compliance.produce_disclosure`, and nobody holds it

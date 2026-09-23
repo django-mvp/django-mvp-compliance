@@ -324,3 +324,19 @@ recorded as declined with their reasons: each is either a requirement the specif
 fixed or a choice sealed inside one view, one form or one string.
 
 **Next**: S6 review.
+
+## 2026-09-23T00:35:00Z · Forge · S6 review
+
+**Did**: One finding, high, verified. Registering the proxy with the admin got it Django's default
+add, change, delete and history addresses as well as the one the feature wrote, and the change view
+fetches the row before it checks anything — so somebody holding only the produce permission could
+read any acceptance by guessing its number, bypassing the function that assembles an answer
+entirely. Reproduced it independently before fixing: a producer-only account got HTTP 200 on the
+change and history addresses of an arbitrary acceptance, with its subject and address in the body.
+Fixed by returning the one address from `get_urls()` and never calling `super()`. Recorded as D16,
+and `docs/disclosure.md` now says so where it previously claimed the page was the only address.
+
+**Verified**: the failing test first — four reversals raise and two guessed paths answer 404. The
+reproduction that returned 200 now cannot resolve either address. Full verify green on every step.
+
+**Next**: S7 — open the pull request, then the walkthrough.
