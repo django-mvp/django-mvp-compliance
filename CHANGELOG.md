@@ -87,8 +87,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   identifier that survives the account's removal. A project bound by a
   stricter erasure requirement sets
   `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = False`, and
-  removing an account then takes that person's acceptances with it;
-  either way, removing one account never touches anyone else's records.
+  removing an account then takes that person's acceptances with it.
+  Either way, removing one account never touches anyone else's records.
+  The surviving identifier is the removed account's primary key, and this
+  package holds nothing else that identifies anybody once an account is
+  gone, so a project keeping acceptances past removal has to keep its own
+  map from the person to that identifier. `docs/models.md` shows the
+  receiver that writes one.
 - By default an acceptance holds nothing about the person beyond who they
   are, which version, and when. A project that turns
   `MVP_COMPLIANCE_RECORD_IP_ADDRESS` on also gets the IP address the

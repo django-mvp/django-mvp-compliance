@@ -108,6 +108,13 @@ Set it to `False` and removing an account takes that person's acceptances with i
 that survives their account being removed, once `user` itself is no longer there to
 find them by.
 
+That identifier is the removed account's primary key, and this package holds nothing
+else that identifies anybody once the account is gone. Keeping the default therefore
+comes with an obligation: the project has to keep its own record of whose identifier
+that was, written when the account is closed, or the surviving acceptances are complete
+and unreachable. See
+[Keeping surviving records findable](docs/models.md#keeping-surviving-records-findable).
+
 By default an acceptance holds nothing about a person beyond who they are, which
 version, and when. A site that wants the address a request came from too, because it
 makes a record harder to dispute, turns that on and passes the request along:

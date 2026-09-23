@@ -66,8 +66,11 @@ because a record can outlive the account it names. What is typed is passed to
 
 The third case is what makes it possible to ask about somebody whose account has
 since been removed: there is no row left to look up, but their acceptances still
-carry the identifier they were recorded under. The answer names the subject it was
-produced for, so whichever reading was taken is visible on the page.
+carry the identifier they were recorded under. Knowing that identifier is the
+project's problem rather than this page's — see
+[Asking about somebody whose account is gone](#asking-about-somebody-whose-account-is-gone)
+below. The answer names the subject it was produced for, so whichever reading was
+taken is visible on the page.
 
 ## What the answer contains
 
@@ -85,16 +88,26 @@ whole, so it carries the same statement as an answer with acceptances in it.
 ## Asking about somebody whose account is gone
 
 A request about somebody who closed their account is the ordinary case, not the
-exotic one, and it is often exactly the person who makes it. Where an account is
-gone, there is no username or email to type, so the field takes the identifier
-the acceptance records themselves carry — the third case in
-[Naming a person](#naming-a-person) above. Whether an acceptance still exists to
-be found this way is not this page's decision: it is
-`MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`, decided once, when the
-account is removed. With the package's default, the acceptances survive and the
-answer contains them, complete with their wording. With that setting off, they
-are gone along with the account, and the answer says nothing is held — the same
-page, behaving exactly as it does for anybody else it holds nothing about.
+exotic one, and it is often exactly the person who makes it. Two things have to be
+true before this page can answer one.
+
+The records have to still be there. That is
+`MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`, decided once, at the moment
+the account is removed. With the package's default they survive, complete with
+their wording. With that setting off they went with the account, and the answer
+says nothing is held — the same page, behaving exactly as it does for anybody
+else it holds nothing about.
+
+**The person asking also has to be reducible to the identifier those records
+carry, and this package cannot do that for you.** Once the account is gone there
+is no username or email left to type, so the field takes the identifier itself —
+the third case in [Naming a person](#naming-a-person) above. That identifier is the
+removed account's primary key, and nothing here maps it back to a human being. A
+project that keeps records past account removal has to keep its own map from the
+person to that identifier, written when the account is closed.
+[Keeping surviving records findable](models.md#keeping-surviving-records-findable)
+shows what to write. Without one, the records survive and nobody can ask the
+question that would reach them.
 
 ## What it does not do
 

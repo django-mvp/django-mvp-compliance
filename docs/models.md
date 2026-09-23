@@ -304,6 +304,64 @@ A new account created with a username an old, removed account once had inherits
 nothing: `subject` is derived from the account's primary key, never its username, so
 the two accounts are never mistaken for one another.
 
+#### Keeping surviving records findable
+
+`subject` is the account's primary key and nothing else. Once the account row is gone,
+nothing in the database maps that number back to a person. A dispute or a request
+arrives as a name or an email address in a letter, and neither of them will find the
+record.
+
+**A project that keeps acceptances past account removal is responsible for keeping its
+own record of whose identifier that was**, in its own table, written when the account is
+closed:
+
+```python
+# myproject/compliance.py
+from django.conf import settings
+from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+
+
+class ClosedAccount(models.Model):
+    """What this project keeps so a surviving acceptance can still be found."""
+
+    email = models.EmailField(verbose_name="email", help_text="The address this account used.")
+    subject = models.CharField(
+        max_length=255,
+        verbose_name="subject",
+        help_text="The identifier this person's acceptances carry.",
+    )
+    closed_at = models.DateTimeField(auto_now_add=True, verbose_name="closed at")
+
+
+@receiver(pre_delete, sender=settings.AUTH_USER_MODEL)
+def remember_closed_account(sender, instance, **kwargs):
+    ClosedAccount.objects.create(email=instance.email, subject=str(instance.pk))
+```
+
+Then a lookup starts from whatever the letter contains and ends at this package:
+
+```python
+subject = ClosedAccount.objects.get(email="someone@example.com").subject
+Acceptance.objects.for_subject(subject)
+```
+
+This package holds no part of that map, under any setting. What a project may keep about
+somebody who asked to be removed, and for how long, follows from its own lawful basis and
+its own retention policy — neither of which a reusable package knows. Keeping the map in
+the project's own table puts that data where those decisions already apply, and keeps this
+package able to say truthfully that it retains nothing identifying about a removed account.
+
+Without a map of some kind, surviving records are unreachable in practice. They exist, they
+are complete, and nothing can match them to the person asking about them. That is not a
+state worth holding personal data in: a project unwilling to keep the map is better off
+setting `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL` to `False` and letting
+acceptances go with the account.
+
+The reasoning, and the configurable alternative that was rejected, are in
+[ADR 0014](adr/0014-the-project-links-a-surviving-acceptance-to-a-person.md).
+
 ### Optional evidence
 
 An acceptance holds three facts by default: who accepted, which version, and when.
