@@ -58,6 +58,13 @@
       "self_resolved": [
         "no findings; the load-bearing research premise (a proxy model carries its own content type, so its Meta.permissions are its own) was verified independently against the resolved Django 5.2.17 source by both the reviewer and the orchestrator"
       ]
+    },
+    "review": {
+      "approved_by": "code-review",
+      "at": "2026-09-23T00:40:00Z",
+      "self_resolved": [
+        "SEC-001 (high, verified, security) the admin registered Django default add/change/delete/history addresses alongside the page, and the change view fetches the row before checking the caller, so a permission holder could read any acceptance by guessing its number. Reproduced independently at admin.py get_urls, fixed by returning the one address and never calling super(), guarded by a test asserting four reversals raise and two guessed paths answer 404, and the original reproduction re-run against the fix can no longer resolve either address. Recorded as D16."
+      ]
     }
   },
   "stories": [
