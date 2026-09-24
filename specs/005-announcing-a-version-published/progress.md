@@ -28,3 +28,10 @@ Did: account-removal test in `TestPublisher`; `TestPublisherDisplay` and `Versio
 Verified: `pytest tests/test_models.py::TestPublisher tests/test_models.py::TestPublisherDisplay` 17 passed. Display tests failed first with `AttributeError: no attribute 'publisher_display'`. Probe for T004: with `Meta.base_manager_name = "objects"` temporarily set, the removal test failed with `PublishedVersionError` raised from `VersionQuerySet.update()` inside `deletion.py`'s collector; setting reverted.
 Next: T006 migration test.
 Watch: none.
+
+## 2026-09-24T13:40Z · Implementer US-2 · T006
+
+Did: `TestPublisherMigration` — builds a published version on the 0004 state through the historical model, migrates to 0005, checks wording, html, standing and published_at unchanged, `publisher` null, `publisher_subject` empty; restores the latest state in `finally`.
+Verified: `pytest tests/test_migrations.py` 2 passed.
+Next: T007 admin publish test.
+Watch: test uses `transaction=True`.
