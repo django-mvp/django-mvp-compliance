@@ -49,3 +49,22 @@ is left to planning.
 writing the receiver that renders the email. Guessing the address from Django's sites framework
 would add a dependency many projects do not install, and it is still wrong for a site served
 under more than one address.
+
+## D4 — Versions a person published are not yet part of what the package produces about them
+
+**Ambiguous**: `records.produce()` answers "everything this package holds about a person" (FS-004
+FR-001), and its statement of coverage says so. This feature makes the package hold one more thing
+about a member of staff: the versions they published, through `publisher_subject`. This spec does
+not ask for that to join the answer, and adding it moves the fixed query count FS-004 pins in its
+tests from one to two.
+
+**Chosen**: nothing about the answer changes in this plan. The gap is put to the maintainer, with
+the recommendation that a *Versions published* section join the answer the way FS-004 FR-017
+anticipated, before this feature merges.
+
+**Why defensible**: adding a section changes what the page shows about a person, which is a
+decision about personal data rather than an implementation detail, and it would change a test from
+another feature. Leaving it silent would ship an answer whose statement of coverage is no longer
+true.
+
+**ADR:** pending — decided with the maintainer before the merge gate
