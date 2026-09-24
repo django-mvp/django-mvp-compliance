@@ -134,3 +134,12 @@ Did: Regenerated the `en` catalog with `poetry run python manage.py makemessages
 Verified: `poetry run pytest tests/test_emails.py tests/test_admin.py::TestUserFacingStrings -q` — 12 passed. Restoring the old catalog makes `TestEmailCatalog` fail.
 Next: full verify and the report.
 Watch: the existing catalog sweep in `tests/test_admin.py` reads only `.html` templates, so `.txt` strings are covered by `TestEmailCatalog` alone.
+
+## 2026-09-24 — S5 CONVERGE
+
+All three stories accepted. Convergence: one migration (`0005_version_publisher`), `makemigrations
+--check` clean. D1 graduated to ADR 0016, numbered past the open pull request that claims 0015. The
+other four decisions carry a declining verdict. The two signal fixtures moved from
+`tests/test_models.py` into `tests/conftest.py`, and the admin test uses them instead of connecting
+by hand. The one tamper flag across the feature is an import line in `tests/test_admin.py` gaining
+`messages`; no pre-existing assertion changed. Full verify green against `61b23e8`.
