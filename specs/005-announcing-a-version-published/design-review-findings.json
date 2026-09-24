@@ -1,0 +1,62 @@
+{
+  "lens": "spec-compliance",
+  "stage": "design",
+  "verdict": "approve",
+  "risk": "medium",
+  "scope": "specs/005-announcing-a-version-published plan.md, research.md, tasks.md against spec.md, CONSTITUTION.md and mvp_compliance/{models,admin,records}.py, tests/test_records.py, Django 5.2.17 as resolved. Lenses run in order: spec-compliance, security, architecture. Every finding is tagged with its lens in `claim`.",
+  "skills_loaded": [
+    {
+      "name": "craft-review",
+      "receipt": "craft-review/2026-09-17/b773db2e",
+      "loaded_via": "skill-tool"
+    },
+    {
+      "name": "craft-security",
+      "receipt": "craft-security/2026-08-04/ea3d6742",
+      "loaded_via": "skill-tool"
+    },
+    {
+      "name": "craft-simplify",
+      "receipt": "craft-simplify/2026-08-04/69038ce1",
+      "loaded_via": "skill-tool"
+    }
+  ],
+  "findings": [
+    {
+      "id": "DES-001",
+      "severity": "medium",
+      "confidence": "verified",
+      "claim": "[spec-compliance] SPEC-LEVEL, not a plan defect: spec.md is silent on whether the versions a person published belong in the personal-record answer, and the plan carries no task for either outcome. If they do not, PersonalRecord.coverage ('This covers what this package holds about this person') becomes untrue once publisher_subject exists.",
+      "evidence": "decisions.md D4 and plan.md 'Outside this plan' record the gap and leave it pending. spec.md Assumptions call the publisher 'new personal data about a member of staff'. mvp_compliance/records.py:126-150 (produce) reads Acceptance only; records.py PersonalRecord.coverage asserts completeness, and tests/test_records.py:366,373 pin that exact wording. FS-004 spec FR-001 defines the answer as 'everything it holds' about a person. tasks.md T001-T025 contain no task touching records.py, so a 'yes' ruling would arrive after the design is fixed.",
+      "suggested_fix": "Do not edit the plan to add it. Route it as a spec change (delta brief and re-gate) and obtain the ruling before S4 starts, not 'before the merge gate' as D4 says, because either answer changes tasks: 'yes' adds a records task and an authorised edit to an FS-004 pinned test; 'no' needs the coverage statement amended, which is also pinned by tests/test_records.py:366. See notes[0] for the recommended answer and design."
+    },
+    {
+      "id": "DES-002",
+      "severity": "medium",
+      "confidence": "verified",
+      "claim": "[security] FR-005 'MUST be logged' is met in name only for a project on Django's default logging with DEBUG=False: the error send_robust logs on 'django.dispatch' goes to no visible handler, so a receiver that fails to send the site owners' email fails silently in production.",
+      "evidence": "research.md R1 / plan.md rely on send_robust's own logging (django/dispatch/dispatcher.py:263-269, resolved Django 5.2.17). django/utils/log.py DEFAULT_LOGGING routes the 'django' logger (parent of 'django.dispatch') to 'console', filtered by require_debug_true, and 'mail_admins', filtered by require_debug_false and inert without ADMINS. With DEBUG=False and no ADMINS the record is dropped. decisions.md D1 says the cost is 'quiet unless the project watches its logs'; the plan documents neither the logger name nor this precondition.",
+      "suggested_fix": "No new code (adding a package logger would be a second mechanism). Extend T019 so docs/announcing.md states that receiver errors are logged on the 'django.dispatch' logger at ERROR, that Django's default configuration shows them only when DEBUG is on or ADMINS is set, and that a project relying on a receiver must route that logger. Also state in the same section that receivers run synchronously in the publisher's request after the commit, so a slow receiver (SMTP) should hand off to a task queue."
+    },
+    {
+      "id": "DES-003",
+      "severity": "low",
+      "confidence": "likely",
+      "claim": "[spec-compliance] Several tests are specified as 'Passes' with no failing step, and the ones asserting that a receiver did not run are vacuous under the default `db` fixture unless callbacks are executed.",
+      "evidence": "tasks.md T004, T005, T006, T014, T015, T016, T022, T023, T024 have Done-when 'Passes'. tests/conftest.py and tests/settings.py show no transactional_db use anywhere in the suite (grep: none), so a `db` test never commits and on_commit callbacks never run. T014 (refusals: receiver never runs), T016 (receiver that raises) and T017 (admin publish with a raising receiver) do not say execute=True or transactional_db; plan.md Testing names the technique but the tasks do not bind it. A 'never ran' assertion then passes even if on_commit were registered before the refusals, and T017's raising receiver would never be called.",
+      "suggested_fix": "In T014, T016 and T017, state 'runs the callbacks (django_capture_on_commit_callbacks(execute=True) or transactional_db)' and, for T014, pair each refusal with a control publication in the same test that shows the receiver does run. For T004 add the probe 'set Meta.base_manager_name = VersionManager, watch the test fail, revert'. Record the probe outcome in the task's Done-when."
+    }
+  ],
+  "notes": [
+    "ORCHESTRATOR QUESTION (D4). Yes, this is a spec gap the maintainer must rule on, and it is a spec-level ruling (delta brief, re-gate), not a plan edit. Reasons: (a) FS-004 FR-001 defines produce() as everything the package holds about a person, and FS-004 ADR 0012 was built so a further kind of record joins as a Section. (b) FS-005 spec Assumptions call the publisher new personal data. (c) So after FS-005 lands, produce() plus its pinned coverage sentence (tests/test_records.py:366) is either extended or false. Recommendation: rule 'yes', add a 'Versions published' section keyed on Version.publisher_subject (already indexed, which is what the index is for), listing document name, version number and published_at only, no wording. Rule it before S4, since it adds a task and changes what US-2 delivers. On the query pin: no clean design keeps tests/test_records.py:146-165 literally unchanged. Reading it precisely, django_assert_num_queries(1) pins the literal 1, while the requirement it serves (FS-004 SC-008: cost does not grow with the number of documents) is the equality assertion at :165-167. A second section needs a second query, so the literal must become 2 and the equality assertion stays untouched; that is a pre-existing-test edit that tamper-check will flag, so the delta brief must authorise it explicitly and the edit must be limited to the two literals. Alternatives that keep 1: a UNION of two normalised values_list projections, or one Version query with a FilteredRelation onto acceptances, then splitting in Python. Both are possible; both add real complexity (Article II) purely to preserve a literal, and the AcceptanceEntry.wording column has no counterpart on a publication row. I do not recommend either. Cheapest honest alternative if the maintainer rules 'no': amend the coverage statement (again a pinned-test edit) rather than leave it untrue. Note the section also needs its own entry type, since Section.entries is typed tuple[AcceptanceEntry, ...] (records.py:71).",
+    "plan.md 'Account removal goes through the base manager' and research.md R3: verified against resolved Django 5.2.17. deletion.py:405 (related_objects uses related_model._base_manager) and :484-485 (combined_updates.update) hold, Version.Meta sets no base_manager_name, so plain SET_NULL clears a frozen field without tripping VersionQuerySet.update(). Nuance for R3's text: when a project has delete-signal listeners on Version, sub_objs is evaluated and the collector uses UpdateQuery.update_batch (deletion.py:490-494) instead, which bypasses the guard as well; the conclusion stands.",
+    "research.md R1, R2 and R4 spot-checked against the resolved source and hold: dispatcher.py:263-269 and 305-309 (send_robust catches Exception, logs, continues), makemessages.py:360 (['html','txt','py']). research.md cites deletion.py:73 for SET_NULL.lazy_sub_objs; it sits a line or two earlier - trivial drift.",
+    "Acceptance.subject_of(publisher) raises RecordError ('Cannot record an acceptance for a user with no primary key') when publisher is an unsaved user, from inside Version.publish(), whose documented refusal type is PublishError and whose admin caller catches only PublishError. Unreachable from the admin (request.user is saved); for code callers the message is acceptance-worded. Wording/type drift only; T003 could widen the message when it widens the docstring.",
+    "docs/models.md:105 ('document, number, markdown, html and published_at can never change again') and docs/authoring.md:56 state the frozen set; T011 names only the Publishing sections, so both stay stale. Add them to T011's scope. The refusal message 'A published version's wording cannot be changed.' (models.py:106, :377) is also now used for a publisher change, which is not wording.",
+    "T011 vs Article XV: the CHANGELOG entry is specified in T011 (US-2) and again as Added entries in T019 and T025; fine, but only the T011 entry needs the plain-language personal-data statement.",
+    "plan.md Stories and order: US-1, US-2 and US-3 all edit models.py or admin.py, docs/announcing.md (US-1 and US-3), CHANGELOG and the en catalog. The plan runs them in strict sequence on one branch, which is the correct handling; do not dispatch them in parallel worktrees.",
+    "Email body is rendered with autoescape off (correct for plain text). docs/announcing.md should say to send it as text, not html_message, since the document name and account name are unescaped. The subject collapse via ' '.join(rendered.split()) also strips Unicode line separators, so it is sufficient for header safety; Django's own mail header check remains a second control.",
+    "render_publication_email builds the admin link with reverse('admin:mvp_compliance_version_change') and so assumes the default admin namespace, as DocumentAdmin.current_version already does (admin.py:65); consistent, no change asked.",
+    "tests/test_models.py is already over 1100 lines and the plan adds three classes there (TestPublisher, TestPublisherDisplay, TestVersionPublished). Article X allows it because the behaviour lives in models.py; keep them as classes, not a new file."
+  ]
+}

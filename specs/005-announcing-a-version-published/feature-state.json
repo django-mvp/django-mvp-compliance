@@ -1,220 +1,229 @@
 {
-  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
-  "feature": "005-announcing-a-version-published",
-  "branch": "005-announcing-a-version-published",
-  "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
-  "state_history": [
-    {
-      "state": "QUEUED",
-      "at": "2026-09-24T09:14:35Z",
-      "note": "specification merged in #43; issue graph built"
-    },
-    {
-      "state": "PLAN",
-      "at": "2026-09-24T12:35:00Z",
-      "note": "picked off the feature queue as ready; nothing delivered since the spec landed"
-    },
-    {
-      "state": "DESIGN_REVIEW",
-      "at": "2026-09-24T12:43:32Z",
-      "note": "plan, research and tasks written; draft PR #50 open"
-    }
-  ],
-  "gates": {
-    "spec": {
-      "approved_by": "SamuelJennings",
-      "at": "2026-09-24T09:14:35Z",
-      "self_resolved": [
-        "merge commit 61b23e841c, pull request #43"
-      ]
-    },
-    "plan": {
-      "approved_by": null,
-      "at": null
-    },
-    "merge": {
-      "approved_by": null,
-      "at": null
-    }
+ "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+ "feature": "005-announcing-a-version-published",
+ "branch": "005-announcing-a-version-published",
+ "repo": "django-mvp/django-mvp-compliance",
+ "state": "DESIGN_REVIEW",
+ "state_history": [
+  {
+   "state": "QUEUED",
+   "at": "2026-09-24T09:14:35Z",
+   "note": "specification merged in #43; issue graph built"
   },
-  "stories": [
-    {
-      "id": "US2",
-      "priority": "P1",
-      "issue": 45,
-      "worktree": null,
-      "status": "todo",
-      "replans": 0,
-      "tasks": [
-        {
-          "id": "T001",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T002",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T003",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T004",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T005",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T006",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T007",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T008",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T009",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T010",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T011",
-          "status": "todo",
-          "attempts": 0
-        }
-      ]
-    },
-    {
-      "id": "US1",
-      "priority": "P1",
-      "issue": 44,
-      "worktree": null,
-      "status": "todo",
-      "replans": 0,
-      "tasks": [
-        {
-          "id": "T012",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T013",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T014",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T015",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T016",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T017",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T018",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T019",
-          "status": "todo",
-          "attempts": 0
-        }
-      ]
-    },
-    {
-      "id": "US3",
-      "priority": "P2",
-      "issue": 46,
-      "worktree": null,
-      "status": "todo",
-      "replans": 0,
-      "tasks": [
-        {
-          "id": "T020",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T021",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T022",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T023",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T024",
-          "status": "todo",
-          "attempts": 0
-        },
-        {
-          "id": "T025",
-          "status": "todo",
-          "attempts": 0
-        }
-      ]
-    }
-  ],
-  "budgets": {
-    "converge_cycles": {
-      "used": 0,
-      "max": 2
-    },
-    "review_cycles": {
-      "used": 0,
-      "max": 1
-    },
-    "design_review_cycles": {
-      "used": 1,
-      "max": 1
-    },
-    "tokens": {
-      "used": 0,
-      "max": 120
-    }
+  {
+   "state": "PLAN",
+   "at": "2026-09-24T12:35:00Z",
+   "note": "picked off the feature queue as ready; nothing delivered since the spec landed"
   },
-  "pr": {
-    "number": 50,
-    "draft": true
+  {
+   "state": "DESIGN_REVIEW",
+   "at": "2026-09-24T12:43:32Z",
+   "note": "plan, research and tasks written; draft PR #50 open"
   }
+ ],
+ "gates": {
+  "spec": {
+   "approved_by": "SamuelJennings",
+   "at": "2026-09-24T09:14:35Z",
+   "self_resolved": [
+    "merge commit 61b23e841c, pull request #43"
+   ]
+  },
+  "plan": {
+   "approved_by": null,
+   "at": null
+  },
+  "merge": {
+   "approved_by": null,
+   "at": null
+  },
+  "design_review": {
+   "approved_by": "design-panel",
+   "at": "2026-09-24T12:55:10Z",
+   "self_resolved": [
+    "DES-001 (medium, spec-level) the personal-record answer does not cover versions a person published; put to the maintainer as D4, not planned around",
+    "DES-002 (medium) receiver errors are logged on django.dispatch, invisible under Django's default logging with DEBUG off and no ADMINS; documented in T019 rather than adding a logger",
+    "DES-003 (low) tests asserting a receiver did or did not run must execute commit callbacks; bound into T014, T016, T017, with a control publication and a base-manager probe in T004"
+   ]
+  }
+ },
+ "stories": [
+  {
+   "id": "US2",
+   "priority": "P1",
+   "issue": 45,
+   "worktree": null,
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T001",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T002",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T003",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T004",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T005",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T006",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T007",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T008",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T009",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T010",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T011",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US1",
+   "priority": "P1",
+   "issue": 44,
+   "worktree": null,
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T012",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T013",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T014",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T015",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T016",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T017",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T018",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T019",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US3",
+   "priority": "P2",
+   "issue": 46,
+   "worktree": null,
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T020",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T021",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T022",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T023",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T024",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T025",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  }
+ ],
+ "budgets": {
+  "converge_cycles": {
+   "used": 0,
+   "max": 2
+  },
+  "review_cycles": {
+   "used": 0,
+   "max": 1
+  },
+  "design_review_cycles": {
+   "used": 1,
+   "max": 1
+  },
+  "tokens": {
+   "used": 0,
+   "max": 120
+  }
+ },
+ "pr": {
+  "number": 50,
+  "draft": true
+ }
 }
