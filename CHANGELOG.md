@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The answer about a person (`mvp_compliance.records.produce()` and the admin's
+  **Everything held about a person** page) now has a *Versions published* section: every
+  version that person published, with its document, number and publication time. Its
+  statement that it covers what this package holds is true again now that versions record
+  who published them. Producing an answer takes two queries instead of one, still fixed
+  however many documents there are.
 - `render_publication_email(version, replaced, site_url)`, in `mvp_compliance.emails`, which
   writes the subject and plain-text body of an email announcing a publication and returns them.
   It sends nothing. The subject is always one line, the text is translatable, and a template at

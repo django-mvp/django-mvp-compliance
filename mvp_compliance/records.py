@@ -6,22 +6,24 @@ answer is built fresh on every call, and calling it twice with no change to
 the records gives an equal answer back (FR-006, D11: no clock is read
 anywhere in it).
 
-The package holds one kind of record today — acceptances — so
-:func:`produce` returns exactly one :class:`Section`. A further kind of
-record joins as another section without :class:`PersonalRecord` changing
-shape (FR-017); this module names each kind it knows about rather than
-offering a registry for one it does not (FR-018, D1, D9).
+The package holds two kinds of record about a person — their acceptances,
+and the versions they published — so :func:`produce` returns two
+:class:`Section` instances. A further kind of record joins as another
+section without :class:`PersonalRecord` changing shape (FR-017); this module
+names each kind it knows about rather than offering a registry for one it
+does not (FR-018, D1, D9).
 """
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import cast
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 
-from mvp_compliance.models import Acceptance
+from mvp_compliance.models import Acceptance, Version
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,20 @@ class AcceptanceEntry:
 
 
 @dataclass(frozen=True)
+class PublicationEntry:
+    """One version the person published, as it appears in the answer.
+
+    Names the document and the version number, the same way an
+    :class:`AcceptanceEntry` does, and when it was published. The wording is
+    not repeated here: publishing it is the fact held about the person.
+    """
+
+    document: str
+    version: int
+    published_at: datetime
+
+
+@dataclass(frozen=True)
 class Section:
     """One kind of record the package holds about a person.
 
@@ -54,7 +70,7 @@ class Section:
     """
 
     heading: "str | Promise"
-    entries: "tuple[AcceptanceEntry, ...]"
+    entries: "tuple[AcceptanceEntry, ...] | tuple[PublicationEntry, ...]"
     template: str
 
 
@@ -120,16 +136,18 @@ def resolve_subject(text: str) -> str:
 
 
 def produce(subject: str) -> PersonalRecord:
-    """Build the answer for ``subject``, the identifier :class:`Acceptance` records carry.
+    """Build the answer for ``subject``, the identifier this package's records carry.
 
-    One query, whatever the number of documents (SC-008): the acceptances
-    are fetched with their version and document in the same query, and
-    nothing else is queried.
+    Two queries, whatever the number of documents (SC-008): one for the
+    acceptances, fetched with their version and document, and one for the
+    versions published, fetched with their document. A version nobody was
+    recorded as publishing holds an empty subject, so an empty ``subject``
+    is never matched against those.
     """
     acceptances = Acceptance.objects.for_subject(subject).select_related(
         "version", "version__document"
     )
-    entries = tuple(
+    acceptance_entries = tuple(
         AcceptanceEntry(
             document=acceptance.version.document.name,
             version=acceptance.version.number,
@@ -139,9 +157,34 @@ def produce(subject: str) -> PersonalRecord:
         )
         for acceptance in acceptances
     )
-    acceptances_section = Section(
-        heading=_("Acceptances"),
-        entries=entries,
-        template="admin/mvp_compliance/disclosure/acceptances.html",
+    published = (
+        Version.objects.filter(publisher_subject=subject)
+        .exclude(publisher_subject="")
+        .select_related("document")
+        .order_by("published_at", "id")
     )
-    return PersonalRecord(subject=subject, sections=(acceptances_section,))
+    publication_entries = tuple(
+        PublicationEntry(
+            document=version.document.name,
+            version=version.number,
+            # Never None here: the database refuses a version that names a
+            # publisher without having been published.
+            published_at=cast(datetime, version.published_at),
+        )
+        for version in published
+    )
+    return PersonalRecord(
+        subject=subject,
+        sections=(
+            Section(
+                heading=_("Acceptances"),
+                entries=acceptance_entries,
+                template="admin/mvp_compliance/disclosure/acceptances.html",
+            ),
+            Section(
+                heading=_("Versions published"),
+                entries=publication_entries,
+                template="admin/mvp_compliance/disclosure/publications.html",
+            ),
+        ),
+    )

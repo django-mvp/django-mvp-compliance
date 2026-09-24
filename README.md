@@ -14,7 +14,8 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > previewing and publishing them, behind a confirmation step and a
 > permission of its own. So is `Acceptance` — recording who accepted which
 > version, and when. `mvp_compliance.records.produce(subject)` assembles
-> everything the package holds about one person into a single answer, and
+> everything the package holds about one person, their acceptances and the
+> versions they published, into a single answer, and
 > the admin's **Everything held about a person** page is what calls it,
 > behind a permission of its own that nobody holds by default. No
 > account-area page exists yet.

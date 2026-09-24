@@ -77,8 +77,14 @@ taken is visible on the page.
 Every acceptance held for that person: the document, the version accepted, when it
 happened, and the wording that version carried at publication — never wording
 produced again at this point, so an answer never shows something the person was
-never actually served. A person the package holds nothing about gets a page
-saying so, which is a normal result rather than an error.
+never actually served.
+
+Then every version that person published: the document, the version number and when
+it was published, found by the account identifier the version kept, so it is answered
+for after the account is removed too.
+
+A person the package holds nothing about gets a page saying so, which is a normal
+result rather than an error.
 
 Every answer, whichever of those two it is, carries a plain statement next to it:
 that it covers what this package holds, and not data the project holds elsewhere.

@@ -209,6 +209,7 @@ msgstr ""
 
 #: mvp_compliance/models.py:257 mvp_compliance/models.py:648
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:6
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/publications.html:5
 msgid "version"
 msgstr "version"
 
@@ -348,7 +349,7 @@ msgstr "everything held about a person"
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
-#: mvp_compliance/records.py:86
+#: mvp_compliance/records.py:101
 msgid ""
 "This covers what this package holds about this person. The project may hold "
 "further records about them elsewhere that are not included here."
@@ -356,9 +357,13 @@ msgstr ""
 "This covers what this package holds about this person. The project may hold "
 "further records about them elsewhere that are not included here."
 
-#: mvp_compliance/records.py:143
+#: mvp_compliance/records.py:180
 msgid "Acceptances"
 msgstr "Acceptances"
+
+#: mvp_compliance/records.py:185
+msgid "Versions published"
+msgstr "Versions published"
 
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:12
 msgid "Recorded from"

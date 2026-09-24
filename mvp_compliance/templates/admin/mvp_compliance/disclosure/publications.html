@@ -1,0 +1,9 @@
+{% load i18n %}
+<ul>
+  {% for entry in entries %}
+    <li>
+      {{ entry.document }} — {% translate "version" %} {{ entry.version }} —
+      {{ entry.published_at|date:"DATETIME_FORMAT" }}
+    </li>
+  {% endfor %}
+</ul>

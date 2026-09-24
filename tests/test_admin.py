@@ -1571,3 +1571,26 @@ class TestPublishAnnouncement:
 
         levels = [m.level for m in messages.get_messages(response.wsgi_request)]
         assert levels == [messages.ERROR]
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDisclosureVersionsPublished:
+    """The page shows the versions a person published (#52)."""
+
+    def test_the_page_lists_what_they_published(
+        self, client, disclosure_producer
+    ) -> None:
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        version = VersionFactory(document=DocumentFactory(name="House rules"))
+        version.publish(publisher=someone)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_disclosure_changelist"),
+            {"subject": someone.username},
+        )
+
+        content = response.content.decode()
+        assert "Versions published" in content
+        assert "House rules" in content

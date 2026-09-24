@@ -6,8 +6,8 @@
 
 `mvp_compliance.records.produce(subject)` returns a `PersonalRecord` whose fields are exactly
 `subject` and `sections`. A `Section` is one kind of record this package holds about a person: its
-heading, its entries, and the template partial that renders them. Today `produce()` builds exactly
-one section, for acceptances.
+heading, its entries, and the template partial that renders them. `produce()` builds two sections:
+acceptances, and the versions the person published.
 
 A further kind of record joins by being built as another section. `PersonalRecord` does not change,
 the page does not change, and code that walks `record.sections` does not change. There is no

@@ -442,9 +442,10 @@ primary key while it still exists, or the identifier a record still carries once
 gone.
 
 `produce()` returns a frozen `PersonalRecord`. Its `sections` is a tuple of `Section`
-objects, one per kind of record the package holds about that person — there is one
-today, the acceptances — and each section's `entries` is a tuple of `AcceptanceEntry`
-objects, each naming the document, the version accepted and the moment it happened:
+objects, one per kind of record the package holds about that person. There are two: the
+acceptances first, then the versions the person published. The first section's `entries`
+is a tuple of `AcceptanceEntry` objects, each naming the document, the version accepted
+and the moment it happened:
 
 ```python
 entry = record.sections[0].entries[0]
@@ -469,6 +470,20 @@ nothing about still gets a normal answer rather than an error or an empty screen
 ```python
 produce("nobody-the-package-has-ever-heard-of").is_empty  # True
 ```
+
+The second section holds a `PublicationEntry` for each version whose `publisher_subject`
+is this subject, oldest publication first. It names the document, the version number and
+when it was published. The account need not still exist, because the subject is what the
+version kept:
+
+```python
+entry = record.sections[1].entries[0]
+entry.document       # "Privacy policy"
+entry.version        # 2 — Version.number
+entry.published_at   # the moment that version was published
+```
+
+A version published with nobody named belongs to no one's answer.
 
 Producing an answer only reads — it writes nothing, and it reads no clock, so producing
 the same answer twice with no change to the records gives an equal answer back.

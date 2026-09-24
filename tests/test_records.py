@@ -151,7 +151,7 @@ class TestProduce:
             version.publish()
             AcceptanceFactory(user=someone, version=version)
 
-        with django_assert_num_queries(1) as at_two_documents:
+        with django_assert_num_queries(2) as at_two_documents:
             produce(str(someone.pk))
 
         for _ in range(8):  # ten documents total
@@ -159,7 +159,7 @@ class TestProduce:
             version.publish()
             AcceptanceFactory(user=someone, version=version)
 
-        with django_assert_num_queries(1) as at_ten_documents:
+        with django_assert_num_queries(2) as at_ten_documents:
             produce(str(someone.pk))
 
         assert len(at_two_documents.captured_queries) == len(
@@ -384,3 +384,68 @@ class TestCoverage:
             assert name not in text, name
         for claim in FORBIDDEN_COMPLETENESS_CLAIMS:
             assert claim not in text, claim
+
+
+@pytest.mark.django_db
+class TestVersionsPublished:
+    """The answer carries the versions a person published (#52)."""
+
+    def publish_as(self, publisher, name="Privacy policy"):
+        version = VersionFactory(document=DocumentFactory(name=name))
+        version.publish(publisher=publisher)
+        return version
+
+    def test_every_version_they_published_is_in_its_own_section(self):
+        someone = UserFactory()
+        first = self.publish_as(someone, "Privacy policy")
+        second = self.publish_as(someone, "Terms of use")
+
+        record = produce(str(someone.pk))
+
+        section = record.sections[1]
+        assert str(section.heading) == "Versions published"
+        assert [(entry.document, entry.version) for entry in section.entries] == [
+            ("Privacy policy", first.number),
+            ("Terms of use", second.number),
+        ]
+        assert [entry.published_at for entry in section.entries] == [
+            first.published_at,
+            second.published_at,
+        ]
+
+    def test_it_holds_nothing_published_by_anybody_else(self):
+        someone = UserFactory()
+        self.publish_as(UserFactory(), "Privacy policy")
+        VersionFactory().publish()
+
+        record = produce(str(someone.pk))
+
+        assert record.sections[1].entries == ()
+        assert record.is_empty
+
+    def test_a_publisher_whose_account_was_removed_is_still_answered_for(self):
+        departed = UserFactory()
+        self.publish_as(departed)
+        subject = str(departed.pk)
+        departed.delete()
+
+        record = produce(subject)
+
+        assert [entry.document for entry in record.sections[1].entries] == [
+            "Privacy policy"
+        ]
+        assert not record.is_empty
+
+    def test_versions_with_no_publisher_are_never_anybody_s(self):
+        """An empty subject must not match every version published by nobody."""
+        VersionFactory().publish()
+
+        record = produce("")
+
+        assert record.sections[1].entries == ()
+
+    def test_publishing_alone_makes_an_answer_non_empty(self):
+        someone = UserFactory()
+        self.publish_as(someone)
+
+        assert not produce(str(someone.pk)).is_empty
