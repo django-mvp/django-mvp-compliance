@@ -1,0 +1,111 @@
+{
+  "story": "US2",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 45,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-005",
+  "tasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005",
+    "T006",
+    "T007",
+    "T008",
+    "T009",
+    "T010",
+    "T011"
+  ],
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-16/3c401f5e"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-08-05/d3dce07f"
+    }
+  ],
+  "context": {
+    "why": "Once a wording is in force, 'who approved this?' is the first question anybody asks, and nothing answers it today. This story makes each version keep who published it, frozen with the rest of the version, shown in the admin, and still honest after that account is removed. The announcement signal (US-1) and the email (US-3) come later and read what you build; they are not yours.",
+    "spec_sections": [
+      "specs/005-announcing-a-version-published/spec.md \u00a7 User Story 2",
+      "specs/005-announcing-a-version-published/spec.md \u00a7 Requirements (FR-008 to FR-014, FR-024)",
+      "specs/005-announcing-a-version-published/spec.md \u00a7 Success Criteria (SC-004, SC-005)",
+      "specs/005-announcing-a-version-published/spec.md \u00a7 Edge Cases (the publisher ones)"
+    ],
+    "plan_sections": [
+      "plan.md \u00a7 Design \u2192 The publisher (US-2)",
+      "plan.md \u00a7 Documentation",
+      "plan.md \u00a7 Complexity Tracking"
+    ],
+    "prior_decisions": [
+      "decisions.md D2 \u2014 a removed publisher leaves a trace (publisher_subject), never a name or email (FR-014).",
+      "research.md R3 \u2014 account removal clears the FK through the plain base manager. Never set Meta.base_manager_name; T004 records a probe proving the test fails if you do (then revert).",
+      "decisions.md D4 \u2014 records.py (the personal-record answer) is NOT touched in this story; that question is with the maintainer.",
+      "docs/adr/0008 \u2014 the same two-identifier shape Acceptance uses (user + subject)."
+    ],
+    "acceptance": [
+      "publish(publisher=user) records the user on Version.publisher and str(user.pk) on Version.publisher_subject, via Acceptance.subject_of(); publish() with no publisher leaves both empty; a draft has neither, enforced by the widened check constraint.",
+      "Changing publisher/publisher_id/publisher_subject on a published version is refused by save() and by queryset update(), exactly like the wording.",
+      "Removing the publisher's account succeeds, leaves the version otherwise unchanged, clears publisher and keeps publisher_subject.",
+      "Version.publisher_display: None for a draft; str(publisher) when the account exists; 'An account since removed' when only the subject remains (never the subject itself); 'No publisher recorded' when both are empty.",
+      "Migration 0005 carries an existing published version forward with no publisher recorded.",
+      "The admin publish page records request.user as the publisher. Published by appears next to Published at on the version page and in the version and document lists, with query counts that do not grow with the row count.",
+      "CONTEXT.md defines Publisher; docs/models.md and docs/authoring.md describe the publisher, including their lists of what never changes; CHANGELOG [Unreleased] names the new personal data in plain language."
+    ],
+    "environment": "Poetry. Run everything with `poetry run` from the worktree root (/home/sam/projects/django-mvp/django-mvp-compliance-005); the worktree has its own virtualenv, already synced. The full verify command is `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo /home/sam/projects/django-mvp/django-mvp-compliance-005`. Tests are pytest with pytest-django against tests/settings.py. A demo server is running from this worktree on port 8021 and autoreloads; leave it alone.",
+    "verified_base": {
+      "commit": "a91f8ad",
+      "verified_at": "2026-09-24T12:56:00Z",
+      "steps": [
+        "conformance",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ],
+      "note": "All green. If HEAD is not a91f8ad when you arrive, or the tree cannot run its tests, report blocked."
+    },
+    "conventions": [
+      "Article I: failing test first on every task, confirmed failing for the right reason.",
+      "Article X: mvp_compliance/models.py \u2192 tests/test_models.py (new classes TestPublisher, TestPublisherDisplay); admin \u2192 tests/test_admin.py; migrations \u2192 tests/test_migrations.py. One factory per model; use UserFactory/VersionFactory and existing conftest fixtures, no new factory subclasses. Build a published version with a publisher by calling publish(publisher=...) on a draft.",
+      "Article VIII: every user-facing string wrapped with gettext_lazy, verbose_name + help_text on both new fields. Regenerate the en catalog in T011 the way the repo already does (check tests/test_admin.py TestUserFacingStrings stays green).",
+      "Article IX: squash \u2014 generate ONE migration 0005_version_publisher.py with makemigrations; regenerate it rather than adding a second if you change the fields.",
+      "Article XIV/XV: no regulation named; the CHANGELOG entry says in plain language that each published version now records the account that published it (its primary key).",
+      "Docstrings on public names in the voice the existing modules use.",
+      "Commits are authored as the bot already (git config is bound); do not change git config."
+    ],
+    "glossary_terms": [
+      "version",
+      "published",
+      "draft",
+      "current",
+      "superseded",
+      "publisher (new \u2014 you define it in CONTEXT.md)"
+    ]
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 90
+  },
+  "rituals": [
+    "Load both craft skills by name before reading the tasks; copy each RECEIPT line verbatim into skills_loaded.",
+    "Read the protocol /home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/implement-story.md and follow it.",
+    "Read your own tasks in specs/005-announcing-a-version-published/tasks.md \u2014 the US-2 table only (T001\u2013T011).",
+    "Read the plan.md sections named above and stop there.",
+    "Commit per task with the task id in the subject.",
+    "Append a specs/005-announcing-a-version-published/progress.md entry per task: Did / Verified / Next / Watch.",
+    "Run the full verify command once, at the end, before writing your report."
+  ],
+  "prohibitions": [
+    "Do not build the signal, send anything, or add a success message to the publish page \u2014 US-1.",
+    "Do not build the email function or templates \u2014 US-3.",
+    "Do not touch mvp_compliance/records.py or the disclosure templates (decisions.md D4).",
+    "Do not modify or delete any test you did not author in this story. If one must change, mark the task blocked and say why.",
+    "Do not edit feature-state.json beyond your own tasks' status, attempts and evidence.",
+    "No git merge, no push, no gh, no network beyond the package registry. Your story ends at a clean committed worktree and a report."
+  ]
+}
