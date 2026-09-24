@@ -3,7 +3,7 @@
   "feature": "005-announcing-a-version-published",
   "branch": "005-announcing-a-version-published",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "QUEUED",
@@ -34,6 +34,11 @@
       "state": "REVIEW",
       "at": "2026-09-24T13:23:49Z",
       "note": "converged; review dispatched"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-24T13:33:40Z",
+      "note": "PR #50 ready; walkthrough sent"
     }
   ],
   "gates": {
@@ -376,6 +381,6 @@
   },
   "pr": {
     "number": 50,
-    "draft": true
+    "draft": false
   }
 }
