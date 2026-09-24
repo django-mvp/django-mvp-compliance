@@ -70,3 +70,10 @@ Did: `mvp_compliance/signals.py` with `version_published`; `publish()` sets the 
 Verified: `pytest tests/test_models.py::TestVersionPublished` 3 passed; ruff check and format clean.
 Next: T014 refusal tests.
 Watch: none.
+
+## 2026-09-24T14:55Z · Implementer US-1 · T014, T015, T016
+
+Did: `TestVersionPublished` gains the three-refusals test (each refusal, then a control publication that does announce), rollback and commit-timing tests, the receiver-sees-current test, a raising receiver (logged on `django.dispatch`, later receiver still runs, publication stands), a receiver that publishes another version, and two documents in one transaction. A `connect` fixture disconnects every receiver a test connects.
+Verified: `pytest tests/test_models.py::TestVersionPublished` 10 passed (these pass on T013's code by design). Mutation probes, each restored: registering before the refusals failed 8; sending directly rather than on commit failed 5; `send` instead of `send_robust` failed the raising-receiver test; dropping the superseded status on the instance failed the replaced test.
+Next: T017 admin test.
+Watch: none.

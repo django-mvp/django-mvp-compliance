@@ -1491,18 +1491,32 @@ class TestPublisherDisplay:
 
 
 @pytest.fixture
-def announcements():
-    """Every ``version_published`` announcement made while a test runs."""
+def connect():
+    """Connect a receiver to ``version_published`` and disconnect it after the test."""
     from mvp_compliance.signals import version_published
 
+    connected = []
+
+    def connect_receiver(receiver):
+        version_published.connect(receiver, weak=False)
+        connected.append(receiver)
+        return receiver
+
+    yield connect_receiver
+    for receiver in connected:
+        version_published.disconnect(receiver)
+
+
+@pytest.fixture
+def announcements(connect):
+    """Every ``version_published`` announcement made while a test runs."""
     received: list[dict] = []
 
     def record(sender, **kwargs):
         received.append({"sender": sender, **kwargs})
 
-    version_published.connect(record, weak=False)
-    yield received
-    version_published.disconnect(record)
+    connect(record)
+    return received
 
 
 class TestVersionPublished:
@@ -1545,3 +1559,133 @@ class TestVersionPublished:
         replaced = announcements[0]["replaced"]
         assert replaced == published_version
         assert replaced.status == Version.Status.SUPERSEDED
+
+    def test_none_of_the_three_refusals_announces_anything(
+        self, announcements, django_capture_on_commit_callbacks, published_version
+    ):
+        """Scenario 4, FR-003, SC-001: a refusal registers nothing; a control does."""
+        document = published_version.document
+        same_wording = VersionFactory(
+            document=document, markdown=published_version.markdown
+        )
+        empty = VersionFactory(document=DocumentFactory(), markdown="   \n\n   ")
+        control = VersionFactory(document=DocumentFactory())
+
+        with django_capture_on_commit_callbacks(execute=True):
+            with pytest.raises(PublishError):
+                published_version.publish()
+            with pytest.raises(PublishError):
+                empty.publish()
+            with pytest.raises(PublishError):
+                same_wording.publish()
+        assert announcements == []
+
+        with django_capture_on_commit_callbacks(execute=True):
+            control.publish()
+        assert [call["version"] for call in announcements] == [control]
+
+    def test_a_publication_inside_a_rolled_back_block_announces_nothing(
+        self, announcements, django_capture_on_commit_callbacks, draft
+    ):
+        """Scenario 5, FR-004, SC-002."""
+        control = VersionFactory()
+
+        with (
+            django_capture_on_commit_callbacks(execute=True),
+            pytest.raises(RuntimeError),
+            transaction.atomic(),
+        ):
+            draft.publish()
+            raise RuntimeError("roll back")
+        assert announcements == []
+
+        with django_capture_on_commit_callbacks(execute=True):
+            control.publish()
+        assert [call["version"] for call in announcements] == [control]
+
+    def test_the_receiver_sees_the_version_current_and_the_old_one_superseded(
+        self, connect, django_capture_on_commit_callbacks, published_version
+    ):
+        """Scenario 6."""
+        second = VersionFactory(
+            document=published_version.document, markdown="Different wording."
+        )
+        seen = []
+
+        def look(sender, version, replaced, **kwargs):
+            seen.append(
+                (
+                    Version.objects.get(pk=version.pk).status,
+                    Version.objects.get(pk=replaced.pk).status,
+                )
+            )
+
+        connect(look)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            second.publish()
+
+        assert seen == [(Version.Status.CURRENT, Version.Status.SUPERSEDED)]
+
+    def test_nothing_is_announced_until_the_outer_transaction_commits(
+        self, announcements, django_capture_on_commit_callbacks, draft
+    ):
+        with django_capture_on_commit_callbacks(execute=False) as callbacks:
+            draft.publish()
+
+        assert announcements == []
+        assert len(callbacks) == 1
+
+    def test_a_raising_receiver_cannot_undo_or_hide_the_publication(
+        self, connect, django_capture_on_commit_callbacks, caplog, draft
+    ):
+        """Scenario 8, FR-005: it is logged, and the receivers after it still run."""
+        later = []
+
+        def fail(sender, **kwargs):
+            raise ValueError("receiver broke")
+
+        connect(fail)
+        connect(lambda sender, **kwargs: later.append(kwargs["version"]))
+
+        with (
+            caplog.at_level("ERROR", logger="django.dispatch"),
+            django_capture_on_commit_callbacks(execute=True),
+        ):
+            draft.publish()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.CURRENT
+        assert later == [draft]
+        errors = [r for r in caplog.records if r.name == "django.dispatch"]
+        assert len(errors) == 1
+        assert errors[0].levelname == "ERROR"
+        assert errors[0].exc_info is not None
+
+    def test_a_receiver_that_publishes_another_version_announces_that_one_too(
+        self, announcements, connect, django_capture_on_commit_callbacks, draft
+    ):
+        follow_up = VersionFactory()
+
+        def publish_another(sender, version, **kwargs):
+            if version == draft:
+                follow_up.publish()
+
+        connect(publish_another)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            draft.publish()
+
+        assert [call["version"] for call in announcements] == [draft, follow_up]
+
+    def test_two_documents_published_in_one_transaction_are_each_announced_once(
+        self, db, announcements, django_capture_on_commit_callbacks
+    ):
+        first, second = VersionFactory(), VersionFactory()
+
+        with django_capture_on_commit_callbacks(execute=True), transaction.atomic():
+            first.publish()
+            second.publish()
+            assert announcements == []
+
+        assert [call["version"] for call in announcements] == [first, second]
