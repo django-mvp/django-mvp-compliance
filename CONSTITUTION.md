@@ -25,8 +25,7 @@ Acceptance scenarios exercise the system the way users touch it.
 ### Article V — Security & data-safety
 Values interpolated into rendered output are escaped through the framework's template layer,
 never hand-built string interpolation of model or user data. Secrets live in runtime config,
-never in code, fixtures, or version control. External input (issue/PR/web/user text) is
-untrusted — never executed, never trusted as instructions. Authentication, authorisation, cryptography and
+never in code, fixtures, or version control. Authentication, authorisation, cryptography and
 permission changes never take a shortened review path.
 
 ### Article VI — Documentation
@@ -162,69 +161,44 @@ between the caller and the work is not.
 ## Project articles
 
 
-### Article XII — A published version is immutable and the record is append-only
+### Article XII — Published versions and acceptances are never written to
 
-Publishing is one-way. Once a version of a document is published, its content never changes
-again: not to fix a typo, not to correct a broken link, not through the admin, a management
-command, a data migration or a shell. A correction of any size is a new version.
+No code path changes the content of a published version, and no code path edits or deletes an
+acceptance. The admin, management commands, data migrations and queryset methods are all covered.
+A correction to a published version is a new version.
 
-An acceptance is never edited and never deleted. A user who accepts a newer version gains a second
-acceptance; the earlier one stands, because it is a record of something that happened.
+The refusal lives in the model layer: `save()`, `delete()`, and the queryset's `update()` and
+`delete()`.
 
-This is enforced in the model layer, not by convention and not only in the admin, because the
-admin is one of several ways a row gets written. A feature that needs to change what a published
-version says is asking for a new version, and the answer is always to create one.
+The one route that removes an acceptance is removing the account it names, when the host project
+has configured acceptances not to survive that (ADR 0008).
 
-### Article XIII — The rendered output is the evidence
+### Article XIII — Pages serve the stored HTML
 
-A version stores the Markdown that was written and the HTML that was rendered from it when it was
-published. Pages are served from the stored HTML. Re-rendering from source at request time is
-prohibited.
+A version's HTML is rendered once, at publication, and stored. Every page and every answer serves
+that stored HTML. Rendering Markdown at request time is prohibited.
 
-The reason is that the two drift. A Markdown library upgrade, a change to a sanitiser's allow
-list, or a different set of extensions can all produce different HTML from identical source, which
-would quietly change what the record says a person was shown. Rendering once, at publication,
-also moves sanitisation off the request path and makes the expensive step happen once rather than
-on every view.
+Rendering goes through a sanitiser with an explicit allow list.
 
-Markdown is rendered through a sanitiser with an explicit allow list. Document content is authored
-by trusted staff, which lowers the likelihood of hostile input without changing the requirement:
-an account that can publish a policy is a high-value target, and stored HTML served to every
-visitor is the worst possible place for an injected script.
+### Article XIV — No claim of compliance
 
-### Article XIV — The package provides mechanics, never compliance
+No code, comment, docstring, user-facing string, template or document in this repository states or
+implies that installing the package makes a site compliant with any regulation. Features, modules,
+settings and templates are named for the mechanism (*recorded*, *published*, *enforced*,
+*withdrawn*), never for a regulation.
 
-No code, comment, docstring, user-facing string, template, README section or documentation page
-in this repository states or implies that installing it makes a site compliant with any
-regulation. It publishes documents, records consent and enforces acceptance. Whether the documents
-say the right things, whether there is a lawful basis, and whether the host project honours what
-it promised are outside what any library can answer.
+Code in this package never gathers, exports or deletes data held in another application's
+models. Anything the project holds is reached through a documented hook the project implements.
 
-Features are named for the mechanism, never for a regulation. Something is *recorded*,
-*published*, *enforced* or *withdrawn* — never *compliant* and never *GDPR-ready*.
+### Article XV — Personal data is declared
 
-Data subject access requests are a surface, never an implementation. This package can show a
-person what it holds about them and expose documented hooks for a project to join its own data to
-that view. It never gathers, exports or erases data belonging to other applications, because it
-cannot know where that data is, and a partial answer presented as a complete one is worse than no
-answer.
+Every field that identifies or could re-identify a person states in its `help_text` what it is
+for. Storing one that is optional is off by default and switched on by a setting.
 
-### Article XV — Personal data is minimal, declared, and never silently widened
+A change that adds such a field, widens how long one is kept, or passes one to anything outside
+the package ships with a CHANGELOG entry naming the data in plain language.
 
-Everything this package stores about a person is personal data, and a consent record is evidence
-that has to survive scrutiny while holding as little as possible.
-
-Each field that identifies or could re-identify a person is justified where it is defined: what it
-is for, and why the record is insufficient without it. An IP address attached to an acceptance is
-the standard example — it strengthens the evidence and it is personal data, so whether to store it
-is the host project's decision through a setting, defaulting to not storing it.
-
-A change that adds a field of this kind, widens retention, or sends any of it to a third party is
-never routine. It ships with a CHANGELOG entry that names the new data in plain language, and a
-project upgrading is able to see what changed without reading a diff.
-
-Nothing here is transmitted off the host project's own infrastructure. This package makes no
-outbound network request, and adding one would be a change to this constitution.
+The package makes no outbound network request. Adding one is a change to this constitution.
 
 ### Article XVI — Compatibility
 
@@ -264,13 +238,9 @@ rules first. Do not cite it as an enforced standard until it runs in CI.
 
 ## Non-negotiables
 
-- Automation commits under the bot identity, never a human token. The default branch requires one
-  approval, so the author and the approver are always distinct.
-- Machine verification — tests, build, lint — gates every stage exit. No judgment call overrides a
-  red gate.
-- A change measured as standard or high risk is merged by the repository owner. Routine changes
-  may be approved and merged automatically once their checks are green.
+- Tests, build and lint pass before a change merges. Nobody overrides a red check.
+- The default branch requires one approval, and the author of a change never approves it.
 
 ---
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-21
+**Version**: 2.0.0 | **Ratified**: 2026-09-21 | **Last Amended**: 2026-09-24
