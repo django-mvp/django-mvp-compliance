@@ -1,0 +1,89 @@
+"""Tests for mvp_compliance.emails."""
+
+import pytest
+from django.contrib import admin
+from django.core import mail
+from django.urls import path
+
+from mvp_compliance.emails import render_publication_email
+from tests.factories import DocumentFactory, UserFactory, VersionFactory
+
+urlpatterns = [path("admin/", admin.site.urls)]
+
+SITE_URL = "https://example.com"
+
+
+def publish_two(publisher=None, name="Terms of service"):
+    """Publish a document's first version, then a second, returning both."""
+    document = DocumentFactory(name=name)
+    first = VersionFactory(document=document, markdown="First wording")
+    first.publish()
+    second = VersionFactory(document=document, markdown="Second wording")
+    second.publish(publisher=publisher)
+    first.refresh_from_db()
+    return first, second
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestRenderPublicationEmail:
+    """The ready-made announcement renders text and sends nothing (FR-007, FR-015 to FR-018)."""
+
+    def test_returns_a_subject_and_a_body_and_sends_nothing(self) -> None:
+        """Scenario 1, FR-015, FR-007."""
+        replaced, version = publish_two(publisher=UserFactory())
+
+        result = render_publication_email(version, replaced, SITE_URL)
+
+        subject, body = result
+        assert isinstance(subject, str)
+        assert isinstance(body, str)
+        assert mail.outbox == []
+
+    def test_the_body_names_the_document_the_versions_and_the_publisher(self) -> None:
+        """Scenarios 2, 3, FR-016."""
+        publisher = UserFactory(username="ada")
+        replaced, version = publish_two(publisher=publisher)
+
+        subject, body = render_publication_email(version, replaced, SITE_URL)
+
+        assert "Terms of service" in subject
+        assert "Terms of service" in body
+        assert "Version 2 of" in body
+        assert "replaces version 1" in body
+        assert "ada" in body
+        assert version.published_at.strftime("%Y") in body
+
+    def test_a_first_publication_says_it_is_the_first_version_in_force(self) -> None:
+        """Scenario 4, FR-016."""
+        version = VersionFactory()
+        version.publish()
+
+        _subject, body = render_publication_email(version, None, SITE_URL)
+
+        assert "first version" in body
+        assert "replaces" not in body.lower()
+
+    def test_a_version_with_no_publisher_says_none_was_recorded(self) -> None:
+        """Scenario 5, edge case: publisher with no name or email."""
+        replaced, version = publish_two(publisher=None)
+
+        _subject, body = render_publication_email(version, replaced, SITE_URL)
+
+        assert version.publisher_display in body
+        assert "No publisher recorded" in body
+
+    def test_the_body_carries_the_site_address_and_the_admin_page_for_the_version(
+        self,
+    ) -> None:
+        """FR-017, decisions.md D3."""
+        replaced, version = publish_two()
+
+        _subject, body = render_publication_email(
+            version, replaced, "https://example.com/"
+        )
+
+        assert (
+            f"https://example.com/admin/mvp_compliance/version/{version.pk}/change/"
+            in body
+        )
