@@ -189,49 +189,81 @@
           "id": "T012",
           "status": "done",
           "attempts": 1,
-          "evidence": "tests/test_models.py::TestVersionPublished; failed first with ModuleNotFoundError"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestVersionPublished -x (failed first: ModuleNotFoundError)"
+            ]
+          }
         },
         {
           "id": "T013",
           "status": "done",
           "attempts": 1,
-          "evidence": "pytest tests/test_models.py::TestVersionPublished 3 passed"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestVersionPublished"
+            ]
+          }
         },
         {
           "id": "T014",
           "status": "done",
           "attempts": 1,
-          "evidence": "10 passed; mutation probes"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestVersionPublished"
+            ]
+          }
         },
         {
           "id": "T015",
           "status": "done",
           "attempts": 1,
-          "evidence": "10 passed; mutation probes"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestVersionPublished"
+            ]
+          }
         },
         {
           "id": "T016",
           "status": "done",
           "attempts": 1,
-          "evidence": "10 passed; mutation probes"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_models.py::TestVersionPublished"
+            ]
+          }
         },
         {
           "id": "T017",
           "status": "done",
           "attempts": 1,
-          "evidence": "failed first: no success message"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestPublishAnnouncement (failed first)"
+            ]
+          }
         },
         {
           "id": "T018",
           "status": "done",
           "attempts": 1,
-          "evidence": "pytest tests/test_admin.py 101 passed"
+          "evidence": {
+            "commands": [
+              "poetry run pytest tests/test_admin.py"
+            ]
+          }
         },
         {
           "id": "T019",
           "status": "done",
           "attempts": 1,
-          "evidence": "forge verify --base 0d33904 all passed"
+          "evidence": {
+            "commands": [
+              "forge verify --repo <worktree> --base 0d33904"
+            ]
+          }
         }
       ]
     },
