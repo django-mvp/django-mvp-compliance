@@ -3,7 +3,7 @@
   "feature": "005-announcing-a-version-published",
   "branch": "005-announcing-a-version-published",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "CONVERGE",
   "state_history": [
     {
       "state": "QUEUED",
@@ -24,6 +24,11 @@
       "state": "IMPLEMENT",
       "at": "2026-09-24T12:55:20Z",
       "note": "design review approved, three watch items; plan notified"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-24T13:20:59Z",
+      "note": "all three stories accepted"
     }
   ],
   "gates": {
@@ -272,7 +277,7 @@
       "priority": "P2",
       "issue": 46,
       "worktree": null,
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -341,7 +346,7 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 2
     },
     "review_cycles": {
