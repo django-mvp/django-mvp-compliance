@@ -131,3 +131,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Producing an answer reads what is already held and nothing more.
   Nothing about the request is stored, and asking twice leaves no
   record of having asked once.
+- Django 6.1 is supported, and tested on every change alongside 5.2 and 6.0.
+
+### Changed
+
+- The package is built with hatchling instead of poetry-core, and developed with uv instead of
+  Poetry. The wheel contains the same files as before. The source distribution does too, plus the
+  repository's `.gitignore`, which hatchling includes so that a build from it leaves out the same
+  files.
