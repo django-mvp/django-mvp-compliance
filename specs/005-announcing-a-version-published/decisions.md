@@ -64,9 +64,9 @@ about a member of staff: the versions they published, through `publisher_subject
 not ask for that to join the answer, and adding it moves the fixed query count FS-004 pins in its
 tests from one to two.
 
-**Chosen**: nothing about the answer changes in this plan. The gap is put to the maintainer, with
-the recommendation that a *Versions published* section join the answer the way FS-004 FR-017
-anticipated, before this feature merges.
+**Chosen**: nothing about the answer changes in this feature. The gap is raised as issue #52,
+with the recommendation that a *Versions published* section join the answer the way FS-004
+FR-017 anticipated.
 
 **Why defensible**: adding a section changes what the page shows about a person, which is a
 decision about personal data rather than an implementation detail, and it would change a test from

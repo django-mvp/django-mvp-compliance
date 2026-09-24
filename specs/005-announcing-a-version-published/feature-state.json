@@ -72,6 +72,13 @@
       "self_resolved": [
         "COR-001 (low, verified, correctness) publish() mutated the instance before Acceptance.subject_of() could refuse an unsaved publisher, leaving it claiming a rolled-back publication in memory. Reproduced, fixed by deriving the identifier before any change, guarded by TestPublisher::test_an_unsaved_publisher_is_refused_before_anything_changes (red before, green after)."
       ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-24T14:38:58Z",
+      "self_resolved": [
+        "Change \"An account since removed\" to \"Account removed\" and \"No publisher recorded\" to \"Unknown publisher\" — both strings changed in the model, catalog, docs and tests, and confirmed on the running version list"
+      ]
     }
   },
   "stories": [
