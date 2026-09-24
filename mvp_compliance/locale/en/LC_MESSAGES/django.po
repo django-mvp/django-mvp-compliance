@@ -22,18 +22,39 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:178
+#: mvp_compliance/admin.py:63
+msgid "Current version"
+msgstr "Current version"
+
+#: mvp_compliance/admin.py:67
+msgid "No version in force"
+msgstr "No version in force"
+
+#: mvp_compliance/admin.py:72
+#, python-format
+msgid "Version %(number)s"
+msgstr "Version %(number)s"
+
+#: mvp_compliance/admin.py:75
+msgid "In force since"
+msgstr "In force since"
+
+#: mvp_compliance/admin.py:81
+msgid "Published versions"
+msgstr "Published versions"
+
+#: mvp_compliance/admin.py:238
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:207
+#: mvp_compliance/admin.py:267
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Publish"
 msgstr "Publish"
 
-#: mvp_compliance/admin.py:257
+#: mvp_compliance/admin.py:337
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:5
 msgid "Everything held about a person"
 msgstr "Everything held about a person"

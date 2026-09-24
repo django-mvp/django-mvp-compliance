@@ -57,6 +57,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version in force when one exists, and Version history, leading to the
   versions list narrowed to that document. The versions list can be
   narrowed to one document from its own filter sidebar too.
+- The documents list shows, beside each name, the version in force
+  (linked to its own page, or a plain statement that nothing is in force
+  yet), how long it has been in force, and how many versions have been
+  published — current and superseded together, a draft never counted.
+  The list costs the same number of queries at any number of documents.
 - A version can only be added from a document: the versions list offers
   no add control, and a request for the add form that names none is
   refused, whatever permissions it carries.

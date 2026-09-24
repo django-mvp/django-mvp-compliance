@@ -7,9 +7,11 @@ feature.
 
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
+from django.db.models import Count, Prefetch, Q
 from django.http import Http404, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import PublishError
@@ -21,8 +23,66 @@ from mvp_compliance.rendering import get_renderer
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ["name"]
+    list_display = [
+        "name",
+        "current_version",
+        "in_force_since",
+        "published_version_count",
+    ]
     search_fields = ["name"]
+
+    def get_queryset(self, request):
+        """One annotation and one prefetch, so the cost never grows with the row count (#39).
+
+        ``published_version_count`` is a single filtered ``Count`` alongside
+        the row's own query; the version in force is fetched once for every
+        document on the page rather than once per document, through
+        ``prefetch_related``.
+        """
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            published_version_count=Count(
+                "versions",
+                filter=~Q(versions__status=Version.Status.DRAFT),
+                distinct=True,
+            )
+        )
+        return queryset.prefetch_related(
+            Prefetch(
+                "versions",
+                queryset=Version.objects.current(),
+                to_attr="current_versions",
+            )
+        )
+
+    def version_in_force(self, document):
+        """The document's current ``Version``, or ``None`` — read from the prefetch above."""
+        versions = document.current_versions
+        return versions[0] if versions else None
+
+    @admin.display(description=_("Current version"))
+    def current_version(self, document):
+        version = self.version_in_force(document)
+        if version is None:
+            return _("No version in force")
+        url = reverse("admin:mvp_compliance_version_change", args=[version.pk])
+        return format_html(
+            '<a href="{}">{}</a>',
+            url,
+            _("Version %(number)s") % {"number": version.number},
+        )
+
+    @admin.display(description=_("In force since"))
+    def in_force_since(self, document):
+        version = self.version_in_force(document)
+        return version.published_at if version else None
+
+    @admin.display(
+        description=_("Published versions"), ordering="published_version_count"
+    )
+    def published_version_count(self, document):
+        """Current and superseded versions together — a draft has no legal standing to count."""
+        return document.published_version_count
 
 
 @admin.register(Version)
