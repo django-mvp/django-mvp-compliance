@@ -268,7 +268,7 @@ later does not create a new version for everyone who already accepted.
   policies say the right things, whether you have a lawful basis, and whether
   you honour what you promise are yours and your lawyers' to answer.
 - **It does not fulfil data subject access requests.** It offers the account
-  page and the hooks. Gathering, exporting and erasing a person's data across
+  pages and the hooks. Gathering, exporting and deleting a person's data across
   your own models is the project's work, because only the project knows where
   that data is.
 - **It is not a CMS.** The documents it manages are the legal ones. Nothing
@@ -286,6 +286,27 @@ Letting a person through and reconciling afterwards is the other available
 answer, and it is the wrong one here. A gap in enforcement is a gap. A person
 using the site with no record of what they agreed to is the thing this package
 exists to prevent.
+
+**The record is evidence, and evidence outlives convenience**
+
+A published version never changes, and an acceptance is never edited or
+deleted, because both are records of something that happened. A typo in a
+published policy is corrected by publishing another version. A person who
+asks for their data to be deleted still leaves their acceptances behind: they
+are the evidence of what that person agreed to, and a dispute can arrive after
+the account has gone.
+
+The HTML a reader was served is stored at publication and served from then on.
+Rendering the Markdown again later could produce something different after a
+library upgrade or a change to the sanitiser, which would quietly change what
+the record says a person was shown.
+
+**It holds as little about a person as it can**
+
+Everything stored about a person is personal data, so each field has to earn
+its place, and anything optional is off until the project switches it on. An IP
+address on an acceptance is the usual example: it strengthens the evidence, and
+whether to keep it is the project's decision.
 
 The standing directions this package steers by are in [GOALS.md](GOALS.md).
 

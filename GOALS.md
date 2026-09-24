@@ -24,6 +24,6 @@ Importance is a tag on each goal, not a ranking:
 | G6 | The documents a site actually needs are handled the same way: privacy policy, terms, user agreements, cookie policy | Expected | | |
 | G7 | Visitors can give, refuse and later change cookie consent, and the site honours it | Expected | | |
 | G8 | A signed-in person can see what they have agreed to and what they chose | Expected | | |
-| G9 | A project can join its own data to that view, so an access request has one place to start | Aspirational | | |
+| G9 | A person can ask for a copy of their data, or for it to be deleted, from the account area, and the project decides what happens next | Aspirational | | |
 
 _Written 2026-09-21. Revise as the goals change._
