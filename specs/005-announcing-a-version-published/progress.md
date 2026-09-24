@@ -91,3 +91,10 @@ Did: `publish_view` adds a success message after a publication that succeeded ("
 Verified: `pytest tests/test_admin.py` 101 passed (T017's two failing tests now green; `TestUserFacingStrings` green).
 Next: T019 docs.
 Watch: none.
+
+## 2026-09-24T15:40Z · Implementer US-1 · T019
+
+Did: `docs/announcing.md` (when sent and not, arguments, failing receivers and the `django.dispatch` logging note, synchronous-after-commit note, testing a receiver); README documentation list; CHANGELOG Added entry; one paragraph each in `docs/models.md` Publishing and `docs/authoring.md`. `en` catalog was regenerated in T018, no new strings here.
+Verified: full verify next.
+Next: full verify and report.
+Watch: `docs/announcing.md` says the package sends nothing else (FR-007); US-3 will add the email and must amend that page.

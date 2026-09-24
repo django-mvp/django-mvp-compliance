@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A `version_published` signal, in `mvp_compliance.signals`, sent once each time a version is
+  published and after the publication commits. It carries the version, the account that published
+  it and the version it superseded. It is not sent for a refused or rolled-back publication, and a
+  receiver that raises is logged on `django.dispatch` and cannot undo the publication. The admin
+  publish page now shows a success message after every successful publication. See
+  [docs/announcing.md](docs/announcing.md).
 - Each published version now records the account that published it: its
   primary key, kept as text next to a link to the account. This is new
   personal data held about a person. It is written once, when the version is

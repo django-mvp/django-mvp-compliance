@@ -92,6 +92,10 @@ and both lists show it too — the version list for every version, the document 
 version in force. If that account is later removed, the version says "An account since removed";
 a version with nobody recorded says "No publisher recorded".
 
+A successful publication returns to the version's page with a success message. Your own code
+can react to it through the `version_published` signal (see [announcing.md](announcing.md)); a
+receiver that fails changes nothing the person publishing sees.
+
 `Version.publish()` refuses a version that is not a draft, and one whose rendered output is
 empty once whitespace is stripped. Both refusals reach the person publishing as a message on
 the page they return to, not as a traceback.

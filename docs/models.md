@@ -79,6 +79,9 @@ a removed account's identifier:
 Removing the publisher's account succeeds and leaves the version otherwise unchanged:
 `publisher` becomes empty and `publisher_subject` stays.
 
+Once the publication commits, `publish()` sends the `version_published` signal; see
+[announcing.md](announcing.md).
+
 Publishing an already-published version raises `mvp_compliance.exceptions.PublishError`
 and changes nothing about the document. The same applies when something else published
 the version first and this copy of it is out of date, so a caller that catches

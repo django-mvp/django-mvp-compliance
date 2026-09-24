@@ -299,6 +299,8 @@ The standing directions this package steers by are in [GOALS.md](GOALS.md).
 
 - [docs/models.md](docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
+- [docs/announcing.md](docs/announcing.md) — the signal sent when a version is published, what it
+  carries, and what happens when a receiver fails.
 - [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
   the form, and reading a version back the way the public will see it.
 - [docs/disclosure.md](docs/disclosure.md) — producing everything held about a person: the
