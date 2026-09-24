@@ -48,7 +48,7 @@ field on a published row.
 builds its queryset from `related_model._base_manager` (`django/db/models/deletion.py:406`), and the
 field update runs as `combined_updates.update(...)` on that queryset (`deletion.py:484-485`).
 `Version.Meta` sets no `base_manager_name`, so `_base_manager` is a plain `Manager` whose queryset
-has no guard. `SET_NULL` carries `lazy_sub_objs = True` (`deletion.py:73`), so the update does go
+has no guard. `SET_NULL` carries `lazy_sub_objs = True` (`deletion.py:71-73`), so the update does go
 through a queryset rather than `UpdateQuery.update_batch`, but it is the plain one.
 
 The relation is found even with `related_name="+"`: `get_candidate_relations_to_delete()` reads

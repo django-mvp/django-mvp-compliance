@@ -68,3 +68,16 @@ another feature. Leaving it silent would ship an answer whose statement of cover
 true.
 
 **ADR:** pending — decided with the maintainer before the merge gate
+
+## D5 — Design review carried as watch items
+
+**Ambiguous**: the design review returned no blocking finding. Two medium findings and one low
+needed a decision on whether they change the plan.
+
+**Chosen**: all three are edits to `tasks.md`, none to the design. Receiver-error logging is
+documented rather than given a logger of the package's own (T019). Every test that asserts a
+receiver did or did not run executes the commit callbacks, and each refusal test carries a control
+publication (T014, T016, T017). The account-removal test records a probe showing it fails with a
+guarded base manager (T004). The spec-level question about the personal-record answer stays D4.
+
+**ADR:** none — test and documentation instructions local to this feature
