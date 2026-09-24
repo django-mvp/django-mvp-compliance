@@ -1,8 +1,10 @@
 """Tests for mvp_compliance.emails."""
 
 import pytest
+from django.conf import settings
 from django.contrib import admin
 from django.core import mail
+from django.test import override_settings
 from django.urls import path
 
 from mvp_compliance.emails import render_publication_email
@@ -103,3 +105,24 @@ class TestRenderPublicationEmail:
         assert name in body
         assert "&lt;" not in subject + body
         assert "&amp;" not in subject + body
+
+    def test_a_project_template_at_the_same_path_replaces_the_packages(
+        self, tmp_path
+    ) -> None:
+        """Scenario 6, FR-021."""
+        directory = tmp_path / "mvp_compliance" / "email"
+        directory.mkdir(parents=True)
+        (directory / "version_published_subject.txt").write_text(
+            "Ours: {{ version.document.name }}"
+        )
+        (directory / "version_published_body.txt").write_text(
+            "Ours: {{ version.publisher_display }} at {{ admin_url }}"
+        )
+        templates = [{**settings.TEMPLATES[0], "DIRS": [tmp_path]}]
+        replaced, version = publish_two()
+
+        with override_settings(TEMPLATES=templates):
+            subject, body = render_publication_email(version, replaced, SITE_URL)
+
+        assert subject == "Ours: Terms of service"
+        assert body.startswith("Ours: No publisher recorded at https://example.com/")

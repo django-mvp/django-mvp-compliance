@@ -116,3 +116,9 @@ Did: Added `test_a_name_with_a_line_break_and_markup_gives_a_one_line_subject`.
 Verified: `poetry run pytest tests/test_emails.py -q` — 6 passed. Probed both mechanisms: turning autoescape on in the body fails the test; removing the whitespace collapse from the subject fails it.
 Next: T023.
 Watch: nothing.
+
+## 2026-09-24T15:55:00+02:00 · Implementer US-3 · T023
+Did: Added `test_a_project_template_at_the_same_path_replaces_the_packages`, building the project's templates in `tmp_path` and putting that directory first through `override_settings(TEMPLATES=...)`.
+Verified: `poetry run pytest tests/test_emails.py -q` — 7 passed. The test asserts on text only the replacement can produce, so the package's own templates cannot satisfy it.
+Next: T024.
+Watch: nothing.
