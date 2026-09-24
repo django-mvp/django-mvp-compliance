@@ -110,3 +110,9 @@ Did: Added `mvp_compliance/emails.py::render_publication_email` and the subject 
 Verified: `poetry run pytest tests/test_emails.py -q` — 5 passed (one assertion in my own test corrected for capitalisation first). `ruff check`, `ruff format`, `mypy mvp_compliance/emails.py` clean.
 Next: T022.
 Watch: the templates are `.txt`, so the existing catalog sweep (which reads `.html`) does not see them; T025 adds its own.
+
+## 2026-09-24T15:50:00+02:00 · Implementer US-3 · T022
+Did: Added `test_a_name_with_a_line_break_and_markup_gives_a_one_line_subject`.
+Verified: `poetry run pytest tests/test_emails.py -q` — 6 passed. Probed both mechanisms: turning autoescape on in the body fails the test; removing the whitespace collapse from the subject fails it.
+Next: T023.
+Watch: nothing.

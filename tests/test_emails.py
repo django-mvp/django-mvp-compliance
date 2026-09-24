@@ -87,3 +87,19 @@ class TestRenderPublicationEmail:
             f"https://example.com/admin/mvp_compliance/version/{version.pk}/change/"
             in body
         )
+
+    def test_a_name_with_a_line_break_and_markup_gives_a_one_line_subject(
+        self,
+    ) -> None:
+        """Scenario 8, FR-019, SC-007, edge case."""
+        name = 'Terms\r\nBcc: x@example.com <b>&"of" use</b>'
+        replaced, version = publish_two(name=name)
+
+        subject, body = render_publication_email(version, replaced, SITE_URL)
+
+        assert "\n" not in subject
+        assert "\r" not in subject
+        assert 'Terms Bcc: x@example.com <b>&"of" use</b>' in subject
+        assert name in body
+        assert "&lt;" not in subject + body
+        assert "&amp;" not in subject + body
