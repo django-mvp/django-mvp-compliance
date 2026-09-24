@@ -80,8 +80,8 @@ The value of the record is only realised when somebody asks for it, which is usu
 a dispute or a regulator with a deadline. So this item includes getting the records back out in a
 form a person can actually be shown, alongside the exact text they saw at the time.
 
-One deletion has to exist: a person can ask for their records to be erased, and that is honoured
-as a deliberate, recorded action rather than by quietly editing what the record says.
+A person asking for their data to be deleted does not remove these records. They are the
+evidence of what that person agreed to, and a request to delete an account is R11's.
 
 **Deliverables:**
 
@@ -89,7 +89,6 @@ as a deliberate, recorded action rather than by quietly editing what the record 
 - Records are never edited, and agreeing to a later version does not overwrite an earlier record.
 - Everything held about one person's agreements can be produced on request, together with the text
   they were shown.
-- Erasure on request removes a person's records outright, as an auditable action.
 
 Serves G2. Does not cover the flow that collects the agreement, which is R4.
 
@@ -201,14 +200,15 @@ Serves G2. Completes the Expected set and gates `v1.0.0`.
 
 Genuine wants whose absence never makes the package incomplete.
 
-### R11 — One place an access request can start
+### R11 — Where a person asks for their data, or for it to be deleted
 
 *multi-feature · advances G9*
 
-A project holds personal data in its own models that this package knows nothing about. This would
-let a project contribute what it holds to the view a person already has of their own consent, so
-that answering an access request begins in one place instead of a developer writing a query. The
-gathering and the erasing stay the project's work, because only the project knows where its data
-lives.
+A person can ask a site for a copy of what it holds about them, or ask for their account and data to
+be deleted. Both requests start from the account area, on pages this package puts there, so a
+project does not build or style its own. What happens once a request is made is the project's code,
+connected through a hook, because only the project knows where its data lives. The package does not
+gather or delete anything itself, and a deletion leaves the acceptances in place as the evidence of
+what the person agreed to.
 
 Serves G9.
