@@ -128,3 +128,9 @@ Did: Added a test-only German catalog `tests/locale/de/LC_MESSAGES/django.po`, c
 Verified: `poetry run pytest tests/test_emails.py -q` — RED first (the German test failed with the English text, no `LOCALE_PATHS`), then 8 passed.
 Next: T025.
 Watch: `LOCALE_PATHS` now points at `tests/locale`, so check `makemessages` still writes the English catalog into the package when T025 regenerates it.
+
+## 2026-09-24T16:20:00+02:00 · Implementer US-3 · T025
+Did: Regenerated the `en` catalog with `poetry run python manage.py makemessages -l en --no-obsolete` from the repo root (it still writes into the package with `LOCALE_PATHS` set), removed the date line and the wrong fuzzy guesses, and filled each new entry's `msgstr`. Added `TestEmailCatalog`, which reads both `.txt` templates and checks each string is in the catalog. Added the email section to `docs/announcing.md` (function, four-line receiver, overriding by path, plain text only) and reworded its opening sentence so "sends nothing" stays true. Added the CHANGELOG entry.
+Verified: `poetry run pytest tests/test_emails.py tests/test_admin.py::TestUserFacingStrings -q` — 12 passed. Restoring the old catalog makes `TestEmailCatalog` fail.
+Next: full verify and the report.
+Watch: the existing catalog sweep in `tests/test_admin.py` reads only `.html` templates, so `.txt` strings are covered by `TestEmailCatalog` alone.

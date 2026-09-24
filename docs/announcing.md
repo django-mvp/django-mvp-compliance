@@ -2,8 +2,9 @@
 
 When a version is published, this package sends one signal, `version_published`, so a host
 project can act on it — email the owners, post to a channel, write its own audit trail —
-without watching for it. The package sends nothing else itself: no email, no message, no
-request. What happens next is the host project's receiver.
+without watching for it. The package sends nothing itself: no email, no message, no request.
+It can write the text of an email for you, as described [below](#a-ready-made-email), but
+rendering is not sending, and what happens next is the host project's receiver.
 
 ```python
 from django.dispatch import receiver
@@ -79,3 +80,47 @@ The signal is sent from a commit callback, so a test only sees it once callbacks
 pytest-django, wrap the publication in `django_capture_on_commit_callbacks(execute=True)`; in a
 Django `TestCase`, use `self.captureOnCommitCallbacks(execute=True)`. Disconnect any receiver
 the test connected when it finishes.
+
+## A ready-made email
+
+Most projects that listen for `version_published` send the same email to the people who run
+the site. `render_publication_email` writes its subject and body from the signal's values and
+returns them. It sends nothing, chooses no recipient and makes no request.
+
+```python
+from django.core.mail import send_mail
+from django.dispatch import receiver
+
+from mvp_compliance.emails import render_publication_email
+from mvp_compliance.signals import version_published
+
+
+@receiver(version_published)
+def tell_the_site_owners(sender, version, replaced, **kwargs):
+    subject, body = render_publication_email(version, replaced, site_url="https://example.com")
+    send_mail(subject, body, None, ["owners@example.com"])
+```
+
+`site_url` is the address your site is served at. The package has no way to know it, so you
+supply it, and the body carries it joined to the admin page for the version.
+
+The body names the document, the version number, who published it and when, and either the
+number of the version it replaced or that this is the document's first version in force. Who
+published it is `version.publisher_display`, so a version published with nobody named, or by an
+account since removed, says so.
+
+**Send the body as plain text, never as `html_message`.** The names in it are not escaped, so a
+document called `<b>Terms</b>` arrives as those characters. The subject is always a single
+line, whatever the document is called.
+
+### Changing the wording
+
+The subject and body are two templates, and the text in both is translatable:
+
+- `mvp_compliance/email/version_published_subject.txt`
+- `mvp_compliance/email/version_published_body.txt`
+
+Put a template at the same path in one of your own template directories, ahead of the
+package's, and yours is used. Each receives `version`, `replaced` (`None` for a first version)
+and `admin_url`. Keep `{% autoescape off %}` around the text, since it is not HTML. The
+package's own strings are in English; the language is the one active when the function is called.

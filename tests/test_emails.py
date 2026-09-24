@@ -1,5 +1,7 @@
 """Tests for mvp_compliance.emails."""
 
+import re
+
 import pytest
 from django.conf import settings
 from django.contrib import admin
@@ -10,10 +12,33 @@ from django.utils import translation
 
 from mvp_compliance.emails import render_publication_email
 from tests.factories import DocumentFactory, UserFactory, VersionFactory
+from tests.test_admin import PACKAGE_DIR, catalog_entries
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
 SITE_URL = "https://example.com"
+
+EMAIL_TEMPLATES = PACKAGE_DIR / "templates" / "mvp_compliance" / "email"
+TRANSLATE_TAG_RE = re.compile(r'{%\s*(?:translate|trans)\s+(["\'])((?:(?!\1).)*)\1')
+BLOCKTRANSLATE_RE = re.compile(
+    r"{%\s*blocktranslate[^%]*%}(.*?){%\s*endblocktranslate\s*%}", re.DOTALL
+)
+VARIABLE_RE = re.compile(r"{{\s*(\w+)\s*}}")
+
+
+def email_template_strings() -> set[str]:
+    """Every translatable string in the two email templates, as a catalog msgid.
+
+    A ``blocktranslate`` body is turned into the msgid ``makemessages`` writes
+    for it, each ``{{ name }}`` becoming ``%(name)s``.
+    """
+    strings: set[str] = set()
+    for path_ in EMAIL_TEMPLATES.glob("*.txt"):
+        text = path_.read_text(encoding="utf-8")
+        strings.update(match.group(2) for match in TRANSLATE_TAG_RE.finditer(text))
+        for block in BLOCKTRANSLATE_RE.findall(text):
+            strings.add(VARIABLE_RE.sub(r"%(\1)s", block))
+    return strings
 
 
 def publish_two(publisher=None, name="Terms of service"):
@@ -140,3 +165,18 @@ class TestRenderPublicationEmail:
         assert "Veröffentlicht von: ada" in body
         assert "Sie ersetzt Version 1." in body
         assert "Im Admin ansehen: https://example.com/admin/" in body
+
+
+class TestEmailCatalog:
+    """SC-008: every string in the email templates is in the shipped English catalog."""
+
+    def test_every_email_string_is_in_the_english_catalog(self) -> None:
+        template_strings = email_template_strings()
+        assert len(template_strings) >= 6
+
+        # catalog_entries() reads the file as written, so a quote is still escaped.
+        catalog_msgids = {
+            msgid.replace('\\"', '"') for msgid, _msgstr in catalog_entries() if msgid
+        }
+
+        assert template_strings - catalog_msgids == set()

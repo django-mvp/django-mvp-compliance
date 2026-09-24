@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `render_publication_email(version, replaced, site_url)`, in `mvp_compliance.emails`, which
+  writes the subject and plain-text body of an email announcing a publication and returns them.
+  It sends nothing. The subject is always one line, the text is translatable, and a template at
+  the same path in a project replaces the package's. See [docs/announcing.md](docs/announcing.md).
 - A `version_published` signal, in `mvp_compliance.signals`, sent once each time a version is
   published and after the publication commits. It carries the version, the account that published
   it and the version it superseded. It is not sent for a refused or rolled-back publication, and a

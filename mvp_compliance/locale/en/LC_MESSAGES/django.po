@@ -40,6 +40,7 @@ msgid "In force since"
 msgstr "In force since"
 
 #: mvp_compliance/admin.py:81 mvp_compliance/admin.py:104
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:3
 msgid "Published by"
 msgstr "Published by"
 
@@ -410,6 +411,33 @@ msgstr ""
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:20
 msgid "Back"
 msgstr "Back"
+
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:1
+#, python-format
+msgid "Version %(number)s of \"%(name)s\" is now in force."
+msgstr "Version %(number)s of \"%(name)s\" is now in force."
+
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:4
+msgid "Published at"
+msgstr "Published at"
+
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:5
+#, python-format
+msgid "It replaces version %(number)s."
+msgstr "It replaces version %(number)s."
+
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:5
+msgid "This is the first version of the document in force."
+msgstr "This is the first version of the document in force."
+
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:7
+msgid "See it in the admin"
+msgstr "See it in the admin"
+
+#: mvp_compliance/templates/mvp_compliance/email/version_published_subject.txt:1
+#, python-format
+msgid "%(name)s: version %(number)s is now in force"
+msgstr "%(name)s: version %(number)s is now in force"
 
 #: mvp_compliance/widgets.py:26
 msgid "Heading"
