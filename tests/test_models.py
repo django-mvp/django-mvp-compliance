@@ -1332,3 +1332,93 @@ class TestOptionalEvidence:
             acceptance = Acceptance.objects.record(user, published_version)
 
         assert acceptance.ip_address is None
+
+
+class TestPublisher:
+    """A version keeps who published it, frozen with the rest of it (FR-008 to FR-011, FR-013)."""
+
+    def test_publishing_records_the_publisher_and_their_subject(self, draft, user):
+        """Scenario 3, FR-008: the account and its identifier are both written."""
+        draft.publish(publisher=user)
+
+        draft.refresh_from_db()
+        assert draft.publisher == user
+        assert draft.publisher_subject == Acceptance.subject_of(user)
+
+    def test_publishing_with_nobody_named_leaves_both_empty(self, draft):
+        """Scenario 7, FR-011: publishing from code names nobody."""
+        draft.publish()
+
+        draft.refresh_from_db()
+        assert draft.publisher is None
+        assert draft.publisher_subject == ""
+
+    def test_a_draft_has_no_publisher(self, draft):
+        assert draft.publisher is None
+        assert draft.publisher_subject == ""
+
+    def test_publishing_as_an_unsaved_user_is_refused_and_leaves_the_draft_alone(
+        self, draft
+    ):
+        with pytest.raises(RecordError):
+            draft.publish(publisher=get_user_model()(username="nobody"))
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.DRAFT
+
+    def test_the_database_refuses_a_draft_that_names_a_publisher(self, user):
+        """Scenario 2, FR-009: the widened check constraint."""
+        document = DocumentFactory()
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.create(
+                document=document, markdown="Wording", publisher=user
+            )
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.create(
+                document=document, markdown="Wording", publisher_subject="7"
+            )
+
+    def test_saving_a_published_version_with_a_changed_publisher_is_refused(
+        self, draft, user
+    ):
+        draft.publish(publisher=user)
+        draft.publisher = UserFactory()
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        draft.refresh_from_db()
+        assert draft.publisher == user
+
+    def test_saving_a_published_version_with_a_changed_publisher_subject_is_refused(
+        self, draft, user
+    ):
+        draft.publish(publisher=user)
+        draft.publisher_subject = "someone-else"
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        draft.refresh_from_db()
+        assert draft.publisher_subject == Acceptance.subject_of(user)
+
+    @pytest.mark.parametrize(
+        "field", ["publisher", "publisher_id", "publisher_subject"]
+    )
+    def test_updating_the_publisher_through_the_queryset_is_refused(
+        self, draft, user, field
+    ):
+        draft.publish(publisher=user)
+        other = UserFactory()
+        value = "someone-else" if field == "publisher_subject" else other.pk
+        if field == "publisher":
+            value = other
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=draft.pk).update(**{field: value})
+
+        draft.refresh_from_db()
+        assert draft.publisher == user
+        assert draft.publisher_subject == Acceptance.subject_of(user)

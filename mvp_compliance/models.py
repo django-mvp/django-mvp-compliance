@@ -17,8 +17,16 @@ from mvp_compliance.rendering import get_renderer
 
 #: Everything a published version carries except its standing (FR-013) — the
 #: one change a published version ever undergoes is draft -> current ->
-#: superseded, never a change to what it says.
-PUBLISHED_FROZEN_FIELDS = ("document", "number", "markdown", "html", "published_at")
+#: superseded, never a change to what it says or who published it.
+PUBLISHED_FROZEN_FIELDS = (
+    "document",
+    "number",
+    "markdown",
+    "html",
+    "published_at",
+    "publisher",
+    "publisher_subject",
+)
 
 
 class DocumentQuerySet(models.QuerySet):
@@ -102,7 +110,7 @@ class VersionQuerySet(models.QuerySet):
         touches_frozen_field = bool(Version.frozen_field_keys() & set(kwargs))
         if touches_frozen_field and self.published().exists():
             raise PublishedVersionError(
-                _("A published version's wording cannot be changed.")
+                _("A published version's wording and publisher cannot be changed.")
             )
         return super().update(**kwargs)
 
@@ -209,6 +217,37 @@ class Version(models.Model):
             "never been published."
         ),
     )
+    # Cleared by account removal through the plain base manager (research.md
+    # R3), which is what lets it change a frozen field on a published row.
+    # Never set Meta.base_manager_name: that would put VersionQuerySet.update()
+    # in the collector's path and make removing an account raise.
+    publisher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("publisher"),
+        help_text=_(
+            "The account that published this version. Empty for a draft, for a "
+            "version published from code with nobody named, and once that "
+            "account is removed."
+        ),
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    publisher_subject = models.CharField(
+        _("publisher subject"),
+        max_length=255,
+        blank=True,
+        default="",
+        editable=False,
+        db_index=True,
+        help_text=_(
+            "The publisher's primary key as text, written once at publication. "
+            "It lets the version say an account was since removed after the "
+            "link to it is cleared. Empty when nobody was recorded."
+        ),
+    )
 
     objects = VersionManager()
 
@@ -241,7 +280,13 @@ class Version(models.Model):
                 # saying "not draft": status is the one field the queryset
                 # guard lets through on a published row, so what it may become
                 # is the database's to say.
-                condition=models.Q(status="draft", published_at__isnull=True, html="")
+                condition=models.Q(
+                    status="draft",
+                    published_at__isnull=True,
+                    html="",
+                    publisher__isnull=True,
+                    publisher_subject="",
+                )
                 | (
                     models.Q(status__in=["current", "superseded"])
                     & models.Q(published_at__isnull=False)
@@ -288,8 +333,12 @@ class Version(models.Model):
         """
         return one.replace("\r\n", "\n").strip() == other.replace("\r\n", "\n").strip()
 
-    def publish(self) -> None:
+    def publish(self, publisher=None) -> None:
         """Make this draft the version in force, superseding whichever one held it.
+
+        ``publisher`` is the account putting it in force; it is kept on the
+        version with its identifier, frozen with the wording. Left out, the
+        version records nobody.
 
         Refuses when this version is not a draft (FR-010), when the
         rendered output is empty once whitespace is stripped (FR-018, D7),
@@ -333,7 +382,19 @@ class Version(models.Model):
             self.html = html
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
-            self.save(update_fields=["status", "published_at", "html"])
+            self.publisher = publisher
+            self.publisher_subject = (
+                "" if publisher is None else Acceptance.subject_of(publisher)
+            )
+            self.save(
+                update_fields=[
+                    "status",
+                    "published_at",
+                    "html",
+                    "publisher",
+                    "publisher_subject",
+                ]
+            )
 
     def save(self, *args, **kwargs) -> None:
         stored = self.stored_row()
@@ -372,7 +433,7 @@ class Version(models.Model):
         attnames = [field.attname for field in self.frozen_fields()]
         if any(stored[attname] != getattr(self, attname) for attname in attnames):
             raise PublishedVersionError(
-                _("A published version's wording cannot be changed.")
+                _("A published version's wording and publisher cannot be changed.")
             )
 
     def delete(self, *args, **kwargs):
@@ -603,11 +664,15 @@ class Acceptance(models.Model):
         """The identifier ``record()`` writes and a later story's lookups read back.
 
         The single place the identifier is derived, so writing and reading
-        cannot disagree about what identifies a person.
+        cannot disagree about what identifies a person. A version's
+        publisher is identified the same way.
         """
         if user.pk is None:
             raise RecordError(
-                _("Cannot record an acceptance for a user with no primary key.")
+                _(
+                    "Cannot record an acceptance or a publisher for a user "
+                    "with no primary key."
+                )
             )
         return str(user.pk)
 

@@ -14,3 +14,10 @@ specification merged in #43. Verify green on that commit: lint, typecheck, tests
 
 Plan, research and tasks written. Three stories, run in sequence: US-2 (the publisher) first,
 because the signal carries it and the email shows it.
+
+## 2026-09-24T13:20Z · Implementer US-2 · T001, T002, T003
+
+Did: `TestPublisher` in `tests/test_models.py` (recording, nobody named, draft empty, unsaved user, draft-with-publisher refused by the database, frozen through `save()` and `update()` for `publisher`, `publisher_id`, `publisher_subject`). Then `Version.publisher` / `publisher_subject`, both frozen, the widened draft branch of the check constraint, `publish(publisher=None)` through `Acceptance.subject_of()`, refusal messages now say "wording and publisher", migration `0005_version_publisher`. `en` catalog regenerated so `TestUserFacingStrings` stays green between tasks.
+Verified: before the model change `TestPublisher` failed with `TypeError: publish() got an unexpected keyword argument 'publisher'`; after, `pytest tests/test_models.py::TestPublisher` 10 passed; `tests/test_models.py tests/test_admin.py` green; `makemigrations --check` clean; ruff clean.
+Next: T004 account removal.
+Watch: never set `Meta.base_manager_name` (comment on the field).
