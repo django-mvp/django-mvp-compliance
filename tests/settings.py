@@ -89,3 +89,7 @@ USE_I18N = True
 LANGUAGE_CODE = "en-us"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# A test-only German catalog for the publication email; the package itself
+# ships English only.
+LOCALE_PATHS = [BASE_DIR / "tests" / "locale"]

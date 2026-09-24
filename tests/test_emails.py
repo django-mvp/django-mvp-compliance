@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.core import mail
 from django.test import override_settings
 from django.urls import path
+from django.utils import translation
 
 from mvp_compliance.emails import render_publication_email
 from tests.factories import DocumentFactory, UserFactory, VersionFactory
@@ -126,3 +127,16 @@ class TestRenderPublicationEmail:
 
         assert subject == "Ours: Terms of service"
         assert body.startswith("Ours: No publisher recorded at https://example.com/")
+
+    def test_the_subject_and_body_render_in_the_active_language(self) -> None:
+        """Scenario 7, FR-020."""
+        replaced, version = publish_two(publisher=UserFactory(username="ada"))
+
+        with translation.override("de"):
+            subject, body = render_publication_email(version, replaced, SITE_URL)
+
+        assert subject == "Terms of service: Version 2 ist jetzt in Kraft"
+        assert 'Version 2 von "Terms of service" ist jetzt in Kraft.' in body
+        assert "Veröffentlicht von: ada" in body
+        assert "Sie ersetzt Version 1." in body
+        assert "Im Admin ansehen: https://example.com/admin/" in body

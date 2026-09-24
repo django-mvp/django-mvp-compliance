@@ -122,3 +122,9 @@ Did: Added `test_a_project_template_at_the_same_path_replaces_the_packages`, bui
 Verified: `poetry run pytest tests/test_emails.py -q` — 7 passed. The test asserts on text only the replacement can produce, so the package's own templates cannot satisfy it.
 Next: T024.
 Watch: nothing.
+
+## 2026-09-24T16:05:00+02:00 · Implementer US-3 · T024
+Did: Added a test-only German catalog `tests/locale/de/LC_MESSAGES/django.po`, compiled to a committed `django.mo` with `msgfmt`, `LOCALE_PATHS` in `tests/settings.py`, and `test_the_subject_and_body_render_in_the_active_language`.
+Verified: `poetry run pytest tests/test_emails.py -q` — RED first (the German test failed with the English text, no `LOCALE_PATHS`), then 8 passed.
+Next: T025.
+Watch: `LOCALE_PATHS` now points at `tests/locale`, so check `makemessages` still writes the English catalog into the package when T025 regenerates it.
