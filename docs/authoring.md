@@ -114,6 +114,19 @@ A document's own change page offers **View current version**, leading to that pa
 exists, and **Version history**, leading to the versions list narrowed to this document with
 `VersionAdmin.list_filter`.
 
+## The documents list
+
+Documents in the admin changelist are more than a list of names. Beside each one: the version in
+force, linked to its own page, or a plain **No version in force** for a document that has never
+published anything — the ordinary state for a new document, never treated as a gap. How long that
+version has been in force. And how many versions the document has published — current and
+superseded together, since both were once live, and a draft never counted, because a draft has no
+legal standing to be one of them.
+
+The list costs the same number of queries whether it shows one document or a hundred:
+`DocumentAdmin.get_queryset()` annotates the published count once and fetches every version in
+force in a single prefetch, rather than asking the database once per row.
+
 A new version whose wording is identical to the one in force is refused **at publication**, not
 when it is saved. Saving such a draft is harmless — it has no standing and can be edited or
 thrown away. Publishing it is the act that would supersede a wording with its own copy.
