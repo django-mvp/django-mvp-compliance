@@ -253,7 +253,7 @@ class VersionAdmin(admin.ModelAdmin):
 
         if request.method == "POST":
             try:
-                version.publish()
+                version.publish(publisher=request.user)
             except PublishError as exc:
                 messages.error(request, str(exc))
             return HttpResponseRedirect(

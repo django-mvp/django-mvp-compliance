@@ -1400,3 +1400,22 @@ class TestUserFacingStrings:
         missing = shipped_strings - catalog_msgids
 
         assert not missing
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPublisherInTheAdmin:
+    """Who published a version is recorded by the publish page and shown beside when (FR-010, FR-012)."""
+
+    def test_publishing_through_the_admin_records_the_signed_in_user(
+        self, client, publisher, draft
+    ) -> None:
+        """Scenario 1, FR-010."""
+        client.force_login(publisher)
+
+        client.post(reverse("admin:mvp_compliance_version_publish", args=[draft.pk]))
+
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.CURRENT
+        assert draft.publisher == publisher
+        assert draft.publisher_subject == str(publisher.pk)

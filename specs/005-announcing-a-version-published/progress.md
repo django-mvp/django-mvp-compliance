@@ -35,3 +35,10 @@ Did: `TestPublisherMigration` — builds a published version on the 0004 state t
 Verified: `pytest tests/test_migrations.py` 2 passed.
 Next: T007 admin publish test.
 Watch: test uses `transaction=True`.
+
+## 2026-09-24T13:50Z · Implementer US-2 · T007, T008
+
+Did: `TestPublisherInTheAdmin` publish test; `publish_view` now calls `version.publish(publisher=request.user)`. No success message (US-1).
+Verified: the test failed first with `assert None == <User: person0>`; `pytest tests/test_admin.py::TestPublisherInTheAdmin tests/test_admin.py::TestPublish` green.
+Next: T009/T010 display columns.
+Watch: none.
