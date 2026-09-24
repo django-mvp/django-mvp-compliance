@@ -51,6 +51,10 @@ ACCEPTORS = {
 #: email address, because there is no account left to carry one.
 DEPARTED = "departed.user@example.com"
 
+#: Someone who published a version and whose account was removed afterwards,
+#: so a version that says its publisher's account is gone is reachable.
+DEPARTED_PUBLISHER = "departed-publisher.user@example.com"
+
 PRIVACY = """\
 ## What we collect
 
@@ -117,6 +121,17 @@ Anything that measures how the site is used. Turning them off costs you nothing.
 """
 
 
+HOUSE_RULES = """\
+## Be decent
+
+Treat the people here the way you would want to be treated.
+
+## Stay on topic
+
+Keep each thread to what it started about.
+"""
+
+
 class Command(BaseCommand):
     help = "Seed the demo with the standard accounts and a document in every state."
 
@@ -124,18 +139,21 @@ class Command(BaseCommand):
         for email, (is_staff, is_superuser, codenames) in ACCOUNTS.items():
             self.make_account(email, is_staff, is_superuser, codenames)
 
+        publisher = get_user_model().objects.get(username="publisher.user")
         self.make_document(
             "Privacy policy",
             drafts=[],
             published=[PRIVACY, PRIVACY_NEXT],
             note="two published versions: one in force, one superseded",
+            publisher=publisher,
         )
         self.make_document(
             "Terms of use",
             drafts=[],
             published=[TERMS],
-            note="one version, in force",
+            note="one version, in force, published from code with nobody named",
         )
+        self.make_departed_publisher_document()
         self.make_document(
             "Cookie policy",
             drafts=[COOKIES],
@@ -152,6 +170,21 @@ class Command(BaseCommand):
         self.make_acceptances()
 
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
+
+    def make_departed_publisher_document(self):
+        """A version whose publisher's account has since been removed."""
+        if Document.objects.filter(name="House rules").exists():
+            self.stdout.write("  House rules: already seeded")
+            return
+        departed = self.make_account(DEPARTED_PUBLISHER, True, False, [])
+        self.make_document(
+            "House rules",
+            drafts=[],
+            published=[HOUSE_RULES],
+            note="published by an account since removed",
+            publisher=departed,
+        )
+        departed.delete()
 
     def make_acceptances(self):
         """Record the acceptances the disclosure page is there to produce.
@@ -213,7 +246,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  {'created' if created else 'updated'} {email}")
         return user
 
-    def make_document(self, name, drafts, published, note):
+    def make_document(self, name, drafts, published, note, publisher=None):
         """Create a document and its versions, once.
 
         A document that already has versions is left alone. Publishing is
@@ -226,7 +259,7 @@ class Command(BaseCommand):
 
         for markdown in published:
             version = Version.objects.create(document=document, markdown=markdown)
-            version.publish()
+            version.publish(publisher=publisher)
         for markdown in drafts:
             Version.objects.create(document=document, markdown=markdown)
 
