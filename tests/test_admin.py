@@ -1419,3 +1419,90 @@ class TestPublisherInTheAdmin:
         assert draft.status == draft.Status.CURRENT
         assert draft.publisher == publisher
         assert draft.publisher_subject == str(publisher.pk)
+
+    def test_a_published_versions_page_shows_who_published_it_beside_when(
+        self, client, editor, draft, user
+    ) -> None:
+        """Scenario 4, FR-012."""
+        draft.publish(publisher=user)
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert str(user) in content
+        assert content.index("Published at") < content.index("Published by")
+
+    def test_a_removed_publisher_reads_as_removed_on_the_versions_page(
+        self, client, editor, draft, user
+    ) -> None:
+        draft.publish(publisher=user)
+        user.delete()
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert "An account since removed" in response.content.decode()
+
+    def test_a_drafts_page_shows_the_empty_value_for_published_by(
+        self, client, editor, draft
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert "No publisher recorded" not in content
+
+    def test_the_version_list_shows_the_publisher(
+        self, client, editor, draft, user
+    ) -> None:
+        draft.publish(publisher=user)
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_version_changelist"))
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert str(user) in content
+
+    def test_the_documents_list_shows_the_publisher_of_the_version_in_force(
+        self, client, editor, draft, user
+    ) -> None:
+        draft.publish(publisher=user)
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_document_changelist"))
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert str(user) in content
+
+    @pytest.mark.parametrize("model", ["version", "document"])
+    def test_the_lists_cost_a_fixed_number_of_queries_with_publishers(
+        self, client, editor, model
+    ) -> None:
+        """FR-012: the publisher column must not ask once per row."""
+        client.force_login(editor)
+        url = reverse(f"admin:mvp_compliance_{model}_changelist")
+
+        def add_published(count):
+            for _ in range(count):
+                VersionFactory().publish(publisher=UserFactory())
+
+        add_published(2)
+        with CaptureQueriesContext(connection) as at_two:
+            assert client.get(url).status_code == 200
+        add_published(8)
+        with CaptureQueriesContext(connection) as at_ten:
+            assert client.get(url).status_code == 200
+
+        assert len(at_two.captured_queries) == len(at_ten.captured_queries)

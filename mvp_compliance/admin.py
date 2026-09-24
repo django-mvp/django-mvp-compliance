@@ -27,6 +27,7 @@ class DocumentAdmin(admin.ModelAdmin):
         "name",
         "current_version",
         "in_force_since",
+        "published_by",
         "published_version_count",
     ]
     search_fields = ["name"]
@@ -50,7 +51,7 @@ class DocumentAdmin(admin.ModelAdmin):
         return queryset.prefetch_related(
             Prefetch(
                 "versions",
-                queryset=Version.objects.current(),
+                queryset=Version.objects.current().select_related("publisher"),
                 to_attr="current_versions",
             )
         )
@@ -77,6 +78,11 @@ class DocumentAdmin(admin.ModelAdmin):
         version = self.version_in_force(document)
         return version.published_at if version else None
 
+    @admin.display(description=_("Published by"))
+    def published_by(self, document):
+        version = self.version_in_force(document)
+        return version.publisher_display if version else None
+
     @admin.display(
         description=_("Published versions"), ordering="published_version_count"
     )
@@ -88,11 +94,17 @@ class DocumentAdmin(admin.ModelAdmin):
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
     form = VersionForm
-    readonly_fields = ["number", "status", "published_at", "html"]
-    list_display = ["document", "number", "status", "published_at"]
+    readonly_fields = ["number", "status", "published_at", "published_by", "html"]
+    list_display = ["document", "number", "status", "published_at", "published_by"]
+    list_select_related = ["document", "publisher"]
     list_filter = ["document", "status"]
     search_fields = ["document__name"]
     ordering = ["document", "-number"]
+
+    @admin.display(description=_("Published by"))
+    def published_by(self, version):
+        """Who published this version, or the admin's empty value for a draft."""
+        return version.publisher_display
 
     def has_delete_permission(self, request, obj=None):
         """Offer no delete action for a version ``Version.delete()`` would refuse.

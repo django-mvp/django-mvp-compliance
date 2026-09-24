@@ -42,3 +42,10 @@ Did: `TestPublisherInTheAdmin` publish test; `publish_view` now calls `version.p
 Verified: the test failed first with `assert None == <User: person0>`; `pytest tests/test_admin.py::TestPublisherInTheAdmin tests/test_admin.py::TestPublish` green.
 Next: T009/T010 display columns.
 Watch: none.
+
+## 2026-09-24T14:05Z · Implementer US-2 · T009, T010
+
+Did: `TestPublisherInTheAdmin` display tests (version page beside Published at, removed account, draft empty value, both lists, query counts at 2 vs 10 rows for both lists); `published_by` on `VersionAdmin` (readonly_fields, list_display, list_select_related) and `DocumentAdmin` (list_display, select_related inside the prefetch). Catalog regenerated.
+Verified: five display tests failed first (no "Published by"); `pytest tests/test_admin.py` 98 passed after the catalog step. Probe: removing both `select_related("publisher")` calls made both query-count tests fail; restored.
+Next: T011 docs.
+Watch: none.
