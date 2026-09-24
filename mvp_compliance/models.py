@@ -304,6 +304,22 @@ class Version(models.Model):
         """Whether this version has ever been published — current or superseded."""
         return self.status != self.Status.DRAFT
 
+    @property
+    def publisher_display(self) -> "str | None":
+        """What to say about who published this version.
+
+        ``None`` for a draft, which has no publisher to name. Never the
+        subject of an account that has been removed: it names nobody a
+        reader could look up, so the version says the account is gone.
+        """
+        if not self.is_published:
+            return None
+        if self.publisher_id is not None:
+            return str(self.publisher)
+        if self.publisher_subject:
+            return _("An account since removed")
+        return _("No publisher recorded")
+
     @classmethod
     def frozen_fields(cls) -> list[models.Field]:
         """The fields a published version may never change."""

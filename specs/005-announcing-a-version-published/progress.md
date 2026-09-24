@@ -21,3 +21,10 @@ Did: `TestPublisher` in `tests/test_models.py` (recording, nobody named, draft e
 Verified: before the model change `TestPublisher` failed with `TypeError: publish() got an unexpected keyword argument 'publisher'`; after, `pytest tests/test_models.py::TestPublisher` 10 passed; `tests/test_models.py tests/test_admin.py` green; `makemigrations --check` clean; ruff clean.
 Next: T004 account removal.
 Watch: never set `Meta.base_manager_name` (comment on the field).
+
+## 2026-09-24T13:30Z · Implementer US-2 · T004, T005
+
+Did: account-removal test in `TestPublisher`; `TestPublisherDisplay` and `Version.publisher_display` (the four rows of the plan's table). Catalog regenerated.
+Verified: `pytest tests/test_models.py::TestPublisher tests/test_models.py::TestPublisherDisplay` 17 passed. Display tests failed first with `AttributeError: no attribute 'publisher_display'`. Probe for T004: with `Meta.base_manager_name = "objects"` temporarily set, the removal test failed with `PublishedVersionError` raised from `VersionQuerySet.update()` inside `deletion.py`'s collector; setting reverted.
+Next: T006 migration test.
+Watch: none.

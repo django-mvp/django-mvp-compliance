@@ -1422,3 +1422,69 @@ class TestPublisher:
         draft.refresh_from_db()
         assert draft.publisher == user
         assert draft.publisher_subject == Acceptance.subject_of(user)
+
+    def test_removing_the_publishers_account_succeeds_and_keeps_only_the_subject(
+        self, draft, user
+    ):
+        """Scenario 6: the link clears, the identifier stays, nothing else moves."""
+        draft.publish(publisher=user)
+        draft.refresh_from_db()
+        subject = draft.publisher_subject
+        before = {
+            name: getattr(draft, name)
+            for name in ("document_id", "number", "markdown", "html", "published_at")
+        }
+
+        user.delete()
+
+        draft.refresh_from_db()
+        assert draft.publisher is None
+        assert draft.publisher_subject == subject
+        assert draft.status == Version.Status.CURRENT
+        assert {name: getattr(draft, name) for name in before} == before
+
+    def test_removing_an_account_that_published_nothing_touches_no_version(
+        self, published_version
+    ):
+        other = UserFactory()
+
+        other.delete()
+
+        published_version.refresh_from_db()
+        assert published_version.status == Version.Status.CURRENT
+
+
+class TestPublisherDisplay:
+    """What a version says about who published it (FR-012, FR-013)."""
+
+    def test_a_draft_says_nothing(self, draft):
+        assert draft.publisher_display is None
+
+    def test_a_version_published_by_an_existing_account_names_it(self, draft, user):
+        draft.publish(publisher=user)
+
+        assert draft.publisher_display == str(user)
+
+    def test_a_version_whose_publisher_was_removed_says_so_without_the_subject(
+        self, draft, user
+    ):
+        draft.publish(publisher=user)
+        subject = draft.publisher_subject
+        user.delete()
+        draft.refresh_from_db()
+
+        assert str(draft.publisher_display) == "An account since removed"
+        assert subject not in str(draft.publisher_display)
+
+    def test_a_version_published_with_nobody_named_says_so(self, draft):
+        draft.publish()
+
+        assert str(draft.publisher_display) == "No publisher recorded"
+
+    def test_a_version_published_before_publishers_were_kept_says_so(
+        self, published_version
+    ):
+        """Scenario 5: a version carried forward has both fields empty."""
+        assert published_version.publisher_id is None
+        assert published_version.publisher_subject == ""
+        assert str(published_version.publisher_display) == "No publisher recorded"
