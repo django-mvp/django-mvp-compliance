@@ -3,7 +3,7 @@
   "feature": "004-producing-everything-held",
   "branch": "004-producing-everything-held",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "MERGED",
   "state_history": [
     {
       "state": "QUEUED",
@@ -34,6 +34,11 @@
       "state": "REVIEW",
       "at": "2026-09-22T23:54:19Z",
       "note": "convergence gates green"
+    },
+    {
+      "state": "MERGED",
+      "at": "2026-09-24T07:36:40Z",
+      "note": "PR #40 merged; approved by SamuelJennings"
     }
   ],
   "gates": {
@@ -49,8 +54,8 @@
       "at": "2026-09-22T22:30:00Z"
     },
     "merge": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-24T07:36:30Z"
     },
     "design_review": {
       "approved_by": "design-panel",
@@ -701,7 +706,7 @@
   },
   "pr": {
     "number": 40,
-    "draft": true
+    "draft": false
   },
   "escalations": []
 }
