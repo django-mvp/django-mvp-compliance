@@ -98,3 +98,15 @@ Did: `docs/announcing.md` (when sent and not, arguments, failing receivers and t
 Verified: full verify next.
 Next: full verify and report.
 Watch: `docs/announcing.md` says the package sends nothing else (FR-007); US-3 will add the email and must amend that page.
+
+## 2026-09-24T15:30:00+02:00 · Implementer US-3 · T020
+Did: Added `tests/test_emails.py::TestRenderPublicationEmail` for the returned `(subject, body)`, empty `mail.outbox`, document/version/publisher/moment/replaced number, the first-version sentence, the no-publisher wording and the site address plus admin change URL.
+Verified: `poetry run pytest tests/test_emails.py -x -q` — collection error `No module named 'mvp_compliance.emails'` (RED, correct reason).
+Next: T021.
+Watch: the class mounts the admin urls itself, as `tests/test_admin.py` does, because `tests/urls.py` has none.
+
+## 2026-09-24T15:40:00+02:00 · Implementer US-3 · T021
+Did: Added `mvp_compliance/emails.py::render_publication_email` and the subject and body templates under `mvp_compliance/templates/mvp_compliance/email/`, both autoescape off and wrapped with `translate`/`blocktranslate`. The subject is collapsed with `" ".join(rendered.split())`.
+Verified: `poetry run pytest tests/test_emails.py -q` — 5 passed (one assertion in my own test corrected for capitalisation first). `ruff check`, `ruff format`, `mypy mvp_compliance/emails.py` clean.
+Next: T022.
+Watch: the templates are `.txt`, so the existing catalog sweep (which reads `.html`) does not see them; T025 adds its own.

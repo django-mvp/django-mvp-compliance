@@ -1,0 +1,1 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with name=version.document.name number=version.number %}{{ name }}: version {{ number }} is now in force{% endblocktranslate %}{% endautoescape %}

@@ -1,0 +1,8 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with name=version.document.name number=version.number %}Version {{ number }} of "{{ name }}" is now in force.{% endblocktranslate %}
+
+{% translate "Published by" %}: {{ version.publisher_display }}
+{% translate "Published at" %}: {{ version.published_at|date:"DATETIME_FORMAT" }}
+{% if replaced %}{% blocktranslate with number=replaced.number %}It replaces version {{ number }}.{% endblocktranslate %}{% else %}{% translate "This is the first version of the document in force." %}{% endif %}
+
+{% translate "See it in the admin" %}: {{ admin_url }}
+{% endautoescape %}
