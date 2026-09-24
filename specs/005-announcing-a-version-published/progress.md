@@ -56,3 +56,17 @@ Did: `CONTEXT.md` Publisher; `docs/models.md` Publishing (argument, two fields, 
 Verified: `makemessages` a second time leaves the catalog unchanged; full verify run next.
 Next: full verify and report.
 Watch: `records.py` untouched (D4).
+
+## 2026-09-24T14:35Z · Implementer US-1 · T012
+
+Did: `TestVersionPublished` with an `announcements` fixture that connects a recording receiver and disconnects it on teardown; three tests (once with version, publisher, replaced; nobody named; replaced is superseded on the instance).
+Verified: `pytest tests/test_models.py::TestVersionPublished -x` errored first with `ModuleNotFoundError: mvp_compliance.signals`.
+Next: T013.
+Watch: this commit is red by design.
+
+## 2026-09-24T14:40Z · Implementer US-1 · T013
+
+Did: `mvp_compliance/signals.py` with `version_published`; `publish()` sets the superseded version's status on the instance and registers `send_robust` on commit after `save()`, inside the atomic block.
+Verified: `pytest tests/test_models.py::TestVersionPublished` 3 passed; ruff check and format clean.
+Next: T014 refusal tests.
+Watch: none.

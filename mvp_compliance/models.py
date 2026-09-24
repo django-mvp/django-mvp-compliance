@@ -1,5 +1,6 @@
 """Documents and their versions."""
 
+from functools import partial
 from typing import cast
 
 from django.conf import settings
@@ -14,6 +15,7 @@ from mvp_compliance.exceptions import (
     RecordError,
 )
 from mvp_compliance.rendering import get_renderer
+from mvp_compliance.signals import version_published
 
 #: Everything a published version carries except its standing (FR-013) — the
 #: one change a published version ever undergoes is draft -> current ->
@@ -361,6 +363,9 @@ class Version(models.Model):
         or when it says exactly what the version in force already says
         (D23) — each before anything about this row or the document is
         touched.
+
+        Once the publication commits, ``version_published`` is sent, and a
+        receiver that raises cannot undo it.
         """
         if self.status != self.Status.DRAFT:
             raise PublishError(_("This version has already been published."))
@@ -395,6 +400,8 @@ class Version(models.Model):
                     _("This says exactly what the version in force already says.")
                 )
             document.versions.current().update(status=self.Status.SUPERSEDED)
+            if current is not None:
+                current.status = self.Status.SUPERSEDED
             self.html = html
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
@@ -410,6 +417,18 @@ class Version(models.Model):
                     "publisher",
                     "publisher_subject",
                 ]
+            )
+            # Last, so nothing above can raise after it is registered, and
+            # inside the block, so a rollback discards it. send_robust logs a
+            # failing receiver and carries on: the publication stands.
+            transaction.on_commit(
+                partial(
+                    version_published.send_robust,
+                    sender=Version,
+                    version=self,
+                    publisher=publisher,
+                    replaced=current,
+                )
             )
 
     def save(self, *args, **kwargs) -> None:
