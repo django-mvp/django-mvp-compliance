@@ -77,3 +77,10 @@ Did: `TestVersionPublished` gains the three-refusals test (each refusal, then a 
 Verified: `pytest tests/test_models.py::TestVersionPublished` 10 passed (these pass on T013's code by design). Mutation probes, each restored: registering before the refusals failed 8; sending directly rather than on commit failed 5; `send` instead of `send_robust` failed the raising-receiver test; dropping the superseded status on the instance failed the replaced test.
 Next: T017 admin test.
 Watch: none.
+
+## 2026-09-24T15:15Z · Implementer US-1 · T017
+
+Did: `TestPublishAnnouncement` in `tests/test_admin.py`: raising receiver (version current, redirect, one success message, error logged), a rendered success message after a normal publication, and no success message on a refusal.
+Verified: failed first on `[] == [25]` (no message) and the missing `<li class="success">`; refusal test passes already.
+Next: T018.
+Watch: none.

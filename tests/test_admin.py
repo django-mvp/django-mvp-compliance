@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 import pytest
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.models import Permission
 from django.db import connection
 from django.test import override_settings
@@ -1506,3 +1506,71 @@ class TestPublisherInTheAdmin:
             assert client.get(url).status_code == 200
 
         assert len(at_two.captured_queries) == len(at_ten.captured_queries)
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPublishAnnouncement:
+    """Publishing through the admin is unaffected by a receiver that fails (FR-006, SC-003)."""
+
+    def test_a_raising_receiver_leaves_the_publication_standing_and_reported(
+        self,
+        client,
+        publisher,
+        draft,
+        django_capture_on_commit_callbacks,
+        caplog,
+    ) -> None:
+        """Scenario 7, FR-006, SC-003."""
+        from mvp_compliance.signals import version_published
+
+        def fail(sender, **kwargs):
+            raise ValueError("receiver broke")
+
+        version_published.connect(fail, weak=False)
+        client.force_login(publisher)
+        try:
+            with (
+                caplog.at_level("ERROR", logger="django.dispatch"),
+                django_capture_on_commit_callbacks(execute=True),
+            ):
+                response = client.post(
+                    reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+                )
+        finally:
+            version_published.disconnect(fail)
+
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.CURRENT
+        assert response.status_code == 302
+        assert response.url == reverse(
+            "admin:mvp_compliance_version_change", args=[draft.pk]
+        )
+        shown = list(messages.get_messages(response.wsgi_request))
+        assert [m.level for m in shown] == [messages.SUCCESS]
+        assert [r for r in caplog.records if r.name == "django.dispatch"]
+
+    def test_a_successful_publication_shows_a_success_message(
+        self, client, publisher, draft
+    ) -> None:
+        client.force_login(publisher)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[draft.pk]),
+            follow=True,
+        )
+
+        content = response.content.decode()
+        assert '<li class="success">' in content
+
+    def test_a_refused_publication_shows_no_success_message(
+        self, client, publisher, published_version
+    ) -> None:
+        client.force_login(publisher)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[published_version.pk])
+        )
+
+        levels = [m.level for m in messages.get_messages(response.wsgi_request)]
+        assert levels == [messages.ERROR]
