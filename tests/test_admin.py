@@ -12,16 +12,24 @@ from pathlib import Path
 
 import pytest
 from django.contrib import admin
+from django.contrib.auth.models import Permission
 from django.db import connection
 from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
-from django.urls import path, reverse
+from django.urls import NoReverseMatch, path, reverse
+from django.utils import formats, timezone
 
 import mvp_compliance
 from mvp_compliance.models import Version
+from mvp_compliance.records import PersonalRecord
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
-from tests.factories import VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 
 urlpatterns = [path("admin/", admin.site.urls)]
 
@@ -91,6 +99,34 @@ def template_translatable_strings() -> set[str]:
         for match in TEMPLATE_TAG_RE.finditer(path_.read_text(encoding="utf-8")):
             strings.add(match.group(2))
     return strings
+
+
+#: FR-016, SC-007: no string this package shows may name one of these. Read
+#: by the catalog sweep below, and by TestCoverage's documentation sweep in
+#: tests/test_records.py, so a name only has to be listed once.
+FORBIDDEN_REGULATION_NAMES = (
+    "gdpr",
+    "general data protection regulation",
+    "ccpa",
+    "cpra",
+    "california consumer privacy act",
+    "hipaa",
+    "pipeda",
+    "lgpd",
+    "data protection act",
+    "privacy act",
+)
+
+#: FR-016, SC-007: no string this package shows may claim it satisfies a
+#: request in full.
+FORBIDDEN_COMPLETENESS_CLAIMS = (
+    "request in full",
+    "satisfies this request",
+    "satisfies your request",
+    "satisfies a request",
+    "in full compliance",
+    "complete legal answer",
+)
 
 
 #: Every address this feature serves, and how to reach one given a draft to
@@ -983,6 +1019,234 @@ class TestDocumentAdmin:
 
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
+class TestDisclosureRefusals:
+    """FR-011 to FR-013, SC-003, SC-004, US-3 scenarios 2-5: nobody without
+    ``produce_disclosure`` reaches an answer by any route this feature adds,
+    and a refusal reveals nothing about whether the named person has
+    records.
+    """
+
+    def test_the_page_is_the_only_address_the_proxy_serves(
+        self, client, disclosure_producer
+    ) -> None:
+        """The answer is the one route, and there is no way round it.
+
+        Django's own ``ModelAdmin`` registers add, change, delete and history
+        addresses for every model it is given, and its change view loads the
+        row before it checks anything. Left in place, they let somebody
+        holding only ``produce_disclosure`` read any acceptance by guessing
+        its primary key — one at a time, without naming a person, and
+        without the statement of coverage the answer carries (FR-012,
+        SC-003, decisions.md D8).
+        """
+        acceptance = AcceptanceFactory(ip_address="203.0.113.9")
+        client.force_login(disclosure_producer)
+
+        for name in ("add", "change", "delete", "history"):
+            with pytest.raises(NoReverseMatch):
+                reverse(f"admin:mvp_compliance_disclosure_{name}", args=[acceptance.pk])
+
+        page = reverse("admin:mvp_compliance_disclosure_changelist")
+        for guessed in (f"{page}{acceptance.pk}/change/", f"{page}add/"):
+            assert client.get(guessed).status_code == 404, guessed
+
+    def test_not_signed_in_is_refused(self, client) -> None:
+        """T023, scenario 3, FR-012."""
+        response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
+
+        assert response.status_code == 302
+
+    def test_signed_in_and_not_staff_is_refused(self, client, visitor) -> None:
+        """T023, scenario 2, FR-012."""
+        client.force_login(visitor)
+
+        response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
+
+        assert response.status_code == 302
+
+    def test_staff_holding_every_other_permission_is_refused(
+        self, client, everything_else
+    ) -> None:
+        """T023, scenario 2, FR-012: including the proxy's own routine ``view_disclosure``."""
+        client.force_login(everything_else)
+
+        response = client.get(reverse("admin:mvp_compliance_disclosure_changelist"))
+
+        assert response.status_code == 403
+
+    def test_a_refusal_reveals_nothing(self, client, everything_else) -> None:
+        """T024, scenario 4, FR-013, SC-004."""
+        client.force_login(everything_else)
+        with_records = AcceptanceFactory()
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        has_records_response = client.get(url, {"subject": with_records.subject})
+        no_records_response = client.get(
+            url, {"subject": "nobody-the-package-has-ever-heard-of"}
+        )
+
+        assert has_records_response.status_code == 403
+        assert no_records_response.status_code == 403
+        assert has_records_response.content == no_records_response.content
+
+    def test_the_permission_is_held_by_nobody_on_installation(self) -> None:
+        """T025, scenario 5, FR-011."""
+        fresh_account = UserFactory()
+        fresh_staff = UserFactory(is_staff=True)
+
+        assert not fresh_account.has_perm("mvp_compliance.produce_disclosure")
+        assert not fresh_staff.has_perm("mvp_compliance.produce_disclosure")
+        assert Permission.objects.filter(
+            content_type__app_label="mvp_compliance",
+            codename="produce_disclosure",
+        ).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDisclosurePage:
+    """FR-001, FR-005, FR-007, US-3 scenario 1: somebody holding
+    ``produce_disclosure`` reaches the page and gets an answer.
+    """
+
+    def test_the_answer_names_every_acceptance_in_full(
+        self, client, disclosure_producer
+    ) -> None:
+        """T028."""
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        document = DocumentFactory(name="Privacy policy")
+        version = VersionFactory(
+            document=document, markdown="# Privacy policy\n\nSome wording."
+        )
+        version.publish()
+        acceptance = AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url, {"subject": someone.username})
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Privacy policy" in content
+        assert str(version.number) in content
+        expected_moment = formats.date_format(
+            timezone.localtime(acceptance.accepted_at), "DATETIME_FORMAT"
+        )
+        assert expected_moment in content
+        assert version.html in content
+
+    def test_a_person_with_no_records_gets_a_page_saying_so(
+        self, client, disclosure_producer
+    ) -> None:
+        """T028, FR-005."""
+        client.force_login(disclosure_producer)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url, {"subject": "nobody-the-package-has-ever-heard-of"})
+
+        assert response.status_code == 200
+        assert b"Nothing is held" in response.content
+
+    def test_the_answer_carries_the_address_a_record_holds(
+        self, client, disclosure_producer
+    ) -> None:
+        """D12: a site that turned the optional evidence on holds the address, so
+        the answer carries it. A record without one shows nothing in its place.
+        """
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        with_address = VersionFactory()
+        with_address.publish()
+        without_address = VersionFactory()
+        without_address.publish()
+        AcceptanceFactory(user=someone, version=with_address, ip_address="198.51.100.7")
+        AcceptanceFactory(user=someone, version=without_address)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        content = client.get(url, {"subject": someone.username}).content.decode()
+
+        assert "198.51.100.7" in content
+        assert content.count("Recorded from") == 1
+
+    def test_the_page_offers_no_way_to_change_anything(
+        self, client, disclosure_producer, everything_else
+    ) -> None:
+        """T030."""
+        client.force_login(disclosure_producer)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url)
+        content = response.content.decode()
+
+        assert response.status_code == 200
+        assert "addlink" not in content
+        assert "changelink" not in content
+        assert "deletelink" not in content
+        assert 'name="_save"' not in content
+
+        index_response = client.get(reverse("admin:index"))
+        assert b"Everything held about a person" in index_response.content
+
+        client.force_login(everything_else)
+        everyone_elses_index = client.get(reverse("admin:index"))
+        assert b"Everything held about a person" not in everyone_elses_index.content
+
+    def test_a_person_whose_account_is_gone(self, client, disclosure_producer) -> None:
+        """T043, US-4, research.md R3: asked for by the identifier the records
+        carry, which is the only way that person can be named once their
+        account is gone.
+        """
+        someone = UserFactory()
+        document = DocumentFactory(name="Privacy policy")
+        version = VersionFactory(
+            document=document, markdown="# Privacy policy\n\nSome wording."
+        )
+        version.publish()
+        acceptance = AcceptanceFactory(user=someone, version=version)
+        subject = acceptance.subject
+        someone.delete()
+
+        client.force_login(disclosure_producer)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+
+        response = client.get(url, {"subject": subject})
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "Privacy policy" in content
+        assert str(version.number) in content
+        expected_moment = formats.date_format(
+            timezone.localtime(acceptance.accepted_at), "DATETIME_FORMAT"
+        )
+        assert expected_moment in content
+        assert version.html in content
+
+    def test_the_page_states_what_it_covers(self, client, disclosure_producer) -> None:
+        """T052, FR-015, US-5 scenarios 1, 2: the statement is on the page in
+        both states, near the answer rather than in a footer.
+        """
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+        statement = str(PersonalRecord(subject="irrelevant", sections=()).coverage)
+
+        full_content = client.get(url, {"subject": someone.username}).content.decode()
+        empty_content = client.get(
+            url, {"subject": "nobody-the-package-has-ever-heard-of"}
+        ).content.decode()
+
+        assert statement in full_content
+        assert full_content.index(statement) < full_content.index("Acceptances")
+
+        assert statement in empty_content
+        assert empty_content.index(statement) < empty_content.index("Nothing is held")
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
 class TestDocumentChangelist:
     """The list says something about each document, without a query per row (#39)."""
 
@@ -1111,6 +1375,19 @@ class TestUserFacingStrings:
             lowered = text.lower()
             assert "compliant" not in lowered, text
             assert "complies" not in lowered, text
+
+    def test_nothing_names_a_regulation_or_claims_completeness(self) -> None:
+        """T054, FR-016, SC-007, US-5 scenario 3."""
+        entries = catalog_entries()
+        shown_strings = [msgstr for msgid, msgstr in entries if msgid]
+        assert shown_strings
+
+        for text in shown_strings:
+            lowered = text.lower()
+            for name in FORBIDDEN_REGULATION_NAMES:
+                assert name not in lowered, text
+            for claim in FORBIDDEN_COMPLETENESS_CLAIMS:
+                assert claim not in lowered, text
 
     def test_every_string_is_translatable(self) -> None:
         """T049b, FR-020, SC-008."""

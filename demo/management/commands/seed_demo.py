@@ -8,8 +8,9 @@ version in is reachable without anybody creating a row by hand.
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.management.base import BaseCommand
+from django.http import HttpRequest
 
-from mvp_compliance.models import Document, Version
+from mvp_compliance.models import Acceptance, Document, Version
 
 PASSWORD = "password"
 
@@ -31,7 +32,24 @@ ACCOUNTS = {
     "super.user@example.com": (True, True, []),
     "editor.user@example.com": (True, False, DOCUMENT_WORK),
     "publisher.user@example.com": (True, False, [*DOCUMENT_WORK, "publish_version"]),
+    # Holds the produce permission and nothing else, which is the point of it
+    # being separate: fielding a request is a different job from writing a
+    # document, and staff.user above holds neither.
+    "disclosure.user@example.com": (True, False, ["produce_disclosure"]),
 }
+
+#: The people the demo holds acceptances for, so every state the page can be
+#: in is reachable: somebody with a history across documents, somebody with
+#: one record, and somebody with none at all.
+ACCEPTORS = {
+    "acceptor.user@example.com": ("Privacy policy", "Terms of use"),
+    "newcomer.user@example.com": ("Terms of use",),
+}
+
+#: Someone whose account is closed and whose records outlived it, which is the
+#: ordinary case for a request and the one that cannot be asked for by an
+#: email address, because there is no account left to carry one.
+DEPARTED = "departed.user@example.com"
 
 PRIVACY = """\
 ## What we collect
@@ -131,7 +149,49 @@ class Command(BaseCommand):
             note="no versions at all",
         )
 
+        self.make_acceptances()
+
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
+
+    def make_acceptances(self):
+        """Record the acceptances the disclosure page is there to produce.
+
+        Guarded on there being none at all rather than on each record: an
+        acceptance cannot be edited or deleted once written, so re-seeding one
+        is not something this can undo.
+        """
+        if Acceptance.objects.exists():
+            self.stdout.write("  acceptances: already seeded")
+            return
+
+        for email, document_names in ACCEPTORS.items():
+            person = self.make_account(email, False, False, [])
+            for name in document_names:
+                document = Document.objects.get(name=name)
+                for version in document.versions.published():
+                    Acceptance.objects.record(person, version, request=self.request())
+            self.stdout.write(f"  {email}: accepted {', '.join(document_names)}")
+
+        departed = self.make_account(DEPARTED, False, False, [])
+        privacy = Document.objects.get(name="Privacy policy")
+        subject = Acceptance.subject_of(departed)
+        for version in privacy.versions.published():
+            Acceptance.objects.record(departed, version)
+        departed.delete()
+        self.stdout.write(
+            f"  {DEPARTED}: account removed, records kept — ask for subject {subject}"
+        )
+
+    def request(self):
+        """A request carrying an address, so the optional evidence is reachable.
+
+        The demo turns ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` on, so a record
+        made from a request holds the address it came from and the page has
+        that state to show. The package's own default is off.
+        """
+        request = HttpRequest()
+        request.META["REMOTE_ADDR"] = "198.51.100.24"
+        return request
 
     def make_account(self, email, is_staff, is_superuser, codenames):
         """Create or update one account, and set its permissions."""
@@ -151,6 +211,7 @@ class Command(BaseCommand):
             )
         )
         self.stdout.write(f"  {'created' if created else 'updated'} {email}")
+        return user
 
     def make_document(self, name, drafts, published, note):
         """Create a document and its versions, once.

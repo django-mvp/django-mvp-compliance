@@ -286,8 +286,10 @@ This feature adds no stored data. It reads what those features hold and assemble
   R10.
 - The wording served is what FS-001 stores at publication. This feature holds no copy of its own
   and stores nothing.
-- A person is identified well enough to be looked up whether or not they still have an account,
-  which is what FS-003 requires of a surviving record.
+- A person can be reduced to the identifier their records carry before this page is asked. While
+  the account exists, a username or an email address does that. Once it is gone, only the host
+  project knows which identifier belonged to whom, and keeping that map is the project's
+  responsibility rather than this package's.
 - Cookie choices are absent because nothing records them yet. R8 brings them, and FR-017 is what
   stops that being a second answer.
 - The answer's form is not fixed here. What matters is that it can be handed to somebody, carries

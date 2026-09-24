@@ -1,0 +1,53 @@
+{
+  "role": "design_reviewer",
+  "stage": "S3R",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+  "branch": "004-producing-everything-held",
+  "feature": "004-producing-everything-held",
+  "lenses": ["spec-compliance", "security", "architecture"],
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-17/b773db2e"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/design-review.md",
+  "inputs": [
+    "specs/004-producing-everything-held/spec.md",
+    "specs/004-producing-everything-held/decisions.md",
+    "specs/004-producing-everything-held/research.md",
+    "specs/004-producing-everything-held/plan.md",
+    "specs/004-producing-everything-held/tasks.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "AGENTS.md",
+    "docs/models.md",
+    "mvp_compliance/models.py",
+    "mvp_compliance/admin.py",
+    "mvp_compliance/forms.py",
+    "mvp_compliance/rendering.py",
+    "mvp_compliance/exceptions.py",
+    "tests/settings.py",
+    "tests/factories.py",
+    "tests/conftest.py",
+    "tests/test_admin.py",
+    "tests/test_models.py",
+    "tests/test_app.py",
+    "pyproject.toml"
+  ],
+  "resolved_django": "/home/sam/.cache/pypoetry/virtualenvs/django-mvp-compliance-ED79FGOy-py3.14/lib/python3.14/site-packages/django",
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs004-design-findings.json"
+}

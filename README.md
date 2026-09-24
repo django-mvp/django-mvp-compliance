@@ -13,7 +13,11 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > built, and both are registered in the Django admin for writing,
 > previewing and publishing them, behind a confirmation step and a
 > permission of its own. So is `Acceptance` — recording who accepted which
-> version, and when. No account-area page exists yet.
+> version, and when. `mvp_compliance.records.produce(subject)` assembles
+> everything the package holds about one person into a single answer, and
+> the admin's **Everything held about a person** page is what calls it,
+> behind a permission of its own that nobody holds by default. No
+> account-area page exists yet.
 
 ## Why
 
@@ -103,6 +107,13 @@ Set it to `False` and removing an account takes that person's acceptances with i
 `Acceptance.objects.for_subject(subject)` finds a person's records by the identifier
 that survives their account being removed, once `user` itself is no longer there to
 find them by.
+
+That identifier is the removed account's primary key, and this package holds nothing
+else that identifies anybody once the account is gone. Keeping the default therefore
+comes with an obligation: the project has to keep its own record of whose identifier
+that was, written when the account is closed, or the surviving acceptances are complete
+and unreachable. See
+[Keeping surviving records findable](docs/models.md#keeping-surviving-records-findable).
 
 By default an acceptance holds nothing about a person beyond who they are, which
 version, and when. A site that wants the address a request came from too, because it
@@ -284,6 +295,8 @@ The standing directions this package steers by are in [GOALS.md](GOALS.md).
   version guarantees.
 - [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
   the form, and reading a version back the way the public will see it.
+- [docs/disclosure.md](docs/disclosure.md) — producing everything held about a person: the
+  page, its permission, and what the answer contains.
 - [docs/adr](docs/adr) — the decisions behind the design, and why the alternatives were not
   taken.
 

@@ -304,6 +304,64 @@ A new account created with a username an old, removed account once had inherits
 nothing: `subject` is derived from the account's primary key, never its username, so
 the two accounts are never mistaken for one another.
 
+#### Keeping surviving records findable
+
+`subject` is the account's primary key and nothing else. Once the account row is gone,
+nothing in the database maps that number back to a person. A dispute or a request
+arrives as a name or an email address in a letter, and neither of them will find the
+record.
+
+**A project that keeps acceptances past account removal is responsible for keeping its
+own record of whose identifier that was**, in its own table, written when the account is
+closed:
+
+```python
+# myproject/compliance.py
+from django.conf import settings
+from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+
+
+class ClosedAccount(models.Model):
+    """What this project keeps so a surviving acceptance can still be found."""
+
+    email = models.EmailField(verbose_name="email", help_text="The address this account used.")
+    subject = models.CharField(
+        max_length=255,
+        verbose_name="subject",
+        help_text="The identifier this person's acceptances carry.",
+    )
+    closed_at = models.DateTimeField(auto_now_add=True, verbose_name="closed at")
+
+
+@receiver(pre_delete, sender=settings.AUTH_USER_MODEL)
+def remember_closed_account(sender, instance, **kwargs):
+    ClosedAccount.objects.create(email=instance.email, subject=str(instance.pk))
+```
+
+Then a lookup starts from whatever the letter contains and ends at this package:
+
+```python
+subject = ClosedAccount.objects.get(email="someone@example.com").subject
+Acceptance.objects.for_subject(subject)
+```
+
+This package holds no part of that map, under any setting. What a project may keep about
+somebody who asked to be removed, and for how long, follows from its own lawful basis and
+its own retention policy — neither of which a reusable package knows. Keeping the map in
+the project's own table puts that data where those decisions already apply, and keeps this
+package able to say truthfully that it retains nothing identifying about a removed account.
+
+Without a map of some kind, surviving records are unreachable in practice. They exist, they
+are complete, and nothing can match them to the person asking about them. That is not a
+state worth holding personal data in: a project unwilling to keep the map is better off
+setting `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL` to `False` and letting
+acceptances go with the account.
+
+The reasoning, and the configurable alternative that was rejected, are in
+[ADR 0014](adr/0014-the-project-links-a-surviving-acceptance-to-a-person.md).
+
 ### Optional evidence
 
 An acceptance holds three facts by default: who accepted, which version, and when.
@@ -339,3 +397,50 @@ in only at the moment `record()` creates a new row, and an acceptance is never e
 afterwards. A record made before the setting was turned on still holds nothing for that
 field, and a record made while it was on still holds what it held once the setting is
 turned off again.
+
+### Producing what is held
+
+Everything the package holds about one person, assembled into one answer rather than a
+query per document:
+
+```python
+from mvp_compliance.records import produce
+
+record = produce(subject)
+```
+
+`subject` is the same identifier `Acceptance.objects.for_subject()` takes — an account's
+primary key while it still exists, or the identifier a record still carries once it is
+gone.
+
+`produce()` returns a frozen `PersonalRecord`. Its `sections` is a tuple of `Section`
+objects, one per kind of record the package holds about that person — there is one
+today, the acceptances — and each section's `entries` is a tuple of `AcceptanceEntry`
+objects, each naming the document, the version accepted and the moment it happened:
+
+```python
+entry = record.sections[0].entries[0]
+entry.document       # "Privacy policy" — the document's current name
+entry.version         # 1 — Version.number
+entry.accepted_at     # the moment this acceptance was recorded
+entry.ip_address      # the address the request came from, or None
+entry.wording         # the HTML stored on that version at publication, in full
+```
+
+Each entry's `wording` is `Version.html` exactly as it was stored at publication — never
+rendered again here, and never the current wording of a document whose version has since
+been superseded. `produce()` reads the field; it never calls the renderer, so a later
+change to `MVP_COMPLIANCE_RENDERER` or its allow list cannot alter what an entry shows for
+an acceptance already recorded. A person with acceptances of several versions of one
+document gets each entry carrying that version's own wording, never another's.
+
+Every acceptance held for that person appears, including several acceptances of the same
+document over time, and nothing belonging to anybody else. A person the package holds
+nothing about still gets a normal answer rather than an error or an empty screen:
+
+```python
+produce("nobody-the-package-has-ever-heard-of").is_empty  # True
+```
+
+Producing an answer only reads — it writes nothing, and it reads no clock, so producing
+the same answer twice with no change to the records gives an equal answer back.

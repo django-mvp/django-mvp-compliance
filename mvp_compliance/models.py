@@ -620,3 +620,24 @@ class Acceptance(models.Model):
 
     def delete(self, *args, **kwargs):
         raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
+
+
+class Disclosure(Acceptance):
+    """Names the act of producing everything held about a person.
+
+    Carries no table of its own — a proxy of :class:`Acceptance` with no
+    fields added. It exists for three things a ``ModelAdmin`` needs and this
+    package has nowhere else to put: an entry in the admin index, an
+    address, and a permission of its own (plan.md Design -> The route, D7).
+    Registering ``Acceptance`` itself would hand everyone holding
+    ``view_acceptance`` a changelist of every person's consent history,
+    which is the risk this permission exists to close.
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = _("disclosure")
+        verbose_name_plural = _("everything held about a person")
+        permissions = [
+            ("produce_disclosure", _("Can produce everything held about a person"))
+        ]

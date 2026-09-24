@@ -22,41 +22,58 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:62
+#: mvp_compliance/admin.py:63
 msgid "Current version"
 msgstr "Current version"
 
-#: mvp_compliance/admin.py:66
+#: mvp_compliance/admin.py:67
 msgid "No version in force"
 msgstr "No version in force"
 
-#: mvp_compliance/admin.py:71
+#: mvp_compliance/admin.py:72
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
 
-#: mvp_compliance/admin.py:74
+#: mvp_compliance/admin.py:75
 msgid "In force since"
 msgstr "In force since"
 
-#: mvp_compliance/admin.py:80
+#: mvp_compliance/admin.py:81
 msgid "Published versions"
 msgstr "Published versions"
 
-#: mvp_compliance/admin.py:237
+#: mvp_compliance/admin.py:238
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:266
+#: mvp_compliance/admin.py:267
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Publish"
 msgstr "Publish"
 
+#: mvp_compliance/admin.py:337
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:5
+msgid "Everything held about a person"
+msgstr "Everything held about a person"
+
 #: mvp_compliance/apps.py:8
 msgid "Compliance"
 msgstr "Compliance"
+
+#: mvp_compliance/forms.py:36
+msgid "Person"
+msgstr "Person"
+
+#: mvp_compliance/forms.py:38
+msgid ""
+"The account's login name or email address, or, for somebody whose account "
+"has since been removed, the identifier their records still carry."
+msgstr ""
+"The account's login name or email address, or, for somebody whose account "
+"has since been removed, the identifier their records still carry."
 
 #: mvp_compliance/models.py:63
 msgid "name"
@@ -155,6 +172,7 @@ msgstr ""
 "published."
 
 #: mvp_compliance/models.py:216 mvp_compliance/models.py:552
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
 
@@ -272,6 +290,46 @@ msgstr "acceptances"
 #: mvp_compliance/models.py:610
 msgid "Cannot record an acceptance for a user with no primary key."
 msgstr "Cannot record an acceptance for a user with no primary key."
+
+#: mvp_compliance/models.py:639
+msgid "disclosure"
+msgstr "disclosure"
+
+#: mvp_compliance/models.py:640
+msgid "everything held about a person"
+msgstr "everything held about a person"
+
+#: mvp_compliance/models.py:642
+msgid "Can produce everything held about a person"
+msgstr "Can produce everything held about a person"
+
+#: mvp_compliance/records.py:86
+msgid ""
+"This covers what this package holds about this person. The project may hold "
+"further records about them elsewhere that are not included here."
+msgstr ""
+"This covers what this package holds about this person. The project may hold "
+"further records about them elsewhere that are not included here."
+
+#: mvp_compliance/records.py:143
+msgid "Acceptances"
+msgstr "Acceptances"
+
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:12
+msgid "Recorded from"
+msgstr "Recorded from"
+
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:11
+msgid "Produce"
+msgstr "Produce"
+
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:17
+msgid "Produced for"
+msgstr "Produced for"
+
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:20
+msgid "Nothing is held about this person."
+msgstr "Nothing is held about this person."
 
 #: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
 msgid "View current version"

@@ -1,0 +1,41 @@
+{
+  "lens": "security",
+  "stage": "code",
+  "scope": "git diff ee871bf..HEAD (feature branch 004-producing-everything-held vs its planning commit), phases 1 (correctness + spec-compliance) and 2 (security) combined into one reviewer pass per the brief",
+  "verdict": "request_changes",
+  "risk": "high",
+  "skills_loaded": [
+    {
+      "name": "craft-review",
+      "receipt": "RECEIPT: craft-review/2026-09-17/b773db2e",
+      "loaded_via": "skill-tool"
+    },
+    {
+      "name": "craft-simplify",
+      "receipt": "RECEIPT: craft-simplify/2026-08-04/69038ce1",
+      "loaded_via": "skill-tool"
+    },
+    {
+      "name": "craft-security",
+      "receipt": "RECEIPT: craft-security/2026-08-04/ea3d6742",
+      "loaded_via": "skill-tool"
+    }
+  ],
+  "findings": [
+    {
+      "id": "SEC-001",
+      "severity": "high",
+      "claim": "DisclosureAdmin never overrides ModelAdmin.get_urls(), so Django's default add/, <pk>/change/, <pk>/delete/ and <pk>/history/ routes stay registered under /admin/mvp_compliance/disclosure/. Anyone holding only produce_disclosure can reach <pk>/change/ and <pk>/history/ for an arbitrary Acceptance row by guessing or enumerating its primary key, bypassing resolve_subject()/produce() entirely: no subject lookup, no PersonalRecord/Section shape, no FR-015 coverage statement, just Django's raw read-only ModelForm rendering of that one Acceptance (subject, user FK, ip_address). This lets a produce_disclosure holder page through every acceptance in the system one primary key at a time, which the spec's own Assumptions reserve for R10 ('Producing answers in bulk is not this feature') and which D8 chose against explicitly ('One route, and it is a GET... every extra route is real, permanent test surface'). It also recreates, for the new permission's holders, the exact 'browsable list of every person's consent history' that ADR 0011 registered Disclosure instead of Acceptance specifically to avoid.",
+      "evidence": "mvp_compliance/admin.py:212-264 (DisclosureAdmin defines has_view/add/change/delete_permission and changelist_view but never overrides get_urls()); confirmed live against the resolved Django in .../django-mvp-compliance-ED79FGOy-py3.14: contrib/admin/options.py:715-753 (ModelAdmin.get_urls() unconditionally registers add/, <pk>/change/, <pk>/delete/, <pk>/history/) and options.py:1846-1868 (_changeform_view calls self.get_object(request, ...) BEFORE has_view_or_change_permission() on a GET, using the proxy's inherited default manager/queryset over the whole Acceptance table, not scoped to any subject). A throwaway pytest against a disclosure_producer-only user (holding nothing but produce_disclosure) hitting reverse('admin:mvp_compliance_disclosure_change', args=[an_arbitrary_acceptance.pk]) returned HTTP 200 with that acceptance's subject and ip_address rendered in the page; reverse('admin:mvp_compliance_disclosure_history', args=[...]) also returned 200. The same request from a user without produce_disclosure correctly returned 403, so FR-012/FR-013 are not violated in the narrow authz sense, but tests/test_admin.py's TestDisclosureRefusals and TestDisclosurePage classes only ever exercise reverse('admin:mvp_compliance_disclosure_changelist') — grep across tests/test_admin.py finds zero references to the _add, _change, _delete or _history URL names for disclosure, so SC-003 ('every route the feature adds refuses somebody without the permission, with one test per route and no route left untested') is unmet for three of the four extra routes. docs/disclosure.md:9-13 states 'it is the only route this package adds for producing one... every route this act is reachable by needs its own permission test' and docs/disclosure.md:34-37 states 'Nothing about the person is read until the permission check has already passed' — both are false for change_view/history_view as demonstrated above.",
+      "reproduction": "As a staff user granted only produce_disclosure: GET /admin/mvp_compliance/disclosure/<pk-of-any-acceptance>/change/ -> HTTP 200 showing that acceptance's raw fields, reached without ever calling resolve_subject() or produce(). Same for .../history/. Enumerate pk 1, 2, 3, ... to walk every acceptance in the table without knowing any subject.",
+      "suggested_fix": "Override get_urls() on DisclosureAdmin to return only the changelist path (mirroring the pattern already used elsewhere in this admin for custom-route ModelAdmins), e.g. `return [path(\"\", self.admin_site.admin_view(self.changelist_view), name=\"%s_%s_changelist\" % (self.opts.app_label, self.opts.model_name))]`, dropping add/change/delete/history so the admin genuinely serves the one GET route D8 and docs/disclosure.md describe. No change to resolve_subject(), produce(), or the templates is needed.",
+      "confidence": "verified"
+    }
+  ],
+  "notes": [
+    "Phases 1 and 2 were run as one combined pass since the brief assigned both to a single reviewer; lens is set to security because the sole finding is a security/spec-compliance crossover and that is why phase 2 was triggered for this feature.",
+    "The two items pre-cleared in known_and_not_findings (the two extended pre-existing test modules, and the unescaped `wording|safe` rendering of publication-time stored HTML) were reviewed and confirmed not to be findings; not re-litigated here.",
+    "records.py, models.py's Disclosure proxy, forms.py, the two new templates, docs/models.md, README.md, CHANGELOG.md and every acceptance scenario in tests/test_records.py were checked line by line against the branch: wording immutability (FR-007/008/009/010), no-clock (FR-006/D11), single-query cost (SC-008), i18n (Article VIII), and the coverage statement (FR-015/016) all held up under an attempt to break them, including a mock.patch(timezone.now) probe and an UppercaseRenderer substitution probe that would have failed had either guarantee regressed.",
+    "ruff, mypy and the full test suite (236 tests) pass; coverage is 97% overall with records.py at 95% and admin.py at 97%, well above the 90%/85% floors."
+  ]
+}

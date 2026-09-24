@@ -1,0 +1,707 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "004-producing-everything-held",
+  "branch": "004-producing-everything-held",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "REVIEW",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-09-22T06:11:18Z",
+      "note": "specification merged in #29; issue graph built"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-09-22T21:30:00Z",
+      "note": "picked off the feature queue as ready"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-22T22:20:11Z",
+      "note": "plan, research and tasks committed; draft PR #40 open"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-22T22:28:36Z",
+      "note": "design review approved with no findings"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-22T23:49:10Z",
+      "note": "all five stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-22T23:54:19Z",
+      "note": "convergence gates green"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T06:11:18Z",
+      "self_resolved": [
+        "merge commit 17d9642c60, pull request #29"
+      ]
+    },
+    "plan": {
+      "approved_by": "notified",
+      "at": "2026-09-22T22:30:00Z"
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-22T22:27:00Z",
+      "self_resolved": [
+        "no findings; the load-bearing research premise (a proxy model carries its own content type, so its Meta.permissions are its own) was verified independently against the resolved Django 5.2.17 source by both the reviewer and the orchestrator"
+      ]
+    },
+    "review": {
+      "approved_by": "code-review",
+      "at": "2026-09-23T00:40:00Z",
+      "self_resolved": [
+        "SEC-001 (high, verified, security) the admin registered Django default add/change/delete/history addresses alongside the page, and the change view fetches the row before checking the caller, so a permission holder could read any acceptance by guessing its number. Reproduced independently at admin.py get_urls, fixed by returning the one address and never calling super(), guarded by a test asserting four reversals raise and two guessed paths answer 404, and the original reproduction re-run against the fix can no longer resolve either address. Recorded as D16."
+      ]
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 30,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_the_answer_contains_every_acceptance_with_its_document_version_and_moment"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_it_contains_nothing_belonging_to_anybody_else"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_every_acceptance_of_one_document_appears"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_the_answer_contains_every_acceptance_with_its_document_version_and_moment",
+              "tests/test_records.py::TestProduce::test_it_contains_nothing_belonging_to_anybody_else",
+              "tests/test_records.py::TestProduce::test_every_acceptance_of_one_document_appears"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ],
+            "code": [
+              "mvp_compliance/records.py:26",
+              "mvp_compliance/records.py:41",
+              "mvp_compliance/records.py:55",
+              "mvp_compliance/records.py:71"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_a_person_with_no_records_gets_an_answer"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_the_same_answer_twice"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T007",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_it_costs_a_fixed_number_of_queries"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestProduce::test_a_further_kind_of_record_would_not_change_the_answer"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py -v"
+            ]
+          }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python /home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --steps docs --base ee871bf"
+            ],
+            "code": [
+              "docs/models.md:343",
+              "README.md:15"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 31,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_the_wording_is_what_was_stored_at_publication"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
+        },
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_the_wording_is_what_was_stored_at_publication"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
+        },
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_a_superseded_versions_wording_is_the_superseded_one"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_each_entry_carries_its_own_versions_wording"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
+        },
+        {
+          "id": "T014",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestWording::test_nothing_is_rendered_when_an_answer_is_produced"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestWording -q"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --steps docs --base ee871bf"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P1",
+      "issue": 32,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T020",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_login_name_resolves_to_its_identifier",
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_email_resolves_to_its_identifier",
+              "tests/test_records.py::TestNamingAPerson::test_an_email_match_is_case_insensitive",
+              "tests/test_records.py::TestNamingAPerson::test_text_matching_neither_resolves_to_itself"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestNamingAPerson -x"
+            ]
+          }
+        },
+        {
+          "id": "T021",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_login_name_resolves_to_its_identifier",
+              "tests/test_records.py::TestNamingAPerson::test_an_accounts_email_resolves_to_its_identifier"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestNamingAPerson -x"
+            ],
+            "code": [
+              "mvp_compliance/records.py:78"
+            ]
+          }
+        },
+        {
+          "id": "T022",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run python manage.py makemigrations --check --dry-run",
+              "poetry run pytest tests/test_models.py tests/test_app.py -q"
+            ],
+            "code": [
+              "mvp_compliance/models.py:625",
+              "mvp_compliance/migrations/0004_disclosure.py:1"
+            ]
+          }
+        },
+        {
+          "id": "T023",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_not_signed_in_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_signed_in_and_not_staff_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_staff_holding_every_other_permission_is_refused"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ]
+          }
+        },
+        {
+          "id": "T024",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_a_refusal_reveals_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ]
+          }
+        },
+        {
+          "id": "T025",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_the_permission_is_held_by_nobody_on_installation"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ]
+          }
+        },
+        {
+          "id": "T026",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals::test_not_signed_in_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_signed_in_and_not_staff_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_staff_holding_every_other_permission_is_refused",
+              "tests/test_admin.py::TestDisclosureRefusals::test_a_refusal_reveals_nothing"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:257",
+              "mvp_compliance/forms.py:26"
+            ]
+          }
+        },
+        {
+          "id": "T027",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosureRefusals"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosureRefusals -q"
+            ],
+            "code": [
+              "tests/conftest.py:102",
+              "tests/conftest.py:109"
+            ]
+          }
+        },
+        {
+          "id": "T028",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_answer_names_every_acceptance_in_full",
+              "tests/test_admin.py::TestDisclosurePage::test_a_person_with_no_records_gets_a_page_saying_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -q"
+            ]
+          }
+        },
+        {
+          "id": "T029",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_answer_names_every_acceptance_in_full",
+              "tests/test_admin.py::TestDisclosurePage::test_a_person_with_no_records_gets_a_page_saying_so"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -q"
+            ],
+            "code": [
+              "mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:1",
+              "mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:1"
+            ]
+          }
+        },
+        {
+          "id": "T030",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_page_offers_no_way_to_change_anything"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -q"
+            ]
+          }
+        },
+        {
+          "id": "T031",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_app.py::TestPackagedApp::test_the_disclosure_proxy_is_registered_and_acceptance_is_not",
+              "tests/test_app.py::TestPackagedApp::test_it_still_registers_no_public_urls"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_app.py -q"
+            ]
+          }
+        },
+        {
+          "id": "T032",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "code": [
+              "docs/disclosure.md:1",
+              "README.md:11"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P2",
+      "issue": 33,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T040",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestSurvivingRecords::test_the_answer_still_names_the_person_version_and_moment"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestSurvivingRecords -v"
+            ]
+          }
+        },
+        {
+          "id": "T041",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestSurvivingRecords::test_the_other_setting_leaves_nothing_to_produce"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestSurvivingRecords -v"
+            ]
+          }
+        },
+        {
+          "id": "T042",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestSurvivingRecords::test_a_mix_of_people_with_and_without_accounts"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestSurvivingRecords -v"
+            ]
+          }
+        },
+        {
+          "id": "T043",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_a_person_whose_account_is_gone"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -v"
+            ]
+          }
+        },
+        {
+          "id": "T044",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run forge verify --repo . --base ee871bf"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US5",
+      "priority": "P1",
+      "issue": 34,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T050",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestCoverage::test_a_full_answer_carries_the_statement",
+              "tests/test_records.py::TestCoverage::test_an_empty_answer_carries_the_same_statement"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestCoverage -v"
+            ]
+          }
+        },
+        {
+          "id": "T051",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestCoverage::test_a_full_answer_carries_the_statement",
+              "tests/test_records.py::TestCoverage::test_an_empty_answer_carries_the_same_statement"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestCoverage -v"
+            ],
+            "code": [
+              "mvp_compliance/records.py:78"
+            ]
+          }
+        },
+        {
+          "id": "T052",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_page_states_what_it_covers"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -v"
+            ]
+          }
+        },
+        {
+          "id": "T053",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDisclosurePage::test_the_page_states_what_it_covers"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestDisclosurePage -v",
+              "poetry run python manage.py makemessages --locale en --no-obsolete --ignore \"mvp_compliance/static/*\""
+            ],
+            "code": [
+              "mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:16"
+            ]
+          }
+        },
+        {
+          "id": "T054",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestUserFacingStrings::test_nothing_names_a_regulation_or_claims_completeness"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_admin.py::TestUserFacingStrings -v"
+            ]
+          }
+        },
+        {
+          "id": "T055",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_records.py::TestCoverage::test_the_documentation_claims_nothing_either"
+            ],
+            "commands": [
+              "poetry run pytest tests/test_records.py::TestCoverage -v"
+            ],
+            "code": [
+              "docs/disclosure.md:74"
+            ]
+          }
+        },
+        {
+          "id": "T056",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "poetry run pre-commit run --files CHANGELOG.md"
+            ],
+            "code": [
+              "CHANGELOG.md:101"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 40,
+    "draft": true
+  },
+  "escalations": []
+}

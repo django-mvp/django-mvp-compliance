@@ -1,0 +1,17 @@
+{% load i18n %}
+<ul>
+  {% for entry in entries %}
+    <li>
+      <p>
+      {{ entry.document }} — {% translate "version" %} {{ entry.version }} —
+      {{ entry.accepted_at|date:"DATETIME_FORMAT" }}
+      </p>
+      {% if entry.ip_address %}
+        {# Only where the record holds one, which is where the site had turned #}
+        {# that on when the acceptance was made. #}
+        <p>{% translate "Recorded from" %} {{ entry.ip_address }}</p>
+      {% endif %}
+      <div>{{ entry.wording|safe }}</div>
+    </li>
+  {% endfor %}
+</ul>

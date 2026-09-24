@@ -93,6 +93,27 @@ def approver(db):
 
 
 @pytest.fixture
+def disclosure_producer(db):
+    """Staff holding only ``produce_disclosure``."""
+    return grant(UserFactory(is_staff=True), "produce_disclosure")
+
+
+@pytest.fixture
+def everything_else(db):
+    """Staff holding every permission this package defines except ``produce_disclosure``.
+
+    Including the proxy's own routine ``view_disclosure`` — holding it
+    grants nothing on its own (decisions.md D7).
+    """
+    codenames = Permission.objects.filter(
+        content_type__app_label="mvp_compliance"
+    ).exclude(codename="produce_disclosure")
+    return grant(
+        UserFactory(is_staff=True), *codenames.values_list("codename", flat=True)
+    )
+
+
+@pytest.fixture
 def staff_without_permissions(db):
     """Staff who may reach the admin and hold nothing on this package."""
     return UserFactory(is_staff=True)

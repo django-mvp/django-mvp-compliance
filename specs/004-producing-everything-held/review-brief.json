@@ -1,0 +1,50 @@
+{
+  "role": "reviewer",
+  "stage": "S6",
+  "phase": "1 (correctness + spec-compliance) and 2 (security)",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-004",
+  "branch": "004-producing-everything-held",
+  "feature": "004-producing-everything-held",
+  "diff": "git diff ee871bf..HEAD — the whole feature branch against the commit its first story started from. ee871bf is the planning commit; everything before it on this branch is specification artefacts and nothing else.",
+  "lenses": ["correctness", "spec-compliance", "security"],
+  "why_security_lens": "The diff adds an authorisation surface: a new permission, a new admin route, and a page that assembles and serves one person's consent history. pipeline.md makes the S6 security lens mandatory for exactly this.",
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-17/b773db2e"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/review.md",
+  "inputs": [
+    "specs/004-producing-everything-held/spec.md",
+    "specs/004-producing-everything-held/decisions.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "docs/disclosure.md",
+    "docs/models.md",
+    "docs/adr/0011-producing-what-is-held-is-an-admin-page-behind-its-own-permission.md",
+    "docs/adr/0012-the-answer-is-sections-not-a-list-of-acceptances.md",
+    "docs/adr/0013-an-answer-carries-no-time-of-its-own.md",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "known_and_not_findings": [
+    "Two pre-existing test modules were extended with new classes and methods, which the modification guardrail flags. Every removed line across both is an import. Triaged and recorded as decisions.md D14.",
+    "The rendered wording is marked safe in the template. It is the HTML this package sanitised through an explicit allow list at publication and stored — re-rendering it at produce time is forbidden by Article XIII, and the existing preview and publish pages already serve it the same way."
+  ],
+  "resolved_django": "/home/sam/.cache/pypoetry/virtualenvs/django-mvp-compliance-ED79FGOy-py3.14/lib/python3.14/site-packages/django",
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs004-review-findings.json"
+}
