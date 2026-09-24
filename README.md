@@ -208,6 +208,12 @@ posted. Following its **Back** link instead leaves the draft untouched.
 output is empty once stripped — both reach the person publishing as a
 message they can read, not as an error page.
 
+The admin records whoever published a version as its publisher, and shows
+them next to the moment of publication. Code can call
+`version.publish(publisher=user)` to do the same, or `version.publish()` to
+record nobody. See [docs/models.md](docs/models.md) for what a version says
+about a publisher whose account has since been removed.
+
 Once a version is published, its change page in the admin offers no
 editable form at all. Its wording is readable in full, and Django serves
 its own read-only page rather than one this package builds — not a form
@@ -314,6 +320,8 @@ The standing directions this package steers by are in [GOALS.md](GOALS.md).
 
 - [docs/models.md](docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
+- [docs/announcing.md](docs/announcing.md) — the signal sent when a version is published, what it
+  carries, and what happens when a receiver fails.
 - [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
   the form, and reading a version back the way the public will see it.
 - [docs/disclosure.md](docs/disclosure.md) — producing everything held about a person: the

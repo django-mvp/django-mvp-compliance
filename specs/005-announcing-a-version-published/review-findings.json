@@ -1,0 +1,28 @@
+{
+  "lens": "correctness",
+  "stage": "code",
+  "verdict": "approve",
+  "risk": "low",
+  "scope": "git diff 5c0877b..HEAD on 005-announcing-a-version-published; lenses correctness, spec-compliance, security",
+  "skills_loaded": [
+    {"name": "craft-review", "receipt": "craft-review/2026-09-17/b773db2e", "loaded_via": "skill-tool"},
+    {"name": "craft-simplify", "receipt": "craft-simplify/2026-08-04/69038ce1", "loaded_via": "skill-tool"},
+    {"name": "craft-security", "receipt": "craft-security/2026-08-04/ea3d6742", "loaded_via": "skill-tool"}
+  ],
+  "findings": [
+    {
+      "id": "COR-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "publish() leaves the in-memory instance reporting a publication that was rolled back when Acceptance.subject_of() raises RecordError.",
+      "evidence": "mvp_compliance/models.py publish(): self.status/published_at/html/publisher are assigned before Acceptance.subject_of(publisher) is called (it raises RecordError for a user with no pk). The atomic block rolls the database back, but the instance is not restored.",
+      "reproduction": "v2 = VersionFactory(document=v.document, markdown='other'); v2.publish(publisher=User(username='x')) raises RecordError; afterwards v2.status == 'current' and v2.published_at is set in memory, while v2.refresh_from_db() gives status 'draft'. No signal is sent (correct). Not reachable from the admin (request.user is saved), only from code passing an unsaved user.",
+      "suggested_fix": "Compute the subject before mutating: move `subject = '' if publisher is None else Acceptance.subject_of(publisher)` above the first assignment to self (or above the supersede update) and assign it later."
+    }
+  ],
+  "notes": [
+    "Migration 0005_version_publisher.py uses single quotes and unwrapped long lines (generated output, not run through the formatter).",
+    "Probes run on a /tmp copy, each reverted after: removing publisher from PUBLISHED_FROZEN_FIELDS, sending directly instead of on_commit, and send instead of send_robust each fail a test; removing the subject whitespace collapse fails the line-break subject test. The guards are real.",
+    "Verified: full suite 291 passed, makemigrations --check clean, deleting a publisher account succeeds and leaves publisher_display 'An account since removed', docs/announcing.md examples resolve and the page is linked from README, every FR-001..FR-024 has an implementation and a test."
+  ]
+}

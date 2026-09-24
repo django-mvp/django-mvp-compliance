@@ -20,6 +20,8 @@ one broken receiver stop every receiver connected after it. The cost is that a f
 unless the project watches its logs, which is where a project already looks for errors in its own
 code.
 
+**ADR:** docs/adr/0016-a-publication-is-announced-after-it-commits-and-no-receiver-can-undo-it.md
+
 ## D2 — A removed publisher's account leaves a trace, not a name
 
 **Ambiguous**: the issue asks for who published a version. It says nothing about what the record
@@ -37,6 +39,8 @@ fact it exists to hold. A name or an email address kept about somebody whose acc
 is the host project's decision to make, not the package's. A project that keeps its own record of
 who an account belonged to can still answer "who was it?" from the identifier left behind.
 
+**ADR:** none — applies ADR 0008 and ADR 0014 to the publisher; no new decision
+
 ## D3 — The admin link needs a site address from the project
 
 **Ambiguous**: the email links to the version in the admin, but a signal is sent without a request,
@@ -49,3 +53,37 @@ is left to planning.
 writing the receiver that renders the email. Guessing the address from Django's sites framework
 would add a dependency many projects do not install, and it is still wrong for a site served
 under more than one address.
+
+**ADR:** none — local to the email function's signature, nothing downstream inherits it
+
+## D4 — Versions a person published are not yet part of what the package produces about them
+
+**Ambiguous**: `records.produce()` answers "everything this package holds about a person" (FS-004
+FR-001), and its statement of coverage says so. This feature makes the package hold one more thing
+about a member of staff: the versions they published, through `publisher_subject`. This spec does
+not ask for that to join the answer, and adding it moves the fixed query count FS-004 pins in its
+tests from one to two.
+
+**Chosen**: nothing about the answer changes in this feature. The gap is raised as issue #52,
+with the recommendation that a *Versions published* section join the answer the way FS-004
+FR-017 anticipated.
+
+**Why defensible**: adding a section changes what the page shows about a person, which is a
+decision about personal data rather than an implementation detail, and it would change a test from
+another feature. Leaving it silent would ship an answer whose statement of coverage is no longer
+true.
+
+**ADR:** none — a question of scope for the maintainer, not an architectural decision
+
+## D5 — Design review carried as watch items
+
+**Ambiguous**: the design review returned no blocking finding. Two medium findings and one low
+needed a decision on whether they change the plan.
+
+**Chosen**: all three are edits to `tasks.md`, none to the design. Receiver-error logging is
+documented rather than given a logger of the package's own (T019). Every test that asserts a
+receiver did or did not run executes the commit callbacks, and each refusal test carries a control
+publication (T014, T016, T017). The account-removal test records a probe showing it fails with a
+guarded base manager (T004). The spec-level question about the personal-record answer stays D4.
+
+**ADR:** none — test and documentation instructions local to this feature

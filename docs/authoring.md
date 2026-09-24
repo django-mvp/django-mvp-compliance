@@ -52,8 +52,8 @@ produces wording that vanishes at publication.
 `markdown`, because those are the only two an author supplies.
 
 The `html` a reader is served is produced once by `Version.publish()` and is the record of what
-somebody was shown, so it is never something a form can write. `number`, `status` and
-`published_at` belong to the package for the same reason.
+somebody was shown, so it is never something a form can write. `number`, `status`,
+`published_at` and the publisher belong to the package for the same reason.
 
 ## Reading it back before publishing
 
@@ -86,13 +86,23 @@ version, shows the rendering about to go live, and says plainly that the wording
 changed afterwards and that a correction is published as another version. Publishing happens
 only when that page is posted. Following its **Back** link instead leaves the draft untouched.
 
+Publishing records who did it: the account signed in when the confirmation is posted becomes the
+version's publisher. A published version's page shows **Published by** beside **Published at**,
+and both lists show it too — the version list for every version, the document list for the
+version in force. If that account is later removed, the version says "Account removed";
+a version with nobody recorded says "Unknown publisher".
+
+A successful publication returns to the version's page with a success message. Your own code
+can react to it through the `version_published` signal (see [announcing.md](announcing.md)); a
+receiver that fails changes nothing the person publishing sees.
+
 `Version.publish()` refuses a version that is not a draft, and one whose rendered output is
 empty once whitespace is stripped. Both refusals reach the person publishing as a message on
 the page they return to, not as a traceback.
 
 Once a version is published, its change page in the admin offers nothing to edit. Its wording
-is readable in full, and Django serves its own read-only page — not a form with disabled
-fields, and not one whose save is silently refused.
+and its publisher never change, and both are readable in full. Django serves its own read-only
+page — not a form with disabled fields, and not one whose save is silently refused.
 
 ## Starting the next version from the one in force
 

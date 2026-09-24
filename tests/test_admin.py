@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 import pytest
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.models import Permission
 from django.db import connection
 from django.test import override_settings
@@ -1400,3 +1400,174 @@ class TestUserFacingStrings:
         missing = shipped_strings - catalog_msgids
 
         assert not missing
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPublisherInTheAdmin:
+    """Who published a version is recorded by the publish page and shown beside when (FR-010, FR-012)."""
+
+    def test_publishing_through_the_admin_records_the_signed_in_user(
+        self, client, publisher, draft
+    ) -> None:
+        """Scenario 1, FR-010."""
+        client.force_login(publisher)
+
+        client.post(reverse("admin:mvp_compliance_version_publish", args=[draft.pk]))
+
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.CURRENT
+        assert draft.publisher == publisher
+        assert draft.publisher_subject == str(publisher.pk)
+
+    def test_a_published_versions_page_shows_who_published_it_beside_when(
+        self, client, editor, draft, user
+    ) -> None:
+        """Scenario 4, FR-012."""
+        draft.publish(publisher=user)
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert str(user) in content
+        assert content.index("Published at") < content.index("Published by")
+
+    def test_a_removed_publisher_reads_as_removed_on_the_versions_page(
+        self, client, editor, draft, user
+    ) -> None:
+        draft.publish(publisher=user)
+        user.delete()
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert "Account removed" in response.content.decode()
+
+    def test_a_drafts_page_shows_the_empty_value_for_published_by(
+        self, client, editor, draft
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert "Unknown publisher" not in content
+
+    def test_the_version_list_shows_the_publisher(
+        self, client, editor, draft, user
+    ) -> None:
+        draft.publish(publisher=user)
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_version_changelist"))
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert str(user) in content
+
+    def test_the_documents_list_shows_the_publisher_of_the_version_in_force(
+        self, client, editor, draft, user
+    ) -> None:
+        draft.publish(publisher=user)
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_document_changelist"))
+
+        content = response.content.decode()
+        assert "Published by" in content
+        assert str(user) in content
+
+    @pytest.mark.parametrize("model", ["version", "document"])
+    def test_the_lists_cost_a_fixed_number_of_queries_with_publishers(
+        self, client, editor, model
+    ) -> None:
+        """FR-012: the publisher column must not ask once per row."""
+        client.force_login(editor)
+        url = reverse(f"admin:mvp_compliance_{model}_changelist")
+
+        def add_published(count):
+            for _ in range(count):
+                VersionFactory().publish(publisher=UserFactory())
+
+        add_published(2)
+        with CaptureQueriesContext(connection) as at_two:
+            assert client.get(url).status_code == 200
+        add_published(8)
+        with CaptureQueriesContext(connection) as at_ten:
+            assert client.get(url).status_code == 200
+
+        assert len(at_two.captured_queries) == len(at_ten.captured_queries)
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPublishAnnouncement:
+    """Publishing through the admin is unaffected by a receiver that fails (FR-006, SC-003)."""
+
+    def test_a_raising_receiver_leaves_the_publication_standing_and_reported(
+        self,
+        client,
+        publisher,
+        draft,
+        connect,
+        django_capture_on_commit_callbacks,
+        caplog,
+    ) -> None:
+        """Scenario 7, FR-006, SC-003."""
+
+        def fail(sender, **kwargs):
+            raise ValueError("receiver broke")
+
+        connect(fail)
+        client.force_login(publisher)
+        with (
+            caplog.at_level("ERROR", logger="django.dispatch"),
+            django_capture_on_commit_callbacks(execute=True),
+        ):
+            response = client.post(
+                reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+            )
+
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.CURRENT
+        assert response.status_code == 302
+        assert response.url == reverse(
+            "admin:mvp_compliance_version_change", args=[draft.pk]
+        )
+        shown = list(messages.get_messages(response.wsgi_request))
+        assert [m.level for m in shown] == [messages.SUCCESS]
+        assert [r for r in caplog.records if r.name == "django.dispatch"]
+
+    def test_a_successful_publication_shows_a_success_message(
+        self, client, publisher, draft
+    ) -> None:
+        client.force_login(publisher)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[draft.pk]),
+            follow=True,
+        )
+
+        content = response.content.decode()
+        assert '<li class="success">' in content
+
+    def test_a_refused_publication_shows_no_success_message(
+        self, client, publisher, published_version
+    ) -> None:
+        client.force_login(publisher)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[published_version.pk])
+        )
+
+        levels = [m.level for m in messages.get_messages(response.wsgi_request)]
+        assert levels == [messages.ERROR]

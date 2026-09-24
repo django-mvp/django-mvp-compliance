@@ -1332,3 +1332,342 @@ class TestOptionalEvidence:
             acceptance = Acceptance.objects.record(user, published_version)
 
         assert acceptance.ip_address is None
+
+
+class TestPublisher:
+    """A version keeps who published it, frozen with the rest of it (FR-008 to FR-011, FR-013)."""
+
+    def test_an_unsaved_publisher_is_refused_before_anything_changes(self, draft):
+        """A publisher with no primary key leaves the draft untouched, in memory too."""
+        with pytest.raises(RecordError):
+            draft.publish(publisher=get_user_model()(username="unsaved"))
+
+        assert draft.status == draft.Status.DRAFT
+        assert draft.published_at is None
+        assert draft.publisher is None
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.DRAFT
+
+    def test_publishing_records_the_publisher_and_their_subject(self, draft, user):
+        """Scenario 3, FR-008: the account and its identifier are both written."""
+        draft.publish(publisher=user)
+
+        draft.refresh_from_db()
+        assert draft.publisher == user
+        assert draft.publisher_subject == Acceptance.subject_of(user)
+
+    def test_publishing_with_nobody_named_leaves_both_empty(self, draft):
+        """Scenario 7, FR-011: publishing from code names nobody."""
+        draft.publish()
+
+        draft.refresh_from_db()
+        assert draft.publisher is None
+        assert draft.publisher_subject == ""
+
+    def test_a_draft_has_no_publisher(self, draft):
+        assert draft.publisher is None
+        assert draft.publisher_subject == ""
+
+    def test_publishing_as_an_unsaved_user_is_refused_and_leaves_the_draft_alone(
+        self, draft
+    ):
+        with pytest.raises(RecordError):
+            draft.publish(publisher=get_user_model()(username="nobody"))
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.DRAFT
+
+    def test_the_database_refuses_a_draft_that_names_a_publisher(self, user):
+        """Scenario 2, FR-009: the widened check constraint."""
+        document = DocumentFactory()
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.create(
+                document=document, markdown="Wording", publisher=user
+            )
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.create(
+                document=document, markdown="Wording", publisher_subject="7"
+            )
+
+    def test_saving_a_published_version_with_a_changed_publisher_is_refused(
+        self, draft, user
+    ):
+        draft.publish(publisher=user)
+        draft.publisher = UserFactory()
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        draft.refresh_from_db()
+        assert draft.publisher == user
+
+    def test_saving_a_published_version_with_a_changed_publisher_subject_is_refused(
+        self, draft, user
+    ):
+        draft.publish(publisher=user)
+        draft.publisher_subject = "someone-else"
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        draft.refresh_from_db()
+        assert draft.publisher_subject == Acceptance.subject_of(user)
+
+    @pytest.mark.parametrize(
+        "field", ["publisher", "publisher_id", "publisher_subject"]
+    )
+    def test_updating_the_publisher_through_the_queryset_is_refused(
+        self, draft, user, field
+    ):
+        draft.publish(publisher=user)
+        other = UserFactory()
+        value = "someone-else" if field == "publisher_subject" else other.pk
+        if field == "publisher":
+            value = other
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=draft.pk).update(**{field: value})
+
+        draft.refresh_from_db()
+        assert draft.publisher == user
+        assert draft.publisher_subject == Acceptance.subject_of(user)
+
+    def test_removing_the_publishers_account_succeeds_and_keeps_only_the_subject(
+        self, draft, user
+    ):
+        """Scenario 6: the link clears, the identifier stays, nothing else moves."""
+        draft.publish(publisher=user)
+        draft.refresh_from_db()
+        subject = draft.publisher_subject
+        before = {
+            name: getattr(draft, name)
+            for name in ("document_id", "number", "markdown", "html", "published_at")
+        }
+
+        user.delete()
+
+        draft.refresh_from_db()
+        assert draft.publisher is None
+        assert draft.publisher_subject == subject
+        assert draft.status == Version.Status.CURRENT
+        assert {name: getattr(draft, name) for name in before} == before
+
+    def test_removing_an_account_that_published_nothing_touches_no_version(
+        self, published_version
+    ):
+        other = UserFactory()
+
+        other.delete()
+
+        published_version.refresh_from_db()
+        assert published_version.status == Version.Status.CURRENT
+
+
+class TestPublisherDisplay:
+    """What a version says about who published it (FR-012, FR-013)."""
+
+    def test_a_draft_says_nothing(self, draft):
+        assert draft.publisher_display is None
+
+    def test_a_version_published_by_an_existing_account_names_it(self, draft, user):
+        draft.publish(publisher=user)
+
+        assert draft.publisher_display == str(user)
+
+    def test_a_version_whose_publisher_was_removed_says_so_without_the_subject(
+        self, draft, user
+    ):
+        draft.publish(publisher=user)
+        subject = draft.publisher_subject
+        user.delete()
+        draft.refresh_from_db()
+
+        assert str(draft.publisher_display) == "Account removed"
+        assert subject not in str(draft.publisher_display)
+
+    def test_a_version_published_with_nobody_named_says_so(self, draft):
+        draft.publish()
+
+        assert str(draft.publisher_display) == "Unknown publisher"
+
+    def test_a_version_published_before_publishers_were_kept_says_so(
+        self, published_version
+    ):
+        """Scenario 5: a version carried forward has both fields empty."""
+        assert published_version.publisher_id is None
+        assert published_version.publisher_subject == ""
+        assert str(published_version.publisher_display) == "Unknown publisher"
+
+
+class TestVersionPublished:
+    """A host project hears about every publication once, after it commits (FR-001 to FR-005)."""
+
+    def test_a_receiver_runs_once_with_the_version_publisher_and_replaced(
+        self, announcements, django_capture_on_commit_callbacks, draft, user
+    ):
+        """Scenario 1, FR-001, FR-002."""
+        with django_capture_on_commit_callbacks(execute=True):
+            draft.publish(publisher=user)
+
+        assert len(announcements) == 1
+        call = announcements[0]
+        assert call["sender"] is Version
+        assert call["version"] == draft
+        assert call["publisher"] == user
+        assert call["replaced"] is None
+
+    def test_a_publication_with_nobody_named_passes_none_as_publisher(
+        self, announcements, django_capture_on_commit_callbacks, draft
+    ):
+        with django_capture_on_commit_callbacks(execute=True):
+            draft.publish()
+
+        assert announcements[0]["publisher"] is None
+
+    def test_replaced_is_the_superseded_version_already_marked_superseded(
+        self, announcements, django_capture_on_commit_callbacks, published_version
+    ):
+        """Scenarios 2 and 3, FR-002."""
+        second = VersionFactory(
+            document=published_version.document, markdown="Different wording."
+        )
+
+        with django_capture_on_commit_callbacks(execute=True):
+            second.publish()
+
+        assert len(announcements) == 1
+        replaced = announcements[0]["replaced"]
+        assert replaced == published_version
+        assert replaced.status == Version.Status.SUPERSEDED
+
+    def test_none_of_the_three_refusals_announces_anything(
+        self, announcements, django_capture_on_commit_callbacks, published_version
+    ):
+        """Scenario 4, FR-003, SC-001: a refusal registers nothing; a control does."""
+        document = published_version.document
+        same_wording = VersionFactory(
+            document=document, markdown=published_version.markdown
+        )
+        empty = VersionFactory(document=DocumentFactory(), markdown="   \n\n   ")
+        control = VersionFactory(document=DocumentFactory())
+
+        with django_capture_on_commit_callbacks(execute=True):
+            with pytest.raises(PublishError):
+                published_version.publish()
+            with pytest.raises(PublishError):
+                empty.publish()
+            with pytest.raises(PublishError):
+                same_wording.publish()
+        assert announcements == []
+
+        with django_capture_on_commit_callbacks(execute=True):
+            control.publish()
+        assert [call["version"] for call in announcements] == [control]
+
+    def test_a_publication_inside_a_rolled_back_block_announces_nothing(
+        self, announcements, django_capture_on_commit_callbacks, draft
+    ):
+        """Scenario 5, FR-004, SC-002."""
+        control = VersionFactory()
+
+        with (
+            django_capture_on_commit_callbacks(execute=True),
+            pytest.raises(RuntimeError),
+            transaction.atomic(),
+        ):
+            draft.publish()
+            raise RuntimeError("roll back")
+        assert announcements == []
+
+        with django_capture_on_commit_callbacks(execute=True):
+            control.publish()
+        assert [call["version"] for call in announcements] == [control]
+
+    def test_the_receiver_sees_the_version_current_and_the_old_one_superseded(
+        self, connect, django_capture_on_commit_callbacks, published_version
+    ):
+        """Scenario 6."""
+        second = VersionFactory(
+            document=published_version.document, markdown="Different wording."
+        )
+        seen = []
+
+        def look(sender, version, replaced, **kwargs):
+            seen.append(
+                (
+                    Version.objects.get(pk=version.pk).status,
+                    Version.objects.get(pk=replaced.pk).status,
+                )
+            )
+
+        connect(look)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            second.publish()
+
+        assert seen == [(Version.Status.CURRENT, Version.Status.SUPERSEDED)]
+
+    def test_nothing_is_announced_until_the_outer_transaction_commits(
+        self, announcements, django_capture_on_commit_callbacks, draft
+    ):
+        with django_capture_on_commit_callbacks(execute=False) as callbacks:
+            draft.publish()
+
+        assert announcements == []
+        assert len(callbacks) == 1
+
+    def test_a_raising_receiver_cannot_undo_or_hide_the_publication(
+        self, connect, django_capture_on_commit_callbacks, caplog, draft
+    ):
+        """Scenario 8, FR-005: it is logged, and the receivers after it still run."""
+        later = []
+
+        def fail(sender, **kwargs):
+            raise ValueError("receiver broke")
+
+        connect(fail)
+        connect(lambda sender, **kwargs: later.append(kwargs["version"]))
+
+        with (
+            caplog.at_level("ERROR", logger="django.dispatch"),
+            django_capture_on_commit_callbacks(execute=True),
+        ):
+            draft.publish()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.CURRENT
+        assert later == [draft]
+        errors = [r for r in caplog.records if r.name == "django.dispatch"]
+        assert len(errors) == 1
+        assert errors[0].levelname == "ERROR"
+        assert errors[0].exc_info is not None
+
+    def test_a_receiver_that_publishes_another_version_announces_that_one_too(
+        self, announcements, connect, django_capture_on_commit_callbacks, draft
+    ):
+        follow_up = VersionFactory()
+
+        def publish_another(sender, version, **kwargs):
+            if version == draft:
+                follow_up.publish()
+
+        connect(publish_another)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            draft.publish()
+
+        assert [call["version"] for call in announcements] == [draft, follow_up]
+
+    def test_two_documents_published_in_one_transaction_are_each_announced_once(
+        self, db, announcements, django_capture_on_commit_callbacks
+    ):
+        first, second = VersionFactory(), VersionFactory()
+
+        with django_capture_on_commit_callbacks(execute=True), transaction.atomic():
+            first.publish()
+            second.publish()
+            assert announcements == []
+
+        assert [call["version"] for call in announcements] == [first, second]
