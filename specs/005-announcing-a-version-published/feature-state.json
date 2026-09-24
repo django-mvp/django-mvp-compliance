@@ -60,6 +60,13 @@
         "DES-002 (medium) receiver errors are logged on django.dispatch, invisible under Django's default logging with DEBUG off and no ADMINS; documented in T019 rather than adding a logger",
         "DES-003 (low) tests asserting a receiver did or did not run must execute commit callbacks; bound into T014, T016, T017, with a control publication and a base-manager probe in T004"
       ]
+    },
+    "review": {
+      "approved_by": "code-review",
+      "at": "2026-09-24T13:29:10Z",
+      "self_resolved": [
+        "COR-001 (low, verified, correctness) publish() mutated the instance before Acceptance.subject_of() could refuse an unsaved publisher, leaving it claiming a rolled-back publication in memory. Reproduced, fixed by deriving the identifier before any change, guarded by TestPublisher::test_an_unsaved_publisher_is_refused_before_anything_changes (red before, green after)."
+      ]
     }
   },
   "stories": [
