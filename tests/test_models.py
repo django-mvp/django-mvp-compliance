@@ -1488,3 +1488,60 @@ class TestPublisherDisplay:
         assert published_version.publisher_id is None
         assert published_version.publisher_subject == ""
         assert str(published_version.publisher_display) == "No publisher recorded"
+
+
+@pytest.fixture
+def announcements():
+    """Every ``version_published`` announcement made while a test runs."""
+    from mvp_compliance.signals import version_published
+
+    received: list[dict] = []
+
+    def record(sender, **kwargs):
+        received.append({"sender": sender, **kwargs})
+
+    version_published.connect(record, weak=False)
+    yield received
+    version_published.disconnect(record)
+
+
+class TestVersionPublished:
+    """A host project hears about every publication once, after it commits (FR-001 to FR-005)."""
+
+    def test_a_receiver_runs_once_with_the_version_publisher_and_replaced(
+        self, announcements, django_capture_on_commit_callbacks, draft, user
+    ):
+        """Scenario 1, FR-001, FR-002."""
+        with django_capture_on_commit_callbacks(execute=True):
+            draft.publish(publisher=user)
+
+        assert len(announcements) == 1
+        call = announcements[0]
+        assert call["sender"] is Version
+        assert call["version"] == draft
+        assert call["publisher"] == user
+        assert call["replaced"] is None
+
+    def test_a_publication_with_nobody_named_passes_none_as_publisher(
+        self, announcements, django_capture_on_commit_callbacks, draft
+    ):
+        with django_capture_on_commit_callbacks(execute=True):
+            draft.publish()
+
+        assert announcements[0]["publisher"] is None
+
+    def test_replaced_is_the_superseded_version_already_marked_superseded(
+        self, announcements, django_capture_on_commit_callbacks, published_version
+    ):
+        """Scenarios 2 and 3, FR-002."""
+        second = VersionFactory(
+            document=published_version.document, markdown="Different wording."
+        )
+
+        with django_capture_on_commit_callbacks(execute=True):
+            second.publish()
+
+        assert len(announcements) == 1
+        replaced = announcements[0]["replaced"]
+        assert replaced == published_version
+        assert replaced.status == Version.Status.SUPERSEDED
