@@ -49,3 +49,10 @@ Did: `TestPublisherInTheAdmin` display tests (version page beside Published at, 
 Verified: five display tests failed first (no "Published by"); `pytest tests/test_admin.py` 98 passed after the catalog step. Probe: removing both `select_related("publisher")` calls made both query-count tests fail; restored.
 Next: T011 docs.
 Watch: none.
+
+## 2026-09-24T14:20Z · Implementer US-2 · T011
+
+Did: `CONTEXT.md` Publisher; `docs/models.md` Publishing (argument, two fields, the `publisher_display` table, account removal) and Immutability list; `docs/authoring.md` Publishing, the admin's read-only page and the list of fields the package owns; `CHANGELOG.md` `[Unreleased]` entry naming the new personal data. `en` catalog regenerated; no new strings beyond T010's.
+Verified: `makemessages` a second time leaves the catalog unchanged; full verify run next.
+Next: full verify and report.
+Watch: `records.py` untouched (D4).

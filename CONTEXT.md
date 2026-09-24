@@ -27,6 +27,13 @@ never edited again, and a correction of any size means a new version. This is th
 package exists to provide, and it outranks convenience everywhere it conflicts with it.
 _Avoid_: active, live, released, final.
 
+**Publisher**:
+The account that put a version in force, kept on the version when it is published and never
+changed after. It is recorded as the account and as that account's identifier, so a version can
+still say "an account since removed" once the account is gone, without naming anyone. A version
+published from code with nobody named has no publisher, and says so.
+_Avoid_: author (the person who wrote the wording may be someone else), approver, owner.
+
 **Draft**:
 A version that has never been published. It can be edited and previewed freely, and it is invisible
 to everyone but the people who manage documents. A draft has no legal meaning at all.

@@ -56,6 +56,29 @@ version.published_at  # the moment it was published
 version.html  # the HTML a reader is served, rendered from version.markdown
 ```
 
+`publish()` takes the account doing it, `publish(publisher=user)`, and records it on the version
+along with that account's primary key as text, written by the same
+`Acceptance.subject_of()` an acceptance uses. Called without one, it records nobody:
+
+```python
+version.publish(publisher=request.user)
+version.publisher  # the user
+version.publisher_subject  # str(user.pk)
+```
+
+A draft has neither. `version.publisher_display` says what to show a person, and never
+a removed account's identifier:
+
+| The version | `publisher_display` |
+|---|---|
+| is a draft | `None` |
+| was published by an account that still exists | `str(version.publisher)` |
+| was published by an account since removed | "An account since removed" |
+| was published with nobody named, or before publishers were recorded | "No publisher recorded" |
+
+Removing the publisher's account succeeds and leaves the version otherwise unchanged:
+`publisher` becomes empty and `publisher_subject` stays.
+
 Publishing an already-published version raises `mvp_compliance.exceptions.PublishError`
 and changes nothing about the document. The same applies when something else published
 the version first and this copy of it is out of date, so a caller that catches
@@ -102,7 +125,9 @@ MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"
 ### Immutability
 
 Once a version is published — current or superseded, `version.is_published` — its
-`document`, `number`, `markdown`, `html` and `published_at` can never change again.
+`document`, `number`, `markdown`, `html`, `published_at`, `publisher` and `publisher_subject`
+can never change again. The one exception is removing the publisher's account, which clears
+`publisher` and keeps `publisher_subject`.
 Only `status` can, because moving from current to superseded is the one change a
 published version ever undergoes:
 

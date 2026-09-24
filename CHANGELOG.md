@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Each published version now records the account that published it: its
+  primary key, kept as text next to a link to the account. This is new
+  personal data held about a person. It is written once, when the version is
+  published, and cannot be changed afterwards. Removing the account clears the
+  link, keeps the identifier, and leaves the version standing. The admin
+  publish page records the signed-in user, and **Published by** appears next
+  to **Published at** on the version page and in the version and document lists.
+  A version published before this change shows "No publisher recorded".
 - `Document` and `Version` models for versioned legal text: a document holds
   a lasting name, and each version holds the Markdown wording written for
   it. A version starts as a draft, and publishing renders it to HTML,
