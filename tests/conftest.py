@@ -3,6 +3,7 @@
 import pytest
 from django.contrib.auth.models import Permission
 
+from mvp_compliance.signals import version_published
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
@@ -123,3 +124,30 @@ def staff_without_permissions(db):
 def visitor(db):
     """A signed-in account that is not staff at all."""
     return UserFactory()
+
+
+@pytest.fixture
+def connect():
+    """Connect a receiver to ``version_published`` and disconnect it after the test."""
+    connected = []
+
+    def connect_receiver(receiver):
+        version_published.connect(receiver, weak=False)
+        connected.append(receiver)
+        return receiver
+
+    yield connect_receiver
+    for receiver in connected:
+        version_published.disconnect(receiver)
+
+
+@pytest.fixture
+def announcements(connect):
+    """Every ``version_published`` announcement made while a test runs."""
+    received: list[dict] = []
+
+    def record(sender, **kwargs):
+        received.append({"sender": sender, **kwargs})
+
+    connect(record)
+    return received

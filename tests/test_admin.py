@@ -1518,27 +1518,24 @@ class TestPublishAnnouncement:
         client,
         publisher,
         draft,
+        connect,
         django_capture_on_commit_callbacks,
         caplog,
     ) -> None:
         """Scenario 7, FR-006, SC-003."""
-        from mvp_compliance.signals import version_published
 
         def fail(sender, **kwargs):
             raise ValueError("receiver broke")
 
-        version_published.connect(fail, weak=False)
+        connect(fail)
         client.force_login(publisher)
-        try:
-            with (
-                caplog.at_level("ERROR", logger="django.dispatch"),
-                django_capture_on_commit_callbacks(execute=True),
-            ):
-                response = client.post(
-                    reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
-                )
-        finally:
-            version_published.disconnect(fail)
+        with (
+            caplog.at_level("ERROR", logger="django.dispatch"),
+            django_capture_on_commit_callbacks(execute=True),
+        ):
+            response = client.post(
+                reverse("admin:mvp_compliance_version_publish", args=[draft.pk])
+            )
 
         draft.refresh_from_db()
         assert draft.status == draft.Status.CURRENT

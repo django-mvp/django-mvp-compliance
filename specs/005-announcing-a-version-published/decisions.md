@@ -20,6 +20,8 @@ one broken receiver stop every receiver connected after it. The cost is that a f
 unless the project watches its logs, which is where a project already looks for errors in its own
 code.
 
+**ADR:** docs/adr/0016-a-publication-is-announced-after-it-commits-and-no-receiver-can-undo-it.md
+
 ## D2 — A removed publisher's account leaves a trace, not a name
 
 **Ambiguous**: the issue asks for who published a version. It says nothing about what the record
@@ -37,6 +39,8 @@ fact it exists to hold. A name or an email address kept about somebody whose acc
 is the host project's decision to make, not the package's. A project that keeps its own record of
 who an account belonged to can still answer "who was it?" from the identifier left behind.
 
+**ADR:** none — applies ADR 0008 and ADR 0014 to the publisher; no new decision
+
 ## D3 — The admin link needs a site address from the project
 
 **Ambiguous**: the email links to the version in the admin, but a signal is sent without a request,
@@ -49,6 +53,8 @@ is left to planning.
 writing the receiver that renders the email. Guessing the address from Django's sites framework
 would add a dependency many projects do not install, and it is still wrong for a site served
 under more than one address.
+
+**ADR:** none — local to the email function's signature, nothing downstream inherits it
 
 ## D4 — Versions a person published are not yet part of what the package produces about them
 
@@ -67,7 +73,7 @@ decision about personal data rather than an implementation detail, and it would 
 another feature. Leaving it silent would ship an answer whose statement of coverage is no longer
 true.
 
-**ADR:** pending — decided with the maintainer before the merge gate
+**ADR:** none — a question of scope for the maintainer, not an architectural decision
 
 ## D5 — Design review carried as watch items
 
