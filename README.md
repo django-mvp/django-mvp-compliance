@@ -208,6 +208,12 @@ posted. Following its **Back** link instead leaves the draft untouched.
 output is empty once stripped — both reach the person publishing as a
 message they can read, not as an error page.
 
+The admin records whoever published a version as its publisher, and shows
+them next to the moment of publication. Code can call
+`version.publish(publisher=user)` to do the same, or `version.publish()` to
+record nobody. See [docs/models.md](docs/models.md) for what a version says
+about a publisher whose account has since been removed.
+
 Once a version is published, its change page in the admin offers no
 editable form at all. Its wording is readable in full, and Django serves
 its own read-only page rather than one this package builds — not a form
