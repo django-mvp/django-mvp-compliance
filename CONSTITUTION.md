@@ -175,12 +175,6 @@ This is enforced in the model layer, not by convention and not only in the admin
 admin is one of several ways a row gets written. A feature that needs to change what a published
 version says is asking for a new version, and the answer is always to create one.
 
-A person's request to delete their data does not reach their acceptances. The acceptances are the
-evidence of what they agreed to, and they stay. The only route that removes one is removing the
-account itself, and only when the host project has configured acceptances not to survive that
-(ADR 0008). No path in this package deletes, blanks or selects among a person's acceptances on
-request.
-
 ### Article XIII — The rendered output is the evidence
 
 A version stores the Markdown that was written and the HTML that was rendered from it when it was
