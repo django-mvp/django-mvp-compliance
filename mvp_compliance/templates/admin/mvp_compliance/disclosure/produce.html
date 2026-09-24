@@ -22,7 +22,11 @@
       {% for section in record.sections %}
         <section>
           <h3>{{ section.heading }}</h3>
-          {% include section.template with entries=section.entries %}
+          {% if section.entries %}
+            {% include section.template with entries=section.entries %}
+          {% else %}
+            <p>{% translate "None." %}</p>
+          {% endif %}
         </section>
       {% endfor %}
     {% endif %}

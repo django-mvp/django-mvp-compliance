@@ -1594,3 +1594,17 @@ class TestDisclosureVersionsPublished:
         content = response.content.decode()
         assert "Versions published" in content
         assert "House rules" in content
+
+    def test_an_empty_section_says_so(self, client, disclosure_producer) -> None:
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        VersionFactory().publish(publisher=someone)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_disclosure_changelist"),
+            {"subject": someone.username},
+        )
+
+        content = response.content.decode()
+        acceptances = content.index("Acceptances")
+        assert "None." in content[acceptances : content.index("Versions published")]
