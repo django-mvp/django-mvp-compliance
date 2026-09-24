@@ -84,3 +84,10 @@ Did: `TestPublishAnnouncement` in `tests/test_admin.py`: raising receiver (versi
 Verified: failed first on `[] == [25]` (no message) and the missing `<li class="success">`; refusal test passes already.
 Next: T018.
 Watch: none.
+
+## 2026-09-24T15:25Z · Implementer US-1 · T018
+
+Did: `publish_view` adds a success message after a publication that succeeded ("Version N of Document is now published."). `en` catalog regenerated for the new string (`manage.py makemessages -l en --ignore=demo --ignore=tests --ignore=dist`, POT-Creation-Date line removed as before).
+Verified: `pytest tests/test_admin.py` 101 passed (T017's two failing tests now green; `TestUserFacingStrings` green).
+Next: T019 docs.
+Watch: none.

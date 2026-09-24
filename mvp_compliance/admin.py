@@ -268,6 +268,12 @@ class VersionAdmin(admin.ModelAdmin):
                 version.publish(publisher=request.user)
             except PublishError as exc:
                 messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    _("Version %(number)s of %(document)s is now published.")
+                    % {"number": version.number, "document": version.document},
+                )
             return HttpResponseRedirect(
                 reverse("admin:mvp_compliance_version_change", args=[version.pk])
             )
