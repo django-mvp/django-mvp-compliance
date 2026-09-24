@@ -12,7 +12,9 @@ from pathlib import Path
 
 import pytest
 from django.contrib import admin
+from django.db import connection
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import path, reverse
 
 import mvp_compliance
@@ -977,6 +979,117 @@ class TestDocumentAdmin:
         assert response.status_code == 302
         assert current.markdown == original_markdown
         assert current.html == original_html
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDocumentChangelist:
+    """The list says something about each document, without a query per row (#39)."""
+
+    def test_a_document_with_nothing_in_force_reads_as_a_normal_state(
+        self, client, editor, document
+    ) -> None:
+        """Never published at all — the ordinary case for a new document."""
+        client.force_login(editor)
+        changelist_url = reverse("admin:mvp_compliance_document_changelist")
+
+        response = client.get(changelist_url)
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "No version in force" in content
+        assert 'field-published_version_count">0<' in content
+
+    def test_a_draft_alone_still_reads_as_nothing_in_force(
+        self, client, editor, document
+    ) -> None:
+        """A draft has no legal standing — it is not a version in force."""
+        client.force_login(editor)
+        VersionFactory(document=document, markdown="Unpublished wording")
+        changelist_url = reverse("admin:mvp_compliance_document_changelist")
+
+        response = client.get(changelist_url)
+
+        content = response.content.decode()
+        assert "No version in force" in content
+        assert 'field-published_version_count">0<' in content
+
+    def test_the_version_in_force_links_to_its_own_page_and_shows_its_date(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        current = VersionFactory(document=document, markdown="Current wording")
+        current.publish()
+        version_url = reverse("admin:mvp_compliance_version_change", args=[current.pk])
+        changelist_url = reverse("admin:mvp_compliance_document_changelist")
+
+        response = client.get(changelist_url)
+
+        content = response.content.decode()
+        assert f'<a href="{version_url}">Version {current.number}</a>' in content
+        assert 'field-published_version_count">1<' in content
+        assert "No version in force" not in content
+
+    def test_a_superseding_publish_keeps_the_count_moving_and_the_link_current(
+        self, client, editor, document
+    ) -> None:
+        """FR-007: publishing a second version supersedes the first (#39)."""
+        client.force_login(editor)
+        first = VersionFactory(document=document, markdown="First wording")
+        first.publish()
+        second = VersionFactory(document=document, markdown="Second wording")
+        second.publish()
+        second_url = reverse("admin:mvp_compliance_version_change", args=[second.pk])
+        first_url = reverse("admin:mvp_compliance_version_change", args=[first.pk])
+        changelist_url = reverse("admin:mvp_compliance_document_changelist")
+
+        response = client.get(changelist_url)
+
+        content = response.content.decode()
+        assert f'<a href="{second_url}">Version {second.number}</a>' in content
+        assert first_url not in content
+        assert 'field-published_version_count">2<' in content
+
+    def test_a_draft_beside_a_version_in_force_is_not_counted(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        current = VersionFactory(document=document, markdown="Current wording")
+        current.publish()
+        VersionFactory(document=document, markdown="Unpublished rewording")
+        changelist_url = reverse("admin:mvp_compliance_document_changelist")
+
+        response = client.get(changelist_url)
+
+        content = response.content.decode()
+        assert 'field-published_version_count">1<' in content
+
+    def test_the_changelist_costs_a_fixed_number_of_queries(
+        self, client, editor, django_assert_num_queries
+    ) -> None:
+        """The list must not ask the database once per row (#39)."""
+        client.force_login(editor)
+        changelist_url = reverse("admin:mvp_compliance_document_changelist")
+
+        for _ in range(2):
+            version = VersionFactory()
+            version.publish()
+
+        with CaptureQueriesContext(connection) as at_two_documents:
+            response = client.get(changelist_url)
+        assert response.status_code == 200
+
+        for _ in range(8):  # ten documents total
+            version = VersionFactory()
+            version.publish()
+
+        with CaptureQueriesContext(connection) as at_ten_documents:
+            response = client.get(changelist_url)
+        assert response.status_code == 200
+
+        assert len(at_two_documents.captured_queries) == len(
+            at_ten_documents.captured_queries
+        )
 
 
 class TestUserFacingStrings:

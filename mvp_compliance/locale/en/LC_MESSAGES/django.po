@@ -22,12 +22,33 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:177
+#: mvp_compliance/admin.py:62
+msgid "Current version"
+msgstr "Current version"
+
+#: mvp_compliance/admin.py:66
+msgid "No version in force"
+msgstr "No version in force"
+
+#: mvp_compliance/admin.py:71
+#, python-format
+msgid "Version %(number)s"
+msgstr "Version %(number)s"
+
+#: mvp_compliance/admin.py:74
+msgid "In force since"
+msgstr "In force since"
+
+#: mvp_compliance/admin.py:80
+msgid "Published versions"
+msgstr "Published versions"
+
+#: mvp_compliance/admin.py:237
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:206
+#: mvp_compliance/admin.py:266
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Publish"
@@ -133,7 +154,7 @@ msgstr ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
 
-#: mvp_compliance/models.py:216 mvp_compliance/models.py:547
+#: mvp_compliance/models.py:216 mvp_compliance/models.py:552
 msgid "version"
 msgstr "version"
 
@@ -161,24 +182,24 @@ msgstr "This version is no longer a draft."
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: mvp_compliance/models.py:433 mvp_compliance/models.py:612
+#: mvp_compliance/models.py:439 mvp_compliance/models.py:617
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: mvp_compliance/models.py:438 mvp_compliance/models.py:617
+#: mvp_compliance/models.py:443 mvp_compliance/models.py:622
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: mvp_compliance/models.py:488
+#: mvp_compliance/models.py:493
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: mvp_compliance/models.py:523
+#: mvp_compliance/models.py:528
 msgid "user"
 msgstr "user"
 
-#: mvp_compliance/models.py:525
+#: mvp_compliance/models.py:530
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -188,11 +209,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: mvp_compliance/models.py:535
+#: mvp_compliance/models.py:540
 msgid "subject"
 msgstr "subject"
 
-#: mvp_compliance/models.py:539
+#: mvp_compliance/models.py:544
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -204,7 +225,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: mvp_compliance/models.py:549
+#: mvp_compliance/models.py:554
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -212,11 +233,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: mvp_compliance/models.py:556
+#: mvp_compliance/models.py:561
 msgid "accepted at"
 msgstr "accepted at"
 
-#: mvp_compliance/models.py:560
+#: mvp_compliance/models.py:565
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -224,11 +245,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: mvp_compliance/models.py:565
+#: mvp_compliance/models.py:570
 msgid "IP address"
 msgstr "IP address"
 
-#: mvp_compliance/models.py:569
+#: mvp_compliance/models.py:574
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -240,15 +261,15 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: mvp_compliance/models.py:579
+#: mvp_compliance/models.py:584
 msgid "acceptance"
 msgstr "acceptance"
 
-#: mvp_compliance/models.py:580
+#: mvp_compliance/models.py:585
 msgid "acceptances"
 msgstr "acceptances"
 
-#: mvp_compliance/models.py:605
+#: mvp_compliance/models.py:610
 msgid "Cannot record an acceptance for a user with no primary key."
 msgstr "Cannot record an acceptance for a user with no primary key."
 

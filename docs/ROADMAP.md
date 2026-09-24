@@ -29,27 +29,18 @@ Everything needed for a site to publish its legal documents and hold a record of
 
 ### R1 — Documents and the versions they go through
 
-*feature · advances G1, G2, G6*
+*delivered in [#4](https://github.com/django-mvp/django-mvp-compliance/issues/4), [#5](https://github.com/django-mvp/django-mvp-compliance/issues/5) · advances G1, G2, G6*
 
 A site keeps several legal documents at once — a privacy policy, terms, a cookie policy, whatever
 else it needs — and each one is rewritten over the years without ever losing what it used to say.
-This item is that: a document with a lasting identity, and a sequence of versions underneath it,
-each written and reviewed before anyone sees it and then published to become the one in force.
+A document holds a lasting identity, and a sequence of versions underneath it, each written and
+reviewed before anyone sees it and then published to become the one in force.
 
-Publishing is the moment that matters and it only goes one way. A version that has been published
-is what people are reading and agreeing to, so it stops being editable at that point, and any
-correction becomes the next version instead. That is the whole reason the documents live in the
-database rather than in the repository, and it is why this comes first: every other item here
-either reads a version, points at one, or asks someone to agree to one.
-
-**Deliverables:**
-
-- Someone with the right permission creates a document and writes a version of it without a
-  deploy, a migration or a developer.
-- A version can be worked on and looked at before it is live, and has no standing until published.
-- Publishing makes a version the one in force, and leaves the one it replaced intact.
-- A published version cannot be changed afterwards, by any route the package offers.
-- A site runs as many documents as it needs, all managed the same way.
+Someone with the right permission creates a document and writes a version of it without a deploy,
+a migration or a developer. A version can be worked on and looked at before it is live, and has no
+standing until published. Publishing makes a version the one in force and leaves the one it
+replaced intact, and a published version can never be changed afterwards, by any route the package
+offers. A site runs as many documents as it needs, all managed the same way.
 
 Serves G1, G2 and G6. Does not cover how any of it is displayed, which is R2.
 
