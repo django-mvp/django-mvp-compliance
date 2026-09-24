@@ -73,8 +73,8 @@ a removed account's identifier:
 |---|---|
 | is a draft | `None` |
 | was published by an account that still exists | `str(version.publisher)` |
-| was published by an account since removed | "An account since removed" |
-| was published with nobody named, or before publishers were recorded | "No publisher recorded" |
+| was published by an account since removed | "Account removed" |
+| was published with nobody named, or before publishers were recorded | "Unknown publisher" |
 
 Removing the publisher's account succeeds and leaves the version otherwise unchanged:
 `publisher` becomes empty and `publisher_subject` stays.

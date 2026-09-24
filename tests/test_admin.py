@@ -1447,7 +1447,7 @@ class TestPublisherInTheAdmin:
             reverse("admin:mvp_compliance_version_change", args=[draft.pk])
         )
 
-        assert "An account since removed" in response.content.decode()
+        assert "Account removed" in response.content.decode()
 
     def test_a_drafts_page_shows_the_empty_value_for_published_by(
         self, client, editor, draft
@@ -1460,7 +1460,7 @@ class TestPublisherInTheAdmin:
 
         content = response.content.decode()
         assert "Published by" in content
-        assert "No publisher recorded" not in content
+        assert "Unknown publisher" not in content
 
     def test_the_version_list_shows_the_publisher(
         self, client, editor, draft, user

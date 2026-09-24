@@ -221,12 +221,12 @@ msgid "Can publish a version"
 msgstr "Can publish a version"
 
 #: mvp_compliance/models.py:322
-msgid "An account since removed"
-msgstr "An account since removed"
+msgid "Account removed"
+msgstr "Account removed"
 
 #: mvp_compliance/models.py:323
-msgid "No publisher recorded"
-msgstr "No publisher recorded"
+msgid "Unknown publisher"
+msgstr "Unknown publisher"
 
 #: mvp_compliance/models.py:371
 msgid "This version has already been published."

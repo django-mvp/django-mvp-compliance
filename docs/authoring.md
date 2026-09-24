@@ -89,8 +89,8 @@ only when that page is posted. Following its **Back** link instead leaves the dr
 Publishing records who did it: the account signed in when the confirmation is posted becomes the
 version's publisher. A published version's page shows **Published by** beside **Published at**,
 and both lists show it too — the version list for every version, the document list for the
-version in force. If that account is later removed, the version says "An account since removed";
-a version with nobody recorded says "No publisher recorded".
+version in force. If that account is later removed, the version says "Account removed";
+a version with nobody recorded says "Unknown publisher".
 
 A successful publication returns to the version's page with a success message. Your own code
 can react to it through the `version_published` signal (see [announcing.md](announcing.md)); a

@@ -319,8 +319,8 @@ class Version(models.Model):
         if self.publisher_id is not None:
             return str(self.publisher)
         if self.publisher_subject:
-            return str(_("An account since removed"))
-        return str(_("No publisher recorded"))
+            return str(_("Account removed"))
+        return str(_("Unknown publisher"))
 
     @classmethod
     def frozen_fields(cls) -> list[models.Field]:

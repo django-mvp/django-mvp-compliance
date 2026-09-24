@@ -1484,13 +1484,13 @@ class TestPublisherDisplay:
         user.delete()
         draft.refresh_from_db()
 
-        assert str(draft.publisher_display) == "An account since removed"
+        assert str(draft.publisher_display) == "Account removed"
         assert subject not in str(draft.publisher_display)
 
     def test_a_version_published_with_nobody_named_says_so(self, draft):
         draft.publish()
 
-        assert str(draft.publisher_display) == "No publisher recorded"
+        assert str(draft.publisher_display) == "Unknown publisher"
 
     def test_a_version_published_before_publishers_were_kept_says_so(
         self, published_version
@@ -1498,7 +1498,7 @@ class TestPublisherDisplay:
         """Scenario 5: a version carried forward has both fields empty."""
         assert published_version.publisher_id is None
         assert published_version.publisher_subject == ""
-        assert str(published_version.publisher_display) == "No publisher recorded"
+        assert str(published_version.publisher_display) == "Unknown publisher"
 
 
 class TestVersionPublished:

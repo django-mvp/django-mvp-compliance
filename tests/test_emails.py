@@ -99,7 +99,7 @@ class TestRenderPublicationEmail:
         _subject, body = render_publication_email(version, replaced, SITE_URL)
 
         assert version.publisher_display in body
-        assert "No publisher recorded" in body
+        assert "Unknown publisher" in body
 
     def test_the_body_carries_the_site_address_and_the_admin_page_for_the_version(
         self,
@@ -151,7 +151,7 @@ class TestRenderPublicationEmail:
             subject, body = render_publication_email(version, replaced, SITE_URL)
 
         assert subject == "Ours: Terms of service"
-        assert body.startswith("Ours: No publisher recorded at https://example.com/")
+        assert body.startswith("Ours: Unknown publisher at https://example.com/")
 
     def test_the_subject_and_body_render_in_the_active_language(self) -> None:
         """Scenario 7, FR-020."""
