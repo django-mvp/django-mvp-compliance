@@ -373,6 +373,11 @@ class Version(models.Model):
         html = get_renderer()().render(self.markdown)
         if not html.strip():
             raise PublishError(_("Publishing this would produce no output."))
+        # Before anything about this version changes, so an unsaved publisher
+        # is refused with the draft left exactly as it was.
+        publisher_subject = (
+            "" if publisher is None else Acceptance.subject_of(publisher)
+        )
 
         with transaction.atomic():
             # Not belt-and-braces: MySQL and MariaDB silently omit the partial
@@ -406,9 +411,7 @@ class Version(models.Model):
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
             self.publisher = publisher
-            self.publisher_subject = (
-                "" if publisher is None else Acceptance.subject_of(publisher)
-            )
+            self.publisher_subject = publisher_subject
             self.save(
                 update_fields=[
                     "status",

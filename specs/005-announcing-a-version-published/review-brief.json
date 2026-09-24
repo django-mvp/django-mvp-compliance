@@ -1,0 +1,58 @@
+{
+  "role": "reviewer",
+  "stage": "S6",
+  "phase": "1 (correctness + spec-compliance) and 2 (security)",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-005",
+  "branch": "005-announcing-a-version-published",
+  "feature": "005-announcing-a-version-published",
+  "diff": "git diff 5c0877b..HEAD \u2014 the whole feature branch against the commit its first story started from. Everything before 5c0877b on this branch is specification and planning artefacts.",
+  "lenses": [
+    "correctness",
+    "spec-compliance",
+    "security"
+  ],
+  "why_security_lens": "The diff adds new personal data about staff (the publisher), a frozen-field guard it must pass through, an admin write path, and plain-text email templates rendered with autoescape off from names a staff member typed.",
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-17/b773db2e"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/review.md",
+  "inputs": [
+    "specs/005-announcing-a-version-published/spec.md",
+    "specs/005-announcing-a-version-published/decisions.md",
+    "specs/005-announcing-a-version-published/plan.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "docs/announcing.md",
+    "docs/models.md",
+    "docs/authoring.md",
+    "docs/adr/0008-an-acceptance-outlives-the-account-it-names.md",
+    "docs/adr/0014-the-project-links-a-surviving-acceptance-to-a-person.md",
+    "docs/adr/0016-a-publication-is-announced-after-it-commits-and-no-receiver-can-undo-it.md",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "known_and_not_findings": [
+    "tests/test_admin.py is flagged by the modification guardrail; the only removed line is an import gaining `messages`. Triaged.",
+    "The email templates use autoescape off on purpose: they are plain text and never served as HTML; docs/announcing.md tells projects to send the body as plain text.",
+    "decisions.md D4 (the personal-record answer does not include versions a person published) is with the maintainer as a scope question; do not report it again.",
+    "ADR 0016 skips 0015 on purpose: an open pull request already claims 0015."
+  ],
+  "resolved_django": "/home/sam/.cache/pypoetry/virtualenvs/django-mvp-compliance-weIHCgwi-py3.14/lib/python3.14/site-packages/django",
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs005-review-findings.json"
+}

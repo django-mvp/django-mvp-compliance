@@ -1337,6 +1337,17 @@ class TestOptionalEvidence:
 class TestPublisher:
     """A version keeps who published it, frozen with the rest of it (FR-008 to FR-011, FR-013)."""
 
+    def test_an_unsaved_publisher_is_refused_before_anything_changes(self, draft):
+        """A publisher with no primary key leaves the draft untouched, in memory too."""
+        with pytest.raises(RecordError):
+            draft.publish(publisher=get_user_model()(username="unsaved"))
+
+        assert draft.status == draft.Status.DRAFT
+        assert draft.published_at is None
+        assert draft.publisher is None
+        draft.refresh_from_db()
+        assert draft.status == draft.Status.DRAFT
+
     def test_publishing_records_the_publisher_and_their_subject(self, draft, user):
         """Scenario 3, FR-008: the account and its identifier are both written."""
         draft.publish(publisher=user)
