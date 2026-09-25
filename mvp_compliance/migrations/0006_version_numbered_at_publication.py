@@ -4,17 +4,6 @@ from django.conf import settings
 from django.db import migrations, models
 
 
-def clear_draft_numbers(apps, schema_editor):
-    """A draft has no number until it is published (ADR 0018).
-
-    Through the historical model's own manager, whose ``update()`` refuses
-    the moment the rows it touches include a published version (ADR 0004).
-    A published version keeps the number it was published under.
-    """
-    Version = apps.get_model("mvp_compliance", "Version")
-    Version.objects.filter(status="draft").update(number=None)
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -36,7 +25,6 @@ class Migration(migrations.Migration):
             name='number',
             field=models.CharField(blank=True, editable=False, help_text="The year this version was published and its place among the document's versions published that year, such as 2026.2. Assigned at publication. Empty for a draft.", max_length=20, null=True, verbose_name='number'),
         ),
-        migrations.RunPython(clear_draft_numbers, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name='version',
             constraint=models.CheckConstraint(condition=models.Q(models.Q(('html', ''), ('number__isnull', True), ('published_at__isnull', True), ('publisher__isnull', True), ('publisher_subject', ''), ('status', 'draft')), models.Q(('status__in', ['current', 'superseded']), ('number__isnull', False), ('published_at__isnull', False), models.Q(('html', ''), _negated=True)), _connector='OR'), name='version_status_agrees_with_its_publication'),

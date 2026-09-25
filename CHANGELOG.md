@@ -158,8 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   such as `2026.2`. The count starts again each year, using the site's time zone. A draft has no
   number, so drafts that are never published leave no gaps. `Version.number` is now a string, or
   `None` for a draft, and versions are ordered by when they were published, with drafts last. The
-  admin shows "Draft" where a draft's number would be. Existing published versions keep the number
-  they were published under, and migration `0006` clears the number from existing drafts.
+  admin shows "Draft" where a draft's number would be.
 - The package is built with hatchling instead of poetry-core, and developed with uv instead of
   Poetry. The wheel contains the same files as before. The source distribution does too, plus the
   repository's `.gitignore`, which hatchling includes so that a build from it leaves out the same

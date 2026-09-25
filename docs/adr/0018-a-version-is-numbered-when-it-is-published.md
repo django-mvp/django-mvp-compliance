@@ -12,9 +12,6 @@ the document's versions published that year. A document's first three publicatio
 The number is frozen with the wording, like everything else a published version carries. It is the
 only numbering scheme, and there is no setting to choose another.
 
-Versions published before this change keep the plain number they were published under. Migration
-`0006` clears the number from drafts and from nothing else.
-
 ## Why
 
 A version number is how somebody refers to a wording that was in force. Numbering drafts when they
@@ -34,13 +31,6 @@ published numbers alone on every database backend without a partial index.
 
 Offering a choice of scheme was left out: no project has asked for another one, and a setting
 nobody uses is still a setting everyone has to read about.
-
-Renumbering the versions already published was the other way to handle existing data, and it was
-rejected. Their number is part of what people were shown, including in emails announcing them, and
-a migration never rewrites a published version (Article XVI). Clearing a draft's number is a data
-migration, which ADR 0004 says this package does not ship without recording it. It runs through the
-historical model's own manager, whose `update()` refuses if any row it touches is published, and a
-test proves every published version comes through unchanged.
 
 ## Revisit if
 
