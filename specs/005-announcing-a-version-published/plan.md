@@ -261,8 +261,5 @@ publisher does not exist until US-2 writes it. US-3 renders `publisher_display`,
 
 ## Outside this plan
 
-`records.produce()` answers "everything this package holds about a person" (FS-004 FR-001) and says
-so in its statement of coverage. Once `publisher_subject` exists, the package holds one more thing
-about a member of staff: which versions they published. This spec does not ask for that to join the
-answer, and adding it would move FS-004's pinned query count. It is put to the maintainer as a
-decision rather than planned around (decisions.md D4).
+`records.produce()`, the answer about a person, does not list the versions a member of staff
+published. The answer covers consent, and publishing is staff work (decisions.md D4, ADR 0017).
