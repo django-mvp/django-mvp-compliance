@@ -7,7 +7,7 @@ feature.
 
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -94,12 +94,29 @@ class DocumentAdmin(admin.ModelAdmin):
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
     form = VersionForm
-    readonly_fields = ["number", "status", "published_at", "published_by", "html"]
-    list_display = ["document", "number", "status", "published_at", "published_by"]
+    readonly_fields = [
+        "version_number",
+        "status",
+        "published_at",
+        "published_by",
+        "html",
+    ]
+    list_display = [
+        "document",
+        "version_number",
+        "status",
+        "published_at",
+        "published_by",
+    ]
     list_select_related = ["document", "publisher"]
     list_filter = ["document", "status"]
     search_fields = ["document__name"]
-    ordering = ["document", "-number"]
+    ordering = ["document", F("published_at").desc(nulls_first=True), "-pk"]
+
+    @admin.display(description=_("number"), ordering="published_at")
+    def version_number(self, version):
+        """The number a version was published under, or "Draft" until it has one."""
+        return version.number or _("Draft")
 
     @admin.display(description=_("Published by"))
     def published_by(self, version):

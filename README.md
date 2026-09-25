@@ -55,6 +55,11 @@ again; a correction, of any size, is published again as a new version.
 There is no way to unpublish, revert, or make an earlier version current a
 second time.
 
+A version is numbered when it is published, never before: the year it was
+published and its place among that document's versions published in the same
+year, so `2026.1`, `2026.2`, then `2027.1`. A draft has no number, so drafts
+that are never published leave no gaps in the published history.
+
 The version in force:
 
 ```python

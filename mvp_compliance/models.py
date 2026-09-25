@@ -162,7 +162,8 @@ class Version(models.Model):
     """One revision of a document, holding the Markdown its author wrote.
 
     Numbered and ordered by the package — never given a label or number by
-    whoever writes it.
+    whoever writes it. A draft has no number: it gets one when it is
+    published, so a document's published history has no gaps.
     """
 
     document = models.ForeignKey(
@@ -172,12 +173,18 @@ class Version(models.Model):
         related_name="versions",
         on_delete=models.PROTECT,
     )
-    number = models.PositiveIntegerField(
+    # Null rather than blank for a draft, so the unique constraint below holds
+    # for published numbers alone on every backend.
+    number = models.CharField(
         _("number"),
+        max_length=20,
+        null=True,
+        blank=True,
         editable=False,
         help_text=_(
-            "This version's position among its document's versions, "
-            "assigned automatically."
+            "The year this version was published and its place among the "
+            "document's versions published that year, such as 2026.2. "
+            "Assigned at publication. Empty for a draft."
         ),
     )
     markdown = models.TextField(
@@ -256,7 +263,11 @@ class Version(models.Model):
     class Meta:
         verbose_name = _("version")
         verbose_name_plural = _("versions")
-        ordering = ["document", "number"]
+        ordering = [
+            "document",
+            models.F("published_at").asc(nulls_last=True),
+            "pk",
+        ]
         # Writing a version and making one legally binding are different levels
         # of trust, so publishing needs a permission Django does not create on
         # its own (FR-014). A site that wants one person to do both grants both.
@@ -284,6 +295,7 @@ class Version(models.Model):
                 # is the database's to say.
                 condition=models.Q(
                     status="draft",
+                    number__isnull=True,
                     published_at__isnull=True,
                     html="",
                     publisher__isnull=True,
@@ -291,6 +303,7 @@ class Version(models.Model):
                 )
                 | (
                     models.Q(status__in=["current", "superseded"])
+                    & models.Q(number__isnull=False)
                     & models.Q(published_at__isnull=False)
                     & ~models.Q(html="")
                 ),
@@ -299,6 +312,8 @@ class Version(models.Model):
         ]
 
     def __str__(self) -> str:
+        if self.number is None:
+            return f"{self.document} ({_('draft')})"
         return f"{self.document} #{self.number}"
 
     @property
@@ -410,11 +425,23 @@ class Version(models.Model):
             self.html = html
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
+            # The site's year, not UTC's, and counted under the lock, so two
+            # publications cannot take the same place in it.
+            year = (
+                timezone.localdate(self.published_at)
+                if timezone.is_aware(self.published_at)
+                else self.published_at.date()
+            ).year
+            published_this_year = document.versions.filter(
+                number__startswith=f"{year}."
+            ).count()
+            self.number = f"{year}.{published_this_year + 1}"
             self.publisher = publisher
             self.publisher_subject = publisher_subject
             self.save(
                 update_fields=[
                     "status",
+                    "number",
                     "published_at",
                     "html",
                     "publisher",
@@ -436,12 +463,7 @@ class Version(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         stored = self.stored_row()
-        if stored is None:
-            current_max = Version.objects.filter(document=self.document).aggregate(
-                models.Max("number")
-            )["number__max"]
-            self.number = (current_max or 0) + 1
-        else:
+        if stored is not None:
             self.refuse_if_published_wording_changed(stored)
         super().save(*args, **kwargs)
 

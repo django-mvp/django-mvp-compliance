@@ -22,22 +22,29 @@ import mvp_compliance.migrations as migrations_package
 class TestMigrationOperations:
     """Every operation in every migration this package ships, read together."""
 
-    def test_no_shipped_migration_uses_runpython_or_runsql(self):
-        # If a legitimate data migration is ever needed, write it as a
-        # RunPython that loads Version or Acceptance through the historical
-        # model's own manager and calls publish()/save()/record() — never raw
-        # SQL or an unguarded save() on a row this package would otherwise
-        # refuse.
+    #: The data migrations this package ships, each one shown by a test below
+    #: to leave every published version as it was (ADR 0004).
+    DATA_MIGRATIONS = {"0006_version_numbered_at_publication": "clear_draft_numbers"}
+
+    def test_no_shipped_migration_writes_data_except_the_ones_recorded(self):
+        # A new data migration loads Version or Acceptance through the
+        # historical model's own manager, is added here, and gets a test
+        # proving it leaves published versions and acceptances untouched —
+        # never raw SQL or an unguarded save() on a row this package would
+        # otherwise refuse.
         for module_info in pkgutil.iter_modules(migrations_package.__path__):
             module = importlib.import_module(
                 f"{migrations_package.__name__}.{module_info.name}"
             )
             migration = module.Migration
             for operation in migration.operations:
-                assert not isinstance(operation, (RunPython, RunSQL)), (
-                    f"{module_info.name} contains a "
-                    f"{type(operation).__name__} operation — see D10 first"
+                assert not isinstance(operation, RunSQL), (
+                    f"{module_info.name} contains a RunSQL operation — see ADR 0004"
                 )
+                if isinstance(operation, RunPython):
+                    assert operation.code.__name__ == self.DATA_MIGRATIONS.get(
+                        module_info.name
+                    ), f"{module_info.name} writes data — see ADR 0004 first"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -79,6 +86,70 @@ class TestPublisherMigration:
             assert carried.published_at == published_at
             assert carried.publisher_id is None
             assert carried.publisher_subject == ""
+        finally:
+            # Leave the database at the latest migration for whatever runs next.
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())
+
+
+@pytest.mark.django_db(transaction=True)
+class TestNumberingMigration:
+    """Migration 0006 clears a draft's number and leaves published ones (Article XVI)."""
+
+    def test_a_published_version_keeps_its_number_and_a_draft_loses_one(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate([("mvp_compliance", "0005_version_publisher")])
+        old_apps = executor.loader.project_state(
+            [("mvp_compliance", "0005_version_publisher")]
+        ).apps
+        OldVersion = old_apps.get_model("mvp_compliance", "Version")
+        published_at = timezone.now()
+        document = old_apps.get_model("mvp_compliance", "Document").objects.create(
+            name="Terms"
+        )
+        superseded, current, draft = (
+            OldVersion.objects.create(
+                document=document,
+                number=number,
+                markdown=f"Wording {number}",
+                html=f"<p>Wording {number}</p>" if status != "draft" else "",
+                status=status,
+                published_at=published_at if status != "draft" else None,
+                publisher_subject="7" if status != "draft" else "",
+            )
+            for number, status in ((1, "superseded"), (2, "current"), (3, "draft"))
+        )
+
+        try:
+            executor = MigrationExecutor(connection)
+            executor.migrate(
+                [("mvp_compliance", "0006_version_numbered_at_publication")]
+            )
+            new_apps = executor.loader.project_state(
+                [("mvp_compliance", "0006_version_numbered_at_publication")]
+            ).apps
+            NewVersion = new_apps.get_model("mvp_compliance", "Version")
+            carried = {v.pk: v for v in NewVersion.objects.all()}
+
+            assert carried[superseded.pk].number == "1"
+            assert carried[current.pk].number == "2"
+            assert carried[draft.pk].number is None
+            for before in (superseded, current):
+                after = carried[before.pk]
+                assert (
+                    after.markdown,
+                    after.html,
+                    after.status,
+                    after.published_at,
+                    after.publisher_subject,
+                ) == (
+                    before.markdown,
+                    before.html,
+                    before.status,
+                    before.published_at,
+                    before.publisher_subject,
+                )
+            assert carried[draft.pk].markdown == draft.markdown
         finally:
             # Leave the database at the latest migration for whatever runs next.
             executor = MigrationExecutor(connection)

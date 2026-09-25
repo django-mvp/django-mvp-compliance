@@ -77,8 +77,8 @@ class TestRenderPublicationEmail:
 
         assert "Terms of service" in subject
         assert "Terms of service" in body
-        assert "Version 2 of" in body
-        assert "replaces version 1" in body
+        assert f"Version {version.number} of" in body
+        assert f"replaces version {replaced.number}" in body
         assert "ada" in body
         assert version.published_at.strftime("%Y") in body
 
@@ -160,10 +160,15 @@ class TestRenderPublicationEmail:
         with translation.override("de"):
             subject, body = render_publication_email(version, replaced, SITE_URL)
 
-        assert subject == "Terms of service: Version 2 ist jetzt in Kraft"
-        assert 'Version 2 von "Terms of service" ist jetzt in Kraft.' in body
+        assert (
+            subject == f"Terms of service: Version {version.number} ist jetzt in Kraft"
+        )
+        assert (
+            f'Version {version.number} von "Terms of service" ist jetzt in Kraft.'
+            in body
+        )
         assert "Veröffentlicht von: ada" in body
-        assert "Sie ersetzt Version 1." in body
+        assert f"Sie ersetzt Version {replaced.number}." in body
         assert "Im Admin ansehen: https://example.com/admin/" in body
 
 
