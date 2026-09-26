@@ -49,7 +49,7 @@
     },
     "design_review": {
       "approved_by": "design-panel",
-      "at": "2026-09-26T16:40:00Z",
+      "at": "2026-09-26T15:49:52Z",
       "self_resolved": [
         "SPEC-001 high: applied as T001/T002 edits (D2)",
         "SPEC-002, ARCH-001, ARCH-002 low: applied as plan/tasks edits (D3)"
