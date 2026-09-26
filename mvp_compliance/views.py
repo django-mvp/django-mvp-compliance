@@ -12,7 +12,7 @@ from mvp.views.extra import MVPTemplateView
 from mvp_compliance.models import Document, Version
 
 
-def index_crumb() -> dict[str, str]:
+def _index_crumb() -> dict[str, str]:
     """The first crumb of every page's trail: the index of documents."""
     return {"text": _("Legal documents"), "href": reverse("mvp_compliance:index")}
 
@@ -75,7 +75,7 @@ class DocumentView(MVPDetailView):
 
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
-        return [index_crumb(), {"text": self.get_page_title()}]
+        return [_index_crumb(), {"text": self.get_page_title()}]
 
 
 class VersionView(MVPDetailView):
@@ -127,7 +127,7 @@ class VersionView(MVPDetailView):
     def get_breadcrumbs(self):
         document = self.object.document
         return [
-            index_crumb(),
+            _index_crumb(),
             {
                 "text": document.name,
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
@@ -167,7 +167,7 @@ class VersionListView(MVPDetailView):
     def get_breadcrumbs(self):
         document = self.object
         return [
-            index_crumb(),
+            _index_crumb(),
             {
                 "text": document.name,
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
