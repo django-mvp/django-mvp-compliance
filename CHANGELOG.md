@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   signed in or not, and it renders inside the django-mvp shell. A document with nothing
   published, or a slug that names nothing, answers "not found". The package adds nothing to your
   menus. See [docs/pages.md](docs/pages.md).
+- A page for each published version, at `{% url 'mvp_compliance:version' 'privacy-policy' '2026.1' %}`,
+  showing the wording that version was published with. A version that has been replaced says so and
+  links to the one in force. Each document's page links to its list of versions,
+  `mvp_compliance:versions`, which shows every published version newest first with the dates it was
+  in force. `mvp_compliance:index` lists every document that has a version in force, and every
+  page's breadcrumbs start with it. See [docs/pages.md](docs/pages.md).
 - `Document.slug`, a unique slug that forms the document's address, and
   `Document.objects.in_force()`, which returns the documents that have a current version with
   that version already fetched. Migration `0007_document_slug` adds the column with no data step,

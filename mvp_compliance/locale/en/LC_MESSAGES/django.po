@@ -30,8 +30,8 @@ msgstr "Current version"
 msgid "No version in force"
 msgstr "No version in force"
 
-#: mvp_compliance/admin.py:73 mvp_compliance/views.py:99
-#: mvp_compliance/views.py:109
+#: mvp_compliance/admin.py:73 mvp_compliance/views.py:125
+#: mvp_compliance/views.py:135
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
@@ -428,6 +428,14 @@ msgstr ""
 msgid "Back"
 msgstr "Back"
 
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:4
+msgid "Earlier versions"
+msgstr "Earlier versions"
+
+#: mvp_compliance/templates/mvp_compliance/document_index.html:11
+msgid "Nothing has been published yet."
+msgstr "Nothing has been published yet."
+
 #: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:1
 #, python-format
 msgid "Version %(number)s of \"%(name)s\" is now in force."
@@ -472,14 +480,43 @@ msgstr "Read the version in force"
 msgid "This is the version in force."
 msgstr "This is the version in force."
 
-#: mvp_compliance/views.py:44 mvp_compliance/views.py:95
+#: mvp_compliance/templates/mvp_compliance/version_list.html:8
+msgid "Version"
+msgstr "Version"
+
+#: mvp_compliance/templates/mvp_compliance/version_list.html:9
+msgid "In force from"
+msgstr "In force from"
+
+#: mvp_compliance/templates/mvp_compliance/version_list.html:10
+msgid "Replaced on"
+msgstr "Replaced on"
+
+#: mvp_compliance/templates/mvp_compliance/version_list.html:18
+msgid "In force"
+msgstr "In force"
+
+#: mvp_compliance/views.py:17 mvp_compliance/views.py:29
+msgid "Legal documents"
+msgstr "Legal documents"
+
+#: mvp_compliance/views.py:71 mvp_compliance/views.py:121
 #, python-format
 msgid "Version %(number)s, in force since %(date)s"
 msgstr "Version %(number)s, in force since %(date)s"
 
-#: mvp_compliance/views.py:81
+#: mvp_compliance/views.py:107
 msgid "No version found"
 msgstr "No version found"
+
+#: mvp_compliance/views.py:165
+#, python-format
+msgid "Versions of %(name)s"
+msgstr "Versions of %(name)s"
+
+#: mvp_compliance/views.py:175
+msgid "Versions"
+msgstr "Versions"
 
 #: mvp_compliance/widgets.py:26
 msgid "Heading"

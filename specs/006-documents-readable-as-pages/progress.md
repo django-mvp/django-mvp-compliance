@@ -132,3 +132,10 @@ CHANGELOG entry for the version pages is carried into US-3's T018.
 - **Verified:** `uv run pytest tests/test_views.py tests/test_urls.py` 46 passed, 1 failed (the `versions` case in test_urls, see T015); ruff and mypy clean; demo `/legal/` on 8021 answers with the entry.
 - **Next:** T018 docs, changelog, catalog.
 - **Watch:** ruff removed an unused import it flagged in my first edit.
+
+## 2026-09-26T18:40Z · Implementer US-3 · T018
+
+- **Did:** `docs/pages.md` (index, versions and index URL names, the footer "Legal" link, the demo menu entry, the version list, the two new templates and their context); CHANGELOG `Added` now covers the version pages, the version list and the index; `en` catalog regenerated from the repository root, POT-Creation-Date line deleted, eight fuzzy guesses cleared and filled, no `.mo` committed.
+- **Verified:** `uv run pytest -n auto --dist loadscope` 357 passed, 1 failed (the US-2 `versions` case, see T015).
+- **Next:** full verify, report.
+- **Watch:** the failing test asserts `versions` does not resolve under a slug; it now resolves to the version list on purpose.
