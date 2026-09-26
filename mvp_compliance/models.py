@@ -4,6 +4,7 @@ from functools import partial
 from typing import cast
 
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -31,8 +32,47 @@ PUBLISHED_FROZEN_FIELDS = (
 )
 
 
+#: A slug is lowercase letters and digits, joined by single hyphens. Django's
+#: own ``SlugField`` validator also accepts capitals and underscores, which no
+#: address of the pages matches (FR-015).
+lowercase_slug = RegexValidator(
+    regex=r"^[a-z0-9]+(?:-[a-z0-9]+)*\Z",
+    message=_("Use lowercase letters, digits and single hyphens only."),
+    code="invalid",
+)
+
+
 class DocumentQuerySet(models.QuerySet):
-    """Answers what a person has outstanding, without a query per document."""
+    """Answers what a person has outstanding, and keeps a published slug fixed."""
+
+    def update(self, **kwargs) -> int:
+        """Refuse a new slug for any document with a published version (FR-017).
+
+        ``bulk_update()`` calls this, so it is covered too.
+        """
+        if (
+            "slug" in kwargs
+            and self.filter(
+                versions__status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED]
+            ).exists()
+        ):
+            raise PublishedVersionError(Document.SLUG_FIXED_MESSAGE)
+        return super().update(**kwargs)
+
+    def in_force(self) -> "DocumentQuerySet":
+        """Every document with a version in force, each carrying it on ``current_versions``.
+
+        A document with only drafts, or none at all, is absent: nothing of it
+        is published for a visitor to read (FR-007). The version is prefetched
+        so a page reading it costs no further query per document.
+        """
+        return self.filter(versions__status=Version.Status.CURRENT).prefetch_related(
+            models.Prefetch(
+                "versions",
+                queryset=Version.objects.current(),
+                to_attr="current_versions",
+            )
+        )
 
     def outstanding_for(self, user) -> "DocumentQuerySet":
         """Every document in this queryset whose version in force ``user`` has not accepted.
@@ -58,6 +98,9 @@ class DocumentManager(models.Manager["Document"]):
     def get_queryset(self) -> DocumentQuerySet:
         return DocumentQuerySet(self.model, using=self._db)
 
+    def in_force(self) -> DocumentQuerySet:
+        return self.get_queryset().in_force()
+
     def outstanding_for(self, user) -> DocumentQuerySet:
         return self.get_queryset().outstanding_for(user)
 
@@ -75,6 +118,19 @@ class Document(models.Model):
         unique=True,
         help_text=_("The name this document is known by, such as “Privacy policy”."),
     )
+    slug = models.SlugField(
+        _("slug"),
+        max_length=100,
+        unique=True,
+        validators=[lowercase_slug],
+        help_text=_(
+            "The document's identifier in its address, such as “privacy-policy”."
+        ),
+    )
+
+    SLUG_FIXED_MESSAGE = _(
+        "A document's slug cannot be changed once a version of it has been published."
+    )
 
     objects = DocumentManager()
 
@@ -84,6 +140,29 @@ class Document(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, *args, **kwargs) -> None:
+        """Refuse a new slug once a version has been published; the name stays editable.
+
+        A save whose ``update_fields`` leaves the slug out never writes it, so it
+        is not checked.
+        """
+        update_fields = kwargs.get("update_fields")
+        writes_slug = update_fields is None or "slug" in update_fields
+        if self.pk is not None and writes_slug:
+            stored = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values_list("slug", flat=True)
+                .first()
+            )
+            if (
+                stored is not None
+                and stored != self.slug
+                and self.versions.published().exists()
+            ):
+                raise PublishedVersionError(self.SLUG_FIXED_MESSAGE)
+        super().save(*args, **kwargs)
 
     @property
     def current(self) -> "Version | None":
@@ -131,6 +210,25 @@ class VersionQuerySet(models.QuerySet):
     def current(self) -> "VersionQuerySet":
         """The version in force, if any — zero or one row."""
         return self.filter(status=Version.Status.CURRENT)
+
+    def with_replaced_at(self) -> "VersionQuerySet":
+        """Annotate ``replaced_at``: when the next published version took over.
+
+        It is the ``published_at`` of the earliest version of the same document
+        published after this one, and ``None`` for the version in force. Drafts
+        never count. One query however many versions are read.
+        """
+        later = (
+            Version.objects.published()
+            .filter(
+                document=models.OuterRef("document"),
+                published_at__gt=models.OuterRef("published_at"),
+            )
+            .order_by("published_at")
+        )
+        return self.annotate(
+            replaced_at=models.Subquery(later.values("published_at")[:1])
+        )
 
 
 class VersionManager(models.Manager):

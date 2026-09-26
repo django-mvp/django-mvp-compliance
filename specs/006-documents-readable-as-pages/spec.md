@@ -243,12 +243,17 @@ document page's template in the demo's templates and confirm it is used.
   the index. *(US-1, US-2, US-3)*
 - **FR-008**: An address naming no document, or a number that is not a published version of the
   named document, MUST answer "not found". *(US-1, US-2)*
-- **FR-009**: The document's page and each version's page MUST name the document, the version's
-  number and the date it came into force. *(US-1, US-2)*
+- **FR-009**: The document's page and each version's page MUST name the document, and under it
+  show the version as `v<number> · published <date>`. When the visitor is signed in and has
+  accepted that version, the line continues `· Agreed on <date>` with the date of their
+  acceptance. *(US-1, US-2)*
 - **FR-010**: A superseded version's page MUST say it has been replaced, give the dates it was in
   force, and link to the document's page. The page of the version in force MUST say it is in force.
   *(US-2)*
-- **FR-011**: The document's page MUST link to the document's version list. *(US-3)*
+- **FR-011**: When a document has versions before the one in force, its page MUST offer them in a
+  "Previous versions" menu among the page's actions, newest first, each linking to its version's
+  page, and ending with a link to the document's version list. A document with a single published
+  version shows no such menu. *(US-3)*
 - **FR-012**: Every page this feature adds MUST render within the django-mvp shell, taking its
   layout, navigation and theme from the host project, with no template written by the project.
   *(US-1, US-2, US-3)*
@@ -326,6 +331,12 @@ document page's template in the demo's templates and confirm it is used.
   Development databases are updated by hand. Maintainer's ruling at the specification review.
 - **Q**: Does the index include a document with only drafts? → **A**: No (FR-004). Its page answers
   "not found", so listing it would give the reader a dead link.
+
+- **Q**: How does a page say which version it is, and where do earlier versions go? → **A**: The
+  line under the name reads `v2026.1 · published <date>`, with `· Agreed on <date>` added for a
+  signed-in visitor who accepted that version. Earlier versions sit in a "Previous versions" menu
+  among the page's actions rather than as a link in the text (FR-009, FR-011). Maintainer's ruling
+  at the walkthrough.
 
 ## Assumptions
 

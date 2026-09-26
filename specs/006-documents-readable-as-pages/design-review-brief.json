@@ -1,0 +1,61 @@
+{
+ "role": "design_reviewer",
+ "stage": "S3R",
+ "repo": "django-mvp/django-mvp-compliance",
+ "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-006",
+ "branch": "006-documents-readable-as-pages",
+ "feature": "006-documents-readable-as-pages",
+ "lenses": [
+  "spec-compliance",
+  "security",
+  "architecture"
+ ],
+ "required_skills": [
+  {
+   "name": "craft-review",
+   "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+   "receipt": "craft-review/2026-09-17/b773db2e"
+  },
+  {
+   "name": "craft-security",
+   "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+   "receipt": "craft-security/2026-08-04/ea3d6742"
+  },
+  {
+   "name": "craft-simplify",
+   "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+   "receipt": "craft-simplify/2026-08-04/69038ce1"
+  }
+ ],
+ "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/design-review.md",
+ "inputs": [
+  "specs/006-documents-readable-as-pages/spec.md",
+  "specs/006-documents-readable-as-pages/decisions.md",
+  "specs/006-documents-readable-as-pages/research.md",
+  "specs/006-documents-readable-as-pages/plan.md",
+  "specs/006-documents-readable-as-pages/tasks.md",
+  "CONSTITUTION.md",
+  "CONTEXT.md",
+  "AGENTS.md",
+  "docs/models.md",
+  "docs/authoring.md",
+  "mvp_compliance/models.py",
+  "mvp_compliance/admin.py",
+  "mvp_compliance/exceptions.py",
+  "mvp_compliance/rendering.py",
+  "tests/settings.py",
+  "tests/urls.py",
+  "tests/factories.py",
+  "tests/conftest.py",
+  "tests/test_migrations.py",
+  "demo/settings.py",
+  "demo/urls.py",
+  "demo/management/commands/seed_demo.py",
+  "pyproject.toml"
+ ],
+ "resolved_django": "/home/sam/projects/django-mvp/django-mvp-compliance-006/.venv/lib/python3.13/site-packages/django",
+ "resolved_mvp": "/home/sam/projects/django-mvp/django-mvp-compliance-006/.venv/lib/python3.13/site-packages/mvp",
+ "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+ "output_path": "/tmp/fs006-design-findings.json",
+ "orchestrator_question": "Plan uses MVPDetailView (directory=[]) for three pages and MVPTemplateView for the index, with templates extending page_view.html. Verify against the resolved mvp package (not the sibling checkout at /home/sam/projects/django-mvp/django-mvp) that MVPDetailView's breadcrumbs/list-link resolution and get_page_title do not raise NoReverseMatch or require a '<model>-list' URL when directory is empty, and say in notes what the views must override."
+}

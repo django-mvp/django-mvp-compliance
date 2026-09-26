@@ -1035,6 +1035,72 @@ class TestDocumentAdmin:
 
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
+class TestDocumentSlugInTheAdmin:
+    """US-4 scenarios 1-3, FR-016, FR-017: the slug follows the name until
+    a version is published, and is shown fixed afterwards.
+    """
+
+    def test_the_add_form_prepopulates_the_slug_from_the_name(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_document_add"))
+
+        assert response.status_code == 200
+        assert response.context["adminform"].prepopulated_fields == [
+            {
+                "field": response.context["adminform"].form["slug"],
+                "dependencies": [response.context["adminform"].form["name"]],
+            }
+        ]
+
+    def test_an_unpublished_documents_slug_can_be_edited(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
+
+        page = client.get(url)
+        response = client.post(url, {"name": document.name, "slug": "new-address"})
+
+        assert 'name="slug"' in page.content.decode()
+        assert response.status_code == 302
+        document.refresh_from_db()
+        assert document.slug == "new-address"
+
+    def test_a_published_documents_slug_is_shown_read_only(
+        self, client, editor, document
+    ) -> None:
+        VersionFactory(document=document).publish()
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
+
+        response = client.get(url)
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert 'name="slug"' not in content
+        assert document.slug in content
+
+    def test_a_post_carrying_a_different_slug_leaves_a_published_slug_alone(
+        self, client, editor, document
+    ) -> None:
+        VersionFactory(document=document).publish()
+        original = document.slug
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
+
+        response = client.post(url, {"name": "A new name", "slug": "new-address"})
+
+        assert response.status_code == 302
+        document.refresh_from_db()
+        assert document.slug == original
+        assert document.name == "A new name"
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
 class TestDisclosureRefusals:
     """FR-011 to FR-013, SC-003, SC-004, US-3 scenarios 2-5: nobody without
     ``produce_disclosure`` reaches an answer by any route this feature adds,

@@ -1,0 +1,17 @@
+{% extends "page_view.html" %}
+{% load i18n %}
+{% block page.content %}
+  {% if version.replaced_at %}
+    <c-alert variant="warning" class="mb-6">
+      <div>
+        <p>
+          {% blocktrans with published=version.published_at|date replaced=version.replaced_at|date %}This version has been replaced. It was in force from {{ published }} to {{ replaced }}.{% endblocktrans %}
+        </p>
+        <a class="link" href="{% url 'mvp_compliance:document' document.slug %}">{% translate "Read the version in force" %}</a>
+      </div>
+    </c-alert>
+  {% else %}
+    <p class="mb-6">{% translate "This is the version in force." %}</p>
+  {% endif %}
+  <div class="prose max-w-none">{{ version.html|safe }}</div>
+{% endblock page.content %}

@@ -4,10 +4,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
 from django.test import RequestFactory, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from mvp_compliance.exceptions import (
@@ -41,9 +43,9 @@ class TestDocument:
     """A document has a lasting identity and holds no wording of its own."""
 
     def test_documents_exist_side_by_side_with_no_versions(self):
-        privacy = Document.objects.create(name="Privacy policy")
-        terms = Document.objects.create(name="Terms")
-        cookies = Document.objects.create(name="Cookie policy")
+        privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+        terms = Document.objects.create(name="Terms", slug="terms")
+        cookies = Document.objects.create(name="Cookie policy", slug="cookie-policy")
 
         assert Document.objects.count() == 3
         assert list(privacy.versions.all()) == []
@@ -51,15 +53,221 @@ class TestDocument:
         assert list(cookies.versions.all()) == []
 
     def test_duplicate_name_is_refused(self):
-        Document.objects.create(name="Privacy policy")
+        Document.objects.create(name="Privacy policy", slug="privacy-policy")
         with pytest.raises(IntegrityError):
-            Document.objects.create(name="Privacy policy")
+            Document.objects.create(name="Privacy policy", slug="privacy")
 
     def test_document_holds_no_wording(self):
         field_names = {
             field.name for field in Document._meta.get_fields() if field.concrete
         }
-        assert field_names == {"id", "name"}
+        assert field_names == {"id", "name", "slug"}
+
+
+@pytest.mark.django_db
+class TestDocumentSlug:
+    """A document's slug is its identifier in an address, and no two share one."""
+
+    def test_a_document_saves_with_a_slug(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+
+        document.refresh_from_db()
+        assert document.slug == "privacy-policy"
+
+    def test_two_documents_with_the_same_slug_are_refused(self):
+        Document.objects.create(name="Privacy policy", slug="privacy")
+        with pytest.raises(IntegrityError):
+            Document.objects.create(name="Privacy notice", slug="privacy")
+
+    def test_the_slug_says_what_it_is_for(self):
+        field = Document._meta.get_field("slug")
+
+        assert str(field.verbose_name)
+        assert str(field.help_text)
+
+    @pytest.mark.parametrize(
+        "slug", ["Privacy", "privacy_policy", "-privacy", "privacy-"]
+    )
+    def test_a_slug_with_capitals_underscores_or_a_stray_hyphen_is_invalid(self, slug):
+        document = Document(name="Privacy policy", slug=slug)
+
+        with pytest.raises(ValidationError) as error:
+            document.full_clean()
+
+        assert "slug" in error.value.message_dict
+
+    def test_lowercase_letters_digits_and_inner_hyphens_are_valid(self):
+        document = Document(name="Privacy policy", slug="privacy-policy-2")
+
+        document.full_clean()
+
+    def test_the_slug_changes_freely_while_nothing_is_published(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document)
+
+        document.slug = "privacy-policy"
+        document.save()
+        Document.objects.filter(pk=document.pk).update(slug="privacy-notice")
+
+        document.refresh_from_db()
+        assert document.slug == "privacy-notice"
+
+    def test_saving_a_new_slug_after_publication_is_refused(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.slug = "privacy-policy"
+        with pytest.raises(PublishedVersionError):
+            document.save()
+
+        document.refresh_from_db()
+        assert document.slug == "privacy"
+
+    def test_updating_the_slug_after_publication_is_refused(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        with pytest.raises(PublishedVersionError):
+            Document.objects.filter(pk=document.pk).update(slug="privacy-policy")
+
+        document.refresh_from_db()
+        assert document.slug == "privacy"
+
+    def test_bulk_updating_the_slug_after_publication_is_refused(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.slug = "privacy-policy"
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False), so the test supplies the savepoint.
+        with pytest.raises(PublishedVersionError), transaction.atomic():
+            Document.objects.bulk_update([document], ["slug"])
+
+        document.refresh_from_db()
+        assert document.slug == "privacy"
+
+    def test_a_superseded_version_still_fixes_the_slug(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document, markdown="One").publish()
+        VersionFactory(document=document, markdown="Two").publish()
+
+        with pytest.raises(PublishedVersionError):
+            Document.objects.filter(pk=document.pk).update(slug="other")
+
+    def test_saving_an_unchanged_slug_after_publication_is_allowed(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.name = "Privacy notice"
+        document.save()
+
+        document.refresh_from_db()
+        assert document.name == "Privacy notice"
+        assert document.slug == "privacy"
+
+    def test_a_save_that_does_not_write_the_slug_is_allowed(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.slug = "privacy-notice"
+        document.name = "Privacy notice"
+        document.save(update_fields=["name"])
+
+        document.refresh_from_db()
+        assert document.name == "Privacy notice"
+        assert document.slug == "privacy"
+
+    def test_the_name_changes_after_publication_and_the_pages_keep_their_address(
+        self, client
+    ):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+        address = reverse("mvp_compliance:document", args=["privacy"])
+
+        Document.objects.filter(pk=document.pk).update(name="Privacy notice")
+
+        response = client.get(address)
+        assert response.status_code == 200
+        assert "Privacy notice" in response.content.decode()
+
+
+@pytest.mark.django_db
+class TestDocumentInForce:
+    """Only a document with a version in force is one a visitor can read."""
+
+    def test_returns_documents_with_a_current_version_carrying_it(self):
+        document = DocumentFactory()
+        version = VersionFactory(document=document)
+        version.publish()
+
+        found = list(Document.objects.in_force())
+
+        assert found == [document]
+        assert [v.pk for v in found[0].current_versions] == [version.pk]
+
+    def test_excludes_a_document_with_only_drafts(self):
+        VersionFactory(document=DocumentFactory())
+
+        assert list(Document.objects.in_force()) == []
+
+    def test_excludes_a_document_with_no_versions(self):
+        DocumentFactory()
+
+        assert list(Document.objects.in_force()) == []
+
+    def test_a_superseded_version_is_not_the_one_carried(self):
+        document = DocumentFactory()
+        first = VersionFactory(document=document)
+        first.publish()
+        second = VersionFactory(document=document)
+        second.publish()
+
+        (found,) = Document.objects.in_force()
+
+        assert [v.pk for v in found.current_versions] == [second.pk]
+
+
+@pytest.mark.django_db
+class TestWithReplacedAt:
+    """A version knows when the next published version of its document replaced it."""
+
+    def test_is_the_next_published_versions_date_and_none_for_the_current_one(self):
+        document = DocumentFactory()
+        first, second, third = (VersionFactory(document=document) for _ in range(3))
+        for version in (first, second, third):
+            version.publish()
+        other = VersionFactory(document=DocumentFactory())
+        other.publish()
+
+        found = {v.pk: v for v in Version.objects.published().with_replaced_at()}
+
+        second.refresh_from_db()
+        third.refresh_from_db()
+        assert found[first.pk].replaced_at == second.published_at
+        assert found[second.pk].replaced_at == third.published_at
+        assert found[third.pk].replaced_at is None
+        assert found[other.pk].replaced_at is None
+
+    def test_a_draft_is_not_a_replacement(self):
+        document = DocumentFactory()
+        first = VersionFactory(document=document)
+        first.publish()
+        VersionFactory(document=document)
+
+        (found,) = Version.objects.published().with_replaced_at()
+
+        assert found.pk == first.pk
+        assert found.replaced_at is None
+
+    def test_annotates_every_version_in_one_query(self, django_assert_num_queries):
+        document = DocumentFactory()
+        for _ in range(4):
+            VersionFactory(document=document).publish()
+
+        with django_assert_num_queries(1):
+            assert [
+                v.replaced_at for v in Version.objects.published().with_replaced_at()
+            ]
 
 
 @pytest.mark.django_db

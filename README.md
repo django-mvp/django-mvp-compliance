@@ -43,7 +43,7 @@ freely discardable.
 ```python
 from mvp_compliance.models import Document
 
-privacy = Document.objects.create(name="Privacy policy")
+privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
 version = privacy.versions.create(markdown="# Privacy policy\n\n...")
 version.publish()
 ```
@@ -325,6 +325,8 @@ The standing directions this package steers by are in [GOALS.md](GOALS.md).
 
 - [docs/models.md](docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
+- [docs/pages.md](docs/pages.md) — serving a document as a page of your site: mounting the
+  addresses, linking to a document, and what a visitor sees.
 - [docs/announcing.md](docs/announcing.md) — the signal sent when a version is published, what it
   carries, and what happens when a receiver fails.
 - [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,

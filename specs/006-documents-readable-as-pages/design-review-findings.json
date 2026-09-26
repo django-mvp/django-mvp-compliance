@@ -1,0 +1,58 @@
+{
+  "stage": "design",
+  "lens": "spec-compliance",
+  "verdict": "request_changes",
+  "risk": "low",
+  "scope": "Design review of specs/006-documents-readable-as-pages plan.md, tasks.md, research.md, decisions.md against spec.md (FR-001..FR-022, SC-001..SC-008), all three lenses. Read: CONSTITUTION Art. XI, mvp_compliance/models.py (Document, DocumentManager, DocumentQuerySet, VersionQuerySet, Version.save), admin.py DocumentAdmin, exceptions.py, rendering.py, tests/settings.py, tests/urls.py, tests/factories.py, tests/test_models.py (TestDocument), tests/test_migrations.py, demo/urls.py, seed_demo.make_document, and in resolved django-mvp 0.24.0 (.venv site-packages/mvp): views/detail.py, views/base.py, views/extra.py, templates/page_view.html, detail_view.html, cotton/page/title.html, cotton/breadcrumbs/index.html. Both branches checked for the two rules the plan relies on: the show_<action>_action gate before reverse (list/update/delete alike) and both DetailView lookups (slug and pk).",
+  "skills_loaded": [
+    {"name": "craft-review", "receipt": "craft-review/2026-09-17/b773db2e", "loaded_via": "path-read"},
+    {"name": "craft-security", "receipt": "craft-security/2026-08-04/ea3d6742", "loaded_via": "path-read"},
+    {"name": "craft-simplify", "receipt": "craft-simplify/2026-08-04/69038ce1", "loaded_via": "path-read"}
+  ],
+  "findings": [
+    {
+      "id": "SPEC-001",
+      "severity": "high",
+      "confidence": "verified",
+      "claim": "[spec-compliance / test structure] Adding a non-null unique slug breaks existing tests and the demo seed that create documents without one, and no task says they are updated. T002's done-when ('T001 passes') hides the red suite, and editing pre-existing tests unannounced is a tamper-check trip.",
+      "evidence": "tasks.md T001/T002 mention only DocumentFactory. tests/test_models.py:44-46 creates three documents inline with Document.objects.create(name=...) and no slug. An unset CharField/SlugField defaults to '', so with unique=True the second create raises IntegrityError (django Field._get_default returns '' for empty_strings_allowed fields). tests/test_models.py:54-56 (test_duplicate_name_is_refused) would still pass, but for the wrong reason (duplicate slug '' rather than duplicate name). demo/management/commands/seed_demo.py:255 Document.objects.get_or_create(name=name) has the same defect (covered by T006 later, but the suite is red from T002 until then).",
+      "reproduction": "After T002: pytest tests/test_models.py::TestDocument::test_documents_exist_side_by_side_with_no_versions -> IntegrityError: UNIQUE constraint failed: mvp_compliance_document.slug.",
+      "suggested_fix": "tasks.md T001: add 'existing tests in tests/test_models.py::TestDocument that build documents inline get a distinct slug= (mechanical, assertions unchanged); test_duplicate_name_is_refused gives the second document a different slug so it still asserts the name constraint'. T002 done-when: 'T001 passes and the full existing suite is green'. Move the seed_demo get_or_create(name=..., defaults={'slug': ...}) edit from T006 into T002 so no task boundary leaves the demo broken."
+    },
+    {
+      "id": "SPEC-002",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[spec-compliance] FR-020 (no page claims compliance or names a regulation) is traced to no task. Every other FR/SC has a test seam.",
+      "evidence": "tasks.md T001-T024 contain no reference to FR-020; plan.md Constitution Check marks Article XIV 'Pass' by inspection only.",
+      "suggested_fix": "One assertion inside T024's catalog test: the rendered text of the four pages, and the msgids of their strings, contain none of 'compliant', 'compliance', 'GDPR'. No new task."
+    },
+    {
+      "id": "ARCH-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[architecture] plan.md 'Views' says each view 'sets its breadcrumbs'. On the three MVPDetailView subclasses a `breadcrumbs = [...]` class attribute is silently ignored, so the default trail (a 'Documents'/'Versions' crumb with an empty href, then the title) would render and pass a status-code test.",
+      "evidence": "mvp/views/detail.py PageObjectMixin.get_breadcrumbs builds its own list and never reads self.breadcrumbs (only PageMixin.get_breadcrumbs in mvp/views/base.py does, and PageObjectMixin overrides it). MVPTemplateView keeps the PageMixin behaviour.",
+      "suggested_fix": "plan.md 'Views': state 'override get_breadcrumbs()' for the three detail views (and for the index, since its hrefs need reverse()). Tests T003/T011/T014/T016 assert the crumb hrefs resolve to mvp_compliance:index and mvp_compliance:document."
+    },
+    {
+      "id": "ARCH-002",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[architecture] The plan names Document.objects.in_force() but DocumentManager is an explicit forwarder, not from_queryset(); the queryset method alone is unreachable from `.objects`.",
+      "evidence": "mvp_compliance/models.py:55-62 DocumentManager defines get_queryset() and outstanding_for() only. VersionManager forwards published() and current() the same way (models.py:136-160). with_replaced_at() is reachable through the chain `Version.objects.published().with_replaced_at()` because published() returns a VersionQuerySet, so only in_force() needs a forwarder.",
+      "suggested_fix": "tasks.md T002: add 'DocumentManager.in_force() forwarder, matching outstanding_for()'. T009 needs nothing beyond the chain the plan already uses."
+    }
+  ],
+  "notes": [
+    "ORCHESTRATOR QUESTION, verified against the resolved package .venv/lib/python3.13/site-packages/mvp (0.24.0), not the sibling checkout: MVPDetailView with directory=[] does NOT raise NoReverseMatch and does NOT need a '<model>-list' URL. Path: PageObjectMixin.get_breadcrumbs (mvp/views/detail.py) calls resolve_crud_url('list'); get_url_kwargs('list') returns {}; show_action('list') reads show_list_action, which is False, so it returns None before _get_view_name() or reverse() runs. The crumb href is '' and nothing is reversed. reverse() is reached only when a show_<action>_action flag is truthy. get_directory() loops over `directory`, so [] yields {} (even the default ['update','delete'] is inert because both flags default False). directory=[] is therefore harmless belt-and-braces, not a requirement.",
+    "get_page_title() does not raise either: MVPDetailView.get_page_title returns str(self.object). Document.__str__ is the name (fine), but Version.__str__ is 'Name #2026.1', so VersionView must override it as the plan's table says.",
+    "WHAT THE VIEWS MUST OVERRIDE. All detail views: get_breadcrumbs() (the `breadcrumbs` attribute is ignored, see ARCH-001; the default emits a 'Documents' crumb with an empty href); set model (model_meta resolves it from get_queryset() otherwise, which works but is indirect). DocumentView: get_queryset() -> in_force(); get_context_data() adds `version` = self.object.current_versions[0] (the object is `document` by default); get_page_title() -> document name; get_page_subtitle() (default is '', so 'Version N, in force since D' must be built there with _() and django.utils.formats.date_format, not a format string in the class attribute). VersionListView: same get_queryset(); get_context_data() adds `versions`; get_page_title() -> _('Versions of %(name)s'); the default get_page_title would give the bare name. VersionView: MUST override get_object() entirely. The default SingleObjectMixin.get_object reads only pk/slug kwargs and would call queryset.filter(slug=...) on Version, a FieldError, since Version has no slug and the URL kwarg is `number`. Filter document__slug=self.kwargs['slug'], number=self.kwargs['number'] on the published().with_replaced_at().select_related('document') queryset and raise Http404 from get_object_or_404-style; also get_page_title() (default str(version)) and get_page_subtitle(). DocumentIndexView (MVPTemplateView): get_context_data() adds `documents`; get_breadcrumbs() (PageMixin default returns the class attribute, which cannot hold a reversed URL, and the index is the root so it needs only its own title); page_title as a lazy string. MVPTemplateView with template_name set is unaffected by its placeholder default.",
+    "Template resolution checked: BaseTemplateNameMixin appends detail_view.html after Django's [template_name, <app>/<model>_detail.html], so the plan's explicit template_name always wins and a project override at the same path replaces it (FR-018). page_view.html title and subtitle render through autoescaped {{ title }}/{{ subtitle }} (cotton/page/title.html), so the plan's claim that a document name is escaped holds for both.",
+    "Research R1-R4 spot-checked: R1 confirmed (flex_menu/renderers.py:228 raises the quoted ValueError when the renderer is absent; page_view.html and base.html extend as stated), R2 confirmed (`prose` is in mvp/static/css/django-mvp.css), R3 is consistent with django admin's AdminForm behaviour, R4 is derivable from Version.publish under lock. The bulk_update -> queryset.update path the freeze guard relies on is confirmed at django/db/models/query.py:1046.",
+    "Security lens: no new input surface beyond two URL kwargs constrained by converters and looked up through the ORM; every queryset starts from published()/current()/in_force(), so drafts are unreachable by construction (FR-007, SC-003); no mutating endpoint, so no permission is needed and FR-005 is met by omitting mixins; no new dependency; no new setting; pages show no publisher (nothing new exposed). The `|safe` on version.html is safe under the default renderer's nh3 allow list, but a host that points MVP_COMPLIANCE_RENDERER at a looser renderer publishes that looseness on the site origin. That is the existing package contract, so it is a doc sentence in docs/pages.md, not a plan change. Index and version list are unpaginated over admin-authored rows; bounded, so no finding.",
+    "Wording: plan.md 'Storage' says Python 3.12+ / Django 5.2, 6.0 and 6.1 while pyproject classifiers list only 5.2 and 6.0; check the CI matrix before the CHANGELOG entry repeats either.",
+    "Wording: tasks.md T006 points the demo menu at 'the first in-force document' until T017 exists; harmless but the menu entry could simply be added in T017, dropping a half-state.",
+    "Simplification check: no abstraction lacks a caller. The converter, with_replaced_at() and the second validator are each justified in Complexity Tracking. The freeze guard mirrors VersionQuerySet.update() and reuses PublishedVersionError, consistent with Article XI."
+  ]
+}

@@ -1,0 +1,454 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "006-documents-readable-as-pages",
+  "branch": "006-documents-readable-as-pages",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-09-26T15:20:46Z",
+      "note": "specification merged in #59; issue graph built"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-09-26T15:42:52Z",
+      "note": "picked up from the queue; branch cut from origin/main 0679bea; verify green on base"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-26T15:45:54Z",
+      "note": "plan, research, tasks committed; draft PR #64 opened"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-26T15:51:27Z",
+      "note": "design review applied; plan notification sent"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-26T16:20:34Z",
+      "note": "all four stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-26T16:22:23Z",
+      "note": "converge green; ADR 0019"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-26T16:27:38Z",
+      "note": "review approved; PR #64 ready; walkthrough sent to the maintainer"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-26T19:08:52Z",
+      "note": "walkthrough changes requested: T025-T028"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-26T19:14:56Z",
+      "note": "walkthrough changes T025-T028 verified independently"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-26T19:14:57Z",
+      "note": "walkthrough changes T025-T028 verified independently"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-26T19:14:57Z",
+      "note": "walkthrough changes T025-T028 verified independently"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-26T15:20:46Z",
+      "self_resolved": [
+        "merge commit 0679bea7ea, pull request #59"
+      ]
+    },
+    "plan": {
+      "approved_by": "notified",
+      "at": "2026-09-26T15:55:00Z"
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-26T15:49:52Z",
+      "self_resolved": [
+        "SPEC-001 high: applied as T001/T002 edits (D2)",
+        "SPEC-002, ARCH-001, ARCH-002 low: applied as plan/tasks edits (D3)"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-26T19:08:52Z",
+      "self_resolved": [
+        "Line under the name reads 'v2026.1 \u00b7 published <date> \u00b7 Agreed on <date>' \u2014 T025/T026",
+        "Earlier versions as a 'Previous versions' dropdown in the page actions \u2014 T027/T028",
+        "Documents that are read but never agreed to \u2014 filed as #65"
+      ]
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 60,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-006",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py -q -x -k TestDocument (red: TypeError unexpected keyword 'slug')"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests -q -n auto (309 passed)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q -x (red: No module named 'mvp_compliance.urls')"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q (6 passed)",
+              "uv run mypy (clean)"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q (11 passed)",
+              "probe: in_force() -> all() in the view turned 10 of 11 red, reverted"
+            ]
+          }
+        },
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py migrate && seed_demo on fresh demo.sqlite3",
+              "uv run python manage.py check (no issues)",
+              "curl :8021/legal/privacy-policy/ -> 200; /legal/cookie-policy/ -> 404"
+            ]
+          }
+        },
+        {
+          "id": "T007",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pre-commit run --all-files (all passed)",
+              "makemessages regenerated from repo root: en catalog carries the slug strings and the subtitle string"
+            ]
+          }
+        },
+        {
+          "id": "T025",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k TestPageSubtitle: 3 failed (subtitle text), 6 passed, before T026"
+            ]
+          }
+        },
+        {
+          "id": "T026",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k TestPageSubtitle: 9 passed",
+              "uv run ruff check / mypy mvp_compliance: clean"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 61,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-006",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestWithReplacedAt (3 failed before T009, AttributeError)"
+            ]
+          }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestWithReplacedAt (3 passed)"
+            ]
+          }
+        },
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_urls.py (4 failed NoReverseMatch before T012)"
+            ]
+          }
+        },
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestVersionView (12 failed NoReverseMatch before T012)"
+            ]
+          }
+        },
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py tests/test_urls.py tests/test_models.py::TestWithReplacedAt (34 passed)",
+              "probe: dropping the document__slug filter turned 2 tests red, restored"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "forge verify --base origin/main: conformance, docs, lint, typecheck, test, build all passed"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P2",
+      "issue": 62,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-006",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T014",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k 'VersionList or links_to_the_versions' (8 failed, NoReverseMatch 'versions')"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py (31 passed); ruff, mypy clean"
+            ]
+          }
+        },
+        {
+          "id": "T016",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k Index (6 failed, NoReverseMatch 'index')"
+            ]
+          }
+        },
+        {
+          "id": "T017",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py tests/test_urls.py (46 passed, 1 pre-existing test_urls case fails by design)"
+            ]
+          }
+        },
+        {
+          "id": "T018",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest -n auto --dist loadscope (357 passed, 1 failed: the same test_urls case); forge verify docs, lint, typecheck, build passed"
+            ]
+          }
+        },
+        {
+          "id": "T027",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k TestPreviousVersionsMenu: 5 failed (no dropdown, text link present), 1 passed, before T028"
+            ]
+          }
+        },
+        {
+          "id": "T028",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py: 70 passed",
+              "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, fuzzy entries fixed, no .mo",
+              "forge verify --base origin/main: docs passed"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P2",
+      "issue": 63,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-006",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T019",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDocumentSlug -q (before T020: 8 failed, 7 passed, right reasons)"
+            ]
+          }
+        },
+        {
+          "id": "T020",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDocumentSlug tests/test_migrations.py -q (17 passed)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)"
+            ]
+          }
+        },
+        {
+          "id": "T021",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentSlugInTheAdmin -q (before T022: 3 failed, 1 passed, right reasons)"
+            ]
+          }
+        },
+        {
+          "id": "T022",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_admin.py::TestDocumentAdmin tests/test_admin.py::TestDocumentChangelist -q (20 passed)"
+            ]
+          }
+        },
+        {
+          "id": "T023",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestTemplateOverride tests/test_views.py::TestNoMenuEntry -q (5 passed)"
+            ]
+          }
+        },
+        {
+          "id": "T024",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py tests/test_admin.py::TestUserFacingStrings -q (58 passed)",
+              "forge verify --repo /home/sam/projects/django-mvp/django-mvp-compliance-006 --base origin/main (conformance, docs, lint, typecheck, test, build all passed)"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 2,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 2,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 64,
+    "draft": false
+  }
+}

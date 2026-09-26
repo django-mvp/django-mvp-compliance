@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A page for each document that has a version in force, served at an address that never changes:
+  `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
+  `{% url 'mvp_compliance:document' 'privacy-policy' %}` in a template. Anyone can read it,
+  signed in or not, and it renders inside the django-mvp shell. A document with nothing
+  published, or a slug that names nothing, answers "not found". The package adds nothing to your
+  menus. See [docs/pages.md](docs/pages.md).
+- A page for each published version, at `{% url 'mvp_compliance:version' 'privacy-policy' '2026.1' %}`,
+  showing the wording that version was published with. A version that has been replaced says so and
+  links to the one in force. Each document's page links to its list of versions,
+  `mvp_compliance:versions`, which shows every published version newest first with the dates it was
+  in force. `mvp_compliance:index` lists every document that has a version in force, and every
+  page's breadcrumbs start with it. See [docs/pages.md](docs/pages.md).
+- `Document.slug`, a unique slug that forms the document's address, and
+  `Document.objects.in_force()`, which returns the documents that have a current version with
+  that version already fetched. Migration `0007_document_slug` adds the column with no data step,
+  so a database that already holds documents needs their slugs set before it can be migrated.
+  See [docs/models.md](docs/models.md).
+- The slug is validated as lowercase letters, digits and single hyphens, and is fixed once a
+  version of the document is published: changing it through `save()`, `update()` or
+  `bulk_update()` raises `PublishedVersionError`. The admin suggests the slug from the name and
+  shows it read-only once it is fixed. A project restyles a page by placing a template at the
+  same path. See [docs/models.md](docs/models.md), [docs/authoring.md](docs/authoring.md) and
+  [docs/pages.md](docs/pages.md).
 - `render_publication_email(version, replaced, site_url)`, in `mvp_compliance.emails`, which
   writes the subject and plain-text body of an email announcing a publication and returns them.
   It sends nothing. The subject is always one line, the text is translatable, and a template at

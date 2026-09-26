@@ -31,6 +31,24 @@ class DocumentAdmin(admin.ModelAdmin):
         "published_version_count",
     ]
     search_fields = ["name"]
+    prepopulated_fields = {"slug": ("name",)}
+
+    def get_readonly_fields(self, request, obj=None):
+        """Show the slug read-only once a version of the document is published (FR-017)."""
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj is not None and obj.versions.published().exists():
+            readonly.append("slug")
+        return readonly
+
+    def get_prepopulated_fields(self, request, obj=None):
+        """Drop the prepopulation when the slug is read-only.
+
+        Django indexes the form by every prepopulated field, and a read-only
+        field is not on it, so leaving the entry in raises ``KeyError``.
+        """
+        if "slug" in self.get_readonly_fields(request, obj):
+            return {}
+        return super().get_prepopulated_fields(request, obj)
 
     def get_queryset(self, request):
         """One annotation and one prefetch, so the cost never grows with the row count (#39).

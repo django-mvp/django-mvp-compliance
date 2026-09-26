@@ -55,6 +55,15 @@ DEPARTED = "departed.user@example.com"
 #: so a version that says its publisher's account is gone is reachable.
 DEPARTED_PUBLISHER = "departed-publisher.user@example.com"
 
+#: document name -> the slug its address is made from
+SLUGS = {
+    "Privacy policy": "privacy-policy",
+    "Terms of use": "terms-of-use",
+    "Cookie policy": "cookie-policy",
+    "Acceptable use": "acceptable-use",
+    "House rules": "house-rules",
+}
+
 PRIVACY = """\
 ## What we collect
 
@@ -252,7 +261,9 @@ class Command(BaseCommand):
         A document that already has versions is left alone. Publishing is
         one-way, so re-seeding one cannot be made idempotent by rewriting it.
         """
-        document, created = Document.objects.get_or_create(name=name)
+        document, created = Document.objects.get_or_create(
+            name=name, defaults={"slug": SLUGS[name]}
+        )
         if not created and document.versions.exists():
             self.stdout.write(f"  {name}: already seeded")
             return
