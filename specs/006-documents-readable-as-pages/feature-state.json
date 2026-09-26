@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -39,6 +39,11 @@
       "state": "PR_READY",
       "at": "2026-09-26T16:27:38Z",
       "note": "review approved; PR #64 ready; walkthrough sent to the maintainer"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-26T19:08:52Z",
+      "note": "walkthrough changes requested: T025-T028"
     }
   ],
   "gates": {
@@ -63,6 +68,15 @@
       "self_resolved": [
         "SPEC-001 high: applied as T001/T002 edits (D2)",
         "SPEC-002, ARCH-001, ARCH-002 low: applied as plan/tasks edits (D3)"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-26T19:08:52Z",
+      "self_resolved": [
+        "Line under the name reads 'v2026.1 \u00b7 published <date> \u00b7 Agreed on <date>' \u2014 T025/T026",
+        "Earlier versions as a 'Previous versions' dropdown in the page actions \u2014 T027/T028",
+        "Documents that are read but never agreed to \u2014 filed as #65"
       ]
     }
   },
@@ -150,6 +164,16 @@
               "makemessages regenerated from repo root: en catalog carries the slug strings and the subtitle string"
             ]
           }
+        },
+        {
+          "id": "T025",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T026",
+          "status": "todo",
+          "attempts": 0
         }
       ]
     },
@@ -281,6 +305,16 @@
               "uv run pytest -n auto --dist loadscope (357 passed, 1 failed: the same test_urls case); forge verify docs, lint, typecheck, build passed"
             ]
           }
+        },
+        {
+          "id": "T027",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T028",
+          "status": "todo",
+          "attempts": 0
         }
       ]
     },
