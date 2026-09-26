@@ -1,6 +1,7 @@
 """Tests for mvp_compliance.views."""
 
 import re
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,7 +15,12 @@ from mvp.menus import AppMenu
 
 import mvp_compliance
 from mvp_compliance.rendering import MarkdownRenderer
-from tests.factories import DocumentFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 from tests.test_admin import catalog_entries
 
 
@@ -23,6 +29,159 @@ def published(document, markdown="Wording"):
     version = VersionFactory(document=document, markdown=markdown)
     version.publish()
     return version
+
+
+def document_address(document):
+    return reverse("mvp_compliance:document", args=[document.slug])
+
+
+def subtitle_addresses(document, first, second):
+    """The document page and the page of each version of ``document``."""
+    return [
+        document_address(document),
+        reverse("mvp_compliance:version", args=[document.slug, first.number]),
+        reverse("mvp_compliance:version", args=[document.slug, second.number]),
+    ]
+
+
+@pytest.mark.django_db
+class TestPageSubtitle:
+    """FR-009: the line under a page's name is ``v<number> · published <date>``,
+    continued with ``· Agreed on <date>`` for a visitor who accepted that version."""
+
+    @staticmethod
+    def line(version):
+        return f"v{version.number} · published " + date_format(
+            timezone.localdate(version.published_at)
+        )
+
+    def test_an_anonymous_visitor_sees_the_number_and_publication_date(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        for address, version in zip(
+            subtitle_addresses(document, first, second),
+            [second, first, second],
+            strict=True,
+        ):
+            content = client.get(address).content.decode()
+            assert self.line(version) in content
+            assert "Agreed on" not in content
+            assert "in force since" not in content
+
+    def test_a_signed_in_user_with_no_acceptance_of_the_version_sees_no_agreement(
+        self, client
+    ):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        client.force_login(UserFactory())
+
+        for address in subtitle_addresses(document, first, second):
+            assert "Agreed on" not in client.get(address).content.decode()
+
+    def test_a_user_who_accepted_the_version_sees_the_date_they_agreed(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        user = UserFactory()
+        agreed = timezone.now() - timedelta(days=3)
+        AcceptanceFactory(user=user, version=second, accepted_at=agreed)
+        client.force_login(user)
+        expected = (
+            f"{self.line(second)} · Agreed on {date_format(timezone.localdate(agreed))}"
+        )
+
+        for address in [
+            document_address(document),
+            reverse("mvp_compliance:version", args=[document.slug, second.number]),
+        ]:
+            assert expected in client.get(address).content.decode()
+        assert first.number != second.number
+
+    def test_a_superseded_version_carries_the_agreement_in_the_same_format(
+        self, client
+    ):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        user = UserFactory()
+        AcceptanceFactory(user=user, version=first)
+        client.force_login(user)
+
+        content = client.get(
+            reverse("mvp_compliance:version", args=[document.slug, first.number])
+        ).content.decode()
+
+        assert f"{self.line(first)} · Agreed on " in content
+        assert "replaced" in content
+
+    def test_an_acceptance_of_another_version_of_the_document_is_not_shown(
+        self, client
+    ):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        user = UserFactory()
+        AcceptanceFactory(user=user, version=first)
+        client.force_login(user)
+
+        assert (
+            "Agreed on" not in client.get(document_address(document)).content.decode()
+        )
+        assert (
+            "Agreed on"
+            not in client.get(
+                reverse("mvp_compliance:version", args=[document.slug, second.number])
+            ).content.decode()
+        )
+
+    def test_another_persons_acceptance_is_not_shown(self, client):
+        document = DocumentFactory()
+        version = published(document)
+        AcceptanceFactory(user=UserFactory(), version=version)
+        client.force_login(UserFactory())
+
+        assert (
+            "Agreed on" not in client.get(document_address(document)).content.decode()
+        )
+
+    @pytest.mark.parametrize("name", ["document", "version"])
+    def test_the_query_count_does_not_grow_with_versions_or_acceptances(
+        self, client, django_assert_num_queries, name
+    ):
+        user = UserFactory()
+        client.force_login(user)
+
+        def address(document, version):
+            args = [document.slug] + ([version.number] if name == "version" else [])
+            return reverse(f"mvp_compliance:{name}", args=args)
+
+        one = DocumentFactory()
+        only = published(one)
+        AcceptanceFactory(user=user, version=only)
+        many = DocumentFactory()
+        latest = None
+        for n in range(5):
+            latest = published(many, f"Wording {n}")
+            AcceptanceFactory(user=user, version=latest)
+        client.get(address(one, only))  # warm caches
+
+        with CaptureQueriesContext(connection) as single:
+            client.get(address(one, only))
+        with django_assert_num_queries(len(single)):
+            client.get(address(many, latest))
+
+    def test_an_anonymous_visit_costs_no_acceptance_query(self, client):
+        document = DocumentFactory()
+        published(document)
+        client.get(document_address(document))  # warm caches
+
+        with CaptureQueriesContext(connection) as anonymous:
+            client.get(document_address(document))
+
+        assert not [q for q in anonymous if "acceptance" in q["sql"].lower()]
 
 
 @pytest.mark.django_db
@@ -41,6 +200,7 @@ class TestDocumentView:
     def test_the_page_links_to_the_versions_of_the_document(self, client):
         document = DocumentFactory(slug="privacy-policy")
         published(document)
+        published(document, "Later wording")
 
         content = client.get(
             reverse("mvp_compliance:document", args=[document.slug])
@@ -48,7 +208,7 @@ class TestDocumentView:
 
         address = reverse("mvp_compliance:versions", args=[document.slug])
         assert f'href="{address}"' in content
-        assert "Earlier versions" in content
+        assert "All versions" in content
 
     def test_nothing_renders_markdown_while_the_page_is_served(self, client):
         document = DocumentFactory()
@@ -230,8 +390,8 @@ class TestVersionView:
         assert current.html in content
         assert "in force" in content
         assert "replaced" not in content
-        assert f"Version {current.number}, in force since" in document_page
-        assert f"Version {current.number}, in force since" in content
+        assert f"v{current.number} · published" in document_page
+        assert f"v{current.number} · published" in content
 
     def test_a_later_publication_leaves_a_versions_address_and_wording_alone(
         self, client

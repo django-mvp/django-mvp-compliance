@@ -167,8 +167,13 @@
         },
         {
           "id": "T025",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k TestPageSubtitle: 3 failed (subtitle text), 6 passed, before T026"
+            ]
+          }
         },
         {
           "id": "T026",

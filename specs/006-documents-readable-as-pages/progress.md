@@ -207,3 +207,10 @@ approve, no critical, high or medium findings. Two low findings fixed by the orc
 whose `update_fields` leaves the slug out is no longer refused, and `docs/models.md` states that
 `update()` and `bulk_update()` refuse any slug on a published document. Outcome recorded on the pull
 request.
+
+## 2026-09-26T19:30Z · Implementer US1 · T025
+
+- Did: `TestPageSubtitle` in `tests/test_views.py` — anonymous, signed-in without acceptance, signed-in with acceptance (both pages), superseded version, other-version and other-person acceptances, constant query count. Updated the two old subtitle assertions and the "Earlier versions" link assertion (authorised).
+- Verified: `uv run pytest tests/test_views.py -k TestPageSubtitle` — 3 failed on the old subtitle text, 6 passed. Unique (subject, version) means one acceptance per person per version, so "earliest" needs no test.
+- Next: T026.
+- Watch: the link test now publishes two versions, since the versions link lives in the dropdown (T028).
