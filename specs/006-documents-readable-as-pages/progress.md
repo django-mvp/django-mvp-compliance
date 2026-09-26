@@ -70,3 +70,10 @@ mount.
 - **Verified:** `uv run pytest tests/test_models.py::TestWithReplacedAt` 3 passed; ruff clean.
 - **Next:** T010 converter test.
 - **Watch:** not forwarded on `VersionManager`; the views go through `published()`, which returns a queryset.
+
+## 2026-09-26T16:55Z · Implementer US-2 · T010
+
+- **Did:** `tests/test_urls.py::TestVersionNumberConverter`: `2026.1` and `2026.12` resolve and reverse to `version`; `versions`, `2026`, `26.1`, `2026.x` raise `Resolver404`.
+- **Verified:** `uv run pytest tests/test_urls.py` 4 failed (NoReverseMatch / Resolver404 on the missing pattern), 4 passed (the negatives, trivially until T012 adds the pattern).
+- **Next:** T011 view tests.
+- **Watch:** the negative cases only bite once the pattern exists; re-run after T012.
