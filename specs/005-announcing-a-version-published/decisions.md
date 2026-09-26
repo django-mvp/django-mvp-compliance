@@ -56,7 +56,7 @@ under more than one address.
 
 **ADR:** none — local to the email function's signature, nothing downstream inherits it
 
-## D4 — Versions a person published are not yet part of what the package produces about them
+## D4 — Versions a person published are not part of what the package produces about them
 
 **Ambiguous**: `records.produce()` answers "everything this package holds about a person" (FS-004
 FR-001), and its statement of coverage says so. This feature makes the package hold one more thing
@@ -64,16 +64,14 @@ about a member of staff: the versions they published, through `publisher_subject
 not ask for that to join the answer, and adding it moves the fixed query count FS-004 pins in its
 tests from one to two.
 
-**Chosen**: nothing about the answer changes in this feature. The gap is raised as issue #52,
-with the recommendation that a *Versions published* section join the answer the way FS-004
-FR-017 anticipated.
+**Chosen**: the answer does not list them, and its statement of coverage stays as it is. Issue #52
+proposed adding a *Versions published* section and was closed as not planned.
 
-**Why defensible**: adding a section changes what the page shows about a person, which is a
-decision about personal data rather than an implementation detail, and it would change a test from
-another feature. Leaving it silent would ship an answer whose statement of coverage is no longer
-true.
+**Why defensible**: the answer is about what a person agreed to. Publishers are staff acting in
+their role, and which versions they published is a record of their work, not their consent. The
+statement of coverage is read as a statement about consent, and on that reading it is accurate.
 
-**ADR:** none — a question of scope for the maintainer, not an architectural decision
+**ADR:** docs/adr/0017-the-answer-about-a-person-covers-their-consent.md
 
 ## D5 — Design review carried as watch items
 
