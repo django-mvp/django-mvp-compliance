@@ -189,3 +189,13 @@ breadcrumb assertion.
 - **Verified:** `uv run pytest tests/test_views.py tests/test_admin.py::TestUserFacingStrings -q` 58 passed. Probe: renaming the "Earlier versions" catalog entry made the catalog test fail for `document_detail.html`; restored.
 - **Next:** full verify, report.
 - **Watch:** `TestPageStrings` imports `catalog_entries` from `tests/test_admin.py` rather than duplicating the parser.
+
+## 2026-09-26 — US-4 accepted, S5 CONVERGE
+
+US-4: receipts green, independent verify green, tamper-check flags only a moved import in
+`tests/test_views.py`. Task evidence written to the ledger by the orchestrator (the implementer left
+it).
+
+Converge: every functional requirement traced to a delivered task. One migration on the branch
+(`0007_document_slug`), nothing to consolidate. Cleanup pass over the feature diff found nothing to
+simplify. D1 graduated to ADR 0019. D2 to D5 declined with reasons.

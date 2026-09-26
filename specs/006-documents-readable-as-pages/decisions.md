@@ -20,6 +20,8 @@ lets a typo be fixed while it costs nothing, because no address is served until 
 published. This follows the same rule as the rest of the package: what has been published is not
 changed.
 
+**ADR:** docs/adr/0019-a-documents-address-is-fixed-once-a-version-is-published.md
+
 ## D2 — The existing document tests gain a slug
 
 **Ambiguous**: adding a unique, required slug means every test that creates a document inline
