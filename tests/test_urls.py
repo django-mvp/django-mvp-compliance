@@ -20,7 +20,10 @@ class TestVersionNumberConverter:
 
         assert address == f"/legal/privacy-policy/{number}/"
 
-    @pytest.mark.parametrize("segment", ["versions", "2026", "26.1", "2026.x"])
+    @pytest.mark.parametrize("segment", ["2026", "26.1", "2026.x"])
     def test_anything_else_does_not_resolve_to_the_version_address(self, segment):
         with pytest.raises(Resolver404):
             resolve(f"/legal/privacy-policy/{segment}/")
+
+    def test_versions_is_the_version_list_not_a_number(self):
+        assert resolve("/legal/privacy-policy/versions/").url_name == "versions"

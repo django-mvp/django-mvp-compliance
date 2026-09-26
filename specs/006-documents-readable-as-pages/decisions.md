@@ -60,3 +60,16 @@ Both old tests pinned a boundary that was true of the features that wrote them, 
 on purpose.
 
 **ADR:** none — the supersession is recorded here and in the test's docstring.
+
+## D5 — "versions" is the version list, not a malformed number
+
+**Ambiguous**: US-2's converter test listed `versions` among the segments that must not resolve at
+all. US-3 adds the version list at exactly that address.
+
+**Chosen**: `versions` leaves that list, and a separate test asserts it resolves to the `versions`
+address. The remaining cases still prove that a malformed number resolves to nothing.
+
+**Why defensible**: the US-2 test was checking that `versions` is never taken for a version number.
+That is still true, and the new test states it more precisely.
+
+**ADR:** none — local to this feature's tests.

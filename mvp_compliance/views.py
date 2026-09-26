@@ -12,11 +12,6 @@ from mvp.views.extra import MVPTemplateView
 from mvp_compliance.models import Document, Version
 
 
-def _index_crumb() -> dict[str, str]:
-    """The first crumb of every page's trail: the index of documents."""
-    return {"text": _("Legal documents"), "href": reverse("mvp_compliance:index")}
-
-
 class DocumentIndexView(MVPTemplateView):
     """Every document that has a version in force, alphabetically.
 
@@ -27,6 +22,11 @@ class DocumentIndexView(MVPTemplateView):
 
     template_name = "mvp_compliance/document_index.html"
     page_title = gettext_lazy("Legal documents")
+
+    @staticmethod
+    def crumb() -> dict[str, str]:
+        """The first crumb of every page's trail, linking to this index."""
+        return {"text": _("Legal documents"), "href": reverse("mvp_compliance:index")}
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -75,7 +75,7 @@ class DocumentView(MVPDetailView):
 
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
-        return [_index_crumb(), {"text": self.get_page_title()}]
+        return [DocumentIndexView.crumb(), {"text": self.get_page_title()}]
 
 
 class VersionView(MVPDetailView):
@@ -127,7 +127,7 @@ class VersionView(MVPDetailView):
     def get_breadcrumbs(self):
         document = self.object.document
         return [
-            _index_crumb(),
+            DocumentIndexView.crumb(),
             {
                 "text": document.name,
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
@@ -167,7 +167,7 @@ class VersionListView(MVPDetailView):
     def get_breadcrumbs(self):
         document = self.object
         return [
-            _index_crumb(),
+            DocumentIndexView.crumb(),
             {
                 "text": document.name,
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
