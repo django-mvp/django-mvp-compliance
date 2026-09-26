@@ -34,3 +34,10 @@ so) and three low ones. All four applied as plan and task edits, recorded in dec
 - **Verified:** `uv run pytest tests/test_views.py` 11 passed. Probe: swapping `in_force()` for `all()` in the view turned 10 of 11 red; reverted.
 - **Next:** T006 demo wiring.
 - **Watch:** `tests/test_app.py` still asserts `mvp_compliance.urls` does not exist; see the report's concerns.
+
+## 2026-09-26T16:25Z · Implementer US-1 · T006
+
+- **Did:** demo `FLEX_MENUS` renderers and `MVP_CONFIG` sidebar title, `legal/` mounted, landing page links the pages of the two documents that have a version in force.
+- **Verified:** rebuilt `demo.sqlite3` (`migrate`, `seed_demo`), `manage.py check` clean; on the running server `/legal/privacy-policy/` 200, `/legal/cookie-policy/` (draft only) 404, landing carries the link.
+- **Next:** T007 docs, then the full verify.
+- **Watch:** none.

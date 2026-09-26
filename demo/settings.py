@@ -97,6 +97,18 @@ EASY_ICONS = {
 # personal data about somebody who did not ask for it to be kept.
 MVP_COMPLIANCE_RECORD_IP_ADDRESS = True
 
+# django-mvp's shell draws its navigation through flex-menu renderers, and
+# rendering any page raises until the host project registers them.
+FLEX_MENUS = {
+    "renderers": {
+        "sidebar": "mvp.renderers.SidebarRenderer",
+        "dock": "mvp.renderers.MobileFooterNavRenderer",
+    }
+}
+
+# The shell needs a title beside the brand icon before any page renders in it.
+MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
+
 STATIC_URL = "/static/"
 
 USE_TZ = True
