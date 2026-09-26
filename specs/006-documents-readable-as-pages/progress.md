@@ -235,3 +235,10 @@ request.
 - Verified: `uv run pytest tests/test_views.py` — 70 passed.
 - Next: full verify, report.
 - Watch: the catalog carries line-number churn in unrelated location comments, which `makemessages` produces.
+
+## 2026-09-26 — Walkthrough changes accepted
+
+T025–T028 verified independently: receipts green, full verify green, tamper-check flags only the
+subtitle and "Earlier versions" assertions the brief authorised. Checked on the demo data: the
+version line with and without "Agreed on", and the "Previous versions" menu present with earlier
+versions and absent without them.

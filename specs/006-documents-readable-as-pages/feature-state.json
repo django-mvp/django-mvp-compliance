@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "QUEUED",
@@ -44,6 +44,21 @@
       "state": "IMPLEMENT",
       "at": "2026-09-26T19:08:52Z",
       "note": "walkthrough changes requested: T025-T028"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-26T19:14:56Z",
+      "note": "walkthrough changes T025-T028 verified independently"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-26T19:14:57Z",
+      "note": "walkthrough changes T025-T028 verified independently"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-26T19:14:57Z",
+      "note": "walkthrough changes T025-T028 verified independently"
     }
   ],
   "gates": {
@@ -416,11 +431,11 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 1,
+      "used": 2,
       "max": 2
     },
     "review_cycles": {
-      "used": 1,
+      "used": 2,
       "max": 1
     },
     "design_review_cycles": {
