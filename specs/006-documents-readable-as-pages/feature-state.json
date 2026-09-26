@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -19,6 +19,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-09-26T15:45:54Z",
       "note": "plan, research, tasks committed; draft PR #64 opened"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-26T15:51:27Z",
+      "note": "design review applied; plan notification sent"
     }
   ],
   "gates": {
@@ -30,8 +35,8 @@
       ]
     },
     "plan": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "notified",
+      "at": "2026-09-26T15:55:00Z"
     },
     "merge": {
       "approved_by": null,
