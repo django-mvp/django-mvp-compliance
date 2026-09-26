@@ -4,10 +4,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
 from django.test import RequestFactory, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from mvp_compliance.exceptions import (
@@ -82,6 +84,97 @@ class TestDocumentSlug:
 
         assert str(field.verbose_name)
         assert str(field.help_text)
+
+    @pytest.mark.parametrize(
+        "slug", ["Privacy", "privacy_policy", "-privacy", "privacy-"]
+    )
+    def test_a_slug_with_capitals_underscores_or_a_stray_hyphen_is_invalid(self, slug):
+        document = Document(name="Privacy policy", slug=slug)
+
+        with pytest.raises(ValidationError) as error:
+            document.full_clean()
+
+        assert "slug" in error.value.message_dict
+
+    def test_lowercase_letters_digits_and_inner_hyphens_are_valid(self):
+        document = Document(name="Privacy policy", slug="privacy-policy-2")
+
+        document.full_clean()
+
+    def test_the_slug_changes_freely_while_nothing_is_published(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document)
+
+        document.slug = "privacy-policy"
+        document.save()
+        Document.objects.filter(pk=document.pk).update(slug="privacy-notice")
+
+        document.refresh_from_db()
+        assert document.slug == "privacy-notice"
+
+    def test_saving_a_new_slug_after_publication_is_refused(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.slug = "privacy-policy"
+        with pytest.raises(PublishedVersionError):
+            document.save()
+
+        document.refresh_from_db()
+        assert document.slug == "privacy"
+
+    def test_updating_the_slug_after_publication_is_refused(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        with pytest.raises(PublishedVersionError):
+            Document.objects.filter(pk=document.pk).update(slug="privacy-policy")
+
+        document.refresh_from_db()
+        assert document.slug == "privacy"
+
+    def test_bulk_updating_the_slug_after_publication_is_refused(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.slug = "privacy-policy"
+        with pytest.raises(PublishedVersionError):
+            Document.objects.bulk_update([document], ["slug"])
+
+        document.refresh_from_db()
+        assert document.slug == "privacy"
+
+    def test_a_superseded_version_still_fixes_the_slug(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document, markdown="One").publish()
+        VersionFactory(document=document, markdown="Two").publish()
+
+        with pytest.raises(PublishedVersionError):
+            Document.objects.filter(pk=document.pk).update(slug="other")
+
+    def test_saving_an_unchanged_slug_after_publication_is_allowed(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.name = "Privacy notice"
+        document.save()
+
+        document.refresh_from_db()
+        assert document.name == "Privacy notice"
+        assert document.slug == "privacy"
+
+    def test_the_name_changes_after_publication_and_the_pages_keep_their_address(
+        self, client
+    ):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+        address = reverse("mvp_compliance:document", args=["privacy"])
+
+        Document.objects.filter(pk=document.pk).update(name="Privacy notice")
+
+        response = client.get(address)
+        assert response.status_code == 200
+        assert "Privacy notice" in response.content.decode()
 
 
 @pytest.mark.django_db
