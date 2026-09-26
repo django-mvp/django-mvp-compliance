@@ -175,3 +175,10 @@ breadcrumb assertion.
 - **Verified:** `uv run pytest tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_admin.py::TestDocumentAdmin tests/test_admin.py::TestDocumentChangelist -q` 20 passed; ruff clean.
 - **Next:** T023.
 - **Watch:** none.
+
+## 2026-09-26T19:30Z · Implementer US-4 · T023
+
+- **Did:** `TestTemplateOverride` (a test-only `tests/project_templates/` directory placed first in `TEMPLATES["DIRS"]` holds `mvp_compliance/document_detail.html` and `version_list.html`; the document page and the version list render the overrides, the version page still renders the packaged template) and `TestNoMenuEntry` (`AppMenu` children unchanged after serving all four pages; no package module references the menu library) in `tests/test_views.py`.
+- **Verified:** `uv run pytest tests/test_views.py::TestTemplateOverride tests/test_views.py::TestNoMenuEntry -q` 5 passed. These pass by design (the behaviour is already on the branch); the override case is the probe that the templates directory takes effect, since the marker ids exist only in the override files.
+- **Next:** T024.
+- **Watch:** `AppMenu` is empty under `tests/settings.py` (the demo's entry lives in `demo/menus.py`, not loaded), confirmed before asserting.

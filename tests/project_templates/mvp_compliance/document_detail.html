@@ -1,0 +1,5 @@
+{% extends "page_view.html" %}
+{% block page.content %}
+  <p id="project-document-page">{{ document.name }}: project override</p>
+  <div class="prose max-w-none">{{ version.html|safe }}</div>
+{% endblock page.content %}

@@ -1,5 +1,6 @@
 """Tests for mvp_compliance.views."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -8,7 +9,9 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
+from mvp.menus import AppMenu
 
+import mvp_compliance
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
 
@@ -556,3 +559,85 @@ class TestBreadcrumbTrails:
         response = client.get(reverse("mvp_compliance:index"))
 
         assert response.context["page"]["breadcrumbs"] == [{"text": "Legal documents"}]
+
+
+PROJECT_TEMPLATES = Path(__file__).parent / "project_templates"
+
+
+@pytest.mark.django_db
+class TestTemplateOverride:
+    """FR-018: a project restyles a page by placing a template at the same path."""
+
+    @pytest.fixture
+    def project_templates(self, settings):
+        """Point the template loaders at a directory of project templates first."""
+        templates = [dict(engine) for engine in settings.TEMPLATES]
+        templates[0]["DIRS"] = [PROJECT_TEMPLATES]
+        settings.TEMPLATES = templates
+
+    def test_the_document_page_renders_the_project_template(
+        self, client, project_templates
+    ):
+        document = DocumentFactory(name="Privacy policy")
+        version = published(document)
+
+        response = client.get(reverse("mvp_compliance:document", args=[document.slug]))
+
+        content = response.content.decode()
+        assert 'id="project-document-page"' in content
+        assert "Privacy policy: project override" in content
+        assert version.html in content
+        assert "Earlier versions" not in content
+
+    def test_another_page_renders_the_project_template(self, client, project_templates):
+        document = DocumentFactory(name="Privacy policy")
+        published(document)
+
+        response = client.get(reverse("mvp_compliance:versions", args=[document.slug]))
+
+        assert 'id="project-version-list"' in response.content.decode()
+
+    def test_a_page_with_no_project_template_still_renders_the_packaged_one(
+        self, client, project_templates
+    ):
+        document = DocumentFactory()
+        version = published(document)
+
+        response = client.get(
+            reverse("mvp_compliance:version", args=[document.slug, version.number])
+        )
+
+        names = [template.name for template in response.templates]
+        assert names[0] == "mvp_compliance/version_detail.html"
+
+
+@pytest.mark.django_db
+class TestNoMenuEntry:
+    """FR-014: the package adds nothing to a project's menus."""
+
+    def test_serving_every_page_leaves_the_app_menu_unchanged(self, client):
+        before = [child.name for child in AppMenu.children]
+        document = DocumentFactory()
+        version = published(document)
+
+        for name, args in [
+            ("index", []),
+            ("document", [document.slug]),
+            ("versions", [document.slug]),
+            ("version", [document.slug, version.number]),
+        ]:
+            client.get(reverse(f"mvp_compliance:{name}", args=args))
+
+        assert [child.name for child in AppMenu.children] == before
+
+    def test_the_package_does_not_touch_the_menu_library(self):
+        package = Path(mvp_compliance.__file__).parent
+
+        offenders = [
+            path.name
+            for path in package.rglob("*.py")
+            if "flex_menu" in path.read_text(encoding="utf-8")
+            or "AppMenu" in path.read_text(encoding="utf-8")
+        ]
+
+        assert offenders == []
