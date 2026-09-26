@@ -108,3 +108,42 @@ class VersionView(MVPDetailView):
             },
             {"text": _("Version %(number)s") % {"number": self.object.number}},
         ]
+
+
+class VersionListView(MVPDetailView):
+    """Every published version of a document, newest first.
+
+    Readable by anyone (FR-005), and "not found" for the same documents that
+    ``DocumentView`` refuses: one with nothing in force has no list (FR-007).
+    Each row carries the date the version was replaced, from one annotated
+    query however many versions there are.
+    """
+
+    model = Document
+    template_name = "mvp_compliance/version_list.html"
+    directory: list[str] = []
+
+    def get_queryset(self):
+        return Document.objects.in_force()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["versions"] = (
+            self.object.versions.published()
+            .with_replaced_at()
+            .order_by("-published_at")
+        )
+        return context
+
+    def get_page_title(self):
+        return _("Versions of %(name)s") % {"name": self.object.name}
+
+    def get_breadcrumbs(self):
+        document = self.object
+        return [
+            {
+                "text": document.name,
+                "href": reverse("mvp_compliance:document", args=[document.slug]),
+            },
+            {"text": _("Versions")},
+        ]

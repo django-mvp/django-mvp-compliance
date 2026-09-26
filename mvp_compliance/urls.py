@@ -6,7 +6,7 @@ with ``{% url 'mvp_compliance:document' 'privacy-policy' %}``.
 
 from django.urls import path, register_converter
 
-from mvp_compliance.views import DocumentView, VersionView
+from mvp_compliance.views import DocumentView, VersionListView, VersionView
 
 
 class VersionNumberConverter:
@@ -31,6 +31,7 @@ app_name = "mvp_compliance"
 
 urlpatterns = [
     path("<slug:slug>/", DocumentView.as_view(), name="document"),
+    path("<slug:slug>/versions/", VersionListView.as_view(), name="versions"),
     path(
         "<slug:slug>/<version_number:number>/",
         VersionView.as_view(),

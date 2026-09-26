@@ -402,7 +402,7 @@ class TestVersionListView:
             reverse("mvp_compliance:versions", args=[document.slug])
         ).content.decode()
 
-        assert content.count("In force") == 1
+        assert content.count(">In force</td>") == 1
 
     def test_no_draft_is_listed(self, client):
         document = DocumentFactory()

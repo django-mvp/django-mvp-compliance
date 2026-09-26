@@ -111,3 +111,10 @@ CHANGELOG entry for the version pages is carried into US-3's T018.
 - **Verified:** `uv run pytest tests/test_views.py -k "VersionList or links_to_the_versions"` 8 failed, all `NoReverseMatch: 'versions'`.
 - **Next:** T015 pattern, view, template, link.
 - **Watch:** the "In force" marker test counts the string in the whole page.
+
+## 2026-09-26T18:00Z · Implementer US-3 · T015
+
+- **Did:** `versions` pattern, `VersionListView`, `version_list.html` (table: number linking to its page, in-force date, replaced date or "In force"), the "Earlier versions" link in `document_detail.html`. Fixed my own marker test (the column header also contains "In force").
+- **Verified:** `uv run pytest tests/test_views.py` 31 passed; `ruff check` and `mypy mvp_compliance` clean.
+- **Next:** T016 index tests.
+- **Watch:** `tests/test_urls.py::TestVersionNumberConverter::test_anything_else_does_not_resolve_to_the_version_address[versions]` (US-2's) now fails by design: `versions` is a real address. Not mine to edit; reported in concerns.

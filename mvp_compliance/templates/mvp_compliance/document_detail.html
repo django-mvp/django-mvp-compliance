@@ -1,4 +1,6 @@
 {% extends "page_view.html" %}
+{% load i18n %}
 {% block page.content %}
+  <p class="mb-6"><a class="link" href="{% url 'mvp_compliance:versions' document.slug %}">{% translate "Earlier versions" %}</a></p>
   <div class="prose max-w-none">{{ version.html|safe }}</div>
 {% endblock page.content %}
