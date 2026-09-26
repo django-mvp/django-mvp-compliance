@@ -98,3 +98,9 @@ mount.
 - **Verified:** see the full verify below in the report.
 - **Next:** full verify, report.
 - **Watch:** CHANGELOG `[Unreleased]` has no entry for the version pages; left alone as outside this story's listed files.
+
+## 2026-09-26 — US-2 accepted
+
+Receipts green, independent verify green, tamper-check clean. One wording change by the
+orchestrator: the replaced notice named the replacement date twice and now names it once. The
+CHANGELOG entry for the version pages is carried into US-3's T018.
