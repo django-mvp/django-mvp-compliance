@@ -319,8 +319,13 @@
         },
         {
           "id": "T027",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k TestPreviousVersionsMenu: 5 failed (no dropdown, text link present), 1 passed, before T028"
+            ]
+          }
         },
         {
           "id": "T028",

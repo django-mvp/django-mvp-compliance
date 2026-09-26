@@ -221,3 +221,10 @@ request.
 - Verified: `uv run pytest tests/test_views.py` — all pass except `test_the_page_links_to_the_versions_of_the_document`, which waits on T028. ruff and mypy clean.
 - Next: T027.
 - Watch: the mixin must be quoted in `docs/pages.md` (T028). The old msgid "Version %(number)s, in force since %(date)s" is gone; catalog regeneration is T028.
+
+## 2026-09-26T19:50Z · Implementer US1 · T027
+
+- Did: `TestPreviousVersionsMenu` in `tests/test_views.py` — earlier published versions newest first with their links and lines, ending in "All versions", no draft, no menu with one published version, no "Earlier versions" text link, constant query count.
+- Verified: `uv run pytest tests/test_views.py -k TestPreviousVersionsMenu` — 5 failed for the missing dropdown and the old link still present, 1 passed (the count guard).
+- Next: T028.
+- Watch: the tests locate the menu from the first `data-mvp-dropdown`; if the shell draws another one earlier, narrow the helper.

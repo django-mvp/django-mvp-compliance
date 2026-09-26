@@ -185,6 +185,106 @@ class TestPageSubtitle:
 
 
 @pytest.mark.django_db
+class TestPreviousVersionsMenu:
+    """FR-011: earlier versions are a "Previous versions" dropdown in the page actions."""
+
+    @staticmethod
+    def menu(client, document):
+        content = client.get(document_address(document)).content.decode()
+        start = content.find("data-mvp-dropdown")
+        return content, content[start:] if start != -1 else ""
+
+    def test_every_earlier_published_version_is_listed_newest_first(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        third = published(document, "Third wording")
+        for version in (first, second):
+            version.refresh_from_db()
+
+        _content, menu = self.menu(client, document)
+
+        assert "Previous versions" in menu
+        addresses = [
+            reverse("mvp_compliance:version", args=[document.slug, version.number])
+            for version in (second, first)
+        ]
+        positions = [menu.index(f'href="{address}"') for address in addresses]
+        assert positions == sorted(positions)
+        assert (
+            f'href="{reverse("mvp_compliance:version", args=[document.slug, third.number])}"'
+            not in menu
+        )
+        for version in (second, first):
+            assert (
+                f"v{version.number} · published "
+                f"{date_format(timezone.localdate(version.published_at))}"
+            ) in menu
+
+    def test_the_menu_ends_with_a_link_to_the_version_list(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        _content, menu = self.menu(client, document)
+
+        versions = reverse("mvp_compliance:versions", args=[document.slug])
+        assert "All versions" in menu
+        assert menu.rindex(f'href="{versions}"') > menu.rindex(
+            'href="'
+            + reverse("mvp_compliance:version", args=[document.slug, first.number])
+        )
+
+    def test_a_draft_is_not_in_the_menu(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        published(document, "Second wording")
+        VersionFactory(document=document, markdown="Unpublished wording")
+
+        _content, menu = self.menu(client, document)
+
+        assert menu.count("· published") == 1
+
+    def test_a_document_with_one_published_version_has_no_menu(self, client):
+        document = DocumentFactory()
+        published(document)
+        VersionFactory(document=document, markdown="Unpublished wording")
+
+        content, _menu = self.menu(client, document)
+
+        assert "Previous versions" not in content
+        assert "data-mvp-dropdown" not in content
+        assert reverse("mvp_compliance:versions", args=[document.slug]) not in content
+
+    def test_the_earlier_versions_text_link_is_gone(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        published(document, "Second wording")
+
+        content, _menu = self.menu(client, document)
+
+        assert "Earlier versions" not in content
+
+    def test_the_query_count_does_not_grow_with_the_versions_published(
+        self, client, django_assert_num_queries
+    ):
+        one = DocumentFactory()
+        published(one)
+        two = DocumentFactory()
+        published(two, "First wording")
+        published(two, "Second wording")
+        many = DocumentFactory()
+        for n in range(6):
+            published(many, f"Wording {n}")
+        client.get(document_address(two))  # warm caches
+
+        with CaptureQueriesContext(connection) as single:
+            client.get(document_address(two))
+        with django_assert_num_queries(len(single)):
+            client.get(document_address(many))
+
+
+@pytest.mark.django_db
 class TestDocumentView:
     """A visitor reads the version in force at an address that never changes."""
 
