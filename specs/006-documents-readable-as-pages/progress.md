@@ -77,3 +77,10 @@ mount.
 - **Verified:** `uv run pytest tests/test_urls.py` 4 failed (NoReverseMatch / Resolver404 on the missing pattern), 4 passed (the negatives, trivially until T012 adds the pattern).
 - **Next:** T011 view tests.
 - **Watch:** the negative cases only bite once the pattern exists; re-run after T012.
+
+## 2026-09-26T17:00Z · Implementer US-2 · T011
+
+- **Did:** `TestVersionView` in `tests/test_views.py` (12 tests): superseded and current wording, unchanged after a later publication, another document's number, unpublished number, draft, shell, breadcrumbs, no Markdown rendering, escaped name, constant query count.
+- **Verified:** `uv run pytest tests/test_views.py::TestVersionView` 12 failed, all `NoReverseMatch: 'version'`.
+- **Next:** T012 converter, pattern, view, template.
+- **Watch:** the draft test asserts a draft has no number and that the next number is 404.
