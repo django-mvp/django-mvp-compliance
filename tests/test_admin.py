@@ -211,6 +211,20 @@ class TestVersionAdmin:
         assert str(published_version.number) in content
         assert "Current" in content
 
+    def test_a_draft_is_labelled_draft_where_its_number_would_be(
+        self, client, editor, draft, published_version
+    ) -> None:
+        client.force_login(editor)
+
+        content = client.get(
+            reverse("admin:mvp_compliance_version_changelist")
+        ).content.decode()
+
+        number_cells = re.findall(
+            r'<td class="field-version_number">([^<]*)</td>', content
+        )
+        assert sorted(number_cells) == sorted([published_version.number, "Draft"])
+
     def test_a_version_in_forces_page_offers_the_next_version(
         self, client, editor, published_version
     ) -> None:
@@ -481,7 +495,10 @@ class TestDraftPrivacy:
             reverse("admin:mvp_compliance_version_changelist")
         ).content.decode()
         for version in drafts:
-            assert str(version.number) in changelist_content
+            change_url = reverse(
+                "admin:mvp_compliance_version_change", args=[version.pk]
+            )
+            assert change_url in changelist_content
 
         for version in drafts:
             response = client.get(
@@ -672,8 +689,7 @@ class TestPublish:
         draft.refresh_from_db()
         content = response.content.decode()
         assert response.status_code == 200
-        assert str(draft.document) in content
-        assert str(draft.number) in content
+        assert str(draft) in content
         assert expected_html in content
         assert "cannot be changed" in content
         assert "another version" in content
