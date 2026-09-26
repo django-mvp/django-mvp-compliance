@@ -27,10 +27,12 @@ Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...")
 
 A version belongs to exactly one document, through `Version.document`, and a
 document's versions come back through `document.versions.all()` in the order they
-were added. `Version.number` is assigned automatically as one more than the highest
-number its document already holds — it is never supplied by whoever writes the
-version, and the database refuses a second version with a number its document
-already has.
+were published, drafts last. `Version.number` is assigned when the version is
+published: the year of publication, in the site's time zone, and its place among
+the document's versions published that year, so `"2026.1"`, `"2026.2"`, then
+`"2027.1"`. It is never supplied by whoever writes the version. A draft's number is
+`None`, so drafts that are never published leave no gaps, and the database refuses
+a second version with a number its document already has.
 
 ### Publishing
 
@@ -177,7 +179,7 @@ document.current  # the Version in force, or None
 One version by its number, the plain Django idiom, no wrapper method:
 
 ```python
-document.versions.get(number=2)
+document.versions.get(number="2026.2")
 ```
 
 The published history, in order, with drafts absent — `VersionQuerySet.published()`,
@@ -449,7 +451,7 @@ objects, each naming the document, the version accepted and the moment it happen
 ```python
 entry = record.sections[0].entries[0]
 entry.document       # "Privacy policy" — the document's current name
-entry.version         # 1 — Version.number
+entry.version         # "2026.1" — Version.number
 entry.accepted_at     # the moment this acceptance was recorded
 entry.ip_address      # the address the request came from, or None
 entry.wording         # the HTML stored on that version at publication, in full

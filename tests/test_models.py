@@ -1,6 +1,6 @@
 """Tests for mvp_compliance.models."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -64,28 +64,132 @@ class TestDocument:
 
 @pytest.mark.django_db
 class TestVersion:
-    """Versions belong to one document and are numbered by the package."""
+    """Versions belong to one document and are numbered by the package when published."""
 
-    def test_versions_are_numbered_in_order_independently_per_document(self):
-        privacy = Document.objects.create(name="Privacy policy")
-        terms = Document.objects.create(name="Terms")
+    def test_a_draft_has_no_number(self, document):
+        draft = Version.objects.create(document=document, markdown="Wording")
 
-        privacy_v1 = Version.objects.create(document=privacy, markdown="Privacy v1")
-        terms_v1 = Version.objects.create(document=terms, markdown="Terms v1")
-        privacy_v2 = Version.objects.create(document=privacy, markdown="Privacy v2")
+        assert draft.number is None
+        assert str(draft) == f"{document} (draft)"
 
-        assert list(privacy.versions.all()) == [privacy_v1, privacy_v2]
-        assert [v.number for v in privacy.versions.all()] == [1, 2]
-        assert list(terms.versions.all()) == [terms_v1]
-        assert [v.number for v in terms.versions.all()] == [1]
+    def test_publishing_numbers_a_version_by_its_year_and_place_in_that_year(
+        self, document
+    ):
+        year = timezone.localdate().year
+        first = VersionFactory(document=document)
+        first.publish()
+        second = VersionFactory(document=document)
+        second.publish()
 
-    def test_number_cannot_collide_within_a_document(self):
-        privacy = Document.objects.create(name="Privacy policy")
-        Version.objects.create(document=privacy, markdown="Privacy v1")
+        assert [first.number, second.number] == [f"{year}.1", f"{year}.2"]
+        assert str(second) == f"{document} #{year}.2"
 
+    def test_drafts_consume_no_numbers(self, document):
+        year = timezone.localdate().year
+        VersionFactory(document=document).publish()
+        VersionFactory(document=document)
+        VersionFactory(document=document)
+        published_later = VersionFactory(document=document)
+
+        published_later.publish()
+
+        assert published_later.number == f"{year}.2"
+        assert [v.number for v in document.versions.published()] == [
+            f"{year}.1",
+            f"{year}.2",
+        ]
+        assert [v.number for v in document.versions.drafts()] == [None, None]
+
+    def test_the_count_starts_again_each_year(self, document, monkeypatch):
+        this_year = timezone.now()
+        next_year = this_year.replace(year=this_year.year + 1)
+        VersionFactory(document=document).publish()
+        VersionFactory(document=document).publish()
+        monkeypatch.setattr(timezone, "now", lambda: next_year)
+
+        version = VersionFactory(document=document)
+        version.publish()
+
+        assert version.number == f"{timezone.localdate(next_year).year}.1"
+
+    @override_settings(TIME_ZONE="Europe/Berlin")
+    def test_the_year_is_the_sites_local_year_at_publication(
+        self, document, monkeypatch
+    ):
+        """23:30 UTC on New Year's Eve is already the next year in Berlin."""
+        moment = datetime(2026, 12, 31, 23, 30, tzinfo=UTC)
+        monkeypatch.setattr(timezone, "now", lambda: moment)
+
+        version = VersionFactory(document=document)
+        version.publish()
+
+        assert version.number == "2027.1"
+
+    @override_settings(USE_TZ=False)
+    def test_a_site_without_time_zones_numbers_by_its_own_clock(
+        self, document, monkeypatch
+    ):
+        moment = datetime(2031, 6, 1, 12, 0)
+        monkeypatch.setattr(timezone, "now", lambda: moment)
+
+        version = VersionFactory(document=document)
+        version.publish()
+
+        assert version.number == "2031.1"
+
+    def test_numbers_are_counted_per_document(self):
+        year = timezone.localdate().year
+        privacy, terms = DocumentFactory(), DocumentFactory()
+        VersionFactory(document=privacy).publish()
+        VersionFactory(document=privacy).publish()
+
+        terms_v1 = VersionFactory(document=terms)
+        terms_v1.publish()
+
+        assert terms_v1.number == f"{year}.1"
+
+    def test_versions_are_ordered_by_publication_with_drafts_last(self, document):
+        draft = VersionFactory(document=document)
+        first = VersionFactory(document=document)
+        first.publish()
+        second = VersionFactory(document=document)
+        second.publish()
+
+        assert list(document.versions.all()) == [first, second, draft]
+
+    def test_number_cannot_collide_within_a_document(self, published_version):
         with pytest.raises(IntegrityError):
             Version.objects.bulk_create(
-                [Version(document=privacy, markdown="Privacy v2", number=1)]
+                [
+                    Version(
+                        document=published_version.document,
+                        markdown="Other wording",
+                        number=published_version.number,
+                        status=Version.Status.SUPERSEDED,
+                        html="<p>Other wording</p>",
+                        published_at=timezone.now(),
+                    )
+                ]
+            )
+
+    def test_a_draft_cannot_carry_a_number(self, document):
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [Version(document=document, markdown="Wording", number="2026.1")]
+            )
+
+    def test_a_published_version_cannot_lack_a_number(self, document):
+        with pytest.raises(IntegrityError):
+            Version.objects.bulk_create(
+                [
+                    Version(
+                        document=document,
+                        markdown="Wording",
+                        status=Version.Status.CURRENT,
+                        html="<p>Wording</p>",
+                        published_at=timezone.now(),
+                    )
+                ]
             )
 
 
@@ -279,9 +383,9 @@ class TestPublishing:
         like from here. The second call must refuse the way FR-010 says it
         refuses, so a caller catching that alone does not miss it.
         """
-        VersionFactory(document=document)
-        first = Version.objects.get(document=document, number=1)
-        stale = Version.objects.get(document=document, number=1)
+        draft = VersionFactory(document=document)
+        first = Version.objects.get(pk=draft.pk)
+        stale = Version.objects.get(pk=draft.pk)
         first.publish()
         published_at = first.published_at
 
@@ -589,11 +693,13 @@ class TestRetrieval:
         assert document.current is None
 
     def test_one_version_by_its_number(self, document):
-        VersionFactory(document=document, markdown="First wording")
+        year = timezone.localdate().year
+        VersionFactory(document=document, markdown="First wording").publish()
         second = VersionFactory(document=document, markdown="Second wording")
-        VersionFactory(document=document, markdown="Third wording")
+        second.publish()
+        VersionFactory(document=document, markdown="Third wording").publish()
 
-        assert document.versions.get(number=2) == second
+        assert document.versions.get(number=f"{year}.2") == second
 
     def test_four_documents_do_not_interfere(self):
         privacy, terms, cookies, agreement = (
@@ -620,19 +726,24 @@ class TestRetrieval:
         agreement_v3 = VersionFactory(document=agreement, markdown="Agreement v3")
         agreement_v3.publish()
 
-        assert [v.number for v in privacy.versions.all()] == [1, 2]
+        year = timezone.localdate().year
+        assert [v.number for v in privacy.versions.all()] == [f"{year}.1", f"{year}.2"]
         assert privacy.current == privacy_v2
         assert list(privacy.versions.published()) == [privacy_v1, privacy_v2]
 
-        assert [v.number for v in terms.versions.all()] == [1]
+        assert [v.number for v in terms.versions.all()] == [f"{year}.1"]
         assert terms.current == terms_v1
         assert list(terms.versions.published()) == [terms_v1]
 
-        assert [v.number for v in cookies.versions.all()] == [1]
+        assert [v.number for v in cookies.versions.all()] == [None]
         assert cookies.current is None
         assert list(cookies.versions.published()) == []
 
-        assert [v.number for v in agreement.versions.all()] == [1, 2, 3]
+        assert [v.number for v in agreement.versions.all()] == [
+            f"{year}.1",
+            f"{year}.2",
+            f"{year}.3",
+        ]
         assert agreement.current == agreement_v3
         assert list(agreement.versions.published()) == [
             agreement_v1,

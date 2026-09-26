@@ -18,7 +18,9 @@ _Avoid_: policy (that names one kind of document, not the category), agreement, 
 **Version**:
 One revision of a document, holding the Markdown a person wrote and the HTML a reader was served.
 A version is what acceptance points at, never the document, because "agreed to the privacy policy"
-without a version is not evidence of anything.
+without a version is not evidence of anything. A version gets its number when it is published: the
+year and its place among the document's versions published that year, such as 2026.2. A draft has
+none.
 _Avoid_: revision, edition, draft (that is a state a version can be in, not a synonym for it).
 
 **Published**:

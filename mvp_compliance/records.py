@@ -30,11 +30,11 @@ class AcceptanceEntry:
 
     Names the document by its current name, the document's own lasting
     identity rather than something versioned, and the version by the number
-    the package assigned it.
+    the package assigned it at publication, such as ``"2026.2"``.
     """
 
     document: str
-    version: int
+    version: str
     accepted_at: datetime
     ip_address: str | None
     #: The HTML stored on the version at publication (``Version.html``), never
