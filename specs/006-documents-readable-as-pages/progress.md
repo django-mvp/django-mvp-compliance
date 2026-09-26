@@ -104,3 +104,10 @@ mount.
 Receipts green, independent verify green, tamper-check clean. One wording change by the
 orchestrator: the replaced notice named the replacement date twice and now names it once. The
 CHANGELOG entry for the version pages is carried into US-3's T018.
+
+## 2026-09-26T17:45Z · Implementer US-3 · T014
+
+- **Did:** `TestVersionListView` (7 tests) and one `TestDocumentView` test for the "Earlier versions" link.
+- **Verified:** `uv run pytest tests/test_views.py -k "VersionList or links_to_the_versions"` 8 failed, all `NoReverseMatch: 'versions'`.
+- **Next:** T015 pattern, view, template, link.
+- **Watch:** the "In force" marker test counts the string in the whole page.

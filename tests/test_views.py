@@ -33,6 +33,18 @@ class TestDocumentView:
         assert response.status_code == 200
         assert version.html in response.content.decode()
 
+    def test_the_page_links_to_the_versions_of_the_document(self, client):
+        document = DocumentFactory(slug="privacy-policy")
+        published(document)
+
+        content = client.get(
+            reverse("mvp_compliance:document", args=[document.slug])
+        ).content.decode()
+
+        address = reverse("mvp_compliance:versions", args=[document.slug])
+        assert f'href="{address}"' in content
+        assert "Earlier versions" in content
+
     def test_nothing_renders_markdown_while_the_page_is_served(self, client):
         document = DocumentFactory()
         version = published(document, "Some **bold** wording")
@@ -354,3 +366,92 @@ class TestVersionView:
             client.get(version_address(only))
         with django_assert_num_queries(len(single)):
             client.get(version_address(first))
+
+
+@pytest.mark.django_db
+class TestVersionListView:
+    """A visitor finds every published version of a document, newest first."""
+
+    def test_every_published_version_is_listed_newest_first_with_its_dates(
+        self, client
+    ):
+        document = DocumentFactory(name="Privacy policy")
+        first = published(document, "One")
+        second = published(document, "Two")
+        third = published(document, "Three")
+        VersionFactory(document=document, markdown="Draft")
+
+        response = client.get(reverse("mvp_compliance:versions", args=[document.slug]))
+
+        assert response.status_code == 200
+        assert list(response.context["versions"]) == [third, second, first]
+        content = response.content.decode()
+        for version in (first, second, third):
+            assert f"{version.number}" in content
+            assert f'href="{version_address(version)}"' in content
+            assert date_format(timezone.localdate(version.published_at)) in content
+        # the first version was replaced the day the second was published
+        assert date_format(timezone.localdate(second.published_at)) in content
+
+    def test_the_version_in_force_is_marked_and_the_others_are_not(self, client):
+        document = DocumentFactory()
+        published(document, "One")
+        published(document, "Two")
+
+        content = client.get(
+            reverse("mvp_compliance:versions", args=[document.slug])
+        ).content.decode()
+
+        assert content.count("In force") == 1
+
+    def test_no_draft_is_listed(self, client):
+        document = DocumentFactory()
+        published(document)
+        draft = VersionFactory(document=document, markdown="Draft")
+
+        response = client.get(reverse("mvp_compliance:versions", args=[document.slug]))
+
+        assert draft not in list(response.context["versions"])
+        assert len(response.context["versions"]) == 1
+
+    def test_a_document_with_only_drafts_is_not_found(self, client):
+        document = DocumentFactory()
+        VersionFactory(document=document)
+
+        response = client.get(reverse("mvp_compliance:versions", args=[document.slug]))
+
+        assert response.status_code == 404
+
+    def test_an_unknown_slug_is_not_found(self, client):
+        response = client.get(reverse("mvp_compliance:versions", args=["nothing"]))
+
+        assert response.status_code == 404
+
+    def test_the_page_renders_in_the_shell_with_the_title_of_the_document(
+        self, client
+    ):
+        document = DocumentFactory(name="Privacy policy")
+        published(document)
+
+        response = client.get(reverse("mvp_compliance:versions", args=[document.slug]))
+
+        names = [template.name for template in response.templates]
+        assert names[0] == "mvp_compliance/version_list.html"
+        assert "mvp/base.html" in names
+        assert "Versions of Privacy policy" in response.content.decode()
+
+    def test_the_query_count_does_not_grow_with_the_versions_published(
+        self, client, django_assert_num_queries
+    ):
+        few = DocumentFactory()
+        for n in range(2):
+            published(few, f"Wording {n}")
+        many = DocumentFactory()
+        for n in range(6):
+            published(many, f"Wording {n}")
+        client.get(reverse("mvp_compliance:versions", args=[few.slug]))  # warm caches
+
+        with CaptureQueriesContext(connection) as small:
+            client.get(reverse("mvp_compliance:versions", args=[few.slug]))
+        with django_assert_num_queries(len(small)):
+            client.get(reverse("mvp_compliance:versions", args=[many.slug]))
