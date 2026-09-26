@@ -208,28 +208,28 @@ whose `update_fields` leaves the slug out is no longer refused, and `docs/models
 `update()` and `bulk_update()` refuse any slug on a published document. Outcome recorded on the pull
 request.
 
-## 2026-09-26T19:30Z · Implementer US1 · T025
+## 2026-09-26T19:10Z · Implementer US1 · T025
 
 - Did: `TestPageSubtitle` in `tests/test_views.py` — anonymous, signed-in without acceptance, signed-in with acceptance (both pages), superseded version, other-version and other-person acceptances, constant query count. Updated the two old subtitle assertions and the "Earlier versions" link assertion (authorised).
 - Verified: `uv run pytest tests/test_views.py -k TestPageSubtitle` — 3 failed on the old subtitle text, 6 passed. Unique (subject, version) means one acceptance per person per version, so "earliest" needs no test.
 - Next: T026.
 - Watch: the link test now publishes two versions, since the versions link lives in the dropdown (T028).
 
-## 2026-09-26T19:40Z · Implementer US1 · T026
+## 2026-09-26T19:11Z · Implementer US1 · T026
 
 - Did: `VersionSubtitleMixin` in `views.py` (public, one `get_page_subtitle`), used by `DocumentView` and `VersionView`; `VersionView.get_version()` returns its object. Acceptance read through `Acceptance.objects.for_person(user).filter(version=...)`, one query, only for signed-in visitors. The two pre-existing document-page tests that asserted "Version N" now assert the new line.
 - Verified: `uv run pytest tests/test_views.py` — all pass except `test_the_page_links_to_the_versions_of_the_document`, which waits on T028. ruff and mypy clean.
 - Next: T027.
 - Watch: the mixin must be quoted in `docs/pages.md` (T028). The old msgid "Version %(number)s, in force since %(date)s" is gone; catalog regeneration is T028.
 
-## 2026-09-26T19:50Z · Implementer US1 · T027
+## 2026-09-26T19:11Z · Implementer US1 · T027
 
 - Did: `TestPreviousVersionsMenu` in `tests/test_views.py` — earlier published versions newest first with their links and lines, ending in "All versions", no draft, no menu with one published version, no "Earlier versions" text link, constant query count.
 - Verified: `uv run pytest tests/test_views.py -k TestPreviousVersionsMenu` — 5 failed for the missing dropdown and the old link still present, 1 passed (the count guard).
 - Next: T028.
 - Watch: the tests locate the menu from the first `data-mvp-dropdown`; if the shell draws another one earlier, narrow the helper.
 
-## 2026-09-26T20:05Z · Implementer US1 · T028
+## 2026-09-26T19:12Z · Implementer US1 · T028
 
 - Did: `previous_versions` in `DocumentView` context (one query, published versions other than the current, newest first); `document_detail.html` fills `page.actions` with `<c-dropdown>` and drops the text link; `docs/pages.md` describes the line under the name, `VersionSubtitleMixin`, the dropdown and the new context key; en catalog regenerated (POT-Creation-Date removed, three fuzzy entries and one empty msgstr filled, no `.mo`). The end-of-file hook added the missing final newline to `review-brief.json`; committed with this task.
 - Verified: `uv run pytest tests/test_views.py` — 70 passed.
