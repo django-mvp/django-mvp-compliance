@@ -82,6 +82,15 @@ EASY_ICONS = {
     }
 }
 
+# django-mvp's shell draws its navigation through flex-menu renderers, and
+# rendering any page raises until the host project registers them.
+FLEX_MENUS = {
+    "renderers": {
+        "sidebar": "mvp.renderers.SidebarRenderer",
+        "dock": "mvp.renderers.MobileFooterNavRenderer",
+    }
+}
+
 STATIC_URL = "/static/"
 
 USE_TZ = True
