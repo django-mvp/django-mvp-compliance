@@ -106,7 +106,7 @@ FLEX_MENUS = {
     }
 }
 
-# The shell needs a title beside the brand icon before any page renders in it.
+# The title the shell shows beside the brand icon in the sidebar.
 MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
 
 STATIC_URL = "/static/"

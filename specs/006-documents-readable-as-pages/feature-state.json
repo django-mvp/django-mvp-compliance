@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "CONVERGE",
+  "state": "REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -29,6 +29,11 @@
       "state": "CONVERGE",
       "at": "2026-09-26T16:20:34Z",
       "note": "all four stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-26T16:22:23Z",
+      "note": "converge green; ADR 0019"
     }
   ],
   "gates": {
@@ -353,7 +358,7 @@
       "max": 2
     },
     "review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "design_review_cycles": {

@@ -165,6 +165,18 @@ class TestDocumentSlug:
         assert document.name == "Privacy notice"
         assert document.slug == "privacy"
 
+    def test_a_save_that_does_not_write_the_slug_is_allowed(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy")
+        VersionFactory(document=document).publish()
+
+        document.slug = "privacy-notice"
+        document.name = "Privacy notice"
+        document.save(update_fields=["name"])
+
+        document.refresh_from_db()
+        assert document.name == "Privacy notice"
+        assert document.slug == "privacy"
+
     def test_the_name_changes_after_publication_and_the_pages_keep_their_address(
         self, client
     ):

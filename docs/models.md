@@ -45,8 +45,10 @@ except PublishedVersionError:
     ...  # the document has a published version; its slug stays "privacy-policy"
 ```
 
-Saving a document with the slug it already has is always allowed. The message is also
-available as `Document.SLUG_FIXED_MESSAGE`.
+Saving a document with the slug it already has is always allowed, and so is a save whose
+`update_fields` leaves `slug` out. `update()` and `bulk_update()` are stricter: on a document
+with a published version they refuse any slug value, including the one it already has. The
+message is also available as `Document.SLUG_FIXED_MESSAGE`.
 
 ### Documents with a version in force
 

@@ -142,8 +142,14 @@ class Document(models.Model):
         return self.name
 
     def save(self, *args, **kwargs) -> None:
-        """Refuse a new slug once a version has been published; the name stays editable."""
-        if self.pk is not None:
+        """Refuse a new slug once a version has been published; the name stays editable.
+
+        A save whose ``update_fields`` leaves the slug out never writes it, so it
+        is not checked.
+        """
+        update_fields = kwargs.get("update_fields")
+        writes_slug = update_fields is None or "slug" in update_fields
+        if self.pk is not None and writes_slug:
             stored = (
                 type(self)
                 .objects.filter(pk=self.pk)
