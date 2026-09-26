@@ -454,6 +454,11 @@ msgstr "See it in the admin"
 msgid "%(name)s: version %(number)s is now in force"
 msgstr "%(name)s: version %(number)s is now in force"
 
+#: mvp_compliance/views.py:42
+#, python-format
+msgid "Version %(number)s, in force since %(date)s"
+msgstr "Version %(number)s, in force since %(date)s"
+
 #: mvp_compliance/widgets.py:26
 msgid "Heading"
 msgstr "Heading"

@@ -20,3 +20,10 @@ maps every functional requirement to at least one task. No critical findings.
 One reviewer, three lenses, receipts green. Verdict: request changes, one verified high finding
 (adding the required slug breaks the existing inline document tests and the demo seed; no task said
 so) and three low ones. All four applied as plan and task edits, recorded in decisions.md D2 and D3.
+
+## 2026-09-26T16:10Z · Implementer US-1 · T001–T004
+
+- **Did:** T001 tests for `Document.slug` and `in_force()` (`TestDocumentSlug`, `TestDocumentInForce`), `DocumentFactory` slug sequence, slugs added to the inline creations in `TestDocument`. T002 `Document.slug` (unique `SlugField`, no validator or freeze), `DocumentQuerySet.in_force()` with manager forwarder, migration `0007_document_slug` (default `""` with `preserve_default=False`, so the existing migration round-trip test that holds one document still runs forward), `seed_demo` slugs, `en` catalog regenerated from the repo root. T003 `TestDocumentView` (six tests) and `FLEX_MENUS` in the test settings, `tests/urls.py` mounts `legal/`. T004 `mvp_compliance/urls.py`, `views.py` (`DocumentView`), `document_detail.html`.
+- **Verified:** T001 and T003 observed red before the code (`TypeError ... unexpected keyword 'slug'`; `No module named 'mvp_compliance.urls'`). After T004: `uv run pytest tests -q -n auto` all green; `makemigrations --check` clean.
+- **Next:** T005 edge-case tests, T006 demo, T007 docs.
+- **Watch:** `TestDocument::test_document_holds_no_wording` asserted the field set `{"id", "name"}`; it now lists `slug` (see concerns in the report).
