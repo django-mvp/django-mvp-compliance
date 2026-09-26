@@ -212,9 +212,6 @@ document page's template in the demo's templates and confirm it is used.
   escaped, never as markup.
 - Two versions of a document are published in one year. Their numbers, such as 2026.1 and 2026.2,
   are both valid in an address, and each opens its own version.
-- A document created before this feature has no slug. Upgrading gives it one derived from its name,
-  and a clash between two derived slugs is resolved so that both documents keep an address. No
-  document or version is dropped.
 - A superseded version is opened after the document's version in force has itself been replaced
   twice. It still links to the document's page, which shows whatever is in force now.
 - The host project mounts the package's addresses under a prefix of its own. Links between the
@@ -266,18 +263,15 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-017**: A document's slug MUST be refused any change once the document has a published
   version, by every route that refuses other changes to published content. Its name MUST stay
   editable. *(US-4)*
-- **FR-018**: Upgrading MUST give every existing document a slug derived from its name, keep every
-  document and version, and resolve a clash between derived slugs without refusing the upgrade.
-  *(US-4)*
-- **FR-019**: A project template at the same path as one of the package's page templates MUST
+- **FR-018**: A project template at the same path as one of the package's page templates MUST
   replace it, with no setting required. *(US-4)*
-- **FR-020**: Every user-facing string on the pages MUST be translatable, and the pages MUST render
+- **FR-019**: Every user-facing string on the pages MUST be translatable, and the pages MUST render
   in the language active when they are requested. *(US-1, US-2, US-3)*
-- **FR-021**: Nothing this feature adds MAY claim that publishing a document makes a site compliant,
+- **FR-020**: Nothing this feature adds MAY claim that publishing a document makes a site compliant,
   or name a regulation. *(US-1)*
-- **FR-022**: The documentation MUST show how to mount the addresses, how to link to a document's
+- **FR-021**: The documentation MUST show how to mount the addresses, how to link to a document's
   page and the index from a template, and list each page template with what it is given. *(US-4)*
-- **FR-023**: The glossary MUST define *Slug* as the document's identifier in its address, fixed once
+- **FR-022**: The glossary MUST define *Slug* as the document's identifier in its address, fixed once
   a version is published. *(US-4)*
 
 ### Key Entities
@@ -327,6 +321,9 @@ document page's template in the demo's templates and confirm it is used.
   in force? → **A**: The document's page (FR-010), which always shows the version in force. After two
   rewordings, the version that directly replaced it is superseded too, and "the next one" would send
   the reader to another old page.
+- **Q**: Does upgrading need to give existing documents a slug? → **A**: No. Nothing has been
+  released and no site uses the package, so there are no existing documents to carry forward.
+  Development databases are updated by hand. Maintainer's ruling at the specification review.
 - **Q**: Does the index include a document with only drafts? → **A**: No (FR-004). Its page answers
   "not found", so listing it would give the reader a dead link.
 
@@ -337,8 +334,8 @@ document page's template in the demo's templates and confirm it is used.
   force.
 - The date a version came into force is its moment of publication. The date it was replaced is the
   moment the next version of the document was published.
-- Nothing has been released, so documents without a slug exist only in development databases.
-  Upgrading still carries them forward under Article XVI.
+- Nothing has been released and no site uses the package yet, so no existing document needs a slug
+  created for it on upgrade.
 - The host project uses the django-mvp shell, which the package already depends on. How the pages
   plug into it is a planning question.
 - The package ships an English catalog only, as for every other string.
