@@ -139,3 +139,11 @@ CHANGELOG entry for the version pages is carried into US-3's T018.
 - **Verified:** `uv run pytest -n auto --dist loadscope` 357 passed, 1 failed (the US-2 `versions` case, see T015).
 - **Next:** full verify, report.
 - **Watch:** the failing test asserts `versions` does not resolve under a slug; it now resolves to the version list on purpose.
+
+## 2026-09-26 — US-3 accepted
+
+Receipts green. Two orchestrator fixes before acceptance: US-2's converter test no longer lists
+`versions` as unresolvable, and a test now asserts it resolves to the list (decisions.md D5); the
+index crumb helper, renamed with a leading underscore to dodge the docs check, is now
+`DocumentIndexView.crumb()`. Independent verify green; tamper-check flags only the authorised
+breadcrumb assertion.
