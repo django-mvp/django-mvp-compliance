@@ -329,8 +329,15 @@
         },
         {
           "id": "T028",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py: 70 passed",
+              "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, fuzzy entries fixed, no .mo",
+              "forge verify --base origin/main: docs passed"
+            ]
+          }
         }
       ]
     },

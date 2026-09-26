@@ -91,7 +91,13 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["version"] = self.get_version()
+        version = self.get_version()
+        context["version"] = version
+        context["previous_versions"] = (
+            self.object.versions.published()
+            .exclude(pk=version.pk)
+            .order_by("-published_at")
+        )
         return context
 
     def get_version(self) -> Version:

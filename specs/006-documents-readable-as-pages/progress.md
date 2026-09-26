@@ -228,3 +228,10 @@ request.
 - Verified: `uv run pytest tests/test_views.py -k TestPreviousVersionsMenu` — 5 failed for the missing dropdown and the old link still present, 1 passed (the count guard).
 - Next: T028.
 - Watch: the tests locate the menu from the first `data-mvp-dropdown`; if the shell draws another one earlier, narrow the helper.
+
+## 2026-09-26T20:05Z · Implementer US1 · T028
+
+- Did: `previous_versions` in `DocumentView` context (one query, published versions other than the current, newest first); `document_detail.html` fills `page.actions` with `<c-dropdown>` and drops the text link; `docs/pages.md` describes the line under the name, `VersionSubtitleMixin`, the dropdown and the new context key; en catalog regenerated (POT-Creation-Date removed, three fuzzy entries and one empty msgstr filled, no `.mo`). The end-of-file hook added the missing final newline to `review-brief.json`; committed with this task.
+- Verified: `uv run pytest tests/test_views.py` — 70 passed.
+- Next: full verify, report.
+- Watch: the catalog carries line-number churn in unrelated location comments, which `makemessages` produces.

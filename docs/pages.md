@@ -46,9 +46,19 @@ else in a template:
 
 ## What a visitor sees
 
-The page shows the document's name, the number of the version in force, the date it came
-into force, and that version's wording. When a new version is published, the same
-address shows it at once.
+The page shows the document's name, a line under it, and the wording of the version in
+force. When a new version is published, the same address shows it at once.
+
+The line under the name reads `v2026.1 · published 26 September 2026`: the version's
+number and the day it was published, in the project's date format. When the signed-in
+visitor has accepted that version it continues `· Agreed on 27 September 2026`, with the
+date of their acceptance. An anonymous visitor, and someone who has accepted a different
+version of the document but not this one, see the first part only. A version's own page
+shows the same line for that version.
+
+Both pages build the line with `mvp_compliance.views.VersionSubtitleMixin`. A project
+view that shows a version and wants the same line mixes it in ahead of the django-mvp
+detail view and defines `get_version()`.
 
 The wording is the `html` stored on the version when it was published, written out
 as it is stored. Nothing renders Markdown while the page is served. That HTML is what the
@@ -88,11 +98,16 @@ Every page's breadcrumbs start with a "Legal documents" crumb linking to the ind
 
 ## Earlier versions
 
-The document's page carries an "Earlier versions" link to `mvp_compliance:versions`. That
-page, `mvp_compliance.views.VersionListView`, lists every published version of the
-document, newest first: its number, linking to the version's page, the date it came into
-force, and the date it was replaced, or "In force" for the version now in force. Drafts
-are not listed. It answers 404 under the same conditions as the document's page.
+When a document has more than one published version, its page carries a "Previous
+versions" dropdown in the page actions. It lists every earlier published version, newest
+first, each as `v2026.1 · published 26 September 2026` linking to that version's page,
+and ends with an "All versions" link to `mvp_compliance:versions`. A document with a
+single published version has no dropdown. Drafts are never listed.
+
+The list page, `mvp_compliance.views.VersionListView`, lists every published version of
+the document, newest first: its number, linking to the version's page, the date it came
+into force, and the date it was replaced, or "In force" for the version now in force.
+Drafts are not listed. It answers 404 under the same conditions as the document's page.
 
 ## A version's own page
 
@@ -107,8 +122,8 @@ Someone who agreed to wording that has since been replaced can open that exact v
 The page shows the document's name, the version's number and its wording, written out as
 stored. What sits above the wording depends on where the version stands:
 
-- **In force:** "This is the version in force.", with the same "Version N, in force
-  since D" line under the title that the document's page shows.
+- **In force:** "This is the version in force.", with the same `v2026.1 · published D`
+  line under the title that the document's page shows.
 - **Replaced:** a notice that the version was replaced, the date it came into force and
   the date it was replaced, and a link to the document's page, which shows the version
   now in force. A version is replaced on the day the next version of the same document
@@ -138,7 +153,7 @@ is never used for that page. The package needs no other change, and you do not f
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_index.html` | `mvp_compliance:index` | `documents`, the documents in force in name order, each with its current version |
-| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, and `version`, the version in force |
+| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version in force, and `previous_versions`, the other published versions newest first |
 | `mvp_compliance/version_list.html` | `mvp_compliance:versions` | `document`, and `versions`, newest first, each carrying `replaced_at` |
 | `mvp_compliance/version_detail.html` | `mvp_compliance:version` | `document`, and `version`, carrying `replaced_at`: the date the next version was published, or `None` for the version in force |
 
