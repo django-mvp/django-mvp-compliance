@@ -205,6 +205,16 @@ reachable through the related manager on any document:
 document.versions.published()  # every version that has ever been current, in order
 ```
 
+`VersionQuerySet.with_replaced_at()` annotates each version with `replaced_at`, the
+moment the next published version of the same document took over, and `None` for the
+version in force. Drafts never count as a replacement. It costs no extra query however
+many versions are read:
+
+```python
+for version in document.versions.published().with_replaced_at():
+    print(version.number, version.published_at, version.replaced_at)
+```
+
 `VersionQuerySet` also carries `.drafts()`, the complement — every version that has
 never been published — and `.current()`, the queryset `document.current` is built on
 top of. All three are available both as `Version.objects.<method>()` and as

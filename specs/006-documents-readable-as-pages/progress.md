@@ -91,3 +91,10 @@ mount.
 - **Verified:** `uv run pytest tests/test_views.py tests/test_urls.py tests/test_models.py::TestWithReplacedAt` 34 passed; ruff and mypy clean. Probe: dropping the `document__slug` filter turned the cross-document and query-count tests red; restored. Also fixed my own T011 cross-document test, whose fixture published identical wording (refused by publish).
 - **Next:** T013 docs and catalog.
 - **Watch:** the query-count test relies on the number-only probe as well.
+
+## 2026-09-26T17:30Z · Implementer US-2 · T013
+
+- **Did:** `docs/pages.md` (the `version` name and arguments, the number's shape, a version's own page in force and replaced, when it is 404, its template); `docs/models.md` (`with_replaced_at()`); `en` catalog regenerated from the repository root with the four new entries filled and the three fuzzy guesses cleared.
+- **Verified:** see the full verify below in the report.
+- **Next:** full verify, report.
+- **Watch:** CHANGELOG `[Unreleased]` has no entry for the version pages; left alone as outside this story's listed files.
