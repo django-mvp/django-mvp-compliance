@@ -63,3 +63,10 @@ mount.
 - **Verified:** `uv run pytest tests/test_models.py::TestWithReplacedAt` 3 failed, all `AttributeError: no attribute 'with_replaced_at'`.
 - **Next:** T009 the queryset method.
 - **Watch:** none.
+
+## 2026-09-26T16:50Z · Implementer US-2 · T009
+
+- **Did:** `VersionQuerySet.with_replaced_at()`: `Subquery` on the earliest published version of the same document with a later `published_at`.
+- **Verified:** `uv run pytest tests/test_models.py::TestWithReplacedAt` 3 passed; ruff clean.
+- **Next:** T010 converter test.
+- **Watch:** not forwarded on `VersionManager`; the views go through `published()`, which returns a queryset.

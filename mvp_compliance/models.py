@@ -158,6 +158,25 @@ class VersionQuerySet(models.QuerySet):
         """The version in force, if any — zero or one row."""
         return self.filter(status=Version.Status.CURRENT)
 
+    def with_replaced_at(self) -> "VersionQuerySet":
+        """Annotate ``replaced_at``: when the next published version took over.
+
+        It is the ``published_at`` of the earliest version of the same document
+        published after this one, and ``None`` for the version in force. Drafts
+        never count. One query however many versions are read.
+        """
+        later = (
+            Version.objects.published()
+            .filter(
+                document=models.OuterRef("document"),
+                published_at__gt=models.OuterRef("published_at"),
+            )
+            .order_by("published_at")
+        )
+        return self.annotate(
+            replaced_at=models.Subquery(later.values("published_at")[:1])
+        )
+
 
 class VersionManager(models.Manager):
     """Gives a historical model in a migration the same guards (D10).
