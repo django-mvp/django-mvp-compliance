@@ -76,7 +76,10 @@ class TestDocumentView:
 
         response = client.get(reverse("mvp_compliance:document", args=[document.slug]))
 
-        assert response.context["page"]["breadcrumbs"] == [{"text": "Privacy policy"}]
+        assert response.context["page"]["breadcrumbs"] == [
+            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
+            {"text": "Privacy policy"},
+        ]
 
     def test_the_page_renders_in_the_shell_with_no_project_template(self, client):
         document = DocumentFactory()
@@ -323,6 +326,7 @@ class TestVersionView:
         response = client.get(version_address(version))
 
         assert response.context["page"]["breadcrumbs"] == [
+            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
             {
                 "text": "Privacy policy",
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
@@ -427,9 +431,7 @@ class TestVersionListView:
 
         assert response.status_code == 404
 
-    def test_the_page_renders_in_the_shell_with_the_title_of_the_document(
-        self, client
-    ):
+    def test_the_page_renders_in_the_shell_with_the_title_of_the_document(self, client):
         document = DocumentFactory(name="Privacy policy")
         published(document)
 
@@ -461,9 +463,7 @@ class TestVersionListView:
 class TestDocumentIndexView:
     """A visitor finds every document that has a version in force."""
 
-    def test_every_document_in_force_is_listed_alphabetically_and_linked(
-        self, client
-    ):
+    def test_every_document_in_force_is_listed_alphabetically_and_linked(self, client):
         terms = DocumentFactory(name="Terms of use")
         cookies = DocumentFactory(name="Cookie policy")
         privacy = DocumentFactory(name="Privacy policy")
@@ -494,9 +494,7 @@ class TestDocumentIndexView:
         assert "Draft only" not in content
         assert "Empty" not in content
 
-    def test_with_nothing_in_force_it_says_nothing_has_been_published_yet(
-        self, client
-    ):
+    def test_with_nothing_in_force_it_says_nothing_has_been_published_yet(self, client):
         VersionFactory(document=DocumentFactory())
 
         response = client.get(reverse("mvp_compliance:index"))
@@ -504,9 +502,7 @@ class TestDocumentIndexView:
         assert response.status_code == 200
         assert "Nothing has been published yet." in response.content.decode()
 
-    def test_the_page_renders_in_the_shell_and_is_titled_legal_documents(
-        self, client
-    ):
+    def test_the_page_renders_in_the_shell_and_is_titled_legal_documents(self, client):
         response = client.get(reverse("mvp_compliance:index"))
 
         names = [template.name for template in response.templates]
@@ -535,3 +531,28 @@ class TestDocumentIndexView:
 
         with django_assert_num_queries(len(small)):
             client.get(reverse("mvp_compliance:index"))
+
+
+@pytest.mark.django_db
+class TestBreadcrumbTrails:
+    """Every page's trail starts at the index of documents."""
+
+    def test_the_versions_page_leads_with_the_index_then_the_document(self, client):
+        document = DocumentFactory(name="Privacy policy")
+        published(document)
+
+        response = client.get(reverse("mvp_compliance:versions", args=[document.slug]))
+
+        assert response.context["page"]["breadcrumbs"] == [
+            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
+            {
+                "text": "Privacy policy",
+                "href": reverse("mvp_compliance:document", args=[document.slug]),
+            },
+            {"text": "Versions"},
+        ]
+
+    def test_the_index_is_the_root_and_its_own_trail_is_its_title(self, client):
+        response = client.get(reverse("mvp_compliance:index"))
+
+        assert response.context["page"]["breadcrumbs"] == [{"text": "Legal documents"}]

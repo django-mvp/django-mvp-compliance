@@ -125,3 +125,10 @@ CHANGELOG entry for the version pages is carried into US-3's T018.
 - **Verified:** `uv run pytest tests/test_views.py -k Index` 6 failed, all `NoReverseMatch: 'index'`.
 - **Next:** T017 pattern, view, template, index crumb, demo menu.
 - **Watch:** T017 also updates the two US-1/US-2 breadcrumb tests the brief authorises.
+
+## 2026-09-26T18:25Z · Implementer US-3 · T017
+
+- **Did:** `index` pattern (first), `DocumentIndexView` (`MVPTemplateView`, lazy title), `document_index.html`; `index_crumb()` leads the trails of the document, version and version-list views. Updated the two US-1/US-2 breadcrumb assertions to lead with the index (authorised); new `TestBreadcrumbTrails`. `demo/menus.py` adds a "Legal documents" `AppMenu` item; `AppMenu` resolves it at import.
+- **Verified:** `uv run pytest tests/test_views.py tests/test_urls.py` 46 passed, 1 failed (the `versions` case in test_urls, see T015); ruff and mypy clean; demo `/legal/` on 8021 answers with the entry.
+- **Next:** T018 docs, changelog, catalog.
+- **Watch:** ruff removed an unused import it flagged in my first edit.

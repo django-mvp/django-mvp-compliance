@@ -5,9 +5,36 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
+from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.models import Document, Version
+
+
+def index_crumb() -> dict[str, str]:
+    """The first crumb of every page's trail: the index of documents."""
+    return {"text": _("Legal documents"), "href": reverse("mvp_compliance:index")}
+
+
+class DocumentIndexView(MVPTemplateView):
+    """Every document that has a version in force, alphabetically.
+
+    Readable by anyone (FR-005). A document with only drafts, or no versions,
+    is not listed (FR-007). The index is the root of every page's trail, so its
+    own trail is its title alone.
+    """
+
+    template_name = "mvp_compliance/document_index.html"
+    page_title = gettext_lazy("Legal documents")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["documents"] = Document.objects.in_force().order_by("name")
+        return context
+
+    def get_breadcrumbs(self):
+        return [{"text": self.get_page_title()}]
 
 
 class DocumentView(MVPDetailView):
@@ -48,8 +75,7 @@ class DocumentView(MVPDetailView):
 
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
-        # Until there is a page to link back to, the trail is the title alone.
-        return [{"text": self.get_page_title()}]
+        return [index_crumb(), {"text": self.get_page_title()}]
 
 
 class VersionView(MVPDetailView):
@@ -99,9 +125,9 @@ class VersionView(MVPDetailView):
         return _("Version %(number)s") % {"number": version.number}
 
     def get_breadcrumbs(self):
-        # Until there is an index to link back to, the trail starts at the document.
         document = self.object.document
         return [
+            index_crumb(),
             {
                 "text": document.name,
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
@@ -141,6 +167,7 @@ class VersionListView(MVPDetailView):
     def get_breadcrumbs(self):
         document = self.object
         return [
+            index_crumb(),
             {
                 "text": document.name,
                 "href": reverse("mvp_compliance:document", args=[document.slug]),
