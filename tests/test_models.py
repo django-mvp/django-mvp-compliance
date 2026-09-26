@@ -121,6 +121,49 @@ class TestDocumentInForce:
 
 
 @pytest.mark.django_db
+class TestWithReplacedAt:
+    """A version knows when the next published version of its document replaced it."""
+
+    def test_is_the_next_published_versions_date_and_none_for_the_current_one(self):
+        document = DocumentFactory()
+        first, second, third = (VersionFactory(document=document) for _ in range(3))
+        for version in (first, second, third):
+            version.publish()
+        other = VersionFactory(document=DocumentFactory())
+        other.publish()
+
+        found = {v.pk: v for v in Version.objects.published().with_replaced_at()}
+
+        second.refresh_from_db()
+        third.refresh_from_db()
+        assert found[first.pk].replaced_at == second.published_at
+        assert found[second.pk].replaced_at == third.published_at
+        assert found[third.pk].replaced_at is None
+        assert found[other.pk].replaced_at is None
+
+    def test_a_draft_is_not_a_replacement(self):
+        document = DocumentFactory()
+        first = VersionFactory(document=document)
+        first.publish()
+        VersionFactory(document=document)
+
+        (found,) = Version.objects.published().with_replaced_at()
+
+        assert found.pk == first.pk
+        assert found.replaced_at is None
+
+    def test_annotates_every_version_in_one_query(self, django_assert_num_queries):
+        document = DocumentFactory()
+        for _ in range(4):
+            VersionFactory(document=document).publish()
+
+        with django_assert_num_queries(1):
+            assert [
+                v.replaced_at for v in Version.objects.published().with_replaced_at()
+            ]
+
+
+@pytest.mark.django_db
 class TestVersion:
     """Versions belong to one document and are numbered by the package when published."""
 

@@ -56,3 +56,10 @@ the two `test_app.py` tests that pinned "no public addresses" replaced (decision
 document view named in `docs/pages.md` so the documentation check passes. Tamper-check flags only
 the authorised edits: `TestDocument` slugs (D2), `test_app.py` (D4) and the planned `tests/urls.py`
 mount.
+
+## 2026-09-26T16:45Z · Implementer US-2 · T008
+
+- **Did:** `TestWithReplacedAt` in `tests/test_models.py`: three versions of one document and one of another, current is `None`, a draft is not a replacement, one query for all.
+- **Verified:** `uv run pytest tests/test_models.py::TestWithReplacedAt` 3 failed, all `AttributeError: no attribute 'with_replaced_at'`.
+- **Next:** T009 the queryset method.
+- **Watch:** none.
