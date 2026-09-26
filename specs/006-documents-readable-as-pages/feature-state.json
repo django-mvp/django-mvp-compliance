@@ -57,43 +57,84 @@
       "priority": "P1",
       "issue": 60,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-006",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
           "id": "T001",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py -q -x -k TestDocument (red: TypeError unexpected keyword 'slug')"
+            ]
+          }
         },
         {
           "id": "T002",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests -q -n auto (309 passed)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)"
+            ]
+          }
         },
         {
           "id": "T003",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q -x (red: No module named 'mvp_compliance.urls')"
+            ]
+          }
         },
         {
           "id": "T004",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q (6 passed)",
+              "uv run mypy (clean)"
+            ]
+          }
         },
         {
           "id": "T005",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q (11 passed)",
+              "probe: in_force() -> all() in the view turned 10 of 11 red, reverted"
+            ]
+          }
         },
         {
           "id": "T006",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py migrate && seed_demo on fresh demo.sqlite3",
+              "uv run python manage.py check (no issues)",
+              "curl :8021/legal/privacy-policy/ -> 200; /legal/cookie-policy/ -> 404"
+            ]
+          }
         },
         {
           "id": "T007",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pre-commit run --all-files (all passed)",
+              "makemessages regenerated from repo root: en catalog carries the slug strings and the subtitle string"
+            ]
+          }
         }
       ]
     },

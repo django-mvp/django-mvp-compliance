@@ -48,3 +48,11 @@ so) and three low ones. All four applied as plan and task edits, recorded in dec
 - **Verified:** `uv run pre-commit run --all-files` green; examples in the docs match the demo and tests.
 - **Next:** full verify, report.
 - **Watch:** none.
+
+## 2026-09-26 — US-1 accepted
+
+Receipts green. Independent verify on the branch: all steps green after two orchestrator fixes —
+the two `test_app.py` tests that pinned "no public addresses" replaced (decisions.md D4), and the
+document view named in `docs/pages.md` so the documentation check passes. Tamper-check flags only
+the authorised edits: `TestDocument` slugs (D2), `test_app.py` (D4) and the planned `tests/urls.py`
+mount.
