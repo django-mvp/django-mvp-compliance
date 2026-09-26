@@ -20,7 +20,8 @@ in force is served at `<prefix>/privacy-policy/`. See [pages.md](pages.md).
 
 A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
 valid and `Privacy_Policy`, `-privacy` and `privacy-` are not. `full_clean()`, which the
-admin calls, refuses the others. Writing through the ORM is not validated, the same as every
+admin calls, refuses the others. The rule is `mvp_compliance.models.lowercase_slug`, a
+`RegexValidator` you can reuse on your own forms. Writing through the ORM is not validated, the same as every
 other field, and a slug no address matches answers "not found".
 
 ### When the slug is fixed
