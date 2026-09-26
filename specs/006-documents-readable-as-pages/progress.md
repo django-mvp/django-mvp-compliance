@@ -118,3 +118,10 @@ CHANGELOG entry for the version pages is carried into US-3's T018.
 - **Verified:** `uv run pytest tests/test_views.py` 31 passed; `ruff check` and `mypy mvp_compliance` clean.
 - **Next:** T016 index tests.
 - **Watch:** `tests/test_urls.py::TestVersionNumberConverter::test_anything_else_does_not_resolve_to_the_version_address[versions]` (US-2's) now fails by design: `versions` is a real address. Not mine to edit; reported in concerns.
+
+## 2026-09-26T18:10Z · Implementer US-3 · T016
+
+- **Did:** `TestDocumentIndexView` (6 tests): alphabetical and linked, draft-only and empty absent, the "nothing published yet" sentence, shell and title, escaped name, constant query count (2 vs 6 documents).
+- **Verified:** `uv run pytest tests/test_views.py -k Index` 6 failed, all `NoReverseMatch: 'index'`.
+- **Next:** T017 pattern, view, template, index crumb, demo menu.
+- **Watch:** T017 also updates the two US-1/US-2 breadcrumb tests the brief authorises.

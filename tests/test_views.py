@@ -455,3 +455,83 @@ class TestVersionListView:
             client.get(reverse("mvp_compliance:versions", args=[few.slug]))
         with django_assert_num_queries(len(small)):
             client.get(reverse("mvp_compliance:versions", args=[many.slug]))
+
+
+@pytest.mark.django_db
+class TestDocumentIndexView:
+    """A visitor finds every document that has a version in force."""
+
+    def test_every_document_in_force_is_listed_alphabetically_and_linked(
+        self, client
+    ):
+        terms = DocumentFactory(name="Terms of use")
+        cookies = DocumentFactory(name="Cookie policy")
+        privacy = DocumentFactory(name="Privacy policy")
+        for document in (terms, cookies, privacy):
+            published(document)
+
+        response = client.get(reverse("mvp_compliance:index"))
+
+        assert response.status_code == 200
+        assert list(response.context["documents"]) == [cookies, privacy, terms]
+        content = response.content.decode()
+        for document in (cookies, privacy, terms):
+            address = reverse("mvp_compliance:document", args=[document.slug])
+            assert f'href="{address}"' in content
+        assert content.index("Cookie policy") < content.index("Privacy policy")
+        assert content.index("Privacy policy") < content.index("Terms of use")
+
+    def test_a_draft_only_document_and_an_empty_one_are_absent(self, client):
+        shown = DocumentFactory(name="Privacy policy")
+        published(shown)
+        VersionFactory(document=DocumentFactory(name="Draft only"))
+        DocumentFactory(name="Empty")
+
+        response = client.get(reverse("mvp_compliance:index"))
+
+        assert list(response.context["documents"]) == [shown]
+        content = response.content.decode()
+        assert "Draft only" not in content
+        assert "Empty" not in content
+
+    def test_with_nothing_in_force_it_says_nothing_has_been_published_yet(
+        self, client
+    ):
+        VersionFactory(document=DocumentFactory())
+
+        response = client.get(reverse("mvp_compliance:index"))
+
+        assert response.status_code == 200
+        assert "Nothing has been published yet." in response.content.decode()
+
+    def test_the_page_renders_in_the_shell_and_is_titled_legal_documents(
+        self, client
+    ):
+        response = client.get(reverse("mvp_compliance:index"))
+
+        names = [template.name for template in response.templates]
+        assert names[0] == "mvp_compliance/document_index.html"
+        assert "mvp/base.html" in names
+        assert "Legal documents" in response.content.decode()
+
+    def test_markup_in_a_document_name_is_escaped(self, client):
+        published(DocumentFactory(name="<script>alert(1)</script>"))
+
+        content = client.get(reverse("mvp_compliance:index")).content.decode()
+
+        assert "<script>alert(1)</script>" not in content
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
+
+    def test_the_query_count_does_not_grow_with_the_documents_published(
+        self, client, django_assert_num_queries
+    ):
+        for n in range(2):
+            published(DocumentFactory(name=f"Document {n}"))
+        client.get(reverse("mvp_compliance:index"))  # warm caches
+        with CaptureQueriesContext(connection) as small:
+            client.get(reverse("mvp_compliance:index"))
+        for n in range(2, 6):
+            published(DocumentFactory(name=f"Document {n}"))
+
+        with django_assert_num_queries(len(small)):
+            client.get(reverse("mvp_compliance:index"))
