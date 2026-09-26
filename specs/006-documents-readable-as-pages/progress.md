@@ -147,3 +147,17 @@ Receipts green. Two orchestrator fixes before acceptance: US-2's converter test 
 index crumb helper, renamed with a leading underscore to dodge the docs check, is now
 `DocumentIndexView.crumb()`. Independent verify green; tamper-check flags only the authorised
 breadcrumb assertion.
+
+## 2026-09-26T19:00Z · Implementer US-4 · T019
+
+- **Did:** `TestDocumentSlug` gains the validator cases (capitals, underscore, leading and trailing hyphen refused; valid slug accepted) and the freeze cases (free before publication through `save()` and `update()`; after publication `save()`, `update(slug=...)` and `bulk_update` raise `PublishedVersionError` with the stored slug unchanged; a superseded version also fixes it; an unchanged slug still saves; the name changes and the page keeps its address).
+- **Verified:** `uv run pytest tests/test_models.py::TestDocumentSlug -q` failed 8 of 15, each for the right reason (validation error not raised, `PublishedVersionError` not raised).
+- **Next:** T020.
+- **Watch:** `bulk_update` raises inside `transaction.atomic(savepoint=False)`, so its test supplies a savepoint the way the existing Version test does.
+
+## 2026-09-26T19:05Z · Implementer US-4 · T020
+
+- **Did:** `lowercase_slug` validator on `Document.slug`; `Document.save()` reads the stored slug with one query only when the instance has a pk and refuses a change once any version is published; `DocumentQuerySet.update()` refuses `slug` for a queryset holding a document with a current or superseded version. Migration `0007` regenerated in place with the validator (`default=''`, `preserve_default=False`).
+- **Verified:** `uv run pytest tests/test_models.py::TestDocumentSlug tests/test_migrations.py -q` 17 passed; `makemigrations --check` clean; ruff clean.
+- **Next:** T021.
+- **Watch:** `Document.SLUG_FIXED_MESSAGE` is a public class attribute shared by the two guards; the docs check may ask for it to be documented.

@@ -138,7 +138,9 @@ class TestDocumentSlug:
         VersionFactory(document=document).publish()
 
         document.slug = "privacy-policy"
-        with pytest.raises(PublishedVersionError):
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False), so the test supplies the savepoint.
+        with pytest.raises(PublishedVersionError), transaction.atomic():
             Document.objects.bulk_update([document], ["slug"])
 
         document.refresh_from_db()

@@ -4,6 +4,7 @@ from functools import partial
 from typing import cast
 
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -31,8 +32,32 @@ PUBLISHED_FROZEN_FIELDS = (
 )
 
 
+#: A slug is lowercase letters and digits, joined by single hyphens. Django's
+#: own ``SlugField`` validator also accepts capitals and underscores, which no
+#: address of the pages matches (FR-015).
+lowercase_slug = RegexValidator(
+    regex=r"^[a-z0-9]+(?:-[a-z0-9]+)*\Z",
+    message=_("Use lowercase letters, digits and single hyphens only."),
+    code="invalid",
+)
+
+
 class DocumentQuerySet(models.QuerySet):
-    """Answers what a person has outstanding, without a query per document."""
+    """Answers what a person has outstanding, and keeps a published slug fixed."""
+
+    def update(self, **kwargs) -> int:
+        """Refuse a new slug for any document with a published version (FR-017).
+
+        ``bulk_update()`` calls this, so it is covered too.
+        """
+        if (
+            "slug" in kwargs
+            and self.filter(
+                versions__status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED]
+            ).exists()
+        ):
+            raise PublishedVersionError(Document.SLUG_FIXED_MESSAGE)
+        return super().update(**kwargs)
 
     def in_force(self) -> "DocumentQuerySet":
         """Every document with a version in force, each carrying it on ``current_versions``.
@@ -97,9 +122,14 @@ class Document(models.Model):
         _("slug"),
         max_length=100,
         unique=True,
+        validators=[lowercase_slug],
         help_text=_(
             "The document's identifier in its address, such as “privacy-policy”."
         ),
+    )
+
+    SLUG_FIXED_MESSAGE = _(
+        "A document's slug cannot be changed once a version of it has been published."
     )
 
     objects = DocumentManager()
@@ -110,6 +140,23 @@ class Document(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, *args, **kwargs) -> None:
+        """Refuse a new slug once a version has been published; the name stays editable."""
+        if self.pk is not None:
+            stored = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values_list("slug", flat=True)
+                .first()
+            )
+            if (
+                stored is not None
+                and stored != self.slug
+                and self.versions.published().exists()
+            ):
+                raise PublishedVersionError(self.SLUG_FIXED_MESSAGE)
+        super().save(*args, **kwargs)
 
     @property
     def current(self) -> "Version | None":
