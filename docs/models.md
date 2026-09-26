@@ -18,6 +18,35 @@ privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
 The `slug` is the document's identifier in its address: the page that shows the version
 in force is served at `<prefix>/privacy-policy/`. See [pages.md](pages.md).
 
+A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
+valid and `Privacy_Policy`, `-privacy` and `privacy-` are not. `full_clean()`, which the
+admin calls, refuses the others. Writing through the ORM is not validated, the same as every
+other field, and a slug no address matches answers "not found".
+
+### When the slug is fixed
+
+The slug can change until the document's first version is published. From then on it is
+fixed, because an address that has been published must keep working. The name stays
+editable, and the pages keep their addresses and show the new name.
+
+A document is fixed when any of its versions is current or superseded. After that,
+`document.save()` with a different slug, `Document.objects.filter(...).update(slug=...)` and
+`Document.objects.bulk_update(documents, ["slug"])` raise `PublishedVersionError` and leave
+the stored slug as it was:
+
+```python
+from mvp_compliance.exceptions import PublishedVersionError
+
+privacy.slug = "privacy"
+try:
+    privacy.save()
+except PublishedVersionError:
+    ...  # the document has a published version; its slug stays "privacy-policy"
+```
+
+Saving a document with the slug it already has is always allowed. The message is also
+available as `Document.SLUG_FIXED_MESSAGE`.
+
 ### Documents with a version in force
 
 `Document.objects.in_force()` returns every document that has a current version, and

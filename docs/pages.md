@@ -128,18 +128,32 @@ The page answers 404, to every visitor whether signed in, staff or anonymous, wh
 
 Nothing on the page links to editing or deleting a document. That is done in the admin.
 
-## Overriding the template
+## Overriding a template
 
-The index renders `mvp_compliance/document_index.html` and receives `documents`, the
-documents in force in name order, each with its current version. The version list renders
-`mvp_compliance/version_list.html` and receives `document` and `versions`, newest first,
-each carrying `replaced_at`.
+Every page is one template under `mvp_compliance/`, and each extends django-mvp's
+`page_view.html` and fills only its `page.content` block. To restyle a page, place a
+template at the same path in your project. Django finds yours first, and the package's
+is never used for that page. The package needs no other change, and you do not fork it.
 
-The document's page renders `mvp_compliance/document_detail.html`. Put a template at the
-same path in your project and it replaces the package's. It receives `document` (the
-object), `version` (the version in force) and django-mvp's `page` context.
+| Template path | Page | Receives |
+|---|---|---|
+| `mvp_compliance/document_index.html` | `mvp_compliance:index` | `documents`, the documents in force in name order, each with its current version |
+| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, and `version`, the version in force |
+| `mvp_compliance/version_list.html` | `mvp_compliance:versions` | `document`, and `versions`, newest first, each carrying `replaced_at` |
+| `mvp_compliance/version_detail.html` | `mvp_compliance:version` | `document`, and `version`, carrying `replaced_at`: the date the next version was published, or `None` for the version in force |
 
-A version's page renders `mvp_compliance/version_detail.html`, replaced the same way. It
-receives `document`, `version` (the object, carrying `replaced_at`: the date the next
-version was published, or `None` for the version in force) and django-mvp's `page`
-context.
+Every page also receives django-mvp's `page` context: its title and breadcrumbs.
+
+A project's own `mvp_compliance/document_detail.html`, for example:
+
+```html
+{% extends "page_view.html" %}
+{% block page.content %}
+  <article class="prose max-w-none">{{ version.html|safe }}</article>
+{% endblock page.content %}
+```
+
+`version.html` is the sanitised HTML stored at publication, so write it out with `|safe`
+and render nothing else from Markdown. Put your template's directory in
+`TEMPLATES["DIRS"]`, or in an app listed before `mvp_compliance` in `INSTALLED_APPS`.
+Strings you add are yours to translate.

@@ -15,6 +15,12 @@ policy. It is the thing with a stable identity and a URL. A document holds no te
 every word lives in one of its versions.
 _Avoid_: policy (that names one kind of document, not the category), agreement, terms, page.
 
+**Slug**:
+The document's identifier in its address, such as `privacy-policy`: lowercase letters, digits and
+single hyphens. It can change until the document's first version is published and is fixed from
+then on, so an address that has been published never moves. The name stays editable.
+_Avoid_: URL, path, key, id.
+
 **Version**:
 One revision of a document, holding the Markdown a person wrote and the HTML a reader was served.
 A version is what acceptance points at, never the document, because "agreed to the privacy policy"

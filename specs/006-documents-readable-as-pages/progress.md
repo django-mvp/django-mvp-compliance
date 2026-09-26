@@ -182,3 +182,10 @@ breadcrumb assertion.
 - **Verified:** `uv run pytest tests/test_views.py::TestTemplateOverride tests/test_views.py::TestNoMenuEntry -q` 5 passed. These pass by design (the behaviour is already on the branch); the override case is the probe that the templates directory takes effect, since the marker ids exist only in the override files.
 - **Next:** T024.
 - **Watch:** `AppMenu` is empty under `tests/settings.py` (the demo's entry lives in `demo/menus.py`, not loaded), confirmed before asserting.
+
+## 2026-09-26T19:50Z · Implementer US-4 · T024
+
+- **Did:** `docs/pages.md` "Overriding a template" (a table of every template path, its page and context, and how to override with an example); `docs/models.md` (slug format, when it is fixed, the error); `docs/authoring.md` "Choosing the slug"; `CONTEXT.md` **Slug**; CHANGELOG entry; `en` catalog regenerated from the repository root (POT-Creation-Date line removed, one fuzzy entry fixed, no `.mo`); `tests/locale/de` gains "This is the version in force." with the `.mo` recompiled. `TestPageStrings` in `tests/test_views.py`: every msgid of each page template (translate tags and blocktranslate bodies) is in the `en` catalog; the version page renders the sentence in German; no page template msgid and no rendered page text contains "compliant", "compliance" or "GDPR".
+- **Verified:** `uv run pytest tests/test_views.py tests/test_admin.py::TestUserFacingStrings -q` 58 passed. Probe: renaming the "Earlier versions" catalog entry made the catalog test fail for `document_detail.html`; restored.
+- **Next:** full verify, report.
+- **Watch:** `TestPageStrings` imports `catalog_entries` from `tests/test_admin.py` rather than duplicating the parser.

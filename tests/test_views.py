@@ -1,5 +1,6 @@
 """Tests for mvp_compliance.views."""
 
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -7,13 +8,14 @@ import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.formats import date_format
 from mvp.menus import AppMenu
 
 import mvp_compliance
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import DocumentFactory, VersionFactory
+from tests.test_admin import catalog_entries
 
 
 def published(document, markdown="Wording"):
@@ -641,3 +643,90 @@ class TestNoMenuEntry:
         ]
 
         assert offenders == []
+
+
+#: FR-020: no page says the site is compliant or names a regulation.
+FORBIDDEN_WORDS = ("compliant", "compliance", "gdpr")
+
+PAGE_TEMPLATES = sorted(
+    (Path(mvp_compliance.__file__).parent / "templates" / "mvp_compliance").glob(
+        "*.html"
+    )
+)
+TRANSLATE_TAG = re.compile(r'{%\s*(?:translate|trans)\s+"([^"]*)"')
+BLOCKTRANSLATE_TAG = re.compile(
+    r"{%\s*(?:blocktranslate|blocktrans)\b[^%]*%}(.*?){%\s*(?:endblocktranslate|endblocktrans)\s*%}",
+    re.DOTALL,
+)
+VARIABLE = re.compile(r"{{\s*(\w+)[^}]*}}")
+
+
+def template_msgids(path):
+    """Every msgid a page template asks for, as ``makemessages`` would write it."""
+    source = path.read_text(encoding="utf-8")
+    msgids = set(TRANSLATE_TAG.findall(source))
+    for body in BLOCKTRANSLATE_TAG.findall(source):
+        msgids.add(VARIABLE.sub(r"%(\1)s", body.strip()))
+    return msgids
+
+
+class TestPageStrings:
+    """SC-008, FR-019, FR-020: every string the pages show is translatable, and none
+    claims compliance."""
+
+    def test_the_page_templates_are_the_four_pages(self):
+        assert [path.name for path in PAGE_TEMPLATES] == [
+            "document_detail.html",
+            "document_index.html",
+            "version_detail.html",
+            "version_list.html",
+        ]
+
+    @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
+    def test_every_string_in_a_page_template_is_in_the_english_catalog(self, path):
+        msgids = template_msgids(path)
+        catalog = {msgid for msgid, _msgstr in catalog_entries() if msgid}
+
+        assert msgids
+        assert msgids <= catalog
+
+    @pytest.mark.django_db
+    def test_the_version_in_force_sentence_renders_in_german(self, client):
+        document = DocumentFactory()
+        version = published(document)
+        address = reverse(
+            "mvp_compliance:version", args=[document.slug, version.number]
+        )
+
+        with translation.override("de"):
+            content = client.get(address).content.decode()
+
+        assert "Dies ist die geltende Version." in content
+        assert "This is the version in force." not in content
+
+    @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
+    def test_no_page_string_claims_compliance_or_names_a_regulation(self, path):
+        for msgid in template_msgids(path):
+            lowered = msgid.lower()
+            for word in FORBIDDEN_WORDS:
+                assert word not in lowered, msgid
+
+    @pytest.mark.django_db
+    def test_no_rendered_page_claims_compliance_or_names_a_regulation(self, client):
+        current = DocumentFactory(name="Privacy policy")
+        published(current, "First wording")
+        replaced = published(current, "Second wording")
+        earlier = current.versions.exclude(pk=replaced.pk).get()
+        addresses = [
+            reverse("mvp_compliance:index"),
+            reverse("mvp_compliance:document", args=[current.slug]),
+            reverse("mvp_compliance:versions", args=[current.slug]),
+            reverse("mvp_compliance:version", args=[current.slug, replaced.number]),
+            reverse("mvp_compliance:version", args=[current.slug, earlier.number]),
+        ]
+
+        for address in addresses:
+            text = re.sub(r"<[^>]+>", " ", client.get(address).content.decode())
+            lowered = text.lower()
+            for word in FORBIDDEN_WORDS:
+                assert word not in lowered, (address, word)

@@ -32,3 +32,6 @@ msgstr "Dies ist die erste in Kraft gesetzte Version des Dokuments."
 
 msgid "See it in the admin"
 msgstr "Im Admin ansehen"
+
+msgid "This is the version in force."
+msgstr "Dies ist die geltende Version."

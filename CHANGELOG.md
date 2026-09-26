@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that version already fetched. Migration `0007_document_slug` adds the column with no data step,
   so a database that already holds documents needs their slugs set before it can be migrated.
   See [docs/models.md](docs/models.md).
+- The slug is validated as lowercase letters, digits and single hyphens, and is fixed once a
+  version of the document is published: changing it through `save()`, `update()` or
+  `bulk_update()` raises `PublishedVersionError`. The admin suggests the slug from the name and
+  shows it read-only once it is fixed. A project restyles a page by placing a template at the
+  same path. See [docs/models.md](docs/models.md), [docs/authoring.md](docs/authoring.md) and
+  [docs/pages.md](docs/pages.md).
 - `render_publication_email(version, replaced, site_url)`, in `mvp_compliance.emails`, which
   writes the subject and plain-text body of an email announcing a publication and returns them.
   It sends nothing. The subject is always one line, the text is translatable, and a template at
