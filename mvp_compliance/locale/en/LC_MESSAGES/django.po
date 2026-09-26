@@ -48,11 +48,11 @@ msgstr "Published by"
 msgid "Published versions"
 msgstr "Published versions"
 
-#: mvp_compliance/admin.py:116 mvp_compliance/models.py:179
+#: mvp_compliance/admin.py:116 mvp_compliance/models.py:205
 msgid "number"
 msgstr "number"
 
-#: mvp_compliance/admin.py:119 mvp_compliance/models.py:204
+#: mvp_compliance/admin.py:119 mvp_compliance/models.py:230
 msgid "Draft"
 msgstr "Draft"
 
@@ -93,35 +93,43 @@ msgstr ""
 "The account's login name or email address, or, for somebody whose account "
 "has since been removed, the identifier their records still carry."
 
-#: mvp_compliance/models.py:73
+#: mvp_compliance/models.py:91
 msgid "name"
 msgstr "name"
 
-#: mvp_compliance/models.py:76
+#: mvp_compliance/models.py:94
 msgid "The name this document is known by, such as “Privacy policy”."
 msgstr "The name this document is known by, such as “Privacy policy”."
 
-#: mvp_compliance/models.py:82 mvp_compliance/models.py:171
+#: mvp_compliance/models.py:97
+msgid "slug"
+msgstr "slug"
+
+#: mvp_compliance/models.py:101
+msgid "The document's identifier in its address, such as “privacy-policy”."
+msgstr "The document's identifier in its address, such as “privacy-policy”."
+
+#: mvp_compliance/models.py:108 mvp_compliance/models.py:197
 msgid "document"
 msgstr "document"
 
-#: mvp_compliance/models.py:83
+#: mvp_compliance/models.py:109
 msgid "documents"
 msgstr "documents"
 
-#: mvp_compliance/models.py:115 mvp_compliance/models.py:496
+#: mvp_compliance/models.py:141 mvp_compliance/models.py:522
 msgid "A published version's wording and publisher cannot be changed."
 msgstr "A published version's wording and publisher cannot be changed."
 
-#: mvp_compliance/models.py:121 mvp_compliance/models.py:501
+#: mvp_compliance/models.py:147 mvp_compliance/models.py:527
 msgid "A published version cannot be deleted."
 msgstr "A published version cannot be deleted."
 
-#: mvp_compliance/models.py:172
+#: mvp_compliance/models.py:198
 msgid "The document this version belongs to."
 msgstr "The document this version belongs to."
 
-#: mvp_compliance/models.py:185
+#: mvp_compliance/models.py:211
 msgid ""
 "The year this version was published and its place among the document's "
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
@@ -131,19 +139,19 @@ msgstr ""
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
 "for a draft."
 
-#: mvp_compliance/models.py:191
+#: mvp_compliance/models.py:217
 msgid "markdown"
 msgstr "markdown"
 
-#: mvp_compliance/models.py:192
+#: mvp_compliance/models.py:218
 msgid "The wording of this version, written in Markdown."
 msgstr "The wording of this version, written in Markdown."
 
-#: mvp_compliance/models.py:195
+#: mvp_compliance/models.py:221
 msgid "html"
 msgstr "html"
 
-#: mvp_compliance/models.py:198
+#: mvp_compliance/models.py:224
 msgid ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
@@ -151,19 +159,19 @@ msgstr ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
 
-#: mvp_compliance/models.py:205
+#: mvp_compliance/models.py:231
 msgid "Current"
 msgstr "Current"
 
-#: mvp_compliance/models.py:206
+#: mvp_compliance/models.py:232
 msgid "Superseded"
 msgstr "Superseded"
 
-#: mvp_compliance/models.py:209
+#: mvp_compliance/models.py:235
 msgid "status"
 msgstr "status"
 
-#: mvp_compliance/models.py:215
+#: mvp_compliance/models.py:241
 msgid ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
@@ -171,11 +179,11 @@ msgstr ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
 
-#: mvp_compliance/models.py:220
+#: mvp_compliance/models.py:246
 msgid "published at"
 msgstr "published at"
 
-#: mvp_compliance/models.py:225
+#: mvp_compliance/models.py:251
 msgid ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
@@ -183,11 +191,11 @@ msgstr ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
 
-#: mvp_compliance/models.py:235
+#: mvp_compliance/models.py:261
 msgid "publisher"
 msgstr "publisher"
 
-#: mvp_compliance/models.py:237
+#: mvp_compliance/models.py:263
 msgid ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
@@ -195,11 +203,11 @@ msgstr ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
 
-#: mvp_compliance/models.py:248
+#: mvp_compliance/models.py:274
 msgid "publisher subject"
 msgstr "publisher subject"
 
-#: mvp_compliance/models.py:255
+#: mvp_compliance/models.py:281
 msgid ""
 "The publisher's primary key as text, written once at publication. It lets "
 "the version say an account was since removed after the link to it is "
@@ -209,65 +217,65 @@ msgstr ""
 "the version say an account was since removed after the link to it is "
 "cleared. Empty when nobody was recorded."
 
-#: mvp_compliance/models.py:264 mvp_compliance/models.py:673
+#: mvp_compliance/models.py:290 mvp_compliance/models.py:699
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
 
-#: mvp_compliance/models.py:265
+#: mvp_compliance/models.py:291
 msgid "versions"
 msgstr "versions"
 
-#: mvp_compliance/models.py:274
+#: mvp_compliance/models.py:300
 msgid "Can publish a version"
 msgstr "Can publish a version"
 
-#: mvp_compliance/models.py:316
+#: mvp_compliance/models.py:342
 msgid "draft"
 msgstr "draft"
 
-#: mvp_compliance/models.py:337
+#: mvp_compliance/models.py:363
 msgid "Account removed"
 msgstr "Account removed"
 
-#: mvp_compliance/models.py:338
+#: mvp_compliance/models.py:364
 msgid "Unknown publisher"
 msgstr "Unknown publisher"
 
-#: mvp_compliance/models.py:386
+#: mvp_compliance/models.py:412
 msgid "This version has already been published."
 msgstr "This version has already been published."
 
-#: mvp_compliance/models.py:390
+#: mvp_compliance/models.py:416
 msgid "Publishing this would produce no output."
 msgstr "Publishing this would produce no output."
 
-#: mvp_compliance/models.py:409
+#: mvp_compliance/models.py:435
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
 
-#: mvp_compliance/models.py:420
+#: mvp_compliance/models.py:446
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: mvp_compliance/models.py:560 mvp_compliance/models.py:742
+#: mvp_compliance/models.py:586 mvp_compliance/models.py:768
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: mvp_compliance/models.py:564 mvp_compliance/models.py:747
+#: mvp_compliance/models.py:590 mvp_compliance/models.py:773
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: mvp_compliance/models.py:614
+#: mvp_compliance/models.py:640
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: mvp_compliance/models.py:649
+#: mvp_compliance/models.py:675
 msgid "user"
 msgstr "user"
 
-#: mvp_compliance/models.py:651
+#: mvp_compliance/models.py:677
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -277,11 +285,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: mvp_compliance/models.py:661
+#: mvp_compliance/models.py:687
 msgid "subject"
 msgstr "subject"
 
-#: mvp_compliance/models.py:665
+#: mvp_compliance/models.py:691
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -293,7 +301,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: mvp_compliance/models.py:675
+#: mvp_compliance/models.py:701
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -301,11 +309,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: mvp_compliance/models.py:682
+#: mvp_compliance/models.py:708
 msgid "accepted at"
 msgstr "accepted at"
 
-#: mvp_compliance/models.py:686
+#: mvp_compliance/models.py:712
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -313,11 +321,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: mvp_compliance/models.py:691
+#: mvp_compliance/models.py:717
 msgid "IP address"
 msgstr "IP address"
 
-#: mvp_compliance/models.py:695
+#: mvp_compliance/models.py:721
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -329,29 +337,29 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: mvp_compliance/models.py:705
+#: mvp_compliance/models.py:731
 msgid "acceptance"
 msgstr "acceptance"
 
-#: mvp_compliance/models.py:706
+#: mvp_compliance/models.py:732
 msgid "acceptances"
 msgstr "acceptances"
 
-#: mvp_compliance/models.py:733
+#: mvp_compliance/models.py:759
 msgid ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 msgstr ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 
-#: mvp_compliance/models.py:764
+#: mvp_compliance/models.py:790
 msgid "disclosure"
 msgstr "disclosure"
 
-#: mvp_compliance/models.py:765
+#: mvp_compliance/models.py:791
 msgid "everything held about a person"
 msgstr "everything held about a person"
 
-#: mvp_compliance/models.py:767
+#: mvp_compliance/models.py:793
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 

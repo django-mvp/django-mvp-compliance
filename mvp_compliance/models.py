@@ -34,6 +34,21 @@ PUBLISHED_FROZEN_FIELDS = (
 class DocumentQuerySet(models.QuerySet):
     """Answers what a person has outstanding, without a query per document."""
 
+    def in_force(self) -> "DocumentQuerySet":
+        """Every document with a version in force, each carrying it on ``current_versions``.
+
+        A document with only drafts, or none at all, is absent: nothing of it
+        is published for a visitor to read (FR-007). The version is prefetched
+        so a page reading it costs no further query per document.
+        """
+        return self.filter(versions__status=Version.Status.CURRENT).prefetch_related(
+            models.Prefetch(
+                "versions",
+                queryset=Version.objects.current(),
+                to_attr="current_versions",
+            )
+        )
+
     def outstanding_for(self, user) -> "DocumentQuerySet":
         """Every document in this queryset whose version in force ``user`` has not accepted.
 
@@ -58,6 +73,9 @@ class DocumentManager(models.Manager["Document"]):
     def get_queryset(self) -> DocumentQuerySet:
         return DocumentQuerySet(self.model, using=self._db)
 
+    def in_force(self) -> DocumentQuerySet:
+        return self.get_queryset().in_force()
+
     def outstanding_for(self, user) -> DocumentQuerySet:
         return self.get_queryset().outstanding_for(user)
 
@@ -74,6 +92,14 @@ class Document(models.Model):
         max_length=100,
         unique=True,
         help_text=_("The name this document is known by, such as “Privacy policy”."),
+    )
+    slug = models.SlugField(
+        _("slug"),
+        max_length=100,
+        unique=True,
+        help_text=_(
+            "The document's identifier in its address, such as “privacy-policy”."
+        ),
     )
 
     objects = DocumentManager()
