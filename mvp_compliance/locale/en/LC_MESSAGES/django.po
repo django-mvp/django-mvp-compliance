@@ -458,11 +458,11 @@ msgstr "%(name)s: version %(number)s is now in force"
 #: mvp_compliance/templates/mvp_compliance/version_detail.html:8
 #, python-format
 msgid ""
-"This version was replaced on %(replaced)s. It was in force from "
-"%(published)s to %(replaced)s."
+"This version has been replaced. It was in force from %(published)s to "
+"%(replaced)s."
 msgstr ""
-"This version was replaced on %(replaced)s. It was in force from "
-"%(published)s to %(replaced)s."
+"This version has been replaced. It was in force from %(published)s to "
+"%(replaced)s."
 
 #: mvp_compliance/templates/mvp_compliance/version_detail.html:10
 msgid "Read the version in force"

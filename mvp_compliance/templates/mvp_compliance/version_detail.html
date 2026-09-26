@@ -5,7 +5,7 @@
     <c-alert variant="warning" class="mb-6">
       <div>
         <p>
-          {% blocktrans with published=version.published_at|date replaced=version.replaced_at|date %}This version was replaced on {{ replaced }}. It was in force from {{ published }} to {{ replaced }}.{% endblocktrans %}
+          {% blocktrans with published=version.published_at|date replaced=version.replaced_at|date %}This version has been replaced. It was in force from {{ published }} to {{ replaced }}.{% endblocktrans %}
         </p>
         <a class="link" href="{% url 'mvp_compliance:document' document.slug %}">{% translate "Read the version in force" %}</a>
       </div>
