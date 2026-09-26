@@ -235,7 +235,8 @@ class TestVersionView:
         mine = DocumentFactory(slug="mine")
         theirs = DocumentFactory(slug="theirs")
         published(mine)
-        other = published(theirs)
+        published(theirs, "First wording")
+        other = published(theirs, "Second wording")
 
         response = client.get(
             reverse("mvp_compliance:version", args=["mine", other.number])

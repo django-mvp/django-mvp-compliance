@@ -84,3 +84,10 @@ mount.
 - **Verified:** `uv run pytest tests/test_views.py::TestVersionView` 12 failed, all `NoReverseMatch: 'version'`.
 - **Next:** T012 converter, pattern, view, template.
 - **Watch:** the draft test asserts a draft has no number and that the next number is 404.
+
+## 2026-09-26T17:15Z · Implementer US-2 · T012
+
+- **Did:** `VersionNumberConverter` (registered as `version_number`) and the `version` pattern; `VersionView` overriding `get_object()`, title, subtitle, breadcrumbs; `version_detail.html` (c-alert with dates and a link for a superseded version, "This is the version in force." otherwise).
+- **Verified:** `uv run pytest tests/test_views.py tests/test_urls.py tests/test_models.py::TestWithReplacedAt` 34 passed; ruff and mypy clean. Probe: dropping the `document__slug` filter turned the cross-document and query-count tests red; restored. Also fixed my own T011 cross-document test, whose fixture published identical wording (refused by publish).
+- **Next:** T013 docs and catalog.
+- **Watch:** the query-count test relies on the number-only probe as well.
