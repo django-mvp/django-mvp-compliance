@@ -177,8 +177,14 @@
         },
         {
           "id": "T026",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k TestPageSubtitle: 9 passed",
+              "uv run ruff check / mypy mvp_compliance: clean"
+            ]
+          }
         }
       ]
     },

@@ -9,7 +9,43 @@ from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
-from mvp_compliance.models import Document, Version
+from mvp_compliance.models import Acceptance, Document, Version
+
+
+class VersionSubtitleMixin:
+    """The line under a page's name: ``v2026.1 · published <date>``.
+
+    Continues with ``· Agreed on <date>`` when the signed-in visitor accepted
+    that version. Used by the document's page and a version's page, which say
+    the same thing in the same words (FR-009). A view using it supplies
+    ``get_version()``.
+    """
+
+    def get_version(self) -> Version:
+        """The version the line describes."""
+        raise NotImplementedError
+
+    def get_page_subtitle(self):
+        version = self.get_version()
+        line = _("v%(number)s · published %(date)s") % {
+            "number": version.number,
+            "date": date_format(timezone.localdate(version.published_at)),
+        }
+        user = self.request.user
+        if not user.is_authenticated:
+            return line
+        agreed_at = (
+            Acceptance.objects.for_person(user)
+            .filter(version=version)
+            .values_list("accepted_at", flat=True)
+            .first()
+        )
+        if agreed_at is None:
+            return line
+        return _("%(published)s · Agreed on %(date)s") % {
+            "published": line,
+            "date": date_format(timezone.localdate(agreed_at)),
+        }
 
 
 class DocumentIndexView(MVPTemplateView):
@@ -37,7 +73,7 @@ class DocumentIndexView(MVPTemplateView):
         return [{"text": self.get_page_title()}]
 
 
-class DocumentView(MVPDetailView):
+class DocumentView(VersionSubtitleMixin, MVPDetailView):
     """The version of a document in force, at an address that never changes.
 
     Readable by anyone (FR-005). A slug that names no document, or a document
@@ -66,19 +102,12 @@ class DocumentView(MVPDetailView):
     def get_page_title(self):
         return self.object.name
 
-    def get_page_subtitle(self):
-        version = self.get_version()
-        return _("Version %(number)s, in force since %(date)s") % {
-            "number": version.number,
-            "date": date_format(timezone.localdate(version.published_at)),
-        }
-
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
         return [DocumentIndexView.crumb(), {"text": self.get_page_title()}]
 
 
-class VersionView(MVPDetailView):
+class VersionView(VersionSubtitleMixin, MVPDetailView):
     """One published version of a document, at an address that never changes.
 
     Readable by anyone (FR-005). A version that is no longer in force says it
@@ -115,14 +144,10 @@ class VersionView(MVPDetailView):
     def get_page_title(self):
         return self.object.document.name
 
-    def get_page_subtitle(self):
-        version = self.object
-        if version.replaced_at is None:
-            return _("Version %(number)s, in force since %(date)s") % {
-                "number": version.number,
-                "date": date_format(timezone.localdate(version.published_at)),
-            }
-        return _("Version %(number)s") % {"number": version.number}
+    def get_version(self) -> Version:
+        """The version this page is about."""
+        version: Version = self.object
+        return version
 
     def get_breadcrumbs(self):
         document = self.object.document

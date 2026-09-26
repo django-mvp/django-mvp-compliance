@@ -232,7 +232,7 @@ class TestDocumentView:
 
         content = response.content.decode()
         assert "Privacy policy" in content
-        assert f"Version {version.number}" in content
+        assert f"v{version.number} · published" in content
         assert date_format(timezone.localdate(version.published_at)) in content
 
     def test_the_breadcrumb_trail_is_the_title_with_no_empty_link(self, client):
@@ -267,7 +267,7 @@ class TestDocumentView:
 
         assert second.html in content
         assert "First wording" not in content
-        assert f"Version {second.number}" in content
+        assert f"v{second.number} · published" in content
 
     def test_a_document_with_only_a_draft_is_not_found_for_everybody(
         self, client, django_user_model
@@ -479,7 +479,7 @@ class TestVersionView:
         assert "mvp/base.html" in names
         content = response.content.decode()
         assert "Privacy policy" in content
-        assert f"Version {version.number}" in content
+        assert f"v{version.number} · published" in content
         assert response.context["directory"] == {}
 
     def test_the_breadcrumb_trail_links_the_document_then_names_the_version(

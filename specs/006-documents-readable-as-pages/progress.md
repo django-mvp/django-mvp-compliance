@@ -214,3 +214,10 @@ request.
 - Verified: `uv run pytest tests/test_views.py -k TestPageSubtitle` — 3 failed on the old subtitle text, 6 passed. Unique (subject, version) means one acceptance per person per version, so "earliest" needs no test.
 - Next: T026.
 - Watch: the link test now publishes two versions, since the versions link lives in the dropdown (T028).
+
+## 2026-09-26T19:40Z · Implementer US1 · T026
+
+- Did: `VersionSubtitleMixin` in `views.py` (public, one `get_page_subtitle`), used by `DocumentView` and `VersionView`; `VersionView.get_version()` returns its object. Acceptance read through `Acceptance.objects.for_person(user).filter(version=...)`, one query, only for signed-in visitors. The two pre-existing document-page tests that asserted "Version N" now assert the new line.
+- Verified: `uv run pytest tests/test_views.py` — all pass except `test_the_page_links_to_the_versions_of_the_document`, which waits on T028. ruff and mypy clean.
+- Next: T027.
+- Watch: the mixin must be quoted in `docs/pages.md` (T028). The old msgid "Version %(number)s, in force since %(date)s" is gone; catalog regeneration is T028.
