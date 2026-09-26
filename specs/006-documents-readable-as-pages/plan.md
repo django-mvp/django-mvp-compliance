@@ -178,8 +178,24 @@ never an mvp default, and each sets its breadcrumbs.
   US-1 scenario 8).
 - Breadcrumbs: index → document → (versions | version). The index crumb links to
   `mvp_compliance:index`, so it resolves under whatever prefix the project chose.
-- `get_page_title()` returns the document's name as a plain string, which mvp's title component
-  escapes.
+- What each view overrides, checked against the resolved mvp 0.24.0 (design review):
+  - All three detail views override `get_breadcrumbs()`. mvp's `PageObjectMixin.get_breadcrumbs()`
+    builds its own trail and never reads a `breadcrumbs` attribute, so setting one is silently
+    ignored and the default draws a crumb with an empty link. The index view overrides it too,
+    because its link needs `reverse()`.
+  - `DocumentView`: `get_queryset()` is `in_force()`; `get_context_data()` adds `version`
+    (`self.object.current_versions[0]`); `get_page_title()` is the name; `get_page_subtitle()`
+    builds "Version N, in force since D" with `_()` and `django.utils.formats.date_format`.
+  - `VersionListView`: the same queryset; `get_context_data()` adds `versions`;
+    `get_page_title()` is `_("Versions of %(name)s")`.
+  - `VersionView`: overrides `get_object()` entirely. Django's `SingleObjectMixin.get_object()`
+    filters on `slug`, which `Version` does not have, so the default raises `FieldError`. It
+    filters `document__slug` and `number` and raises `Http404` when nothing matches. It also
+    overrides `get_page_title()` (the default is `str(version)`, "Name #2026.1") and
+    `get_page_subtitle()`.
+  - `DocumentIndexView`: `get_context_data()` adds `documents`; `page_title` is a lazy string.
+- mvp's title component writes the title and subtitle through autoescaped variables, so a document
+  name with markup in it is escaped (checked in `cotton/page/title.html`).
 
 ### Templates (`mvp_compliance/templates/mvp_compliance/`)
 
@@ -209,7 +225,8 @@ The package adds nothing to menus (FR-014). The demo, as a host project, does:
 
 - `demo/settings.py`: `FLEX_MENUS` renderers (`sidebar`, `dock`) and a minimal `MVP_CONFIG` sidebar
   title, which mvp's shell needs before any page renders (research R1).
-- `demo/menus.py`: an `AppMenu` entry "Legal documents" pointing at `mvp_compliance:index`.
+- `demo/menus.py`: an `AppMenu` entry "Legal documents" pointing at `mvp_compliance:index`, added
+  with the index in US-3.
 - `demo/urls.py`: `path("legal/", include("mvp_compliance.urls"))`.
 - `seed_demo`: every seeded document gets a slug (`privacy-policy`, `terms-of-use`,
   `cookie-policy`, `acceptable-use`), so the four states the walkthrough needs exist: two versions

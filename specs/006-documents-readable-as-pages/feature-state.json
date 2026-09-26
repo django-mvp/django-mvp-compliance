@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PLAN",
+  "state": "DESIGN_REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -14,6 +14,11 @@
       "state": "PLAN",
       "at": "2026-09-26T15:42:52Z",
       "note": "picked up from the queue; branch cut from origin/main 0679bea; verify green on base"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-26T15:45:54Z",
+      "note": "plan, research, tasks committed; draft PR #64 opened"
     }
   ],
   "gates": {
@@ -31,6 +36,14 @@
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-26T16:40:00Z",
+      "self_resolved": [
+        "SPEC-001 high: applied as T001/T002 edits (D2)",
+        "SPEC-002, ARCH-001, ARCH-002 low: applied as plan/tasks edits (D3)"
+      ]
     }
   },
   "stories": [
@@ -205,12 +218,16 @@
       "max": 1
     },
     "design_review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "tokens": {
       "used": 0,
       "max": 120
     }
+  },
+  "pr": {
+    "number": 64,
+    "draft": true
   }
 }

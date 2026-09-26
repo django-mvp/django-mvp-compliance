@@ -14,3 +14,9 @@ specification merged in #59. Verify green on that commit: lint, typecheck, tests
 
 Plan, research and tasks written. Four stories, run in sequence: US-1, US-2, US-3, US-4. Analysis
 maps every functional requirement to at least one task. No critical findings.
+
+## 2026-09-26 — S3R DESIGN REVIEW
+
+One reviewer, three lenses, receipts green. Verdict: request changes, one verified high finding
+(adding the required slug breaks the existing inline document tests and the demo seed; no task said
+so) and three low ones. All four applied as plan and task edits, recorded in decisions.md D2 and D3.
