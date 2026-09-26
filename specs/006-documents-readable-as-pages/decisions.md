@@ -28,7 +28,7 @@ empty strings collide. Changing a test this feature did not write is normally re
 
 **Chosen**: the inline creations in `tests/test_models.py::TestDocument` each get a distinct slug,
 with no assertion changed. `test_duplicate_name_is_refused` gives its second document a different
-slug, so that it keeps proving the name constraint rather than passing on the slug one.
+slug, so that it keeps proving the name constraint rather than passing on the slug one. `test_document_holds_no_wording` lists the document's fields, so its expected set gains `slug`; what it proves, that a document holds no wording, is unchanged.
 
 **Why defensible**: the tests are rewritten only to supply a value the model now requires. What
 they assert is unchanged, and the one test whose meaning a shared slug would have silently changed
@@ -45,3 +45,18 @@ override, and T024 gains the no-compliance-claim assertion. The note that `pypro
 only Django 5.2 and 6.0 was checked and is wrong: 6.1 is listed.
 
 **ADR:** none — a record of this feature's review, not a durable decision.
+
+## D4 — The package now has public addresses
+
+**Ambiguous**: `tests/test_app.py` held two tests asserting the package ships no `urls` module,
+from FS-002 (its D11) and FS-004 (T031). This feature exists to add one.
+
+**Chosen**: the two tests are replaced by one asserting the module exists and is namespaced
+`mvp_compliance`, citing the specs it supersedes, the same way FS-002's D11 replaced FS-001's
+assertion.
+
+**Why defensible**: a later approved specification supersedes an earlier one where they conflict.
+Both old tests pinned a boundary that was true of the features that wrote them, and FS-006 moves it
+on purpose.
+
+**ADR:** none — the supersession is recorded here and in the test's docstring.

@@ -19,11 +19,15 @@ class TestPackagedApp:
         """
         assert apps.get_app_config("mvp_compliance").label == "mvp_compliance"
 
-    def test_it_registers_no_public_urls(self) -> None:
-        """D11: FS-002 supersedes FS-001's D5. The model layer's scope is gone —
-        FS-002 is the authoring surface — but the package still serves no
-        address a visitor can reach directly (FR-008)."""
-        assert importlib.util.find_spec("mvp_compliance.urls") is None
+    def test_it_offers_public_urls_for_a_project_to_mount(self) -> None:
+        """FS-006 decisions.md D4: supersedes FS-002's D11 and FS-004's T031.
+        The package now has addresses a visitor can reach, the published
+        documents, and the host project mounts them under its own prefix."""
+        assert importlib.util.find_spec("mvp_compliance.urls") is not None
+
+        from mvp_compliance import urls
+
+        assert urls.app_name == "mvp_compliance"
 
     def test_it_registers_both_models_in_the_admin(self) -> None:
         """D11: replaces FS-001's assertion that no admin exists — FS-002 is
@@ -49,7 +53,3 @@ class TestPackagedApp:
 
         assert Disclosure in admin.site._registry
         assert Acceptance not in admin.site._registry
-
-    def test_it_still_registers_no_public_urls(self) -> None:
-        """T031: US-3 adds no address of its own either."""
-        assert importlib.util.find_spec("mvp_compliance.urls") is None
