@@ -27,3 +27,10 @@ so) and three low ones. All four applied as plan and task edits, recorded in dec
 - **Verified:** T001 and T003 observed red before the code (`TypeError ... unexpected keyword 'slug'`; `No module named 'mvp_compliance.urls'`). After T004: `uv run pytest tests -q -n auto` all green; `makemigrations --check` clean.
 - **Next:** T005 edge-case tests, T006 demo, T007 docs.
 - **Watch:** `TestDocument::test_document_holds_no_wording` asserted the field set `{"id", "name"}`; it now lists `slug` (see concerns in the report).
+
+## 2026-09-26T16:20Z · Implementer US-1 · T005
+
+- **Did:** edge-case tests in `TestDocumentView`: draft-only and unknown slug are 404 for anonymous, signed-in and staff; markup in a name is escaped; query count identical for one and five published versions; no edit or delete link drawn for a superuser.
+- **Verified:** `uv run pytest tests/test_views.py` 11 passed. Probe: swapping `in_force()` for `all()` in the view turned 10 of 11 red; reverted.
+- **Next:** T006 demo wiring.
+- **Watch:** `tests/test_app.py` still asserts `mvp_compliance.urls` does not exist; see the report's concerns.

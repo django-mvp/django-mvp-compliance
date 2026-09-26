@@ -3,6 +3,8 @@
 from unittest.mock import patch
 
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
@@ -86,3 +88,75 @@ class TestDocumentView:
         assert second.html in content
         assert "First wording" not in content
         assert f"Version {second.number}" in content
+
+    def test_a_document_with_only_a_draft_is_not_found_for_everybody(
+        self, client, django_user_model
+    ):
+        document = DocumentFactory()
+        VersionFactory(document=document)
+        address = reverse("mvp_compliance:document", args=[document.slug])
+        signed_in = django_user_model.objects.create_user("reader", password="pw")
+        staff = django_user_model.objects.create_user(
+            "editor", password="pw", is_staff=True, is_superuser=True
+        )
+
+        assert client.get(address).status_code == 404
+        client.force_login(signed_in)
+        assert client.get(address).status_code == 404
+        client.force_login(staff)
+        assert client.get(address).status_code == 404
+
+    def test_an_unknown_slug_is_not_found_for_everybody(
+        self, client, django_user_model
+    ):
+        address = reverse("mvp_compliance:document", args=["no-such-document"])
+        staff = django_user_model.objects.create_user(
+            "editor", password="pw", is_staff=True, is_superuser=True
+        )
+
+        assert client.get(address).status_code == 404
+        client.force_login(staff)
+        assert client.get(address).status_code == 404
+
+    def test_markup_in_a_document_name_is_escaped(self, client):
+        document = DocumentFactory(name="<script>alert(1)</script>")
+        published(document)
+
+        content = client.get(
+            reverse("mvp_compliance:document", args=[document.slug])
+        ).content.decode()
+
+        assert "<script>alert(1)</script>" not in content
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
+
+    def test_the_query_count_does_not_grow_with_the_versions_published(
+        self, client, django_assert_num_queries
+    ):
+        one = DocumentFactory()
+        published(one)
+        many = DocumentFactory()
+        for n in range(5):
+            published(many, f"Wording {n}")
+        client.get(reverse("mvp_compliance:document", args=[one.slug]))  # warm caches
+
+        with CaptureQueriesContext(connection) as single:
+            client.get(reverse("mvp_compliance:document", args=[one.slug]))
+        with django_assert_num_queries(len(single)):
+            client.get(reverse("mvp_compliance:document", args=[many.slug]))
+
+    def test_no_link_or_button_to_edit_or_delete_is_drawn(
+        self, client, django_user_model
+    ):
+        document = DocumentFactory()
+        published(document)
+        staff = django_user_model.objects.create_user(
+            "editor", password="pw", is_staff=True, is_superuser=True
+        )
+        client.force_login(staff)
+
+        response = client.get(reverse("mvp_compliance:document", args=[document.slug]))
+
+        assert response.context["directory"] == {}
+        content = response.content.decode()
+        assert "/change/" not in content
+        assert "/delete/" not in content
