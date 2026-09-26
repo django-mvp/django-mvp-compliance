@@ -41,9 +41,9 @@ class TestDocument:
     """A document has a lasting identity and holds no wording of its own."""
 
     def test_documents_exist_side_by_side_with_no_versions(self):
-        privacy = Document.objects.create(name="Privacy policy")
-        terms = Document.objects.create(name="Terms")
-        cookies = Document.objects.create(name="Cookie policy")
+        privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+        terms = Document.objects.create(name="Terms", slug="terms")
+        cookies = Document.objects.create(name="Cookie policy", slug="cookie-policy")
 
         assert Document.objects.count() == 3
         assert list(privacy.versions.all()) == []
@@ -51,15 +51,73 @@ class TestDocument:
         assert list(cookies.versions.all()) == []
 
     def test_duplicate_name_is_refused(self):
-        Document.objects.create(name="Privacy policy")
+        Document.objects.create(name="Privacy policy", slug="privacy-policy")
         with pytest.raises(IntegrityError):
-            Document.objects.create(name="Privacy policy")
+            Document.objects.create(name="Privacy policy", slug="privacy")
 
     def test_document_holds_no_wording(self):
         field_names = {
             field.name for field in Document._meta.get_fields() if field.concrete
         }
-        assert field_names == {"id", "name"}
+        assert field_names == {"id", "name", "slug"}
+
+
+@pytest.mark.django_db
+class TestDocumentSlug:
+    """A document's slug is its identifier in an address, and no two share one."""
+
+    def test_a_document_saves_with_a_slug(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+
+        document.refresh_from_db()
+        assert document.slug == "privacy-policy"
+
+    def test_two_documents_with_the_same_slug_are_refused(self):
+        Document.objects.create(name="Privacy policy", slug="privacy")
+        with pytest.raises(IntegrityError):
+            Document.objects.create(name="Privacy notice", slug="privacy")
+
+    def test_the_slug_says_what_it_is_for(self):
+        field = Document._meta.get_field("slug")
+
+        assert str(field.verbose_name)
+        assert str(field.help_text)
+
+
+@pytest.mark.django_db
+class TestDocumentInForce:
+    """Only a document with a version in force is one a visitor can read."""
+
+    def test_returns_documents_with_a_current_version_carrying_it(self):
+        document = DocumentFactory()
+        version = VersionFactory(document=document)
+        version.publish()
+
+        found = list(Document.objects.in_force())
+
+        assert found == [document]
+        assert [v.pk for v in found[0].current_versions] == [version.pk]
+
+    def test_excludes_a_document_with_only_drafts(self):
+        VersionFactory(document=DocumentFactory())
+
+        assert list(Document.objects.in_force()) == []
+
+    def test_excludes_a_document_with_no_versions(self):
+        DocumentFactory()
+
+        assert list(Document.objects.in_force()) == []
+
+    def test_a_superseded_version_is_not_the_one_carried(self):
+        document = DocumentFactory()
+        first = VersionFactory(document=document)
+        first.publish()
+        second = VersionFactory(document=document)
+        second.publish()
+
+        (found,) = Document.objects.in_force()
+
+        assert [v.pk for v in found.current_versions] == [second.pk]
 
 
 @pytest.mark.django_db
