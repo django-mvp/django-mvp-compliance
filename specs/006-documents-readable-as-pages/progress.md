@@ -161,3 +161,17 @@ breadcrumb assertion.
 - **Verified:** `uv run pytest tests/test_models.py::TestDocumentSlug tests/test_migrations.py -q` 17 passed; `makemigrations --check` clean; ruff clean.
 - **Next:** T021.
 - **Watch:** `Document.SLUG_FIXED_MESSAGE` is a public class attribute shared by the two guards; the docs check may ask for it to be documented.
+
+## 2026-09-26T19:15Z · Implementer US-4 · T021
+
+- **Did:** `TestDocumentSlugInTheAdmin` in `tests/test_admin.py`: add form prepopulates the slug from the name; an unpublished document's slug is editable; a published document's slug is not a form field and is shown; a POST with a different slug leaves it unchanged and still saves the name.
+- **Verified:** `uv run pytest tests/test_admin.py::TestDocumentSlugInTheAdmin -q` 3 failed, 1 passed (the editable case already held), failing for the right reasons: no prepopulation, and the admin save raised `PublishedVersionError`.
+- **Next:** T022.
+- **Watch:** none.
+
+## 2026-09-26T19:20Z · Implementer US-4 · T022
+
+- **Did:** `DocumentAdmin.prepopulated_fields`, `get_readonly_fields` (adds `slug` when the document has a published version), `get_prepopulated_fields` (empty in the same case).
+- **Verified:** `uv run pytest tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_admin.py::TestDocumentAdmin tests/test_admin.py::TestDocumentChangelist -q` 20 passed; ruff clean.
+- **Next:** T023.
+- **Watch:** none.
