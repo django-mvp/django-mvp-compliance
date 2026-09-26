@@ -199,3 +199,11 @@ it).
 Converge: every functional requirement traced to a delivered task. One migration on the branch
 (`0007_document_slug`), nothing to consolidate. Cleanup pass over the feature diff found nothing to
 simplify. D1 graduated to ADR 0019. D2 to D5 declined with reasons.
+
+## 2026-09-26 — S6 REVIEW
+
+One reviewer, correctness, conformance to the spec and security, receipts green. Verdict:
+approve, no critical, high or medium findings. Two low findings fixed by the orchestrator: a save
+whose `update_fields` leaves the slug out is no longer refused, and `docs/models.md` states that
+`update()` and `bulk_update()` refuse any slug on a published document. Outcome recorded on the pull
+request.
