@@ -24,9 +24,9 @@ navigation is your decision.
 
 ## The address
 
-| URL name | Arguments | Address |
-|---|---|---|
-| `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` |
+| URL name | Arguments | Address | View |
+|---|---|---|---|
+| `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
 The slug is the document's `slug` field, so `Document(slug="privacy-policy")` is served
 at `legal/privacy-policy/` under the mount above. Link to it from a footer, or anywhere
