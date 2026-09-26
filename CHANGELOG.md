@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A page for each document that has a version in force, served at an address that never changes:
+  `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
+  `{% url 'mvp_compliance:document' 'privacy-policy' %}` in a template. Anyone can read it,
+  signed in or not, and it renders inside the django-mvp shell. A document with nothing
+  published, or a slug that names nothing, answers "not found". The package adds nothing to your
+  menus. See [docs/pages.md](docs/pages.md).
+- `Document.slug`, a unique slug that forms the document's address, and
+  `Document.objects.in_force()`, which returns the documents that have a current version with
+  that version already fetched. Migration `0007_document_slug` adds the column with no data step,
+  so a database that already holds documents needs their slugs set before it can be migrated.
+  See [docs/models.md](docs/models.md).
 - `render_publication_email(version, replaced, site_url)`, in `mvp_compliance.emails`, which
   writes the subject and plain-text body of an email announcing a publication and returns them.
   It sends nothing. The subject is always one line, the text is translatable, and a template at

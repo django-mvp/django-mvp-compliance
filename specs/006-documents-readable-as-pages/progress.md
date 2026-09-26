@@ -41,3 +41,10 @@ so) and three low ones. All four applied as plan and task edits, recorded in dec
 - **Verified:** rebuilt `demo.sqlite3` (`migrate`, `seed_demo`), `manage.py check` clean; on the running server `/legal/privacy-policy/` 200, `/legal/cookie-policy/` (draft only) 404, landing carries the link.
 - **Next:** T007 docs, then the full verify.
 - **Watch:** none.
+
+## 2026-09-26T16:35Z · Implementer US-1 · T007
+
+- **Did:** `docs/pages.md` (mounting, the `document` name, footer link, what a visitor sees, the renderer sentence, when it is "not found", overriding the template); `docs/models.md` slug and `in_force()`; README example and documentation list; CHANGELOG Added entries. Catalog regenerated: no string added since T004, so unchanged.
+- **Verified:** `uv run pre-commit run --all-files` green; examples in the docs match the demo and tests.
+- **Next:** full verify, report.
+- **Watch:** none.

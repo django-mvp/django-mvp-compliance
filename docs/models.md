@@ -6,13 +6,29 @@ identity, and the sequence of versions underneath it.
 ## `Document`
 
 A named legal text — a privacy policy, a set of terms, a cookie policy. It has a
-lasting identity and a unique `name`, and it holds no wording of its own: every word
-lives in one of its versions.
+lasting identity, a unique `name` and a unique `slug`, and it holds no wording of its
+own: every word lives in one of its versions.
 
 ```python
 from mvp_compliance.models import Document
 
-privacy = Document.objects.create(name="Privacy policy")
+privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+```
+
+The `slug` is the document's identifier in its address: the page that shows the version
+in force is served at `<prefix>/privacy-policy/`. See [pages.md](pages.md).
+
+### Documents with a version in force
+
+`Document.objects.in_force()` returns every document that has a current version, and
+leaves out one that has only drafts and one that has no versions at all. Each document
+comes back with its current version already fetched, as a list of one on
+`current_versions`, so reading it costs no query per document:
+
+```python
+for document in Document.objects.in_force():
+    version = document.current_versions[0]
+    print(document.name, version.number)
 ```
 
 ## `Version`
