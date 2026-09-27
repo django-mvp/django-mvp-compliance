@@ -20,14 +20,14 @@ different should be able to change that without forking the package.
 ## Scope
 
 Anyone reading the site, signed in or not, can read published documents as ordinary pages of the
-host site. There are four kinds of page:
+host site. There are three kinds of page, and a menu:
 
 - **The document's page** has one permanent address per document and always shows the version in
   force. This is the address a footer links to.
 - **A version's page** has one permanent address per published version, and keeps it after the
   version is superseded.
-- **A document's version list** shows every version of the document that has been published, with
-  the dates each one was in force.
+- **A "Previous versions" menu** on the document's page lists the versions it replaced, so a
+  reader can reach earlier wording without already having its address.
 - **The document index** lists every document that has a version in force. A project can link to it
   from its footer as a single "Legal" link.
 
@@ -126,9 +126,8 @@ the second version's address and confirm it shows the second wording and says it
 ### User Story 3 - Finding a document and its earlier versions (Priority: P2)
 
 A reader who knows a document was reworded, but has no link to the old wording, can still find it.
-The document's page links to a list of every version that has been published. The list shows each
-version's number and the dates it was in force, marks the one in force now, and links to each
-version's page.
+The document's page has a "Previous versions" menu among its actions listing every earlier
+published version, newest first, each linking to that version's page.
 
 A site that publishes several documents usually wants a single "Legal" link in its footer rather
 than one link per document. The document index gives it one address listing every document that has
@@ -139,27 +138,26 @@ already has the link. This makes them findable. The index saves each project bui
 list.
 
 **Independent Test**: Publish three versions of one document and one version of another, and leave a
-third document with only a draft. Open the first document's version list and confirm it shows all
-three versions with their dates, newest first, the current one marked. Open the index and confirm it
-lists the two documents that have a version in force and not the third.
+third document with only a draft. Open the first document's page and confirm its "Previous versions"
+menu lists the two earlier versions, newest first. Open the index and confirm it lists the two
+documents that have a version in force and not the third.
 
 **Acceptance Scenarios**:
 
-1. **Given** a document's page, **When** it is read, **Then** it links to the document's version
-   list.
-2. **Given** a document with several published versions, **When** its version list is opened,
-   **Then** it shows every published version, newest first, each with its number, the date it came
-   into force, and the date it was replaced if it has been.
-3. **Given** that list, **When** it is read, **Then** the version in force is marked as such, and
-   every entry links to that version's page.
-4. **Given** a document that has drafts as well as published versions, **When** its version list is
-   opened, **Then** no draft appears.
+1. **Given** a document with several published versions, **When** its page is read, **Then** a
+   "Previous versions" menu among the page's actions lists every earlier published version, newest
+   first, each linking to its version's page.
+2. **Given** a document with a single published version, **When** its page is read, **Then** there
+   is no "Previous versions" menu.
+3. **Given** that menu, **When** it is drawn, **Then** it is a primary button with a dropdown caret.
+4. **Given** a document that has drafts as well as published versions, **When** its menu is opened,
+   **Then** no draft appears.
 5. **Given** documents with a version in force and documents with only drafts, **When** the index is
    opened, **Then** it lists every document that has a version in force, each linking to its page,
    and no other document.
 6. **Given** no document has a version in force, **When** the index is opened, **Then** it says there
    is nothing published yet, rather than showing an empty list.
-7. **Given** the version list or the index, **When** it is served, **Then** it carries the shell's
+7. **Given** the index, **When** it is served, **Then** it carries the shell's
    layout, navigation and theme.
 
 ---
@@ -229,9 +227,9 @@ document page's template in the demo's templates and confirm it is used.
   the version in force. *(US-1)*
 - **FR-002**: Each published version, current or superseded, MUST have a page at a permanent address
   built from its document's slug and its number. *(US-2)*
-- **FR-003**: Each document MUST have a version list at its own address, showing every published
-  version newest first, with its number, the date it came into force, and the date it was replaced
-  if it has been, and marking the version in force. *(US-3)*
+- **FR-003**: When a document has versions before the one in force, its page MUST list them newest
+  first, each as `v<number> · published <date>` linking to its version's page. No draft is listed.
+  *(US-3)*
 - **FR-004**: The package MUST provide a document index at its own address, listing every document
   that has a version in force and linking to each document's page. *(US-3)*
 - **FR-005**: Every page this feature adds MUST be readable by any visitor, signed in or not, with
@@ -239,7 +237,7 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-006**: A page MUST serve the version's HTML exactly as stored at publication, and MUST NOT
   render Markdown when it is requested. *(US-1, US-2)*
 - **FR-007**: A draft MUST NOT be shown or listed on any page this feature adds, to anyone. A document
-  with nothing in force MUST answer "not found" at its page and version list, and MUST NOT appear in
+  with nothing in force MUST answer "not found" at its page, and MUST NOT appear in
   the index. *(US-1, US-2, US-3)*
 - **FR-008**: An address naming no document, or a number that is not a published version of the
   named document, MUST answer "not found". *(US-1, US-2)*
@@ -250,10 +248,9 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-010**: A superseded version's page MUST say it has been replaced, give the dates it was in
   force, and link to the document's page. The page of the version in force MUST say it is in force.
   *(US-2)*
-- **FR-011**: When a document has versions before the one in force, its page MUST offer them in a
-  "Previous versions" menu among the page's actions, newest first, each linking to its version's
-  page, and ending with a link to the document's version list. A document with a single published
-  version shows no such menu. *(US-3)*
+- **FR-011**: That list MUST be a "Previous versions" dropdown among the page's actions, drawn as a
+  primary button with a dropdown caret. A document with a single published version shows no such
+  menu. There is no separate page listing a document's versions. *(US-3)*
 - **FR-012**: Every page this feature adds MUST render within the django-mvp shell, taking its
   layout, navigation and theme from the host project, with no template written by the project.
   *(US-1, US-2, US-3)*
@@ -285,7 +282,7 @@ document page's template in the demo's templates and confirm it is used.
   versions have. Fixed once the document has a published version.
 - **Version** (FS-001, FS-002): unchanged. Its number and the dates it was in force identify it on
   the page.
-- **Document's page**, **version's page**, **version list** and **document index**: read-only views
+- **Document's page**, **version's page** and **document index**: read-only views
   of published data. Nothing about them is stored.
 
 ## Success Criteria *(mandatory)*
@@ -301,7 +298,7 @@ document page's template in the demo's templates and confirm it is used.
   version's address still answers with the wording it answered with before.
 - **SC-005**: Once a document has a published version, no route that refuses other changes to
   published content accepts a change to its slug.
-- **SC-006**: The number of database queries for a document's page, version list and the index does
+- **SC-006**: The number of database queries for a document's page, a version's page and the index does
   not grow with the number of versions or documents.
 - **SC-007**: A developer can make the pages reachable and link to a document from the site's footer
   with one line in the project's URLs and one link in a template.
@@ -319,9 +316,10 @@ document page's template in the demo's templates and confirm it is used.
   previews drafts. A public page that looks different depending on who is signed in makes "what does
   the site say today" harder to answer, and a member of staff could mistake a draft for the version
   in force.
-- **Q**: Where does the list of a document's versions live? → **A**: At its own address, linked from
-  the document's page (FR-003, FR-011). The document's page is what a footer links to, so it should
-  be the wording itself. A history list under a long legal text is hard to find.
+- **Q**: Where does the list of a document's versions live? → **A**: In a "Previous versions"
+  dropdown among the document page's actions (FR-003, FR-011), a primary button with a dropdown
+  caret. A separate page listing every version adds nothing the menu does not already give a reader,
+  and each version's own page carries its dates. Maintainer's ruling at the walkthrough.
 - **Q**: What does a superseded version's page link to: the version that replaced it, or the version
   in force? → **A**: The document's page (FR-010), which always shows the version in force. After two
   rewordings, the version that directly replaced it is superseded too, and "the next one" would send
@@ -334,9 +332,7 @@ document page's template in the demo's templates and confirm it is used.
 
 - **Q**: How does a page say which version it is, and where do earlier versions go? → **A**: The
   line under the name reads `v2026.1 · published <date>`, with `· Agreed on <date>` added for a
-  signed-in visitor who accepted that version. Earlier versions sit in a "Previous versions" menu
-  among the page's actions rather than as a link in the text (FR-009, FR-011). Maintainer's ruling
-  at the walkthrough.
+  signed-in visitor who accepted that version (FR-009). Maintainer's ruling at the walkthrough.
 
 ## Assumptions
 

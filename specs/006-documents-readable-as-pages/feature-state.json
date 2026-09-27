@@ -353,6 +353,16 @@
               "forge verify --base origin/main: docs passed"
             ]
           }
+        },
+        {
+          "id": "T029",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T030",
+          "status": "todo",
+          "attempts": 0
         }
       ]
     },
