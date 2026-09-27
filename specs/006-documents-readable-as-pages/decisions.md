@@ -75,3 +75,23 @@ address. The remaining cases still prove that a malformed number resolves to not
 That is still true, and the new test states it more precisely.
 
 **ADR:** none — local to this feature's tests.
+
+## D6 — The second walkthrough removes the version list and its tests
+
+**Ambiguous**: T029's brief authorised rewriting `tests/test_urls.py::test_versions_is_the_version_list_not_a_number`
+into a test that `/legal/<slug>/versions/` is `Resolver404`, and deleting `TestVersionListView` and
+every other assertion about the list page or the "All versions" menu item — tests this feature's
+own earlier tasks (T014, T027) wrote and that were passing.
+
+**Chosen**: removed `TestVersionListView` in full; removed `test_the_menu_ends_with_a_link_to_the_version_list`,
+the "All versions" assertions in `TestDocumentView` and `TestPageStrings`, the versions entry in
+`TestBreadcrumbTrails` and `TestTemplateOverride`, and the versions case in `TestNoMenuEntry`'s loop.
+`tests/test_urls.py::test_versions_is_the_version_list_not_a_number` became
+`test_versions_is_still_not_a_number`, asserting `Resolver404` (this reverses D5).
+
+**Why defensible**: the maintainer ruled at the second walkthrough that a separate list page is
+overkill now the document page carries a "Previous versions" dropdown (FR-011, spec.md
+Clarifications). The deleted tests pinned a page that no longer exists; keeping them would pin dead
+code. Every deletion is named in the FS-006/US3 completion report's `deviations`, per the brief.
+
+**ADR:** none — recorded here and in the task brief that authorised it.
