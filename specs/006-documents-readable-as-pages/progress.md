@@ -242,3 +242,20 @@ T025–T028 verified independently: receipts green, full verify green, tamper-ch
 subtitle and "Earlier versions" assertions the brief authorised. Checked on the demo data: the
 version line with and without "Agreed on", and the "Previous versions" menu present with earlier
 versions and absent without them.
+
+## 2026-09-27T20:47Z · Implementer US3 · T029
+
+- Did: rewrote `tests/test_urls.py::test_versions_is_still_not_a_number` to assert `Resolver404`
+  (confirmed failing first: it resolved to `versions`). Removed the `versions` URL pattern,
+  `VersionListView`, `version_list.html` and its `tests/project_templates` override, the "All
+  versions" menu item in `document_detail.html`, and every assertion in `tests/test_views.py` that
+  depended on the list page (`TestVersionListView`, the menu's "All versions" link, the versions
+  breadcrumb trail, the versions project-template override, the versions entry in the no-menu-entry
+  loop, the versions address in the compliance-wording sweep). `docs/pages.md` and `CHANGELOG.md`
+  now describe the three pages and the dropdown as they are, with no mention a list page ever
+  existed. en catalog regenerated (`POT-Creation-Date` line removed, no fuzzy entries, no `.mo`).
+- Verified: `uv run pytest tests/test_urls.py tests/test_views.py -q` — 65 passed. `uv run ruff
+  check mvp_compliance/urls.py mvp_compliance/views.py tests/test_urls.py tests/test_views.py` —
+  clean.
+- Next: T030.
+- Watch: `Version.objects.published().with_replaced_at()` stays — `VersionView` still uses it.
