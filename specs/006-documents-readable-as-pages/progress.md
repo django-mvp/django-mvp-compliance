@@ -259,3 +259,15 @@ versions and absent without them.
   clean.
 - Next: T030.
 - Watch: `Version.objects.published().with_replaced_at()` stays — `VersionView` still uses it.
+
+## 2026-09-27T20:48Z · Implementer US3 · T030
+
+- Did: `document_detail.html`'s `<c-dropdown>` now passes `variant="primary"`, `icon="chevron-down"`
+  and `reverse`, and drops `ghost`. A styling choice, so no test pins it.
+- Verified: `uv run pytest tests/test_views.py -k "PreviousVersionsMenu or TemplateOverride or
+  PageStrings"` — 16 passed. Confirmed on the running demo (port 8021, `/legal/privacy-policy/`):
+  the trigger renders `<button class="btn btn-primary ... flex-row-reverse ...">` with
+  `<i class="bi bi-chevron-down">` before the "Previous versions" text (reverse puts the icon after
+  in reading order).
+- Next: full verify, report.
+- Watch: none.
