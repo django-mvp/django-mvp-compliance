@@ -28,13 +28,10 @@ navigation is your decision.
 |---|---|---|---|
 | `mvp_compliance:index` | none | `<prefix>/` | `mvp_compliance.views.DocumentIndexView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
-| `mvp_compliance:versions` | `slug` | `<prefix>/<slug>/versions/` | `mvp_compliance.views.VersionListView` |
 | `mvp_compliance:version` | `slug`, `number` | `<prefix>/<slug>/<number>/` | `mvp_compliance.views.VersionView` |
 
 The number is a version's own, such as `2026.1` or `2026.12`: four digits, a dot, then
 digits. Anything else in that position, `2026` for example, is not a version address.
-`versions` is not a number: `<prefix>/<slug>/versions/` is the list of the document's
-versions.
 
 The slug is the document's `slug` field, so `Document(slug="privacy-policy")` is served
 at `legal/privacy-policy/` under the mount above. Link to it from a footer, or anywhere
@@ -100,14 +97,8 @@ Every page's breadcrumbs start with a "Legal documents" crumb linking to the ind
 
 When a document has more than one published version, its page carries a "Previous
 versions" dropdown in the page actions. It lists every earlier published version, newest
-first, each as `v2026.1 · published 26 September 2026` linking to that version's page,
-and ends with an "All versions" link to `mvp_compliance:versions`. A document with a
-single published version has no dropdown. Drafts are never listed.
-
-The list page, `mvp_compliance.views.VersionListView`, lists every published version of
-the document, newest first: its number, linking to the version's page, the date it came
-into force, and the date it was replaced, or "In force" for the version now in force.
-Drafts are not listed. It answers 404 under the same conditions as the document's page.
+first, each as `v2026.1 · published 26 September 2026` linking to that version's page. A
+document with a single published version has no dropdown. Drafts are never listed.
 
 ## A version's own page
 
@@ -154,7 +145,6 @@ is never used for that page. The package needs no other change, and you do not f
 |---|---|---|
 | `mvp_compliance/document_index.html` | `mvp_compliance:index` | `documents`, the documents in force in name order, each with its current version |
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version in force, and `previous_versions`, the other published versions newest first |
-| `mvp_compliance/version_list.html` | `mvp_compliance:versions` | `document`, and `versions`, newest first, each carrying `replaced_at` |
 | `mvp_compliance/version_detail.html` | `mvp_compliance:version` | `document`, and `version`, carrying `replaced_at`: the date the next version was published, or `None` for the version in force |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.

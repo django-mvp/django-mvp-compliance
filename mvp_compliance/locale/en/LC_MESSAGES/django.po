@@ -447,10 +447,6 @@ msgstr "Previous versions"
 msgid "v%(number)s · published %(date)s"
 msgstr "v%(number)s · published %(date)s"
 
-#: mvp_compliance/templates/mvp_compliance/document_detail.html:13
-msgid "All versions"
-msgstr "All versions"
-
 #: mvp_compliance/templates/mvp_compliance/document_index.html:11
 msgid "Nothing has been published yet."
 msgstr "Nothing has been published yet."
@@ -499,22 +495,6 @@ msgstr "Read the version in force"
 msgid "This is the version in force."
 msgstr "This is the version in force."
 
-#: mvp_compliance/templates/mvp_compliance/version_list.html:8
-msgid "Version"
-msgstr "Version"
-
-#: mvp_compliance/templates/mvp_compliance/version_list.html:9
-msgid "In force from"
-msgstr "In force from"
-
-#: mvp_compliance/templates/mvp_compliance/version_list.html:10
-msgid "Replaced on"
-msgstr "Replaced on"
-
-#: mvp_compliance/templates/mvp_compliance/version_list.html:18
-msgid "In force"
-msgstr "In force"
-
 #: mvp_compliance/views.py:45
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
@@ -527,15 +507,6 @@ msgstr "Legal documents"
 #: mvp_compliance/views.py:142
 msgid "No version found"
 msgstr "No version found"
-
-#: mvp_compliance/views.py:196
-#, python-format
-msgid "Versions of %(name)s"
-msgstr "Versions of %(name)s"
-
-#: mvp_compliance/views.py:206
-msgid "Versions"
-msgstr "Versions"
 
 #: mvp_compliance/widgets.py:26
 msgid "Heading"

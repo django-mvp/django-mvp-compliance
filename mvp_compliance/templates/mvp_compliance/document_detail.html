@@ -9,9 +9,6 @@
             <a href="{% url 'mvp_compliance:version' document.slug previous.number %}">{% blocktranslate with number=previous.number date=previous.published_at|date %}v{{ number }} · published {{ date }}{% endblocktranslate %}</a>
           </li>
         {% endfor %}
-        <li>
-          <a href="{% url 'mvp_compliance:versions' document.slug %}">{% translate "All versions" %}</a>
-        </li>
       </ul>
     </c-dropdown>
   {% endif %}

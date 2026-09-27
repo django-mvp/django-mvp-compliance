@@ -25,5 +25,6 @@ class TestVersionNumberConverter:
         with pytest.raises(Resolver404):
             resolve(f"/legal/privacy-policy/{segment}/")
 
-    def test_versions_is_the_version_list_not_a_number(self):
-        assert resolve("/legal/privacy-policy/versions/").url_name == "versions"
+    def test_versions_is_still_not_a_number(self):
+        with pytest.raises(Resolver404):
+            resolve("/legal/privacy-policy/versions/")
