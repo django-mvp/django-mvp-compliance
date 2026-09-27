@@ -361,13 +361,27 @@
         },
         {
           "id": "T029",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_urls.py -x -q",
+              "uv run pytest tests/test_urls.py tests/test_views.py -q",
+              "uv run ruff check mvp_compliance/urls.py mvp_compliance/views.py tests/test_urls.py tests/test_views.py",
+              "uv run python manage.py makemessages -l en --no-obsolete"
+            ]
+          }
         },
         {
           "id": "T030",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k \"PreviousVersionsMenu or TemplateOverride or PageStrings\" -q",
+              "curl -s http://localhost:8021/legal/privacy-policy/"
+            ]
+          }
         }
       ]
     },

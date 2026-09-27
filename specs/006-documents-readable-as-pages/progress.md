@@ -271,3 +271,10 @@ versions and absent without them.
   in reading order).
 - Next: full verify, report.
 - Watch: none.
+
+## 2026-09-27 — Second walkthrough changes accepted
+
+T029–T030 verified independently: receipts green, full verify green. Tamper-check flags only the
+removals and rewrite the brief authorised (the version list's tests, its override fixture, and the
+`versions` URL test). The version list address answers 404, and the menu renders as a primary button
+with the caret after its text. plan.md brought to the current design.
