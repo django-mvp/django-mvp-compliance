@@ -9,7 +9,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("legal/", include("mvp_compliance.urls")),
     # django-mvp's sign-in and account area, so a person who is not staff can
-    # sign in and see the pages as someone who has agreed to a version.
-    path("account/", include("mvp.urls")),
+    # sign in and see the pages as someone who has agreed to a version. It is
+    # mounted at the root and puts its pages under account/ itself.
+    path("", include("mvp.urls")),
     path("", LandingView.as_view(), name="landing"),
 ]

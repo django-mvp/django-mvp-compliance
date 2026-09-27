@@ -22,7 +22,7 @@ version's page. Each is an MVP view, so it renders inside the django-mvp shell t
 
 **Language/Version**: Python 3.12+ (CI matrix 3.12 and 3.13; the development virtualenv is 3.13)
 
-**Primary Dependencies**: Django 5.2, 6.0 and 6.1, django-mvp (0.24.0 resolved, floor `>=0.23.0`
+**Primary Dependencies**: Django 5.2, 6.0 and 6.1, django-mvp (0.25.0 resolved, floor `>=0.25.0`
 unchanged). **No new runtime dependency.** `MVPDetailView` and `MVPTemplateView` from `mvp.views`,
 a registered path converter, a `Subquery` annotation.
 

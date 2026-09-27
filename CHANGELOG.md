@@ -17,8 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   menus. See [docs/pages.md](docs/pages.md).
 - A page for each published version, at `{% url 'mvp_compliance:version' 'privacy-policy' '2026.1' %}`,
   showing the wording that version was published with. A version that has been replaced says so and
-  links to the one in force. Each document's page links to its list of versions,
-  `mvp_compliance:versions`, which shows every published version newest first with the dates it was
+  links to the one in force. A document with earlier versions offers them in a "Previous
+  versions" menu on its page, ending with its list of versions, `mvp_compliance:versions`, which shows every published version newest first with the dates it was
   in force. `mvp_compliance:index` lists every document that has a version in force, and every
   page's breadcrumbs start with it. See [docs/pages.md](docs/pages.md).
 - `Document.slug`, a unique slug that forms the document's address, and
@@ -175,6 +175,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Django 6.1 is supported, and tested on every change alongside 5.2 and 6.0.
 
 ### Changed
+
+- Requires django-mvp 0.25.0 or later (was 0.23.0). django-mvp 0.25.0 mounts its own URLs at the
+  site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
 
 - A version is numbered when it is published instead of when its draft is created, and the number
   is the year of publication and its place among the document's versions published that year,
