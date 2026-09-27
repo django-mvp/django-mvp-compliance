@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "QUEUED",
@@ -64,6 +64,21 @@
       "state": "IMPLEMENT",
       "at": "2026-09-27T20:41:57Z",
       "note": "second walkthrough: drop version list page, primary dropdown (T029-T030)"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-27T20:52:22Z",
+      "note": "second walkthrough changes verified"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-27T20:52:22Z",
+      "note": "second walkthrough changes verified"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-27T20:52:23Z",
+      "note": "second walkthrough changes verified"
     }
   ],
   "gates": {
@@ -92,11 +107,11 @@
     },
     "walkthrough": {
       "approved_by": "SamuelJennings",
-      "at": "2026-09-26T19:08:52Z",
+      "at": "2026-09-27T20:52:23Z",
       "self_resolved": [
-        "Line under the name reads 'v2026.1 \u00b7 published <date> \u00b7 Agreed on <date>' \u2014 T025/T026",
-        "Earlier versions as a 'Previous versions' dropdown in the page actions \u2014 T027/T028",
-        "Documents that are read but never agreed to \u2014 filed as #65"
+        "No separate version list page — removed (T029)",
+        "Previous versions as a primary dropdown with a caret — T030",
+        "What a person agreed to, in the account area — filed as #66"
       ]
     }
   },
@@ -460,11 +475,11 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 2,
+      "used": 3,
       "max": 2
     },
     "review_cycles": {
-      "used": 2,
+      "used": 3,
       "max": 1
     },
     "design_review_cycles": {
