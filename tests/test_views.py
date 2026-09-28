@@ -9,7 +9,7 @@ import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.formats import date_format
 from mvp.menus import AppMenu
 
@@ -442,6 +442,60 @@ class TestDocumentView:
 
 
 @pytest.mark.django_db
+class TestSupersededVersionAlert:
+    """FR-010: a superseded version's page carries one alert row with a button back
+    to the version in force; the version in force shows no such alert."""
+
+    def test_a_superseded_version_shows_one_alert_row(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        content = client.get(version_address(document, first.number)).content.decode()
+
+        assert content.count('role="alert"') == 1
+
+    def test_the_alert_names_the_dates_it_was_in_force(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        first.refresh_from_db()
+
+        content = client.get(version_address(document, first.number)).content.decode()
+
+        assert date_format(timezone.localdate(first.published_at)) in content
+        assert date_format(timezone.localdate(second.published_at)) in content
+
+    def test_the_alerts_button_leads_to_the_document_page(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        content = client.get(version_address(document, first.number)).content.decode()
+
+        assert f'href="{document_address(document)}"' in content
+
+    def test_the_version_in_force_shows_no_alert(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert 'role="alert"' not in content
+        assert f'href="{document_address(document)}"' not in content
+
+    def test_the_version_in_forces_own_number_as_the_parameter_shows_no_alert_either(
+        self, client
+    ):
+        document = DocumentFactory()
+        current = published(document)
+
+        content = client.get(version_address(document, current.number)).content.decode()
+
+        assert 'role="alert"' not in content
+
+
+@pytest.mark.django_db
 class TestDocumentIndexView:
     """A visitor finds every document that has a version in force."""
 
@@ -649,6 +703,19 @@ class TestPageStrings:
 
     def test_at_least_one_page_carries_a_translatable_string(self):
         assert any(template_msgids(path) for path in PAGE_TEMPLATES)
+
+    @pytest.mark.django_db
+    def test_the_replaced_message_renders_in_german(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        address = version_address(document, first.number)
+
+        with translation.override("de"):
+            content = client.get(address).content.decode()
+
+        assert "wurde ersetzt" in content
+        assert "has been replaced" not in content
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
     def test_no_page_string_claims_compliance_or_names_a_regulation(self, path):
