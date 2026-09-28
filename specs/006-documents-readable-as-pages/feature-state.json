@@ -299,13 +299,30 @@
         },
         {
           "id": "T031",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -q (before: 10 failed, right reasons; after: 49 passed)",
+              "uv run pytest tests/test_admin.py tests/test_records.py tests/test_models.py -q (281 passed)",
+              "uv run ruff check / ruff format --check mvp_compliance/views.py mvp_compliance/urls.py tests/test_views.py (clean)",
+              "uv run mypy mvp_compliance/views.py mvp_compliance/urls.py (clean)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)"
+            ]
+          }
         },
         {
           "id": "T032",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestSupersededVersionAlert -q (before: 2 failed, right reasons; after: 5 passed)",
+              "uv run pytest tests/test_views.py -q (55 passed)",
+              "uv run ruff check / ruff format --check tests/test_views.py (clean)",
+              "curl :8021/legal/privacy-policy/?version=2026.1 -> one role=\"alert\", button href to /legal/privacy-policy/"
+            ]
+          }
         }
       ]
     },
@@ -415,8 +432,19 @@
         },
         {
           "id": "T033",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestVersionSwitcher -q (before: 6 failed, right reasons; after: 6 passed)",
+              "uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py tests/test_models.py -q (342 passed)",
+              "uv run ruff check / ruff format --check mvp_compliance/views.py tests/test_views.py (clean)",
+              "uv run mypy mvp_compliance/views.py (clean)",
+              "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, no fuzzy entries, no .mo",
+              "uv run python manage.py check (no issues)",
+              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 — switcher, alert, 404 all as expected"
+            ]
+          }
         }
       ]
     },
