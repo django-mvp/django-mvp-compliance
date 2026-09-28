@@ -74,12 +74,14 @@ class DocumentIndexView(MVPTemplateView):
 
 
 class DocumentView(VersionSubtitleMixin, MVPDetailView):
-    """The version of a document in force, at an address that never changes.
+    """The document's one canonical page: the version in force by default, or any
+    published version shown with ``?version=<number>``.
 
-    Readable by anyone (FR-005). A slug that names no document, or a document
-    with nothing published, is "not found" for everybody, signed in or not
-    (FR-007). Nothing here offers a link to edit or delete: the authoring
-    surface is the admin.
+    Readable by anyone (FR-005). A slug that names no document, a document with
+    nothing published, or a ``?version=`` value that names no published version
+    of it, is "not found" for everybody, signed in or not (FR-007, FR-008).
+    Nothing here offers a link to edit or delete: the authoring surface is the
+    admin.
     """
 
     model = Document
@@ -91,18 +93,24 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        version = self.get_version()
-        context["version"] = version
-        context["previous_versions"] = (
-            self.object.versions.published()
-            .exclude(pk=version.pk)
-            .order_by("-published_at")
-        )
+        context["version"] = self.get_version()
         return context
 
     def get_version(self) -> Version:
-        """The version in force, already fetched with the document."""
-        version: Version = self.object.current_versions[0]
+        """The version shown: named by ``?version=``, or the one in force.
+
+        One query over ``published().with_replaced_at()``, so the query count
+        stays the same whether or not the parameter is given (SC-006).
+        """
+        number = self.request.GET.get("version")
+        versions = self.object.versions.published().with_replaced_at()
+        version: Version | None
+        if number is None:
+            version = versions.filter(status=Version.Status.CURRENT).first()
+        else:
+            version = versions.filter(number=number).first()
+        if version is None:
+            raise Http404(_("No version found"))
         return version
 
     def get_page_title(self):
@@ -111,57 +119,3 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
         return [DocumentIndexView.crumb(), {"text": self.get_page_title()}]
-
-
-class VersionView(VersionSubtitleMixin, MVPDetailView):
-    """One published version of a document, at an address that never changes.
-
-    Readable by anyone (FR-005). A version that is no longer in force says it
-    was replaced, and when; the one in force says so in the document page's
-    own words. A draft has no number, so it has no address (FR-007).
-    """
-
-    model = Version
-    template_name = "mvp_compliance/version_detail.html"
-    directory: list[str] = []
-
-    def get_object(self, queryset=None) -> Version:
-        """The published version with this number, of the document with this slug.
-
-        Overrides Django's lookup, which filters on a ``slug`` that a version
-        does not have.
-        """
-        versions = (
-            Version.objects.published().with_replaced_at().select_related("document")
-        )
-        try:
-            version: Version = versions.get(
-                document__slug=self.kwargs["slug"], number=self.kwargs["number"]
-            )
-        except Version.DoesNotExist:
-            raise Http404(_("No version found")) from None
-        return version
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["document"] = self.object.document
-        return context
-
-    def get_page_title(self):
-        return self.object.document.name
-
-    def get_version(self) -> Version:
-        """The version this page is about."""
-        version: Version = self.object
-        return version
-
-    def get_breadcrumbs(self):
-        document = self.object.document
-        return [
-            DocumentIndexView.crumb(),
-            {
-                "text": document.name,
-                "href": reverse("mvp_compliance:document", args=[document.slug]),
-            },
-            {"text": _("Version %(number)s") % {"number": self.object.number}},
-        ]

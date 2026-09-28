@@ -9,7 +9,7 @@ import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
-from django.utils import timezone, translation
+from django.utils import timezone
 from django.utils.formats import date_format
 from mvp.menus import AppMenu
 
@@ -35,12 +35,17 @@ def document_address(document):
     return reverse("mvp_compliance:document", args=[document.slug])
 
 
+def version_address(document, number):
+    """The document's page showing the published version numbered ``number``."""
+    return f"{document_address(document)}?version={number}"
+
+
 def subtitle_addresses(document, first, second):
-    """The document page and the page of each version of ``document``."""
+    """The document page and the page showing each version of ``document``."""
     return [
         document_address(document),
-        reverse("mvp_compliance:version", args=[document.slug, first.number]),
-        reverse("mvp_compliance:version", args=[document.slug, second.number]),
+        version_address(document, first.number),
+        version_address(document, second.number),
     ]
 
 
@@ -95,7 +100,7 @@ class TestPageSubtitle:
 
         for address in [
             document_address(document),
-            reverse("mvp_compliance:version", args=[document.slug, second.number]),
+            version_address(document, second.number),
         ]:
             assert expected in client.get(address).content.decode()
         assert first.number != second.number
@@ -110,12 +115,9 @@ class TestPageSubtitle:
         AcceptanceFactory(user=user, version=first)
         client.force_login(user)
 
-        content = client.get(
-            reverse("mvp_compliance:version", args=[document.slug, first.number])
-        ).content.decode()
+        content = client.get(version_address(document, first.number)).content.decode()
 
         assert f"{self.line(first)} · Agreed on " in content
-        assert "replaced" in content
 
     def test_an_acceptance_of_another_version_of_the_document_is_not_shown(
         self, client
@@ -132,9 +134,7 @@ class TestPageSubtitle:
         )
         assert (
             "Agreed on"
-            not in client.get(
-                reverse("mvp_compliance:version", args=[document.slug, second.number])
-            ).content.decode()
+            not in client.get(version_address(document, second.number)).content.decode()
         )
 
     def test_another_persons_acceptance_is_not_shown(self, client):
@@ -147,16 +147,19 @@ class TestPageSubtitle:
             "Agreed on" not in client.get(document_address(document)).content.decode()
         )
 
-    @pytest.mark.parametrize("name", ["document", "version"])
+    @pytest.mark.parametrize("with_version", [False, True])
     def test_the_query_count_does_not_grow_with_versions_or_acceptances(
-        self, client, django_assert_num_queries, name
+        self, client, django_assert_num_queries, with_version
     ):
         user = UserFactory()
         client.force_login(user)
 
         def address(document, version):
-            args = [document.slug] + ([version.number] if name == "version" else [])
-            return reverse(f"mvp_compliance:{name}", args=args)
+            return (
+                version_address(document, version.number)
+                if with_version
+                else document_address(document)
+            )
 
         one = DocumentFactory()
         only = published(one)
@@ -185,93 +188,9 @@ class TestPageSubtitle:
 
 
 @pytest.mark.django_db
-class TestPreviousVersionsMenu:
-    """FR-011: earlier versions are a "Previous versions" dropdown in the page actions."""
-
-    @staticmethod
-    def menu(client, document):
-        content = client.get(document_address(document)).content.decode()
-        start = content.find("data-mvp-dropdown")
-        return content, content[start:] if start != -1 else ""
-
-    def test_every_earlier_published_version_is_listed_newest_first(self, client):
-        document = DocumentFactory()
-        first = published(document, "First wording")
-        second = published(document, "Second wording")
-        third = published(document, "Third wording")
-        for version in (first, second):
-            version.refresh_from_db()
-
-        _content, menu = self.menu(client, document)
-
-        assert "Previous versions" in menu
-        addresses = [
-            reverse("mvp_compliance:version", args=[document.slug, version.number])
-            for version in (second, first)
-        ]
-        positions = [menu.index(f'href="{address}"') for address in addresses]
-        assert positions == sorted(positions)
-        assert (
-            f'href="{reverse("mvp_compliance:version", args=[document.slug, third.number])}"'
-            not in menu
-        )
-        for version in (second, first):
-            assert (
-                f"v{version.number} - "
-                f"{date_format(timezone.localdate(version.published_at))}"
-            ) in menu
-
-    def test_a_draft_is_not_in_the_menu(self, client):
-        document = DocumentFactory()
-        published(document, "First wording")
-        published(document, "Second wording")
-        VersionFactory(document=document, markdown="Unpublished wording")
-
-        _content, menu = self.menu(client, document)
-
-        assert menu.count('href="') == 1
-
-    def test_a_document_with_one_published_version_has_no_menu(self, client):
-        document = DocumentFactory()
-        published(document)
-        VersionFactory(document=document, markdown="Unpublished wording")
-
-        content, _menu = self.menu(client, document)
-
-        assert "Previous versions" not in content
-        assert "data-mvp-dropdown" not in content
-
-    def test_the_earlier_versions_text_link_is_gone(self, client):
-        document = DocumentFactory()
-        published(document, "First wording")
-        published(document, "Second wording")
-
-        content, _menu = self.menu(client, document)
-
-        assert "Earlier versions" not in content
-
-    def test_the_query_count_does_not_grow_with_the_versions_published(
-        self, client, django_assert_num_queries
-    ):
-        one = DocumentFactory()
-        published(one)
-        two = DocumentFactory()
-        published(two, "First wording")
-        published(two, "Second wording")
-        many = DocumentFactory()
-        for n in range(6):
-            published(many, f"Wording {n}")
-        client.get(document_address(two))  # warm caches
-
-        with CaptureQueriesContext(connection) as single:
-            client.get(document_address(two))
-        with django_assert_num_queries(len(single)):
-            client.get(document_address(many))
-
-
-@pytest.mark.django_db
 class TestDocumentView:
-    """A visitor reads the version in force at an address that never changes."""
+    """A visitor reads the version in force, or any published version by number, at
+    one canonical address (FR-001, FR-002)."""
 
     def test_anonymous_visitor_reads_the_stored_html_byte_for_byte(self, client):
         document = DocumentFactory(slug="privacy-policy")
@@ -413,100 +332,67 @@ class TestDocumentView:
         assert "/change/" not in content
         assert "/delete/" not in content
 
-
-def version_address(version):
-    return reverse(
-        "mvp_compliance:version", args=[version.document.slug, version.number]
-    )
-
-
-@pytest.mark.django_db
-class TestVersionView:
-    """A visitor reads any published version at its own permanent address."""
-
-    def test_a_superseded_version_shows_its_stored_html_and_says_it_was_replaced(
+    def test_the_version_parameter_shows_that_published_versions_stored_html(
         self, client
     ):
-        document = DocumentFactory(slug="privacy-policy")
+        document = DocumentFactory()
         first = published(document, "First **bold** wording")
         second = published(document, "Second wording")
-        first.refresh_from_db()
-        second.refresh_from_db()
 
-        response = client.get(version_address(first))
+        content = client.get(version_address(document, first.number)).content.decode()
 
-        content = response.content.decode()
-        assert response.status_code == 200
         assert first.html in content
         assert second.html not in content
-        assert "replaced" in content
-        assert date_format(timezone.localdate(first.published_at)) in content
-        assert date_format(timezone.localdate(second.published_at)) in content
-        assert reverse("mvp_compliance:document", args=[document.slug]) in content
 
-    def test_the_current_version_says_it_is_in_force_as_the_document_page_does(
+    def test_the_version_in_forces_number_as_the_parameter_shows_the_same_page(
         self, client
     ):
         document = DocumentFactory()
         published(document, "First wording")
         current = published(document, "Second wording")
-        current.refresh_from_db()
 
-        document_page = client.get(
-            reverse("mvp_compliance:document", args=[document.slug])
+        without_param = client.get(document_address(document)).content.decode()
+        with_param = client.get(
+            version_address(document, current.number)
         ).content.decode()
-        response = client.get(version_address(current))
 
-        content = response.content.decode()
-        assert response.status_code == 200
-        assert current.html in content
-        assert "in force" in content
-        assert "replaced" not in content
-        assert f"v{current.number} - " in document_page
-        assert f"v{current.number} - " in content
+        assert without_param == with_param
 
-    def test_a_later_publication_leaves_a_versions_address_and_wording_alone(
-        self, client
-    ):
+    def test_a_later_publication_leaves_an_earlier_versions_wording_alone(self, client):
         document = DocumentFactory()
         first = published(document, "First wording")
-        address = version_address(first)
+        address = version_address(document, first.number)
         before = client.get(address).content.decode()
-        assert "replaced" not in before
+        assert first.html in before
 
         second = published(document, "Second wording")
-        after = client.get(address)
+        after = client.get(address).content.decode()
 
-        assert version_address(first) == address
-        assert after.status_code == 200
-        assert first.html in after.content.decode()
-        assert second.html not in after.content.decode()
-        assert "replaced" in after.content.decode()
+        assert first.html in after
+        assert second.html not in after
 
-    def test_a_number_belonging_to_another_document_is_not_found(self, client):
+    def test_a_version_parameter_belonging_to_another_document_is_not_found(
+        self, client
+    ):
         mine = DocumentFactory(slug="mine")
         theirs = DocumentFactory(slug="theirs")
         published(mine)
         published(theirs, "First wording")
         other = published(theirs, "Second wording")
 
-        response = client.get(
-            reverse("mvp_compliance:version", args=["mine", other.number])
-        )
+        response = client.get(version_address(mine, other.number))
 
         assert response.status_code == 404
 
-    def test_a_number_that_was_never_published_is_not_found(self, client):
+    def test_a_version_parameter_that_was_never_published_is_not_found(self, client):
         document = DocumentFactory()
         published(document)
 
-        response = client.get(
-            reverse("mvp_compliance:version", args=[document.slug, "1999.1"])
-        )
+        response = client.get(version_address(document, "1999.1"))
 
         assert response.status_code == 404
 
-    def test_a_draft_is_unreachable_by_number_for_everybody(
+    def test_a_number_no_version_has_is_not_found_for_everybody(
         self, client, django_user_model
     ):
         document = DocumentFactory()
@@ -520,93 +406,39 @@ class TestVersionView:
         next_number = (
             f"{first.number.split('.')[0]}.{int(first.number.split('.')[1]) + 1}"
         )
-        response = client.get(
-            reverse("mvp_compliance:version", args=[document.slug, next_number])
-        )
 
         assert draft.number is None
-        assert response.status_code == 404
+        assert client.get(version_address(document, next_number)).status_code == 404
 
-    def test_a_document_with_only_drafts_has_no_version_pages(self, client):
+    def test_a_document_with_only_drafts_has_no_version_parameter_page(self, client):
         document = DocumentFactory()
         VersionFactory(document=document)
 
-        response = client.get(
-            reverse("mvp_compliance:version", args=[document.slug, "2026.1"])
-        )
+        response = client.get(version_address(document, "2026.1"))
 
         assert response.status_code == 404
 
-    def test_the_page_renders_in_the_shell_and_reads_the_version_on_its_own(
-        self, client
-    ):
-        document = DocumentFactory(name="Privacy policy")
-        version = published(document)
-
-        response = client.get(version_address(version))
-
-        names = [template.name for template in response.templates]
-        assert names[0] == "mvp_compliance/version_detail.html"
-        assert "page_view.html" in names
-        assert "mvp/base.html" in names
-        content = response.content.decode()
-        assert "Privacy policy" in content
-        assert f"v{version.number} - " in content
-        assert response.context["directory"] == {}
-
-    def test_the_breadcrumb_trail_links_the_document_then_names_the_version(
-        self, client
-    ):
-        document = DocumentFactory(name="Privacy policy")
-        version = published(document)
-
-        response = client.get(version_address(version))
-
-        assert response.context["page"]["breadcrumbs"] == [
-            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
-            {
-                "text": "Privacy policy",
-                "href": reverse("mvp_compliance:document", args=[document.slug]),
-            },
-            {"text": f"Version {version.number}"},
-        ]
-
-    def test_nothing_renders_markdown_while_the_page_is_served(self, client):
+    @pytest.mark.parametrize("number", ["", "not-a-number"])
+    def test_a_malformed_version_parameter_is_not_found(self, client, number):
         document = DocumentFactory()
-        version = published(document, "Some **bold** wording")
+        published(document)
 
-        with patch.object(
-            MarkdownRenderer, "render", side_effect=AssertionError("rendered")
-        ):
-            response = client.get(version_address(version))
+        response = client.get(version_address(document, number))
 
-        assert response.status_code == 200
-        assert version.html in response.content.decode()
+        assert response.status_code == 404
 
-    def test_markup_in_a_document_name_is_escaped(self, client):
-        document = DocumentFactory(name="<script>alert(1)</script>")
-        version = published(document)
-
-        content = client.get(version_address(version)).content.decode()
-
-        assert "<script>alert(1)</script>" not in content
-        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
-
-    def test_the_query_count_does_not_grow_with_the_versions_published(
+    def test_the_query_count_is_the_same_with_or_without_the_parameter(
         self, client, django_assert_num_queries
     ):
-        one = DocumentFactory()
-        only = published(one)
-        many = DocumentFactory()
-        first = published(many)
-        for n in range(5):
-            published(many, f"Wording {n}")
-        client.get(version_address(only))  # warm caches
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        client.get(document_address(document))  # warm caches
 
-        with CaptureQueriesContext(connection) as single:
-            client.get(version_address(only))
-        with django_assert_num_queries(len(single)):
-            client.get(version_address(first))
+        with CaptureQueriesContext(connection) as without_param:
+            client.get(document_address(document))
+        with django_assert_num_queries(len(without_param)):
+            client.get(version_address(document, first.number))
 
 
 @pytest.mark.django_db
@@ -692,6 +524,18 @@ class TestBreadcrumbTrails:
 
         assert response.context["page"]["breadcrumbs"] == [{"text": "Legal documents"}]
 
+    def test_the_trail_is_unchanged_by_the_version_parameter(self, client):
+        document = DocumentFactory(name="Privacy policy")
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        response = client.get(version_address(document, first.number))
+
+        assert response.context["page"]["breadcrumbs"] == [
+            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
+            {"text": "Privacy policy"},
+        ]
+
 
 PROJECT_TEMPLATES = Path(__file__).parent / "project_templates"
 
@@ -724,15 +568,10 @@ class TestTemplateOverride:
     def test_a_page_with_no_project_template_still_renders_the_packaged_one(
         self, client, project_templates
     ):
-        document = DocumentFactory()
-        version = published(document)
-
-        response = client.get(
-            reverse("mvp_compliance:version", args=[document.slug, version.number])
-        )
+        response = client.get(reverse("mvp_compliance:index"))
 
         names = [template.name for template in response.templates]
-        assert names[0] == "mvp_compliance/version_detail.html"
+        assert names[0] == "mvp_compliance/document_index.html"
 
 
 @pytest.mark.django_db
@@ -744,12 +583,12 @@ class TestNoMenuEntry:
         document = DocumentFactory()
         version = published(document)
 
-        for name, args in [
-            ("index", []),
-            ("document", [document.slug]),
-            ("version", [document.slug, version.number]),
+        for address in [
+            reverse("mvp_compliance:index"),
+            reverse("mvp_compliance:document", args=[document.slug]),
+            version_address(document, version.number),
         ]:
-            client.get(reverse(f"mvp_compliance:{name}", args=args))
+            client.get(address)
 
         assert [child.name for child in AppMenu.children] == before
 
@@ -795,11 +634,10 @@ class TestPageStrings:
     """SC-008, FR-019, FR-020: every string the pages show is translatable, and none
     claims compliance."""
 
-    def test_the_page_templates_are_the_three_pages(self):
+    def test_the_page_templates_are_the_two_pages(self):
         assert [path.name for path in PAGE_TEMPLATES] == [
             "document_detail.html",
             "document_index.html",
-            "version_detail.html",
         ]
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
@@ -807,22 +645,10 @@ class TestPageStrings:
         msgids = template_msgids(path)
         catalog = {msgid for msgid, _msgstr in catalog_entries() if msgid}
 
-        assert msgids
         assert msgids <= catalog
 
-    @pytest.mark.django_db
-    def test_the_version_in_force_sentence_renders_in_german(self, client):
-        document = DocumentFactory()
-        version = published(document)
-        address = reverse(
-            "mvp_compliance:version", args=[document.slug, version.number]
-        )
-
-        with translation.override("de"):
-            content = client.get(address).content.decode()
-
-        assert "Dies ist die geltende Version." in content
-        assert "This is the version in force." not in content
+    def test_at_least_one_page_carries_a_translatable_string(self):
+        assert any(template_msgids(path) for path in PAGE_TEMPLATES)
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
     def test_no_page_string_claims_compliance_or_names_a_regulation(self, path):
@@ -840,8 +666,8 @@ class TestPageStrings:
         addresses = [
             reverse("mvp_compliance:index"),
             reverse("mvp_compliance:document", args=[current.slug]),
-            reverse("mvp_compliance:version", args=[current.slug, replaced.number]),
-            reverse("mvp_compliance:version", args=[current.slug, earlier.number]),
+            version_address(current, replaced.number),
+            version_address(current, earlier.number),
         ]
 
         for address in addresses:

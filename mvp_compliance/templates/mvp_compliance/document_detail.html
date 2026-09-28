@@ -1,18 +1,5 @@
 {% extends "page_view.html" %}
 {% load i18n %}
-{% block page.actions %}
-  {% if previous_versions %}
-    <c-dropdown halign="end" variant="primary" icon="chevron-down" reverse text="{% trans "Previous versions" %}">
-      <ul class="menu menu-sm w-full">
-        {% for previous in previous_versions %}
-          <li>
-            <a href="{% url 'mvp_compliance:version' document.slug previous.number %}">{% blocktranslate with number=previous.number date=previous.published_at|date %}v{{ number }} - {{ date }}{% endblocktranslate %}</a>
-          </li>
-        {% endfor %}
-      </ul>
-    </c-dropdown>
-  {% endif %}
-{% endblock page.actions %}
 {% block page.content %}
   <div class="prose max-w-none">{{ version.html|safe }}</div>
 {% endblock page.content %}
