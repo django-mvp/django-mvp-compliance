@@ -309,3 +309,25 @@ with the caret after its text. plan.md brought to the current design.
   alert); a new `test_at_least_one_page_carries_a_translatable_string` keeps that sanity check at
   the module level instead — deviation, not one of the authorised removals, logged because it
   wasn't literally exercising the removed view/URL/converter.
+
+## 2026-09-28T20:23Z · Implementer US2 · T032
+
+- Did: `document_detail.html` shows one `<c-alert variant="warning" class="alert-horizontal">` row
+  when `version.replaced_at` is set: the replaced message with the dates it was in force in a
+  `<span>`, then a `btn btn-sm` "View current version" link to the document's plain address. No
+  alert for the version in force, whether reached with no parameter or with its own number as
+  `?version=`. Both English msgids the alert needs ("This version has been replaced..." and "View
+  current version") already existed in the en catalog from the removed `version_detail.html` and
+  the admin, so no catalog gap opened; regenerating it to refresh the now-stale location comments
+  is T033's. `tests/locale/de/LC_MESSAGES/django.po` gains the replaced message's German
+  translation (recompiled). New `TestSupersededVersionAlert` in `tests/test_views.py` asserts the
+  alert row's presence/absence by `role="alert"`, the button's `href`, and the dates named — never
+  the wording. `TestPageStrings` regains a German-rendering test, now anchored on the replaced
+  message instead of the removed "This is the version in force." sentence.
+- Verified: `uv run pytest tests/test_views.py -q` — 55 passed. `uv run ruff check
+  tests/test_views.py` and `ruff format --check` — clean. Confirmed on the running demo (port
+  8021): `/legal/privacy-policy/?version=2026.1` renders one `role="alert"` and
+  `href="/legal/privacy-policy/"`; `/legal/privacy-policy/` and `/legal/terms-of-use/` (single
+  published version) render none; `/legal/privacy-policy/?version=9999.9` still answers 404.
+- Next: T033.
+- Watch: `document_detail.html`'s `page.actions` is still empty — the switcher is T033's.
