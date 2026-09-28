@@ -95,3 +95,53 @@ Clarifications). The deleted tests pinned a page that no longer exists; keeping 
 code. Every deletion is named in the FS-006/US3 completion report's `deviations`, per the brief.
 
 **ADR:** none — recorded here and in the task brief that authorised it.
+
+## D7 — The third walkthrough removes the version page and its tests
+
+**Ambiguous**: T031's brief authorised deleting or rewriting every pre-existing test that exercised
+`VersionView`, the `mvp_compliance:version` URL name or `VersionNumberConverter`, and every
+assertion about the old "Previous versions" label or behaviour (no menu on a single-version
+document, only earlier versions listed) — tests this feature's own earlier tasks (T011, T027, T030)
+wrote and that were passing.
+
+**Chosen**: removed `TestVersionView` and `TestPreviousVersionsMenu` in full; rewrote
+`subtitle_addresses`/`version_address` in `tests/test_views.py` to build `?version=` addresses
+instead of reversing the removed URL name; rewrote every test that reversed
+`mvp_compliance:version` directly (`TestPageSubtitle`'s query-count test, `TestTemplateOverride`'s
+no-override test, `TestNoMenuEntry`'s menu sweep, `TestPageStrings`'s compliance-wording sweep and
+German-rendering test) to use the document address with `?version=` instead; deleted
+`tests/test_urls.py` (it tested only the removed converter). The content those old tests
+demonstrated — a superseded version's stored HTML, an earlier version's wording surviving a later
+publication, 404 for another document's number, a never-published number and a draft's would-be
+number — is ported into new `TestDocumentView` methods addressed by `?version=`.
+
+**Why defensible**: the maintainer ruled at the third walkthrough that there is one canonical page
+per document, the version chosen by `?version=`, and no separate page or address for a version
+(spec.md Clarifications). The deleted and rewritten tests pinned a URL, view and label that no
+longer exist; keeping them unrewritten would leave the suite red for reasons unrelated to any real
+regression. Every deletion is named in the FS-006/US2 completion report's `deviations`, per the
+brief.
+
+**ADR:** none — recorded here and in the task brief that authorised it.
+
+## D8 — One page-strings sanity check drops its per-template assertion
+
+**Ambiguous**: `TestPageStrings.test_every_string_in_a_page_template_is_in_the_english_catalog`
+asserted `msgids` non-empty for every page template, as well as `msgids <= catalog`. Between T031
+(which removes the old "Previous versions" dropdown, `document_detail.html`'s only translatable
+content at the time) and T032 (which adds the replaced-version alert), `document_detail.html`
+legitimately carries no translatable string for one commit.
+
+**Chosen**: dropped `assert msgids` from the per-template, per-path test (it still asserts
+`msgids <= catalog`, which holds vacuously for an empty set and is the only claim SC-008 actually
+makes) and added a separate `test_at_least_one_page_carries_a_translatable_string`, asserting the
+same sanity property — that the extraction regex is finding real strings somewhere — across all
+page templates together rather than each one individually.
+
+**Why defensible**: the per-template non-empty assertion was never a stated requirement (FR-019,
+SC-008); it was an incidental strictness that happened to hold while every existing page carried a
+menu or a sentence. Nothing in the spec says every page must always carry translatable text. This
+change is not one of T031's authorised removals in the strict sense (it does not exercise the
+removed view, URL or converter directly), so it is logged here rather than folded silently into D7.
+
+**ADR:** none — recorded here and in the T031 completion report's `deviations`.
