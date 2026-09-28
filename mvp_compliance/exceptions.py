@@ -1,22 +1,21 @@
 """Exceptions this package raises for invariant breaches.
 
-D9: neither subclasses Django's ``ValidationError`` — that is a message for a
-form, and swallowing an invariant breach into a field error would be the
-silent discard FR-012 forbids.
+None subclasses ``ValidationError``, so a breach is never swallowed into a form
+field error (docs/adr/0003-refusals-raise-package-exceptions.md).
 """
 
 
 class PublishedVersionError(Exception):
-    """Raised for an attempt to change or delete a published version (FR-011, FR-014)."""
+    """Raised for an attempt to change or delete a published version."""
 
 
 class PublishError(Exception):
-    """Raised when publishing is refused: already published, or nothing to publish (FR-010)."""
+    """Raised when publishing is refused."""
 
 
 class RecordedAcceptanceError(Exception):
-    """Raised for an attempt to change or delete an acceptance (FR-004, FR-006)."""
+    """Raised for an attempt to change or delete an acceptance."""
 
 
 class RecordError(Exception):
-    """Raised when recording an acceptance is refused: the version is a draft, or the user has no account to name (FR-003)."""
+    """Raised when recording an acceptance is refused."""

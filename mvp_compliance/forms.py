@@ -10,8 +10,8 @@ from mvp_compliance.widgets import MarkdownEditorWidget
 class VersionForm(forms.ModelForm):
     """Everything a compliance editor may supply for a version.
 
-    ``Meta.fields`` is an explicit allow list (FR-005): ``html`` is evidence
-    ``Version.publish()`` produces (Article XIII) and is never postable, and
+    ``Meta.fields`` is an explicit allow list: ``html`` is evidence
+    ``Version.publish()`` produces (Article XII) and is never postable, and
     ``number``, ``status`` and ``published_at`` are already ``editable=False``
     on the model.
     """
@@ -23,12 +23,12 @@ class VersionForm(forms.ModelForm):
 
 
 class DisclosureForm(forms.Form):
-    """Names who to produce everything held about (plan.md Design -> Naming a person).
+    """Names who to produce everything held about.
 
     Free text rather than a picker: a removed account has no row left to
-    choose, so the only way to ask about that person is the identifier
-    their records still carry (research.md R3). Not bound to a model —
-    ``Disclosure`` carries no fields of its own to post.
+    choose, so the only way to ask about that person is the identifier their
+    records still carry. Not bound to a model, because ``Disclosure`` carries
+    no fields of its own to post.
     """
 
     subject = forms.CharField(
