@@ -8,8 +8,8 @@ defensible.
 
 **Ambiguous**: an account being closed or tidied up is not an erasure request, but Django's
 ordinary behaviour when an account goes is that things attached to it go with it. Two readings are
-defensible. Keeping the records honours Article XII, which says an acceptance is never deleted.
-Removing them honours Article XV, because a closed account otherwise leaves personal data behind
+defensible. Keeping the records honours Article XI, which says an acceptance is never deleted.
+Removing them honours Article XIV, because a closed account otherwise leaves personal data behind
 indefinitely with nobody watching it.
 
 **Chosen**: a setting the host project controls, defaulting to the records surviving.
@@ -38,7 +38,7 @@ people accept what is in force, so anything else is a mistake to be refused.
 **Why defensible**: the race is real rather than theoretical. A person opens the document, reads
 it, and a new version is published before they submit. Refusing their acceptance either throws away
 something that happened or, worse, records them against wording they never read. Recording what
-they actually saw is the only answer consistent with Article XIII, where the stored output is the
+they actually saw is the only answer consistent with Article XII, where the stored output is the
 evidence. The safety property is preserved elsewhere: what a person has *outstanding* is measured
 against the version in force, so that person is simply asked again, which is the correct outcome.
 
@@ -94,7 +94,7 @@ implementation.
 **Why defensible**: this is the difference between the setting doing what it says and appearing to.
 It is a property of the record rather than a design, so it belongs in the specification, while the
 mechanism is exactly the kind of decision that should be made with the data model in front of you.
-Article XV bears on it directly, because whatever is held for this purpose is personal data that
+Article XIV bears on it directly, because whatever is held for this purpose is personal data that
 outlives the account, and it has to be justified where it is defined.
 
 **ADR:** docs/adr/0008-an-acceptance-outlives-the-account-it-names.md — not separable from the decision that a record outlives its account: a record that survives and cannot say whose it is would be evidence of nothing.
@@ -142,7 +142,7 @@ name reattaches a person's old records to a recreated account with the same name
 own edge case says must not happen — and it fails by looking correct. A random per-record identifier
 survives but groups nothing, so issue #21 could not produce a person's records as a set and issue #22
 could not erase them. The account's primary key is stable for the life of the account, is new for a
-recreated one, and is already shared by every record belonging to that person. Article XV is
+recreated one, and is already shared by every record belonging to that person. Article XIV is
 satisfied by it being the least that can be held and still answer whose record this is, and the
 justification sits in the field's own `help_text`.
 
@@ -176,7 +176,7 @@ shorter than setting the field.
 **Chosen**: the recording method sets `accepted_at`.
 
 **Why defensible**: `auto_now_add` makes the field a property of the write rather than of the fact,
-and it rewrites on every save — the exact behaviour Article XII forbids for a row that is finished
+and it rewrites on every save — the exact behaviour Article XI forbids for a row that is finished
 the moment it exists. Setting it once, where the fact is recorded, also means the one field that says
 *when* can be supplied by a caller importing history it already holds, should issue #22's neighbour
 ever be built.
@@ -378,7 +378,7 @@ setting is honoured — removing the setting check from `record()` entirely left
 That is the wrong test to rest SC-008 on, because the case it leaves uncovered is the ordinary one: a
 sign-in flow has a request to hand and the project has not asked for the address to be kept. A
 regression there would collect personal data the project never asked for, silently, against
-Article XV, and nothing would have failed. The story disclosed that the test passed by construction;
+Article XIV, and nothing would have failed. The story disclosed that the test passed by construction;
 what it did not draw out was which case therefore went untested.
 
 **Revisit if**: nothing. The general rule is the one already recorded about choices: a test that

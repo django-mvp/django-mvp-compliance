@@ -92,7 +92,7 @@ the document above it, which would take the versions with it.
 document holding any.
 
 **Why defensible**: an immutability rule with a cascade underneath it is not an immutability rule.
-This closes the loophole rather than adding a policy, and it follows from Article XII rather than
+This closes the loophole rather than adding a policy, and it follows from Article XI rather than
 extending it. A document created by mistake and never published can still be deleted, because
 nothing has been put in front of anybody.
 

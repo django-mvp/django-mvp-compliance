@@ -68,12 +68,8 @@ DATABASES = {
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
 CRISPY_TEMPLATE_PACK = "tailwind"
 
-# django-mvp's error pages name icons, and an unconfigured renderer makes
-# rendering one raise rather than return a page. Without this, a test that
-# asserts a permission refusal gets ImproperlyConfigured instead of the 403 it
-# is asserting on — the refusal happened, and the assertion could not see it.
-# The pack is django-mvp's own, which is what a host project installing it
-# would use.
+# django-mvp's error pages name icons, and without a renderer a refused request
+# raises ImproperlyConfigured instead of returning its 403.
 EASY_ICONS = {
     "default": {
         "renderer": "easy_icons.renderers.ProviderRenderer",

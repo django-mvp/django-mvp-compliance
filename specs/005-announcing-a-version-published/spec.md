@@ -292,6 +292,6 @@ confirm the override is used.
 - A signal carries no request, so the site's address for the admin link comes from the host project.
   How it supplies it is a planning question.
 - The package ships an English catalog only, as for every other string.
-- The publisher is new personal data about a member of staff. Under Article XV it ships with a
+- The publisher is new personal data about a member of staff. Under Article XIV it ships with a
   CHANGELOG entry naming it in plain language.
 - FS-001 and FS-002 are delivered, and this spec is written against them as they stand on main.

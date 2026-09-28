@@ -140,7 +140,7 @@ The one-document question (FR-011) is the same queryset narrowed to one primary 
 second implementation of the rule. Two expressions of "outstanding" would drift, and the one that
 drifted would be the one R4 relies on.
 
-`django_assert_num_queries` is how the suite holds the bound, per Article X — a counted assertion
+`django_assert_num_queries` is how the suite holds the bound, per section 4 of the testing standard — a counted assertion
 rather than wall-clock timing, so it stays honest on a loaded machine.
 
 ## R5 — What identifies a person once the account is gone
@@ -162,7 +162,7 @@ rows that share no value.
 
 **The account's primary key, copied onto the record when it is written.** This is what the plan
 uses. It is stable for the life of the account, a recreated account gets a new one, and it is the
-value every one of this person's records already shares. Article XV asks that a field which could
+value every one of this person's records already shares. Article XIV asks that a field which could
 re-identify a person is justified where it is defined, and this one is: it is the least that can be
 held and still answer whose record this is.
 
@@ -173,7 +173,7 @@ the point of the column is that it outlives the row it refers to.
 
 ## R6 — Where a request came from, and why the package will not guess
 
-FR-016 lets a project hold more than the three facts, and Article XV names an IP address as the
+FR-016 lets a project hold more than the three facts, and Article XIV names an IP address as the
 example. Reading one is a question with a wrong answer that looks right.
 
 `request.META["REMOTE_ADDR"]` is the address the connection came from. Behind a proxy or a load

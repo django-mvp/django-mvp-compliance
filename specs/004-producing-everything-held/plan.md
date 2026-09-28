@@ -38,7 +38,7 @@ dataclass, a proxy model, a `ModelAdmin`, a form and two templates, all of them 
 no table, no column, no data.
 
 **Testing**: pytest with pytest-django, `tests/settings.py`, an in-memory SQLite database.
-`factory_boy` factories per Article X, `django_assert_num_queries` for the bound in SC-008, and the
+`factory_boy` factories per section 4 of the testing standard, `django_assert_num_queries` for the bound in SC-008, and the
 `client` fixture against real users for every route assertion — a `ModelAdmin` method called
 directly proves nothing about what a request receives.
 
@@ -47,8 +47,8 @@ directly proves nothing about what a request receives.
 **Project Type**: installable Django application. This feature has a surface a person sees, so it
 is walked through on the demo project before the merge gate.
 
-**Constraints**: Article XIII (the stored output is the evidence; never re-render), Article XIV (the
-answer states what it covers and names no regulation), Article XV (nothing new is stored, and the
+**Constraints**: Article XII (the stored output is the evidence; never re-render), Article XIII (the
+answer states what it covers and names no regulation), Article XIV (nothing new is stored, and the
 one optional field FS-003 holds is disclosed rather than hidden), Article II/III (no registry, no
 hook, no settings object for a feature with no settings).
 
@@ -124,9 +124,9 @@ README.md                # + the page, and a link to docs/disclosure.md
 CHANGELOG.md             # + the Added entry
 ```
 
-**Structure Decision**: `records.py` is a new module rather than more of `models.py`. Article XI
+**Structure Decision**: `records.py` is a new module rather than more of `models.py`. Article X
 puts behaviour with the state it belongs to, and this behaviour belongs to no row: it reads three
-models and returns frozen values that are not models at all. Article X then gives it
+models and returns frozen values that are not models at all. Section 4 of the testing standard then gives it
 `tests/test_records.py`, mirroring it.
 
 ## Design
@@ -142,7 +142,7 @@ Three frozen dataclasses in `mvp_compliance/records.py`, none of them a model:
 | `document` | `str` | FR-003. The document's name as it stands now — the name is the document's lasting identity and is not versioned |
 | `version` | `int` | FR-003. `Version.number`, which the package assigns |
 | `accepted_at` | `datetime` | FR-003 |
-| `wording` | `str` | FR-007, FR-008, FR-009. `Version.html`, read as stored at publication. Never produced again (FR-010, Article XIII) |
+| `wording` | `str` | FR-007, FR-008, FR-009. `Version.html`, read as stored at publication. Never produced again (FR-010, Article XII) |
 | `ip_address` | `str \| None` | `research.md` R8. Present only where the record holds one, so a site that never turned FS-003's setting on shows nothing and records written before it was turned on look exactly as they did |
 
 **`Section`** — one kind of record the package holds about a person.

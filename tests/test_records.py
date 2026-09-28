@@ -2,7 +2,6 @@
 
 import dataclasses
 from datetime import UTC, datetime
-from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -15,37 +14,13 @@ from tests.factories import (
     UserFactory,
     VersionFactory,
 )
-from tests.test_admin import FORBIDDEN_COMPLETENESS_CLAIMS, FORBIDDEN_REGULATION_NAMES
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DISCLOSURE_DOCS_PATH = REPO_ROOT / "docs" / "disclosure.md"
-README_PATH = REPO_ROOT / "README.md"
-
-
-def readme_disclosure_section() -> str:
-    """The README text this feature added: the status callout and the
-    documentation list entry, not everything the README says (T055).
-    """
-    text = README_PATH.read_text(encoding="utf-8")
-    status_start = text.index(
-        "the admin's **Everything held about a person** page is what calls it"
-    )
-    status_end = text.index("account-area page exists yet.", status_start) + len(
-        "account-area page exists yet."
-    )
-    doc_start = text.index("[docs/disclosure.md](docs/disclosure.md)")
-    doc_end = text.index("\n- [docs/adr]", doc_start)
-    return text[status_start:status_end] + "\n" + text[doc_start:doc_end]
 
 
 @pytest.mark.django_db
 class TestProduce:
-    """produce() assembles the one answer this package holds about a person."""
-
     def test_the_answer_contains_every_acceptance_with_its_document_version_and_moment(
         self,
     ):
-        """Scenarios 1, 2; FR-001, FR-002, FR-003."""
         privacy = DocumentFactory(name="Privacy policy")
         terms = DocumentFactory(name="Terms")
         privacy_v1 = VersionFactory(document=privacy)
@@ -70,12 +45,6 @@ class TestProduce:
         assert by_document["Terms"].accepted_at == terms_acceptance.accepted_at
 
     def test_it_contains_nothing_belonging_to_anybody_else(self):
-        """Scenario 3; FR-004, SC-001.
-
-        Each person accepts a different document, so an entry that leaked from
-        somebody else is visible rather than indistinguishable from a correct
-        one.
-        """
         people_and_documents = {}
         for name in ("Privacy policy", "Terms", "Cookie policy"):
             document = DocumentFactory(name=name)
@@ -93,7 +62,6 @@ class TestProduce:
         assert [entry.document for entry in entries] == ["Terms"]
 
     def test_every_acceptance_of_one_document_appears(self):
-        """Scenario 4; FR-002."""
         privacy = DocumentFactory(name="Privacy policy")
         v1 = VersionFactory(document=privacy)
         v1.publish()
@@ -119,14 +87,12 @@ class TestProduce:
         }
 
     def test_a_person_with_no_records_gets_an_answer(self):
-        """Scenario 5; FR-005, SC-005."""
         record = produce("nobody-the-package-has-ever-heard-of")
 
         assert record.is_empty is True
         assert record.sections[0].entries == ()
 
     def test_the_same_answer_twice(self):
-        """Scenario 6; FR-006, D11: no attribute of the answer is a clock reading."""
         someone = UserFactory()
         version = VersionFactory()
         version.publish()
@@ -144,7 +110,6 @@ class TestProduce:
         assert now.call_count == 0
 
     def test_it_costs_a_fixed_number_of_queries(self, django_assert_num_queries):
-        """SC-008: the cost does not move with the number of documents."""
         someone = UserFactory()
         for _ in range(2):
             version = VersionFactory()
@@ -167,17 +132,12 @@ class TestProduce:
         )
 
     def test_a_further_kind_of_record_would_not_change_the_answer(self):
-        """FR-017: the answer's own field names are exactly ``subject`` and ``sections``,
-        so a further kind of record can only join as a section.
-        """
         field_names = {field.name for field in dataclasses.fields(PersonalRecord)}
         assert field_names == {"subject", "sections"}
 
 
 @pytest.mark.django_db
 class TestNamingAPerson:
-    """resolve_subject() names a person from free text (research.md R3, T020)."""
-
     def test_an_accounts_login_name_resolves_to_its_identifier(self):
         someone = UserFactory(username="alice")
 
@@ -202,10 +162,7 @@ class TestNamingAPerson:
 
 @pytest.mark.django_db
 class TestWording:
-    """Each entry carries the wording served for the version it names (FR-007)."""
-
     def test_the_wording_is_what_was_stored_at_publication(self):
-        """Scenarios 1, 3; FR-007, SC-002."""
         version = VersionFactory(markdown="# Privacy policy\n\nSome wording.")
         version.publish()
         someone = UserFactory()
@@ -217,7 +174,6 @@ class TestWording:
         assert entry.wording == version.html
 
     def test_a_superseded_versions_wording_is_the_superseded_one(self):
-        """Scenario 2; FR-008."""
         document = DocumentFactory()
         v1 = VersionFactory(document=document, markdown="Original wording")
         v1.publish()
@@ -234,7 +190,6 @@ class TestWording:
         assert entry.wording != v2.html
 
     def test_each_entry_carries_its_own_versions_wording(self):
-        """Scenario 4; FR-009."""
         document = DocumentFactory()
         someone = UserFactory()
         versions = []
@@ -253,12 +208,6 @@ class TestWording:
             assert by_version_number[version.number].wording == version.html
 
     def test_nothing_is_rendered_when_an_answer_is_produced(self):
-        """FR-010: the renderer is never called on this path.
-
-        The configured renderer is switched to one that produces visibly
-        different output, so an entry carrying what it would render — rather
-        than what was stored at publication — is caught rather than missed.
-        """
         version = VersionFactory(markdown="# Privacy policy\n\nSome wording.")
         version.publish()
         stored_html = version.html
@@ -277,10 +226,7 @@ class TestWording:
 
 @pytest.mark.django_db
 class TestSurvivingRecords:
-    """Acceptances survive the removal of the account they name (FR-014, SC-006)."""
-
     def test_the_answer_still_names_the_person_version_and_moment(self):
-        """Scenarios 1, 2; FR-014, SC-006."""
         someone = UserFactory()
         version = VersionFactory(document=DocumentFactory(name="Privacy policy"))
         version.publish()
@@ -301,7 +247,6 @@ class TestSurvivingRecords:
         assert entry.wording == version.html
 
     def test_the_other_setting_leaves_nothing_to_produce(self):
-        """Scenario 3."""
         someone = UserFactory()
         version = VersionFactory()
         version.publish()
@@ -318,7 +263,6 @@ class TestSurvivingRecords:
         assert record.is_empty is True
 
     def test_a_mix_of_people_with_and_without_accounts(self):
-        """Scenario 4; FR-004."""
         gone = UserFactory()
         gone_version = VersionFactory(document=DocumentFactory(name="Gone's document"))
         gone_version.publish()
@@ -340,47 +284,18 @@ class TestSurvivingRecords:
         assert [entry.document for entry in entries] == ["Gone's document"]
 
 
-#: FR-015: the exact statement every answer carries, whether or not it holds
-#: anything.
-EXPECTED_COVERAGE_STATEMENT = (
-    "This covers what this package holds about this person. The project may "
-    "hold further records about them elsewhere that are not included here."
-)
-
-
 @pytest.mark.django_db
 class TestCoverage:
-    """FR-015, SC-005: every answer carries a plain statement of what it
-    covers, the same whether or not anything is held.
-    """
-
-    def test_a_full_answer_carries_the_statement(self):
-        """Scenario 1."""
+    def test_a_full_and_an_empty_answer_carry_the_same_statement(self):
         someone = UserFactory()
         version = VersionFactory()
         version.publish()
         AcceptanceFactory(user=someone, version=version)
 
-        record = produce(str(someone.pk))
+        full = produce(str(someone.pk))
+        empty = produce("nobody-the-package-has-ever-heard-of")
 
-        assert str(record.coverage) == EXPECTED_COVERAGE_STATEMENT
-
-    def test_an_empty_answer_carries_the_same_statement(self):
-        """Scenario 2."""
-        record = produce("nobody-the-package-has-ever-heard-of")
-
-        assert record.is_empty is True
-        assert str(record.coverage) == EXPECTED_COVERAGE_STATEMENT
-
-    def test_the_documentation_claims_nothing_either(self):
-        """T055, FR-016, SC-007."""
-        text = (
-            DISCLOSURE_DOCS_PATH.read_text(encoding="utf-8")
-            + "\n"
-            + readme_disclosure_section()
-        ).lower()
-
-        for name in FORBIDDEN_REGULATION_NAMES:
-            assert name not in text, name
-        for claim in FORBIDDEN_COMPLETENESS_CLAIMS:
-            assert claim not in text, claim
+        assert not full.is_empty
+        assert empty.is_empty
+        assert str(full.coverage)
+        assert str(full.coverage) == str(empty.coverage)

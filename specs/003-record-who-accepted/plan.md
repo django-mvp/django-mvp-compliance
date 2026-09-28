@@ -41,15 +41,15 @@ feature adds a model, a manager and two settings, all of them Django.
 consolidation. `0001_initial.py` is on main and is not touched.
 
 **Testing**: pytest with pytest-django, `tests/settings.py`, an in-memory SQLite database.
-`factory_boy` factories per Article X, and `django_assert_num_queries` for the query bound in SC-005.
+`factory_boy` factories per section 4 of the testing standard, and `django_assert_num_queries` for the query bound in SC-005.
 
 **Target Platform**: a Django project that has installed django-mvp.
 
 **Project Type**: installable Django application. This feature has no surface a person can see.
 
-**Constraints**: Article XII (an acceptance is never edited and never deleted, enforced in the model
-layer), Article XV (the record holds three facts; anything beyond them is off unless the project asks
-and is justified where it is defined), Article XVI (a migration carries existing records forward).
+**Constraints**: Article XI (an acceptance is never edited and never deleted, enforced in the model
+layer), Article XIV (the record holds three facts; anything beyond them is off unless the project asks
+and is justified where it is defined), Article XV (a migration carries existing records forward).
 
 **Scale/Scope**: one model, one manager, one queryset on each of two models, two exceptions, two
 settings, five user stories, 18 functional requirements.
@@ -65,7 +65,7 @@ Read before planning and re-checked after the design below.
 | III Anti-Abstraction | No settings-object wrapper for two settings, no base class for one model, no abstraction over "the person" beyond the column that holds them | Pass |
 | IV Integration-First | The contract is the public Python surface R4, R5, R9, R10 and issues #21/#22 consume, and every acceptance scenario exercises it the way they will | Pass |
 | V Security & data-safety | Nothing is rendered here. The one place external input reaches the model is the client address, and R6 records why the package reads `REMOTE_ADDR` and refuses to parse a header the client controls | Pass |
-| VI Documentation | `docs/models.md` gains the acceptance surface, README gains both settings, CHANGELOG gains an Added entry naming the personal data the optional one holds (Article XV). Docstrings on the model, the manager, the queryset methods and both exceptions | Pass |
+| VI Documentation | `docs/models.md` gains the acceptance surface, README gains both settings, CHANGELOG gains an Added entry naming the personal data the optional one holds (Article XIV). Docstrings on the model, the manager, the queryset methods and both exceptions | Pass |
 | VII Dependency discipline | No new runtime dependency | Pass |
 | VIII Internationalization | Every `verbose_name`, `help_text` and exception message wrapped with `gettext_lazy`; the shipped `en` catalog regenerated | Pass |
 | IX Data-model conventions | Every field's indexing decision is stated in Data model below, with the one composite index that serves both query paths. `verbose_name` and `help_text` on every field. The branch's migrations consolidated at S5 | Pass |
@@ -119,10 +119,10 @@ README.md                # + both settings
 CHANGELOG.md             # + the Added entry
 ```
 
-**Structure Decision**: `models.py` stays one module. Article X ties one source module to one test
+**Structure Decision**: `models.py` stays one module. Section 4 of the testing standard ties one source module to one test
 module, and splitting the package into a `models/` package to separate two small model groups would
 buy nothing but a mirrored test directory. The grouping inside the module is by class, which is where
-Article XI puts it.
+Article X puts it.
 
 ## Design
 
@@ -133,10 +133,10 @@ Article XI puts it.
 | Field | Type | Index | Why |
 |---|---|---|---|
 | `user` | `ForeignKey(settings.AUTH_USER_MODEL, on_delete=keep_or_remove_acceptances, null=True, blank=True, related_name="compliance_acceptances")` | FK index | The ordinary relationship, and what a signed-in request already has in its hand. Null only ever means "the account has since been removed" (FR-013), never "we did not know" — `record()` refuses a user without a primary key. `related_name` is prefixed because this accessor lands on the host project's own user model |
-| `subject` | `CharField(max_length=255, editable=False)` | composite unique with `version`, which indexes it as a prefix | The account's primary key as text, written when the record is. It is what a surviving record still says about whose it is (FR-014), and what gathers one person's records into a set for issues #21 and #22. Article XV justification: it is a pseudonymous identifier and it is the least that can be held and still answer that question — see `research.md` R5 for the two alternatives and why each is worse |
+| `subject` | `CharField(max_length=255, editable=False)` | composite unique with `version`, which indexes it as a prefix | The account's primary key as text, written when the record is. It is what a surviving record still says about whose it is (FR-014), and what gathers one person's records into a set for issues #21 and #22. Article XIV justification: it is a pseudonymous identifier and it is the least that can be held and still answer that question — see `research.md` R5 for the two alternatives and why each is worse |
 | `version` | `ForeignKey(Version, on_delete=PROTECT, related_name="acceptances")` | FK index | FR-002: the record points at a version, never at a document. `PROTECT` costs nothing — a published version already cannot be deleted (FS-001 FR-014) — and it closes the same hole for a draft that somebody accepted, which cannot happen because FR-003 refuses drafts, and would be silent if it ever did |
 | `accepted_at` | `DateTimeField(editable=False, db_index=True)` | indexed | FR-001's third fact, and `Meta.ordering`'s key, so it has an ordering path. Article IX indexes a field with a query path at its definition, because a consumer of a published package cannot add the index later. Set in `record()` rather than `auto_now_add`, so it is a value the model holds rather than a behaviour on write — `auto_now_add` also silently rewrites on every save, which is the opposite of an append-only record |
-| `ip_address` | `GenericIPAddressField(null=True, blank=True)` | none — no query path, and it is not something to look a person up by | FR-016's optional additional evidence, empty unless the project turned it on and a request was supplied. Article XV justification: it strengthens the evidence by saying where the agreement came from, it is personal data about somebody who did not ask for it to be kept, and so it is the host project's decision and defaults to off |
+| `ip_address` | `GenericIPAddressField(null=True, blank=True)` | none — no query path, and it is not something to look a person up by | FR-016's optional additional evidence, empty unless the project turned it on and a request was supplied. Article XIV justification: it strengthens the evidence by saying where the agreement came from, it is personal data about somebody who did not ask for it to be kept, and so it is the host project's decision and defaults to off |
 
 **Meta**
 
@@ -246,7 +246,7 @@ handling.
 | Setting | Default | What it decides |
 |---|---|---|
 | `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL` | `True` | Whether a person's acceptances outlive the removal of their account (FR-013, D1) |
-| `MVP_COMPLIANCE_RECORD_IP_ADDRESS` | `False` | Whether an acceptance also holds the address the request came from (FR-016, Article XV) |
+| `MVP_COMPLIANCE_RECORD_IP_ADDRESS` | `False` | Whether an acceptance also holds the address the request came from (FR-016, Article XIV) |
 
 Both are read with `getattr(settings, ..., default)` at the point of use, and neither gets a
 configuration object. Article III: two settings read in two places do not need a layer between the

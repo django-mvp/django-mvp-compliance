@@ -35,7 +35,7 @@
       "D15 — `publish()` does NOT translate a constraint `IntegrityError` into `PublishError`. plan.md's Publishing section still describes that translation; D15 supersedes it and the code as US-2 left it is correct. Do not add the catch clause.",
       "D14 — `Version`'s constraints match `Status` values as string literals, not through the enum: a nested `Meta` class cannot see names bound in `Version`'s own class body. When you widen the check constraint in T044, follow that existing style rather than referencing `Version.Status`.",
       "US-3's frozen-field set is `(\"document\", \"number\", \"markdown\", \"published_at\")`. T047 is where `html` joins it. `PUBLISHED_FROZEN_FIELDS` is a module-level constant in models.py and the guards read it, so adding the name there is the whole change — the four refusal routes need no edit.",
-      "The renderer is a class so a host project can subclass it and point the setting at the subclass. `get_renderer()` is a module-level function only because Article XI permits a thin wrapper that returns a class. Do not add a registry, a settings dict, or a setting per knob."
+      "The renderer is a class so a host project can subclass it and point the setting at the subclass. `get_renderer()` is a module-level function only because Article X permits a thin wrapper that returns a class. Do not add a registry, a settings dict, or a setting per knob."
     ],
     "acceptance": [
       {

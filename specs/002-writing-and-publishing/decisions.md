@@ -145,7 +145,7 @@ no such display and the scenario would have nothing on one side of it. Of the co
 EasyMDE takes its toolbar as an explicit list, so the set FR-003 forbids does not exist rather than
 being hidden, and it writes ordinary Markdown back to the text area, which FR-005 requires.
 
-Vendoring rather than fetching follows from Article XV: a third-party asset tag would let somebody
+Vendoring rather than fetching follows from Article XIV: a third-party asset tag would let somebody
 else change what runs inside an authenticated session on a site this package is installed on. A
 Python wrapper package was considered and rejected — it adds a dependency and a second opinion about
 the toolbar in exchange for the same two files this package would still have to configure.
@@ -332,7 +332,7 @@ preview's and the confirmation's assertions go red, and with it in place both pa
 question is not one question after all.
 
 **ADR:** none — a correction inside one class, and the rule it applies is already recorded as
-Article XIII in the constitution and as ADR 0001's neighbours. Nothing downstream inherits it.
+Article XII in the constitution and as ADR 0001's neighbours. Nothing downstream inherits it.
 
 ## D16 — The message catalog is regenerated from the repository root
 
@@ -562,3 +562,18 @@ this one.
 
 **ADR:** none — a third refusal beside two existing ones in the same method, with its reasoning in
 the comment above it.
+
+## Publish link on the change form (US-4)
+
+**Decision**: Add a **Publish** entry to the change form's object tools, alongside T035's
+**Preview** entry, visible only for a draft to a caller holding `publish_version`.
+
+**Why**: No task in the brief names this addition directly, but T035's own row in `tasks.md`
+says the object-tools block gets "the **Publish** link US-4 adds," and FR-013's "the confirmation
+page is the only route" only holds meaning if there is a route to it. Without a link, reaching the
+confirmation page requires typing its address by hand, which contradicts the feature's own premise
+of a surface a non-developer can use. It is not a form field, a checkbox, or a changelist action,
+so it does not touch the FR-013 prohibition on anything else that publishes.
+
+**Revisit if**: A future story adds its own navigation to the publish address and this becomes
+redundant, or the object-tools pattern changes shape.

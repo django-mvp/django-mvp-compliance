@@ -12,10 +12,8 @@
 # carrying it are being silently ignored. Use a CODEOWNERS file if review
 # assignment is wanted.
 #
-# There is no npm ecosystem here. This package ships no build pipeline of its
-# own: charting libraries are loaded from a CDN in development and bundled by
-# the host project in production, so no JavaScript dependency is declared in
-# this repository for Dependabot to watch.
+# There is no npm ecosystem here. The editor's one JavaScript library is
+# vendored under mvp_compliance/static/mvp_compliance/vendor/ and refreshed by hand.
 version: 2
 updates:
   # Python dependencies (uv)

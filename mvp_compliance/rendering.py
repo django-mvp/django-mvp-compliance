@@ -1,10 +1,4 @@
-"""Turns authored Markdown into the HTML a reader is served.
-
-Article XIII: this runs once, at publication (`Version.publish()`), and never
-again on the way a stored version is read. A markup library upgrade or a
-change to the allow list below cannot retroactively alter what a document
-said when someone agreed to it.
-"""
+"""Turns authored Markdown into the HTML a reader is served, once, at publication."""
 
 from typing import cast
 
@@ -57,12 +51,9 @@ class MarkdownRenderer:
 
     allowed_url_schemes = {"http", "https", "mailto"}
 
-    #: Characters that change what text says without being visible in it.
-    #: The allow list above governs tags, attributes and URL schemes, none of
-    #: which reaches text content, so these are removed separately. The first
-    #: group reorders the characters after it, which lets a link's wording
-    #: name a different site from the one it points at. The second is
-    #: invisible, which lets two words read as one.
+    #: Characters that change what text says without being visible in it, which
+    #: the allow list cannot reach. The first group reorders the text after it,
+    #: so a link's wording can name another site. The second is invisible.
     discarded_characters = str.maketrans(
         "",
         "",
@@ -70,6 +61,14 @@ class MarkdownRenderer:
     )
 
     def render(self, source: str) -> str:
+        """Render Markdown to sanitised HTML.
+
+        Args:
+            source: The authored Markdown.
+
+        Returns:
+            HTML holding only the allowed tags, attributes and URL schemes.
+        """
         html = markdown.markdown(
             source.translate(self.discarded_characters), extensions=self.extensions
         )
@@ -83,10 +82,13 @@ class MarkdownRenderer:
 
 
 def get_renderer() -> type[MarkdownRenderer]:
-    """Resolve the renderer class, defaulting to :class:`MarkdownRenderer`.
+    """Resolve the renderer class.
 
     A host project points ``MVP_COMPLIANCE_RENDERER`` at a dotted path to
     override it.
+
+    Returns:
+        The configured class, or :class:`MarkdownRenderer` by default.
     """
     dotted_path = getattr(settings, "MVP_COMPLIANCE_RENDERER", None)
     if dotted_path is None:
