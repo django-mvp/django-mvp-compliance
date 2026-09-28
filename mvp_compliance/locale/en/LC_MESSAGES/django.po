@@ -444,8 +444,8 @@ msgstr "Previous versions"
 #: mvp_compliance/templates/mvp_compliance/document_detail.html:9
 #: mvp_compliance/views.py:30
 #, python-format
-msgid "v%(number)s · published %(date)s"
-msgstr "v%(number)s · published %(date)s"
+msgid "v%(number)s - %(date)s"
+msgstr "v%(number)s - %(date)s"
 
 #: mvp_compliance/templates/mvp_compliance/document_index.html:11
 msgid "Nothing has been published yet."

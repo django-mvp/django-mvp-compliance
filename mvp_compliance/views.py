@@ -13,7 +13,7 @@ from mvp_compliance.models import Acceptance, Document, Version
 
 
 class VersionSubtitleMixin:
-    """The line under a page's name: ``v2026.1 · published <date>``.
+    """The line under a page's name: ``v2026.1 - <date>``.
 
     Continues with ``· Agreed on <date>`` when the signed-in visitor accepted
     that version. Used by the document's page and a version's page, which say
@@ -27,7 +27,7 @@ class VersionSubtitleMixin:
 
     def get_page_subtitle(self):
         version = self.get_version()
-        line = _("v%(number)s · published %(date)s") % {
+        line = _("v%(number)s - %(date)s") % {
             "number": version.number,
             "date": date_format(timezone.localdate(version.published_at)),
         }

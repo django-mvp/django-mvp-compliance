@@ -165,7 +165,7 @@ never an mvp default, and each sets its breadcrumbs.
 | View | Base | Object and 404 rule | Template | Page title / subtitle |
 |---|---|---|---|---|
 | `DocumentIndexView` | `MVPTemplateView` | `documents`: `Document.objects.in_force().order_by("name")` | `mvp_compliance/document_index.html` | "Legal documents" |
-| `DocumentView` | `MVPDetailView` | `Document.objects.in_force()` by `slug`, 404 otherwise | `mvp_compliance/document_detail.html` | document name / "vN · published D", plus "· Agreed on D" for a visitor who accepted it |
+| `DocumentView` | `MVPDetailView` | `Document.objects.in_force()` by `slug`, 404 otherwise | `mvp_compliance/document_detail.html` | document name / "vN - D", plus "· Agreed on D" for a visitor who accepted it |
 | `VersionView` | `MVPDetailView` | `Version.objects.published().with_replaced_at().select_related("document")` filtered by `document__slug` and `number`, 404 otherwise | `mvp_compliance/version_detail.html` | document name / the same line as the document's page |
 
 - A slug naming no document, a document with only drafts, and a number from another document all
@@ -199,7 +199,7 @@ what puts them in the shell with no project template (FR-012), and what a projec
 a template at the same path (FR-018).
 
 - `document_detail.html`: a "Previous versions" dropdown in `page.actions` when there are earlier
-  versions, a primary button with a caret, listing each as `vN · published D` linking to its page.
+  versions, a primary button with a caret, listing each as `vN - D` linking to its page.
   Then the wording in `<div class="prose max-w-none">`, written as `{{ version.html|safe }}`. `prose` ships in mvp's stylesheet (research R2).
 - `version_detail.html`: the same wording block. Above it, for the version in force, "This is the
   version in force"; for a superseded one, an alert saying it has been replaced, the dates it was in

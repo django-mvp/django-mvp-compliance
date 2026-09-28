@@ -46,7 +46,7 @@ else in a template:
 The page shows the document's name, a line under it, and the wording of the version in
 force. When a new version is published, the same address shows it at once.
 
-The line under the name reads `v2026.1 · published 26 September 2026`: the version's
+The line under the name reads `v2026.1 - 26 September 2026`: the version's
 number and the day it was published, in the project's date format. When the signed-in
 visitor has accepted that version it continues `· Agreed on 27 September 2026`, with the
 date of their acceptance. An anonymous visitor, and someone who has accepted a different
@@ -97,7 +97,7 @@ Every page's breadcrumbs start with a "Legal documents" crumb linking to the ind
 
 When a document has more than one published version, its page carries a "Previous
 versions" dropdown in the page actions. It lists every earlier published version, newest
-first, each as `v2026.1 · published 26 September 2026` linking to that version's page. A
+first, each as `v2026.1 - 26 September 2026` linking to that version's page. A
 document with a single published version has no dropdown. Drafts are never listed.
 
 ## A version's own page
@@ -113,7 +113,7 @@ Someone who agreed to wording that has since been replaced can open that exact v
 The page shows the document's name, the version's number and its wording, written out as
 stored. What sits above the wording depends on where the version stands:
 
-- **In force:** "This is the version in force.", with the same `v2026.1 · published D`
+- **In force:** "This is the version in force.", with the same `v2026.1 - D`
   line under the title that the document's page shows.
 - **Replaced:** a notice that the version was replaced, the date it came into force and
   the date it was replaced, and a link to the document's page, which shows the version

@@ -228,7 +228,7 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-002**: Each published version, current or superseded, MUST have a page at a permanent address
   built from its document's slug and its number. *(US-2)*
 - **FR-003**: When a document has versions before the one in force, its page MUST list them newest
-  first, each as `v<number> · published <date>` linking to its version's page. No draft is listed.
+  first, each as `v<number> - <date>` linking to its version's page. No draft is listed.
   *(US-3)*
 - **FR-004**: The package MUST provide a document index at its own address, listing every document
   that has a version in force and linking to each document's page. *(US-3)*
@@ -242,7 +242,7 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-008**: An address naming no document, or a number that is not a published version of the
   named document, MUST answer "not found". *(US-1, US-2)*
 - **FR-009**: The document's page and each version's page MUST name the document, and under it
-  show the version as `v<number> · published <date>`. When the visitor is signed in and has
+  show the version as `v<number> - <date>`. When the visitor is signed in and has
   accepted that version, the line continues `· Agreed on <date>` with the date of their
   acceptance. *(US-1, US-2)*
 - **FR-010**: A superseded version's page MUST say it has been replaced, give the dates it was in
@@ -331,7 +331,7 @@ document page's template in the demo's templates and confirm it is used.
   "not found", so listing it would give the reader a dead link.
 
 - **Q**: How does a page say which version it is, and where do earlier versions go? → **A**: The
-  line under the name reads `v2026.1 · published <date>`, with `· Agreed on <date>` added for a
+  line under the name reads `v2026.1 - <date>`, with `· Agreed on <date>` added for a
   signed-in visitor who accepted that version (FR-009). Maintainer's ruling at the walkthrough.
 
 ## Assumptions

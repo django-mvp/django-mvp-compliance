@@ -46,12 +46,12 @@ def subtitle_addresses(document, first, second):
 
 @pytest.mark.django_db
 class TestPageSubtitle:
-    """FR-009: the line under a page's name is ``v<number> · published <date>``,
+    """FR-009: the line under a page's name is ``v<number> - <date>``,
     continued with ``· Agreed on <date>`` for a visitor who accepted that version."""
 
     @staticmethod
     def line(version):
-        return f"v{version.number} · published " + date_format(
+        return f"v{version.number} - " + date_format(
             timezone.localdate(version.published_at)
         )
 
@@ -217,7 +217,7 @@ class TestPreviousVersionsMenu:
         )
         for version in (second, first):
             assert (
-                f"v{version.number} · published "
+                f"v{version.number} - "
                 f"{date_format(timezone.localdate(version.published_at))}"
             ) in menu
 
@@ -229,7 +229,7 @@ class TestPreviousVersionsMenu:
 
         _content, menu = self.menu(client, document)
 
-        assert menu.count("· published") == 1
+        assert menu.count('href="') == 1
 
     def test_a_document_with_one_published_version_has_no_menu(self, client):
         document = DocumentFactory()
@@ -304,7 +304,7 @@ class TestDocumentView:
 
         content = response.content.decode()
         assert "Privacy policy" in content
-        assert f"v{version.number} · published" in content
+        assert f"v{version.number} - " in content
         assert date_format(timezone.localdate(version.published_at)) in content
 
     def test_the_breadcrumb_trail_is_the_title_with_no_empty_link(self, client):
@@ -339,7 +339,7 @@ class TestDocumentView:
 
         assert second.html in content
         assert "First wording" not in content
-        assert f"v{second.number} · published" in content
+        assert f"v{second.number} - " in content
 
     def test_a_document_with_only_a_draft_is_not_found_for_everybody(
         self, client, django_user_model
@@ -462,8 +462,8 @@ class TestVersionView:
         assert current.html in content
         assert "in force" in content
         assert "replaced" not in content
-        assert f"v{current.number} · published" in document_page
-        assert f"v{current.number} · published" in content
+        assert f"v{current.number} - " in document_page
+        assert f"v{current.number} - " in content
 
     def test_a_later_publication_leaves_a_versions_address_and_wording_alone(
         self, client
@@ -551,7 +551,7 @@ class TestVersionView:
         assert "mvp/base.html" in names
         content = response.content.decode()
         assert "Privacy policy" in content
-        assert f"v{version.number} · published" in content
+        assert f"v{version.number} - " in content
         assert response.context["directory"] == {}
 
     def test_the_breadcrumb_trail_links_the_document_then_names_the_version(
