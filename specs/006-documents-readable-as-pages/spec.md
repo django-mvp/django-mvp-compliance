@@ -348,4 +348,3 @@ document page's template in the demo's templates and confirm it is used.
   plug into it is a planning question.
 - The package ships an English catalog only, as for every other string.
 - The slug is not personal data, so Article XV does not apply.
-
