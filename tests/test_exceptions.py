@@ -11,8 +11,6 @@ from mvp_compliance.exceptions import (
 
 
 class TestExceptions:
-    """Neither exception is a ValidationError (D9)."""
-
     def test_publish_error_is_not_a_validation_error(self):
         assert not issubclass(PublishError, ValidationError)
 
