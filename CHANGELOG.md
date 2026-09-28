@@ -9,17 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- A page for each document that has a version in force, served at an address that never changes:
-  `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
+- One canonical page for each document that has a version in force, served at an address that
+  never changes: `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
   `{% url 'mvp_compliance:document' 'privacy-policy' %}` in a template. Anyone can read it,
-  signed in or not, and it renders inside the django-mvp shell. A document with nothing
-  published, or a slug that names nothing, answers "not found". The package adds nothing to your
-  menus. See [docs/pages.md](docs/pages.md).
-- A page for each published version, at `{% url 'mvp_compliance:version' 'privacy-policy' '2026.1' %}`,
-  showing the wording that version was published with. A version that has been replaced says so and
-  links to the one in force. A document with earlier versions offers them in a "Previous
-  versions" dropdown on its page. `mvp_compliance:index` lists every document that has a version
-  in force, and every page's breadcrumbs start with it. See [docs/pages.md](docs/pages.md).
+  signed in or not, and it renders inside the django-mvp shell. The same address with
+  `?version=<number>` shows that published version, current or superseded, for as long as it
+  stays published. A document with nothing published, a slug that names nothing, or a
+  `?version=` value that is not a published version of the document, answers "not found". A
+  superseded version's page carries one alert row with the dates it was in force and a "View
+  current version" button. Every document page also carries a version switcher among its
+  actions, listing every published version newest first and marking the one shown. The package
+  adds nothing to your menus. `mvp_compliance:index` lists every document that has a version in
+  force, and every page's breadcrumbs start with it. See [docs/pages.md](docs/pages.md).
 - `Document.slug`, a unique slug that forms the document's address, and
   `Document.objects.in_force()`, which returns the documents that have a current version with
   that version already fetched. Migration `0007_document_slug` adds the column with no data step,

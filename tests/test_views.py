@@ -496,6 +496,90 @@ class TestSupersededVersionAlert:
 
 
 @pytest.mark.django_db
+class TestVersionSwitcher:
+    """FR-003, FR-011: every document page carries a version switcher among its
+    actions, listing every published version newest first, the version shown
+    marked active."""
+
+    @staticmethod
+    def switcher(client, address):
+        content = client.get(address).content.decode()
+        start = content.find("data-mvp-dropdown")
+        return content, content[start:] if start != -1 else ""
+
+    def test_every_published_version_is_listed_newest_first(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        third = published(document, "Third wording")
+
+        _content, switcher = self.switcher(client, document_address(document))
+
+        addresses = [
+            f'href="{version_address(document, version.number)}"'
+            for version in (third, second, first)
+        ]
+        positions = [switcher.index(address) for address in addresses]
+        assert positions == sorted(positions)
+
+    def test_a_draft_is_not_listed(self, client):
+        document = DocumentFactory()
+        published(document)
+        VersionFactory(document=document, markdown="Unpublished wording")
+
+        _content, switcher = self.switcher(client, document_address(document))
+
+        assert switcher.count("href=") == 1
+
+    def test_the_switcher_is_present_on_a_single_version_document(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        _content, switcher = self.switcher(client, document_address(document))
+
+        assert switcher != ""
+
+    def test_the_shown_version_is_marked_active(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        _content, switcher = self.switcher(
+            client, version_address(document, first.number)
+        )
+
+        assert (
+            f'href="{version_address(document, first.number)}" class="menu-active" aria-current="page"'
+            in switcher
+        )
+        assert (
+            f'href="{version_address(document, second.number)}" class="menu-active"'
+            not in switcher
+        )
+
+    def test_the_current_version_is_marked_active_with_no_parameter(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        current = published(document, "Second wording")
+
+        _content, switcher = self.switcher(client, document_address(document))
+
+        assert (
+            f'href="{version_address(document, current.number)}" class="menu-active" aria-current="page"'
+            in switcher
+        )
+
+    def test_the_triggers_text_is_the_version_shown(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        content = client.get(version_address(document, first.number)).content.decode()
+
+        assert f"<span>v{first.number}</span>" in content
+
+
+@pytest.mark.django_db
 class TestDocumentIndexView:
     """A visitor finds every document that has a version in force."""
 

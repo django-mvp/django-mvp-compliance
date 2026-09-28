@@ -30,7 +30,7 @@ msgstr "Current version"
 msgid "No version in force"
 msgstr "No version in force"
 
-#: mvp_compliance/admin.py:91 mvp_compliance/views.py:166
+#: mvp_compliance/admin.py:91
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
@@ -402,6 +402,7 @@ msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
 #: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:18
 msgid "View current version"
 msgstr "View current version"
 
@@ -437,15 +438,20 @@ msgstr ""
 msgid "Back"
 msgstr "Back"
 
-#: mvp_compliance/templates/mvp_compliance/document_detail.html:5
-msgid "Previous versions"
-msgstr "Previous versions"
-
-#: mvp_compliance/templates/mvp_compliance/document_detail.html:9
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:8
 #: mvp_compliance/views.py:30
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
+
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:17
+#, python-format
+msgid ""
+"This version has been replaced. It was in force from %(published)s to "
+"%(replaced)s."
+msgstr ""
+"This version has been replaced. It was in force from %(published)s to "
+"%(replaced)s."
 
 #: mvp_compliance/templates/mvp_compliance/document_index.html:11
 msgid "Nothing has been published yet."
@@ -478,23 +484,6 @@ msgstr "See it in the admin"
 msgid "%(name)s: version %(number)s is now in force"
 msgstr "%(name)s: version %(number)s is now in force"
 
-#: mvp_compliance/templates/mvp_compliance/version_detail.html:8
-#, python-format
-msgid ""
-"This version has been replaced. It was in force from %(published)s to "
-"%(replaced)s."
-msgstr ""
-"This version has been replaced. It was in force from %(published)s to "
-"%(replaced)s."
-
-#: mvp_compliance/templates/mvp_compliance/version_detail.html:10
-msgid "Read the version in force"
-msgstr "Read the version in force"
-
-#: mvp_compliance/templates/mvp_compliance/version_detail.html:14
-msgid "This is the version in force."
-msgstr "This is the version in force."
-
 #: mvp_compliance/views.py:45
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
@@ -504,7 +493,7 @@ msgstr "%(published)s · Agreed on %(date)s"
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: mvp_compliance/views.py:142
+#: mvp_compliance/views.py:114
 msgid "No version found"
 msgstr "No version found"
 

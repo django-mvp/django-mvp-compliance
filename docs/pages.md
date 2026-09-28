@@ -28,10 +28,11 @@ navigation is your decision.
 |---|---|---|---|
 | `mvp_compliance:index` | none | `<prefix>/` | `mvp_compliance.views.DocumentIndexView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
-| `mvp_compliance:version` | `slug`, `number` | `<prefix>/<slug>/<number>/` | `mvp_compliance.views.VersionView` |
 
-The number is a version's own, such as `2026.1` or `2026.12`: four digits, a dot, then
-digits. Anything else in that position, `2026` for example, is not a version address.
+There is one page per document: its address always shows the version in force. The same
+address with `?version=<number>` shows that published version, current or superseded,
+for as long as it stays published — a number such as `2026.1` or `2026.12`. A `?version=`
+value that names no published version of the document is "not found".
 
 The slug is the document's `slug` field, so `Document(slug="privacy-policy")` is served
 at `legal/privacy-policy/` under the mount above. Link to it from a footer, or anywhere
@@ -43,17 +44,18 @@ else in a template:
 
 ## What a visitor sees
 
-The page shows the document's name, a line under it, and the wording of the version in
-force. When a new version is published, the same address shows it at once.
+The page shows the document's name, a line under it, and the wording of the version
+shown: the version in force by default, or the one named by `?version=`. When a new
+version is published, the plain address shows it at once; an earlier `?version=` address
+keeps showing what it always showed.
 
-The line under the name reads `v2026.1 - 26 September 2026`: the version's
+The line under the name reads `v2026.1 - 26 September 2026`: the shown version's
 number and the day it was published, in the project's date format. When the signed-in
 visitor has accepted that version it continues `· Agreed on 27 September 2026`, with the
 date of their acceptance. An anonymous visitor, and someone who has accepted a different
-version of the document but not this one, see the first part only. A version's own page
-shows the same line for that version.
+version of the document but not this one, see the first part only.
 
-Both pages build the line with `mvp_compliance.views.VersionSubtitleMixin`. A project
+The page builds this line with `mvp_compliance.views.VersionSubtitleMixin`. A project
 view that shows a version and wants the same line mixes it in ahead of the django-mvp
 detail view and defines `get_version()`.
 
@@ -91,61 +93,49 @@ AppMenu.append(
 )
 ```
 
-Every page's breadcrumbs start with a "Legal documents" crumb linking to the index.
+Every page's breadcrumbs start with a "Legal documents" crumb linking to the index. A
+`?version=` address shows the same trail as the plain one.
 
-## Earlier versions
+## The version switcher
 
-When a document has more than one published version, its page carries a "Previous
-versions" dropdown in the page actions. It lists every earlier published version, newest
-first, each as `v2026.1 - 26 September 2026` linking to that version's page. A
-document with a single published version has no dropdown. Drafts are never listed.
+Every document page carries a version switcher among its actions: a primary button,
+labelled with the version shown and a dropdown caret, listing every published version of
+the document, newest first, each as `v2026.1 - 26 September 2026` linking to the same
+page with `?version=` and that number. The version shown is marked. The switcher is there
+even when the document has only one published version, and drafts are never listed.
 
-## A version's own page
+## A superseded version
 
-Every published version stays readable at its own address, which never changes and always
-shows the wording that version was published with:
-
-```html
-<a href="{% url 'mvp_compliance:version' 'privacy-policy' '2026.1' %}">Version 2026.1</a>
-```
-
-Someone who agreed to wording that has since been replaced can open that exact version.
-The page shows the document's name, the version's number and its wording, written out as
-stored. What sits above the wording depends on where the version stands:
-
-- **In force:** "This is the version in force.", with the same `v2026.1 - D`
-  line under the title that the document's page shows.
-- **Replaced:** a notice that the version was replaced, the date it came into force and
-  the date it was replaced, and a link to the document's page, which shows the version
-  now in force. A version is replaced on the day the next version of the same document
-  was published.
-
-The version's page answers 404, to every visitor, when no document has that slug, when
-that document has no published version with that number (a number that belongs to
-another document included), or when the version is still a draft, since a draft has no
-number.
+When `?version=` shows a version that is no longer in force, the page carries one alert
+row above the wording: a notice that the version was replaced, the date it came into
+force and the date it was replaced, and a "View current version" button leading to the
+document's plain address, which always shows the version now in force. The version in
+force shows no such alert, whether it is reached with no parameter or with its own number
+as `?version=`.
 
 ## When the page is "not found"
 
 The page answers 404, to every visitor whether signed in, staff or anonymous, when:
 
-- no document has that slug, or
-- the document has no version in force, because it has no versions or only drafts.
+- no document has that slug,
+- the document has no version in force, because it has no versions or only drafts, or
+- `?version=` names a value that is not a published version of the document — a draft's
+  number (a draft has none), another document's number, or anything else.
 
 Nothing on the page links to editing or deleting a document. That is done in the admin.
 
 ## Overriding a template
 
 Every page is one template under `mvp_compliance/`, and each extends django-mvp's
-`page_view.html` and fills only its `page.content` block. To restyle a page, place a
-template at the same path in your project. Django finds yours first, and the package's
-is never used for that page. The package needs no other change, and you do not fork it.
+`page_view.html` and fills only its `page.content` and, where it has one, `page.actions`
+block. To restyle a page, place a template at the same path in your project. Django finds
+yours first, and the package's is never used for that page. The package needs no other
+change, and you do not fork it.
 
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_index.html` | `mvp_compliance:index` | `documents`, the documents in force in name order, each with its current version |
-| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version in force, and `previous_versions`, the other published versions newest first |
-| `mvp_compliance/version_detail.html` | `mvp_compliance:version` | `document`, and `version`, carrying `replaced_at`: the date the next version was published, or `None` for the version in force |
+| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
 

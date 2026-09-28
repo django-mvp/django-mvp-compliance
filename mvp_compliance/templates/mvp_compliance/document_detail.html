@@ -1,5 +1,16 @@
 {% extends "page_view.html" %}
 {% load i18n %}
+{% block page.actions %}
+  <c-dropdown halign="end" variant="primary" icon="chevron-down" reverse text="v{{ version.number }}">
+    <ul class="menu menu-sm w-full">
+      {% for item in versions %}
+        <li>
+          <a href="{% url 'mvp_compliance:document' document.slug %}?version={{ item.number }}"{% if item.number == version.number %} class="menu-active" aria-current="page"{% endif %}>{% blocktranslate with number=item.number date=item.published_at|date %}v{{ number }} - {{ date }}{% endblocktranslate %}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </c-dropdown>
+{% endblock page.actions %}
 {% block page.content %}
   {% if version.replaced_at %}
     <c-alert variant="warning" class="alert-horizontal">
