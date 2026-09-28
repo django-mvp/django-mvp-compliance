@@ -109,9 +109,9 @@
       "approved_by": "SamuelJennings",
       "at": "2026-09-27T20:52:23Z",
       "self_resolved": [
-        "No separate version list page — removed (T029)",
-        "Previous versions as a primary dropdown with a caret — T030",
-        "What a person agreed to, in the account area — filed as #66"
+        "No separate version list page \u2014 removed (T029)",
+        "Previous versions as a primary dropdown with a caret \u2014 T030",
+        "What a person agreed to, in the account area \u2014 filed as #66"
       ]
     }
   },
@@ -291,6 +291,16 @@
               "forge verify --base origin/main: conformance, docs, lint, typecheck, test, build all passed"
             ]
           }
+        },
+        {
+          "id": "T031",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T032",
+          "status": "todo",
+          "attempts": 0
         }
       ]
     },
@@ -397,6 +407,11 @@
               "curl -s http://localhost:8021/legal/privacy-policy/"
             ]
           }
+        },
+        {
+          "id": "T033",
+          "status": "todo",
+          "attempts": 0
         }
       ]
     },
