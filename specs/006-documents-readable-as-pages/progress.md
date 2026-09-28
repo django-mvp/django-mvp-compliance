@@ -278,3 +278,34 @@ T029–T030 verified independently: receipts green, full verify green. Tamper-ch
 removals and rewrite the brief authorised (the version list's tests, its override fixture, and the
 `versions` URL test). The version list address answers 404, and the menu renders as a primary button
 with the caret after its text. plan.md brought to the current design.
+
+## 2026-09-28T20:21Z · Implementer US2 · T031
+
+- Did: `DocumentView.get_version()` now resolves the version shown from the `?version=` GET
+  parameter — one query over `self.object.versions.published().with_replaced_at()`, filtered by
+  `status=CURRENT` when the parameter is absent or by `number` when it is given; `Http404` when
+  nothing matches. `VersionView`, the `mvp_compliance:version` URL name, `VersionNumberConverter`
+  and `version_detail.html` are removed. `document_detail.html`'s old "Previous versions" dropdown
+  (which addressed versions by that URL name) is removed with it — the new switcher is T033's.
+  `tests/test_urls.py` (only the converter) is deleted. `tests/test_views.py`: added coverage for
+  the `?version=` parameter (stored HTML, the version in force under the parameter matches the
+  no-parameter page, an earlier version's wording survives a later publication, a query count equal
+  with and without the parameter, 404 for another document's number, a never-published number, a
+  number no version has, and a malformed value); removed `TestVersionView` and
+  `TestPreviousVersionsMenu` and every other assertion that exercised the removed view, URL name or
+  the old "Previous versions" label; `subtitle_addresses`/`version_address` rewritten to build
+  `?version=` addresses. `tests/locale/de/LC_MESSAGES/django.po` drops the now-unused "This is the
+  version in force." msgid (recompiled).
+- Verified: `uv run pytest tests/test_views.py -q` — 49 passed. `uv run pytest tests/test_admin.py
+  tests/test_records.py tests/test_models.py -q` — 281 passed (sanity check, nothing else
+  referenced the removed URL). `uv run ruff check mvp_compliance/views.py mvp_compliance/urls.py
+  tests/test_views.py` and `ruff format --check` on the same — clean. `uv run mypy
+  mvp_compliance/views.py mvp_compliance/urls.py` — clean. `uv run python manage.py
+  makemigrations --check --dry-run` — no changes detected.
+- Next: T032.
+- Watch: `document_detail.html`'s `page.actions` block is empty between this commit and T033 — no
+  switcher until the new one lands. `TestPageStrings.test_every_string_in_a_page_template_is_in_the_english_catalog`
+  no longer asserts a template has at least one msgid (document_detail.html has none until T032's
+  alert); a new `test_at_least_one_page_carries_a_translatable_string` keeps that sanity check at
+  the module level instead — deviation, not one of the authorised removals, logged because it
+  wasn't literally exercising the removed view/URL/converter.
