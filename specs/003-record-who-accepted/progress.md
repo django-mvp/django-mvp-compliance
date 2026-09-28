@@ -90,7 +90,7 @@ Watch: nothing.
 ## 2026-09-22T17:17:00+02:00 · Implementer US-1 · T013
 
 Did: built `Acceptance` — `user`, `subject`, `version`, `accepted_at`, `ip_address`, each
-with a translated `verbose_name` and `help_text`; `subject`'s carries the Article XV
+with a translated `verbose_name` and `help_text`; `subject`'s carries the Article XIV
 justification (D7); `Meta`, `__str__`, class docstring. No manager methods and no migration
 yet.
 Verified: `poetry run pytest tests/test_models.py::TestAcceptance tests/test_models.py::TestRecording`
@@ -689,7 +689,7 @@ Watch: nothing.
 ## 2026-09-22T19:01:00+02:00 · Implementer US-5 · T064
 
 Did: nothing to generate. `ip_address` was added to `Acceptance` by this feature's first
-story, with its `verbose_name` and `help_text` already carrying the Article XV
+story, with its `verbose_name` and `help_text` already carrying the Article XIV
 justification, and this story's own change to `record()` is behavioural only — no field,
 option or constraint changed. There is no schema for a migration to capture.
 Verified: `DJANGO_SETTINGS_MODULE=tests.settings poetry run python -m django

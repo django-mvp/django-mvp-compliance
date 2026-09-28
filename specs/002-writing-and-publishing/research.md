@@ -59,7 +59,7 @@ The two distributed files are committed to the repository under
 `mvp_compliance/static/mvp_compliance/vendor/easymde/`, beside the upstream `LICENSE` and a short
 note recording the version and the SHA-256 of each file.
 
-A content delivery network was considered and rejected. Article XV says nothing this package holds
+A content delivery network was considered and rejected. Article XIV says nothing this package holds
 is transmitted off the host project's own infrastructure; a third-party asset tag reverses that for
 every visitor to the page and hands a third party the ability to change what runs inside an
 authenticated admin session. A Python wrapper package around the same two files was also

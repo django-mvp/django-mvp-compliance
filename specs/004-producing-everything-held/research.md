@@ -105,7 +105,7 @@ same thing.
 - `Acceptance.Meta.ordering = ["accepted_at", "id"]` on main is already total: `id` breaks a tie, so
   the order is deterministic rather than merely usually stable.
 - Everything an entry carries is stored: the document's name, the version's number, `accepted_at`,
-  and `version.html`, which Article XIII fixes at publication.
+  and `version.html`, which Article XII fixes at publication.
 
 **Answer.** Determinism is free, on one condition: **the answer carries no clock reading of its
 own.** A "produced at" stamp on the page would make FR-006 false by construction. The page
@@ -137,7 +137,7 @@ template has to render it unescaped.
 
 **Findings.**
 
-- Article XIII: the HTML is produced once, at publication, through a sanitiser with an explicit
+- Article XII: the HTML is produced once, at publication, through a sanitiser with an explicit
   allow list (`mvp_compliance/rendering.py`), and pages are served from the stored field.
 - FS-002's preview and publish pages already render `version.html` unescaped, and
   `tests/test_admin.py::TestPreview` covers the stored-versus-fresh distinction.
@@ -184,7 +184,7 @@ version and the moment, and is silent about the address.
 
 **Finding.** Where a site turned that setting on, the address is personal data this package holds
 about that person, written into `Acceptance.ip_address`. An answer that silently omitted it would
-be a partial answer presented as a complete one, which Article XIV names as worse than no answer.
+be a partial answer presented as a complete one, which Article XIII names as worse than no answer.
 
 **Answer.** The entry carries it, and the page shows it only where a record has one. No setting is
 read at produce time — what governs the page is whether the record in front of it holds an address,

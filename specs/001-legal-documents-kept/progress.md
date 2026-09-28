@@ -372,7 +372,7 @@ Watch: nothing.
 Did: `mvp_compliance/rendering.py` — `MarkdownRenderer` with `extensions`,
 `allowed_tags`, `allowed_attributes`, `allowed_url_schemes` class attributes
 and `render()` running `markdown.markdown()` then `nh3.clean()`. Module
-docstring states Article XIII.
+docstring states Article XII.
 Verified: manual script (T040's test file can't collect standalone until
 T043's `get_renderer` also exists — D18) exercising every assertion in
 `TestMarkdownRenderer` directly against `MarkdownRenderer().render()` — all

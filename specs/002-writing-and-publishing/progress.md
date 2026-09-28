@@ -296,7 +296,7 @@ Next: T031, the preview URL and view.
 Did: `VersionAdmin.get_urls()` adds `<pk>/preview/`, wrapped in `admin_site.admin_view` and
 checking `has_view_permission(request, obj)`. `preview_view` renders a draft through
 `get_renderer()`, and reads the stored `html` field for a published version rather than
-rendering it again (Article XIII). Added
+rendering it again (Article XII). Added
 `TestPreview::test_a_published_versions_preview_reads_the_stored_html_not_a_fresh_rendering` —
 publishes a version, changes `MVP_COMPLIANCE_RENDERER` with `override_settings`, and asserts the
 preview still shows the stored output rather than the new renderer's. A bare-bones
@@ -429,7 +429,7 @@ version, starts a new one from the same document's add page, posts it with diffe
 re-reads the published version and asserts its markdown and html are exactly what they were before
 the post.
 Verified: needed no production change — the add view always creates a new row, and
-`Version.save()`'s existing frozen-field guard (Article XII, already in place before this story)
+`Version.save()`'s existing frozen-field guard (Article XI, already in place before this story)
 would refuse a write to the published row even if something tried to reach it. `poetry run pytest
 tests/test_admin.py::TestDocumentAdmin` — passed first run. `poetry run ruff check
 tests/test_admin.py` — clean.

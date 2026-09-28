@@ -145,7 +145,7 @@ no such display and the scenario would have nothing on one side of it. Of the co
 EasyMDE takes its toolbar as an explicit list, so the set FR-003 forbids does not exist rather than
 being hidden, and it writes ordinary Markdown back to the text area, which FR-005 requires.
 
-Vendoring rather than fetching follows from Article XV: a third-party asset tag would let somebody
+Vendoring rather than fetching follows from Article XIV: a third-party asset tag would let somebody
 else change what runs inside an authenticated session on a site this package is installed on. A
 Python wrapper package was considered and rejected — it adds a dependency and a second opinion about
 the toolbar in exchange for the same two files this package would still have to configure.
@@ -332,7 +332,7 @@ preview's and the confirmation's assertions go red, and with it in place both pa
 question is not one question after all.
 
 **ADR:** none — a correction inside one class, and the rule it applies is already recorded as
-Article XIII in the constitution and as ADR 0001's neighbours. Nothing downstream inherits it.
+Article XII in the constitution and as ADR 0001's neighbours. Nothing downstream inherits it.
 
 ## D16 — The message catalog is regenerated from the repository root
 

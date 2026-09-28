@@ -50,9 +50,9 @@ calling a `ModelAdmin` method directly.
 
 **Project Type**: installable Django application. This feature is its authoring surface.
 
-**Constraints**: Article XII (publishing stays one-way — this surface calls `publish()` and never
-reaches past it), Article XIII (the preview and publication share one renderer, and nothing
-re-renders a published version), Article XIV (no string anywhere claims compliance), Article VIII
+**Constraints**: Article XI (publishing stays one-way — this surface calls `publish()` and never
+reaches past it), Article XII (the preview and publication share one renderer, and nothing
+re-renders a published version), Article XIII (no string anywhere claims compliance), Article VIII
 (every string translatable, templates included).
 
 **Scale/Scope**: two model admins, one widget, one form, two admin views, four templates, two
@@ -166,7 +166,7 @@ Font Awesome class names are not used and Font Awesome is not shipped (`research
 
 `VersionForm` puts the widget on `markdown` and is `VersionAdmin.form`. Its `Meta.fields` is the
 explicit allow list `["document", "markdown"]` — the only two fields an author supplies. `html` is
-produced by `Version.publish()` and is evidence under Article XIII, so it never appears on a form
+produced by `Version.publish()` and is evidence under Article XII, so it never appears on a form
 an author can post to, and `number`, `status` and `published_at` are already `editable=False`.
 `VersionAdmin.readonly_fields` carries those three plus `html` so a version's full state is
 readable on the page without any of it being writable.
@@ -198,7 +198,7 @@ does not offer an action that would raise.
 
 `VersionAdmin.get_urls()` adds `<pk>/preview/`, named `admin:mvp_compliance_version_preview`. It
 renders `preview.html` with the output of `get_renderer()().render(version.markdown)` for a draft,
-and with the stored `html` for a version that has been published, because Article XIII forbids
+and with the stored `html` for a version that has been published, because Article XII forbids
 re-rendering one.
 
 The page states in its own heading that this is what a reader will be served, so the distinction the
