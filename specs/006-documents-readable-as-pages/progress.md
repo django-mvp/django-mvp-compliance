@@ -331,3 +331,38 @@ with the caret after its text. plan.md brought to the current design.
   published version) render none; `/legal/privacy-policy/?version=9999.9` still answers 404.
 - Next: T033.
 - Watch: `document_detail.html`'s `page.actions` is still empty — the switcher is T033's.
+
+## 2026-09-28T20:29Z · Implementer US2/US3 · T033
+
+- Did: `document_detail.html`'s `page.actions` carries a
+  `<c-dropdown halign="end" variant="primary" icon="chevron-down" reverse text="v{{ version.number }}">`:
+  every published version of the document, newest first, each `v<number> - <date>` linking to
+  `?version=<number>`, the shown one marked with `class="menu-active" aria-current="page"`. Present
+  on every document page, including a single-version document; drafts never appear.
+  `DocumentView.get_context_data()` adds `context["versions"]`, all published versions newest
+  first (one more constant-cost query; `context["version"]` still comes from T031's own query).
+  New `TestVersionSwitcher` in `tests/test_views.py` asserts the items, their links, the active
+  mark, the absence of drafts, presence on a single-version document and the trigger's text — none
+  of it wording or styling. `docs/pages.md` rewritten for the current two-page design (the address
+  table, the switcher, the alert, the "not found" cases, the overridable-template table) with no
+  mention a version page or version list ever existed; `README.md` needed no change (its "Version
+  history" passage is the *admin's* changelist, unrelated). `CHANGELOG.md`'s `[Unreleased]` entry
+  for the pages rewritten the same way. en catalog regenerated
+  (`uv run python manage.py makemessages -l en --no-obsolete`, `POT-Creation-Date` line removed, no
+  fuzzy entries, no compiled `.mo`); both strings the alert needs already existed under other
+  locations, so no new msgid was added there. The `text="v{{ version.number }}"` trigger is left
+  unwrapped in translation tags, per the maintainer's literal ruling — `makemessages` does not pick
+  it up, and it carries no prose to translate.
+- Verified: `uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py
+  tests/test_models.py -q` — 342 passed. `uv run ruff check mvp_compliance/views.py
+  tests/test_views.py` and `ruff format --check` on the same — clean. `uv run mypy
+  mvp_compliance/views.py` — clean. `uv run python manage.py check` — no issues. `uv run python
+  manage.py makemigrations --check --dry-run` — no changes detected. Confirmed on the running demo
+  (port 8021): `/legal/privacy-policy/` shows the switcher (`data-mvp-dropdown`, trigger
+  `<span>v2026.2</span>`, `menu-active` on the current item, items `?version=2026.2` then
+  `?version=2026.1` in that order, trigger button carries `btn-primary` and `flex-row-reverse`);
+  `/legal/privacy-policy/?version=2026.1` shows the alert row, the button, and the switcher with
+  `2026.1` marked active; `/legal/terms-of-use/` (single published version) still shows the
+  switcher; `/legal/privacy-policy/?version=9999.9` still answers 404.
+- Next: full verify, report.
+- Watch: none.
