@@ -366,3 +366,13 @@ with the caret after its text. plan.md brought to the current design.
   switcher; `/legal/privacy-policy/?version=9999.9` still answers 404.
 - Next: full verify, report.
 - Watch: none.
+
+## 2026-09-28 — Third walkthrough changes accepted
+
+T031–T033 verified independently. The craft skills were revised after the brief was written, so the
+implementer echoed the current receipts; `check-receipts` is green against the registry. The one lint
+failure the implementer reported was a trailing blank line in `spec.md` from the orchestrator's own
+edit, now removed. Full verify green. Tamper-check flags only the removals the brief authorised. On the
+demo: `?version=` selects the version, a bad value is a 404, the old version address is a 404, the
+replaced alert is one row with the button at the end, and the switcher lists every version with the
+shown one active. plan.md brought to the single-page design.

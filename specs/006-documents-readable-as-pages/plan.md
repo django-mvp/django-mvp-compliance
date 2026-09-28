@@ -6,14 +6,15 @@
 
 ## Summary
 
-One field, one guard, three read-only views, three templates, one URL module.
+One field, one guard, two read-only views, two templates, one URL module.
 
 `Document` gains `slug`. Once the document has a published version, `Document.save()` and the
 queryset's `update()` refuse a change to it, the same way they refuse a change to a published
 version's wording. The admin suggests it from the name and shows it read-only once it is fixed.
 
-`mvp_compliance/urls.py` (`app_name = "mvp_compliance"`) gives a host project three addresses to mount
-under a prefix of its choosing: the document index, a document's page, and a version's page. Each is an MVP view, so it renders inside the django-mvp shell through the packaged
+`mvp_compliance/urls.py` (`app_name = "mvp_compliance"`) gives a host project two addresses to mount
+under a prefix of its choosing: the document index and a document's page. The document's page is the
+one canonical page for a document: with `?version=<number>` it shows that published version. Each is an MVP view, so it renders inside the django-mvp shell through the packaged
 `page_view.html`, and each template fills `page.content` only. A version's wording is its stored
 `html`, written out unaltered (Article XIII).
 
@@ -23,7 +24,7 @@ under a prefix of its choosing: the document index, a document's page, and a ver
 
 **Primary Dependencies**: Django 5.2, 6.0 and 6.1, django-mvp (0.25.0 resolved, floor `>=0.25.0`,
 raised from `>=0.23.0` at the maintainer's request). **No new runtime dependency.** `MVPDetailView` and `MVPTemplateView` from `mvp.views`,
-a registered path converter, a `Subquery` annotation.
+a `Subquery` annotation.
 
 **Storage**: one migration, `0007_document_slug.py`: `Document.slug`, a unique `SlugField`. Nothing
 has been released and no site uses the package, so no existing document is carried forward (spec
@@ -45,7 +46,7 @@ Article XIII (pages serve the stored HTML, never a render), Article XIV (no page
 line claims compliance or names a regulation), Article VIII (every template string translatable),
 Article XVI (template names become public surface, recorded in the CHANGELOG).
 
-**Scale/Scope**: one field, one migration, three views, three templates, one URL module, one
+**Scale/Scope**: one field, one migration, two views, two templates, one URL module, one
 annotation, admin changes, demo and test settings, four stories, 22 functional requirements.
 
 ## Constitution Check
@@ -56,15 +57,15 @@ Read before planning and re-checked after the design below.
 |---|---|---|
 | I Test-First | Every scenario is a status code, a query count, or an assertion on rendered HTML. The failing test comes first on every task | Pass |
 | II Simplicity | Django's `DetailView` machinery through mvp, `get_object_or_404`, one annotation. No caching, no sitemap, no settings | Pass |
-| III Anti-Abstraction | Three small view classes that share one queryset method each. No base class of the package's own beyond what mvp provides | Pass |
+| III Anti-Abstraction | Two small view classes that share one queryset method each. No base class of the package's own beyond what mvp provides | Pass |
 | IV Integration-First | The URL names and template paths are the contract a host project codes against. Both are fixed in the story that introduces them and documented there | Pass |
 | V Security & data-safety | The document name is autoescaped everywhere. The version's `html` is written with `safe` because it was sanitised against an allow list at publication (`rendering.py`) and is never user input at request time. Drafts are unreachable by construction: every queryset starts from `published()` or `current()` | Pass |
 | VI Documentation | `docs/pages.md` is new and linked from the README. `docs/models.md` and `docs/authoring.md` gain the slug. CHANGELOG Added entries | Pass |
 | VII Dependency discipline | No new runtime dependency | Pass |
 | VIII Internationalization | Every template string in `{% trans %}`/`{% blocktrans %}`, every Python string in `_()`. The `en` catalog regenerated | Pass |
 | IX Data-model conventions | `slug` is `unique=True`, which is its index and the lookup every page makes. `verbose_name` and `help_text` set | Pass |
-| X Test structure | `tests/test_views.py` mirrors `views.py`, `tests/test_urls.py` mirrors the converter in `urls.py`. Model and admin behaviour stay in their existing files | Pass |
-| XI Cohesion | The converter is a class in `urls.py`, where Django looks for it. Queryset behaviour lives on the querysets | Pass |
+| X Test structure | `tests/test_views.py` mirrors `views.py`. Model and admin behaviour stay in their existing files | Pass |
+| XI Cohesion | Queryset behaviour lives on the querysets | Pass |
 | XII Immutable publication | The slug joins the published content that `save()` and `update()` refuse to change | Pass |
 | XIII Pages serve the stored HTML | Templates write `version.html`, nothing renders Markdown. A test compares the response bytes with the stored field | Pass |
 | XIV Mechanics, not compliance | Pages say "in force", "replaced", "version". Nothing says compliant or names a regulation | Pass |
@@ -89,8 +90,7 @@ slug = models.SlugField(
 ```
 
 - Django's own `SlugField` validator accepts capitals and underscores. FR-015 asks for lowercase
-  letters, digits and hyphens, and the URL converter matches only that, so the extra validator is
-  what keeps the admin from saving a slug no address can reach.
+  letters, digits and hyphens, and the extra validator keeps the admin from saving anything else.
 - The validator runs on `full_clean()`, which the admin calls. Code writing through the ORM is not
   validated, the same as every other field in the package (Django's normal behaviour). A slug no
   address matches then answers "not found", which is safe.
@@ -124,24 +124,16 @@ case should catch it for the other.
 `mvp_compliance/urls.py`:
 
 ```python
-class VersionNumberConverter:
-    regex = r"[0-9]{4}\.[0-9]+"
-    def to_python(self, value): return value
-    def to_url(self, value): return value
-
-register_converter(VersionNumberConverter, "version_number")
-
 app_name = "mvp_compliance"
 urlpatterns = [
     path("", DocumentIndexView.as_view(), name="index"),
     path("<slug:slug>/", DocumentView.as_view(), name="document"),
-    path("<slug:slug>/<version_number:number>/", VersionView.as_view(), name="version"),
 ]
 ```
 
 A host project mounts it with `path("legal/", include("mvp_compliance.urls"))` and links with
 `{% url 'mvp_compliance:document' 'privacy-policy' %}`. That is SC-007: one line in the URLs, one
-link in a template.
+link in a template. An earlier version is `{% url 'mvp_compliance:document' 'privacy-policy' %}?version=2026.1`.
 
 ### Querysets
 
@@ -152,42 +144,37 @@ link in a template.
 - `VersionQuerySet.with_replaced_at()`: annotates `replaced_at`, the `published_at` of the earliest
   published version of the same document published after this one, through a `Subquery` ordered by
   `published_at`. `None` for the version in force. One query for any number of versions (SC-006).
-  The version's page uses it for "in force from … to …".
+  The document's page uses it for "in force from … to …" when it shows a superseded version.
 
 `Document.current` (existing) is left alone. The views read `current_versions[0]`.
 
 ### Views (`mvp_compliance/views.py`)
 
-All three are readable by anyone: no login or permission mixin (FR-005). None offers a CRUD link:
-`directory = []` on each detail view. Each sets `template_name` explicitly, so the page it renders is
+Both are readable by anyone: no login or permission mixin (FR-005). None offers a CRUD link:
+`directory = []` on the detail view. Each sets `template_name` explicitly, so the page it renders is
 never an mvp default, and each sets its breadcrumbs.
 
 | View | Base | Object and 404 rule | Template | Page title / subtitle |
 |---|---|---|---|---|
 | `DocumentIndexView` | `MVPTemplateView` | `documents`: `Document.objects.in_force().order_by("name")` | `mvp_compliance/document_index.html` | "Legal documents" |
-| `DocumentView` | `MVPDetailView` | `Document.objects.in_force()` by `slug`, 404 otherwise | `mvp_compliance/document_detail.html` | document name / "vN - D", plus "· Agreed on D" for a visitor who accepted it |
-| `VersionView` | `MVPDetailView` | `Version.objects.published().with_replaced_at().select_related("document")` filtered by `document__slug` and `number`, 404 otherwise | `mvp_compliance/version_detail.html` | document name / the same line as the document's page |
+| `DocumentView` | `MVPDetailView` | `Document.objects.in_force()` by `slug`, 404 otherwise; `?version=` chooses the version shown, 404 when it is not a published version of the document | `mvp_compliance/document_detail.html` | document name / "vN - D", plus "· Agreed on D" for a visitor who accepted it |
 
-- A slug naming no document, a document with only drafts, and a number from another document all
-  come back from `get_object()` as `Http404`. Being signed in, or staff, changes nothing (FR-007,
+- A slug naming no document, a document with only drafts, and a `?version=` value that is not one of
+  its published versions all answer `Http404`. Being signed in, or staff, changes nothing (FR-007,
   US-1 scenario 8).
 - Breadcrumbs: index → document → (versions | version). The index crumb links to
   `mvp_compliance:index`, so it resolves under whatever prefix the project chose.
 - What each view overrides, checked against the resolved mvp 0.24.0 (design review):
-  - All three detail views override `get_breadcrumbs()`. mvp's `PageObjectMixin.get_breadcrumbs()`
+  - `DocumentView` overrides `get_breadcrumbs()`. mvp's `PageObjectMixin.get_breadcrumbs()`
     builds its own trail and never reads a `breadcrumbs` attribute, so setting one is silently
     ignored and the default draws a crumb with an empty link. The index view overrides it too,
     because its link needs `reverse()`.
-  - `DocumentView`: `get_queryset()` is `in_force()`; `get_context_data()` adds `version`
-    (`self.object.current_versions[0]`); `get_page_title()` is the name; `get_page_subtitle()`
-    builds the line under the name with `_()` and `django.utils.formats.date_format`, and
-    `get_context_data()` adds `previous_versions`, the document's other published versions,
-    newest first.
-  - `VersionView`: overrides `get_object()` entirely. Django's `SingleObjectMixin.get_object()`
-    filters on `slug`, which `Version` does not have, so the default raises `FieldError`. It
-    filters `document__slug` and `number` and raises `Http404` when nothing matches. It also
-    overrides `get_page_title()` (the default is `str(version)`, "Name #2026.1") and
-    `get_page_subtitle()`.
+  - `DocumentView`: `get_queryset()` is `in_force()`. The version shown is the current one, or,
+    with `?version=<number>`, that published version of the document from
+    `published().with_replaced_at()`, `Http404` when it is not one. `get_context_data()` adds
+    `version` (the one shown) and `versions` (every published version, newest first, for the
+    switcher). `get_page_title()` is the name; `get_page_subtitle()` builds the line under the name
+    with `_()` and `django.utils.formats.date_format`.
   - `DocumentIndexView`: `get_context_data()` adds `documents`; `page_title` is a lazy string.
 - mvp's title component writes the title and subtitle through autoescaped variables, so a document
   name with markup in it is escaped (checked in `cotton/page/title.html`).
@@ -198,12 +185,11 @@ Each extends `page_view.html` (the packaged mvp page) and fills `page.content`, 
 what puts them in the shell with no project template (FR-012), and what a project replaces by placing
 a template at the same path (FR-018).
 
-- `document_detail.html`: a "Previous versions" dropdown in `page.actions` when there are earlier
-  versions, a primary button with a caret, listing each as `vN - D` linking to its page.
-  Then the wording in `<div class="prose max-w-none">`, written as `{{ version.html|safe }}`. `prose` ships in mvp's stylesheet (research R2).
-- `version_detail.html`: the same wording block. Above it, for the version in force, "This is the
-  version in force"; for a superseded one, an alert saying it has been replaced, the dates it was in
-  force, and a link to the document's page ("Read the version in force").
+- `document_detail.html`: a version switcher dropdown in `page.actions` on every document page, a
+  primary button with a caret whose text is the version shown, listing every version as `vN - D`
+  linking to `?version=N`, the shown one marked active. For a superseded version, one alert row: the
+  warning icon, the replaced message with its dates, and a "View current version" button at the
+  end (`alert-horizontal`). Then the wording in `<div class="prose max-w-none">`, written as `{{ version.html|safe }}`. `prose` ships in mvp's stylesheet (research R2).
 - `document_index.html`: one entry per document linking to its page. With none, a sentence saying
   nothing has been published yet (US-3 scenario 6).
 
@@ -231,7 +217,7 @@ under `legal/`.
 
 ### Documentation
 
-- `docs/pages.md` (new): mounting the addresses, the three URL names and their arguments, linking to
+- `docs/pages.md` (new): mounting the addresses, the two URL names and their arguments, linking to
   a document from a footer, what each page shows and when it answers "not found", every template
   path with the context it receives, overriding one. Linked from the README.
 - `docs/models.md`: the slug and when it is fixed. `in_force()` and `with_replaced_at()`.
@@ -243,12 +229,12 @@ under `legal/`.
 
 The stories run in sequence on one branch: **US-1, US-2, US-3, US-4**. US-1 introduces the slug
 field and the URL module because the first page needs both. US-4 then fixes the slug and adds the
-override proof and the template documentation, once all three templates exist.
+override proof and the template documentation, once both templates exist.
 
 | Order | Story | Touches |
 |---|---|---|
 | 1 | US-1 Reading the document in force | `models.py` (`slug`, `in_force()`), migration `0007`, `urls.py` (new), `views.py` (new, `DocumentView`), `document_detail.html`, `tests/settings.py`, `tests/urls.py`, `tests/factories.py`, demo settings, menu, URLs, seed and landing, `docs/pages.md` (new), `docs/models.md`, README, CHANGELOG, `en` catalog |
-| 2 | US-2 Reading any version at its own address | `models.py` (`with_replaced_at()`), `urls.py` (converter, `version`), `views.py` (`VersionView`), `version_detail.html`, `docs/pages.md`, `docs/models.md`, `en` catalog |
+| 2 | US-2 Reading any version of a document | `models.py` (`with_replaced_at()`), `views.py` (`?version=` on `DocumentView`), `document_detail.html` (the replaced alert), `docs/pages.md`, `docs/models.md`, `en` catalog |
 | 3 | US-3 Finding a document and its earlier versions | `views.py` (`DocumentIndexView`, the previous versions on `DocumentView`), `urls.py`, `document_index.html`, `document_detail.html` (the menu), `docs/pages.md`, `en` catalog |
 | 4 | US-4 A stable address, and a project's own presentation | `models.py` (validator, freeze), `admin.py`, `tests/templates/` override, `docs/pages.md` (overriding), `docs/models.md`, `docs/authoring.md`, `CONTEXT.md`, CHANGELOG, `en` catalog |
 
@@ -256,9 +242,8 @@ override proof and the template documentation, once all three templates exist.
 
 | Addition | Why it is needed | Simpler alternative rejected because |
 |---|---|---|
-| A path converter for version numbers | `2026.2` contains a dot, which `slug` rejects, and `str` would also match any other word | `re_path` would work, but a named converter keeps all three patterns in one readable style and states the number's shape once |
-| `with_replaced_at()` annotation | FR-003 and FR-010 need the date a version was replaced, which no field stores | Walking the list in Python works for the list page but not the single version's page, and two definitions of "replaced" can disagree |
-| A lowercase validator beside `SlugField`'s own | FR-015; the converter matches only lowercase | `SlugField` alone accepts `Privacy_Policy`, which the admin would save and no address could reach |
+| `with_replaced_at()` annotation | FR-003 and FR-010 need the date a version was replaced, which no field stores | Walking the versions in Python on every request is a second definition of "replaced" that can disagree with the model's |
+| A lowercase validator beside `SlugField`'s own | FR-015 | `SlugField` alone accepts `Privacy_Policy`, which the admin would save and no address could reach |
 
 ## Outside this plan
 

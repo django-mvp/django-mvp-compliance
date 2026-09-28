@@ -442,7 +442,7 @@
               "uv run mypy mvp_compliance/views.py (clean)",
               "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, no fuzzy entries, no .mo",
               "uv run python manage.py check (no issues)",
-              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 — switcher, alert, 404 all as expected"
+              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 \u2014 switcher, alert, 404 all as expected"
             ]
           }
         }
