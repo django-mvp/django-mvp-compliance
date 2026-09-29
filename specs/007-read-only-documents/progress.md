@@ -159,3 +159,10 @@ Did: `tests/test_admin.py::TestDocumentKindInTheAdmin`, four tests: the changeli
 Verified: `uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin -q` gave 1 failed, 3 passed, the failure being the missing `field-kind` cell on the changelist. The three form tests pass against US-1's code because `DocumentAdmin` declares no fields.
 Next: T011, `"kind"` in `list_display`.
 Watch: none.
+
+## 2026-09-29T22:48Z · Implementer US2 · T011
+
+Did: `"kind"` after `"name"` in `DocumentAdmin.list_display`. No permission check, no filter, no migration.
+Verified: `uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin tests/test_admin.py::TestDocumentChangelist -q` gave 10 passed (the existing query-count test stays green with the column). `uv run pre-commit run --all-files` passes after ruff-format reformatted my T010 test on its first run.
+Next: T012, the model tests for changing the kind.
+Watch: none.

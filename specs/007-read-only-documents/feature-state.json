@@ -219,8 +219,21 @@
         },
         {
           "id": "T011",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentKindInTheAdmin",
+              "tests/test_admin.py::TestDocumentChangelist"
+            ],
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin tests/test_admin.py::TestDocumentChangelist -q (10 passed)",
+              "uv run pre-commit run --all-files (all hooks pass)"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:26"
+            ]
+          }
         },
         {
           "id": "T012",
