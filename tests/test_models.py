@@ -79,6 +79,23 @@ class TestDocument:
 
 
 @pytest.mark.django_db
+class TestDocumentKind:
+    def test_a_document_created_without_a_kind_is_one_people_agree_to(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+
+        document.refresh_from_db()
+
+        assert document.kind == Document.Kind.AGREED
+
+    def test_a_document_created_as_a_notice_keeps_it(self):
+        document = DocumentFactory(kind=Document.Kind.NOTICE)
+
+        document.refresh_from_db()
+
+        assert document.kind == Document.Kind.NOTICE
+
+
+@pytest.mark.django_db
 class TestDocumentSlug:
     """A document's slug is its identifier in an address, and no two share one."""
 
@@ -1366,6 +1383,68 @@ class TestOutstanding:
 
         assert len(at_two_documents.captured_queries) == len(
             at_ten_documents.captured_queries
+        )
+
+
+    def test_a_notice_with_a_version_in_force_is_not_outstanding(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice).publish()
+
+        assert not notice.is_outstanding_for(user)
+        assert notice not in Document.objects.outstanding_for(user)
+
+    def test_a_document_created_without_a_kind_is_outstanding_until_accepted(
+        self, user
+    ):
+        document = Document.objects.create(name="Terms", slug="terms")
+        VersionFactory(document=document).publish()
+
+        assert document.is_outstanding_for(user)
+
+    def test_outstanding_for_names_the_agreed_documents_not_yet_accepted_among_notices(
+        self, user
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice).publish()
+        unaccepted = DocumentFactory()
+        VersionFactory(document=unaccepted).publish()
+        accepted = DocumentFactory()
+        accepted_version = VersionFactory(document=accepted)
+        accepted_version.publish()
+        Acceptance.objects.record(user, accepted_version)
+
+        assert set(Document.objects.outstanding_for(user)) == {unaccepted}
+
+    def test_a_notice_with_only_drafts_is_outstanding_for_nobody(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice)
+
+        assert not notice.is_outstanding_for(user)
+
+    def test_a_kind_that_is_not_a_notice_leaves_the_document_outstanding(self, user):
+        document = DocumentFactory()
+        VersionFactory(document=document).publish()
+        Document.objects.filter(pk=document.pk).update(kind="something-else")
+
+        assert document.is_outstanding_for(user)
+
+    def test_the_answer_costs_the_same_with_one_document_as_with_fifty_with_notices(
+        self, user, django_assert_num_queries
+    ):
+        VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE)).publish()
+
+        with django_assert_num_queries(1) as at_two_documents:
+            list(Document.objects.outstanding_for(user))
+
+        for n in range(49):
+            kind = Document.Kind.NOTICE if n % 5 == 0 else Document.Kind.AGREED
+            VersionFactory(document=DocumentFactory(kind=kind)).publish()
+
+        with django_assert_num_queries(1) as at_fifty_documents:
+            list(Document.objects.outstanding_for(user))
+
+        assert len(at_two_documents.captured_queries) == len(
+            at_fifty_documents.captured_queries
         )
 
 
