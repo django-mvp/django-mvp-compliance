@@ -880,7 +880,9 @@ class TestDocumentSlugInTheAdmin:
         url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
 
         page = client.get(url)
-        response = client.post(url, {"name": document.name, "slug": "new-address"})
+        response = client.post(
+            url, {"name": document.name, "slug": "new-address", "kind": "agreed"}
+        )
 
         assert 'name="slug"' in page.content.decode()
         assert response.status_code == 302
@@ -909,7 +911,9 @@ class TestDocumentSlugInTheAdmin:
         client.force_login(editor)
         url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
 
-        response = client.post(url, {"name": "A new name", "slug": "new-address"})
+        response = client.post(
+            url, {"name": "A new name", "slug": "new-address", "kind": "agreed"}
+        )
 
         assert response.status_code == 302
         document.refresh_from_db()

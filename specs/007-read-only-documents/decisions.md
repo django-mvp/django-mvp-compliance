@@ -79,3 +79,21 @@ enforcement and does not apply to a kind of document that nobody can accept.
 **Revisit if**: a caller ever needs notices in the answer. None of the three the ADR names does.
 
 **ADR:** docs/adr/0009-outstanding-is-answered-for-every-published-document.md (amended)
+
+## D5 — Three existing tests gain the new field
+
+**Ambiguous**: adding `kind` changed three tests written before it existed.
+`TestDocument::test_document_holds_no_wording` asserts the document's exact field set, and two tests
+in `TestDocumentSlugInTheAdmin` post the change form with only a name and a slug. The form now has
+a required `kind` select, so a browser always posts it, but these hand-built posts did not.
+Changing a test this feature did not write is normally refused.
+
+**Chosen**: authorised by the orchestrator at US-1 acceptance. The field-set assertion lists `kind`,
+and the two posts carry `"kind": "agreed"`. No assertion was changed or weakened.
+
+**Why defensible**: each test still proves what it was written to prove: that a document holds no
+wording, and how the slug behaves before and after publication. The edits only bring each test's
+inputs up to date with the document as it now is. Weakening them, for example by making `kind`
+optional on the form, would change behaviour to suit a test.
+
+**ADR:** none — a test maintenance ruling local to this feature.

@@ -80,7 +80,7 @@ class TestDocument:
         field_names = {
             field.name for field in Document._meta.get_fields() if field.concrete
         }
-        assert field_names == {"id", "name", "slug"}
+        assert field_names == {"id", "name", "slug", "kind"}
 
 
 @pytest.mark.django_db

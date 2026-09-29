@@ -77,7 +77,7 @@
         },
         {
           "id": "T002",
-          "status": "blocked",
+          "status": "done",
           "attempts": 1,
           "evidence": {
             "tests": [
@@ -87,7 +87,8 @@
             "commands": [
               "uv run pytest tests/test_models.py::TestDocumentKind tests/test_models.py::TestOutstanding -q (15 passed)",
               "uv run pytest tests -q -n auto --dist loadscope (3 failed, 405 passed: three pre-existing tests must change, see progress.md)",
-              "uv run python manage.py makemigrations --check --dry-run (No changes detected)"
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)",
+              "orchestrator: three pre-existing tests gain the kind field (decisions.md D5); uv run pytest tests -q -n auto (423 passed)"
             ],
             "code": [
               "mvp_compliance/models.py:124",
