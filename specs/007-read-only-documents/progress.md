@@ -24,7 +24,7 @@ over version ids), DR-005 (dropped a query-count clause the existing changelist 
 DR-006 (the `?version=` page of an earlier version also carries no agreement line). DR-002 (who
 may change the kind) ruled in D3 and raised in the plan notification.
 
-## 2026-09-29T21:00Z · Implementer US1 · T001
+## 2026-09-29T20:43Z · Implementer US1 · T001
 
 Did: `TestDocumentKind` (default agreed, notice kept) and six `TestOutstanding` cases: a notice with a
 version in force is not outstanding, a document created without a kind still is, a mix of notices
@@ -36,7 +36,7 @@ gave 7 failed, 8 passed, every failure the missing `Document.Kind` / `kind`.
 Next: T002.
 Watch: no test for "kind is not indexed": it could only fail by someone changing the decision.
 
-## 2026-09-29T21:05Z · Implementer US1 · T002
+## 2026-09-29T20:45Z · Implementer US1 · T002
 
 Did: `Document.Kind` and `Document.kind`, `outstanding_for()` excludes notices (docstrings updated),
 migration `0008_document_kind` (one `AddField`), `en` catalog regenerated for the four new strings
@@ -53,7 +53,7 @@ are older tests that describe the model as it was before, and I may not edit the
 Next: T003. T002 is marked blocked for Forge to triage those three one-line edits; the code is done.
 Watch: nothing in the model can avoid this: a required field on the change form is the design.
 
-## 2026-09-29T21:12Z · Implementer US1 · T003
+## 2026-09-29T20:45Z · Implementer US1 · T003
 
 Did: `TestDocumentKindMigration` builds two documents, a published version and an acceptance at
 `0007_document_slug` with the historical `.objects.create()` (never `bulk_create`), migrates to
@@ -63,7 +63,7 @@ Verified: `uv run pytest tests/test_migrations.py -q` gave 4 passed.
 Next: T004.
 Watch: passes on arrival by design (its done-when is "Passes"); T002 already carried the migration.
 
-## 2026-09-29T21:20Z · Implementer US1 · T004
+## 2026-09-29T20:45Z · Implementer US1 · T004
 
 Did: `TestRecording` gains seven tests. `record()` against a notice's version in force and its
 superseded one; twice in a row; a user who accepted before the document became a notice (`RecordError`,
@@ -75,7 +75,7 @@ failure `DID NOT RAISE RecordError`.
 Next: T005.
 Watch: the stale-instance test is what keeps the check reading the database rather than `version.document`.
 
-## 2026-09-29T21:30Z · Implementer US1 · T005
+## 2026-09-29T20:46Z · Implementer US1 · T005
 
 Did: `Acceptance.refuse_if_notice(version_ids)` (one query, reads the database), called by
 `record()` after the "never published" refusal and before `get_or_create()`, by `Acceptance.save()`
@@ -87,7 +87,7 @@ gave 23 passed; `tests/test_admin.py::TestUserFacingStrings` passes.
 Next: T006.
 Watch: `Acceptance._base_manager.bulk_create()` is a plain manager and is not covered, by design.
 
-## 2026-09-29T21:40Z · Implementer US1 · T006
+## 2026-09-29T20:47Z · Implementer US1 · T006
 
 Did: `tests/test_views.py::TestNotice` (200 for anonymous and signed-in with stored html, number and
 date; no "Agreed on" for a signed-in user on the current and earlier versions; the same after an
@@ -101,7 +101,7 @@ Next: T007.
 Watch: a notice made from a document nobody accepted cannot show the line before T007 either, so
 only the earlier-acceptance test is red.
 
-## 2026-09-29T21:45Z · Implementer US1 · T007
+## 2026-09-29T20:47Z · Implementer US1 · T007
 
 Did: `VersionSubtitleMixin.get_page_subtitle()` returns the version line alone when the version's
 document is a notice, before it looks for an acceptance. The mixin's docstring now says it is used
@@ -112,7 +112,7 @@ Verified: `uv run pytest tests/test_views.py -q` gave 65 passed, the query-count
 Next: T008.
 Watch: none.
 
-## 2026-09-29T21:55Z · Implementer US1 · T008
+## 2026-09-29T20:47Z · Implementer US1 · T008
 
 Did: `seed_demo` seeds an "Impressum" notice (slug `impressum`, one published version);
 `make_document()` takes `kind`, defaulting to a document people agree to; `SLUGS` gains `impressum`;
@@ -126,7 +126,7 @@ server was started.
 Next: T009.
 Watch: none.
 
-## 2026-09-29T22:15Z · Implementer US1 · T009
+## 2026-09-29T20:48Z · Implementer US1 · T009
 
 Did: ADR 0009 amended in place (its Decision says a notice is never outstanding because nobody can
 accept one, marked amended 2026-09-29; the Why is untouched). `docs/models.md`: a *The kind*
@@ -142,7 +142,7 @@ once, at the end of the story.
 Next: full verify, then the report.
 Watch: the two admin tests and one model test that T002 cannot keep green are for Forge to triage.
 
-## 2026-09-29T22:25Z · Implementer US1 · full verify
+## 2026-09-29T20:49Z · Implementer US1 · full verify
 
 Ran `forge verify --repo … --base origin/main`: conformance, docs, lint, typecheck and build pass;
 `uv:test` fails (exit 1) on three tests written before `kind` existed, which I may not edit:
@@ -153,34 +153,34 @@ Ran `forge verify --repo … --base origin/main`: conformance, docs, lint, typec
 `uv run pytest tests -n auto --dist loadscope` gave 3 failed, 420 passed. Each needs one line added
 to the test (`"kind"` in the set; `"kind": "agreed"` in the posted data). Forge triages.
 
-## 2026-09-29T22:45Z · Implementer US2 · T010
+## 2026-09-29T20:53Z · Implementer US2 · T010
 
 Did: `tests/test_admin.py::TestDocumentKindInTheAdmin`, four tests: the changelist shows each document's kind (asserted through `get_kind_display()`), an add form saved with the preselected kind makes a document people agree to, an add with Notice makes a notice, and the change form changes the kind of a document with two published versions while every version row (pk, number, status, markdown, html) stays the same. Added the `Document` import.
 Verified: `uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin -q` gave 1 failed, 3 passed, the failure being the missing `field-kind` cell on the changelist. The three form tests pass against US-1's code because `DocumentAdmin` declares no fields.
 Next: T011, `"kind"` in `list_display`.
 Watch: none.
 
-## 2026-09-29T22:48Z · Implementer US2 · T011
+## 2026-09-29T20:53Z · Implementer US2 · T011
 
 Did: `"kind"` after `"name"` in `DocumentAdmin.list_display`. No permission check, no filter, no migration.
 Verified: `uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin tests/test_admin.py::TestDocumentChangelist -q` gave 10 passed (the existing query-count test stays green with the column). `uv run pre-commit run --all-files` passes after ruff-format reformatted my T010 test on its first run.
 Next: T012, the model tests for changing the kind.
 Watch: none.
 
-## 2026-09-29T22:58Z · Implementer US2 · T012
+## 2026-09-29T20:54Z · Implementer US2 · T012
 
 Did: `tests/test_models.py::TestChangingTheKind`, twelve cases (six behaviours, most run through both `save()` and `Document.objects.filter(...).update(kind=...)`): versions and acceptances are identical rows before and after in both directions (FR-007, SC-003); an agreed document made a notice still lists all its acceptances in `records.produce()`; it is not outstanding for someone who never accepted it; a notice made agreed is outstanding for someone who has not accepted its version in force; an acceptance recorded before it became a notice counts again once agreed again. Two module helpers (`change_kind`, `held_about`) and the `produce` import.
 Verified: `uv run pytest tests/test_models.py::TestChangingTheKind -q` gave 12 passed, as expected against US-1 code. Probed both ways: removing the `.exclude(kind=NOTICE)` in `outstanding_for()` failed 4; a `save()` that deletes acceptances once the kind is notice failed 3 (the save route). Both mutations reverted; `git status` shows only the test file. `uv run pre-commit run --all-files` passes.
 Next: T013, the docs.
 Watch: no red step is possible for this task; it pins behaviour US-1 already delivered.
 
-## 2026-09-29T23:08Z · Implementer US2 · T013
+## 2026-09-29T20:54Z · Implementer US2 · T013
 
 Did: `docs/authoring.md` gains *Documents people agree to, and notices* (choosing the kind, changing it later on the document's page, what happens to recorded acceptances in each direction, no extra permission) and *The documents list* names the **Kind** column. `docs/models.md` *The kind* says how to change it from code (`save()` and `update()`), that nothing recorded is touched and what flips at once. CHANGELOG's existing Added entry now mentions the column and changing the kind and links the three pages. No string in code changed, so the `en` catalog is untouched.
 Verified: `uv run pre-commit run --all-files` passes. The docs gate runs in the full verify below.
 Next: full verify, then the report.
 Watch: none.
 
-## 2026-09-29T23:12Z · Implementer US2 · full verify
+## 2026-09-29T20:54Z · Implementer US2 · full verify
 
 Ran `forge verify --repo … --base origin/main`, exit 0: conformance, docs, lint, typecheck, test and build all passed.
