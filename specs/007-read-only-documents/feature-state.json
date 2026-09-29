@@ -140,8 +140,17 @@
         },
         {
           "id": "T006",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestNotice",
+              "tests/test_models.py::TestVersionPublished"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestNotice tests/test_models.py::TestVersionPublished -q (1 failed, 16 passed before T007: Agreed on shown for an acceptance from before the document became a notice)"
+            ]
+          }
         },
         {
           "id": "T007",

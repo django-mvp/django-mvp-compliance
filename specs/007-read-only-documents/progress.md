@@ -86,3 +86,17 @@ Verified: `uv run pytest tests/test_models.py::TestRecording tests/test_models.p
 gave 23 passed; `tests/test_admin.py::TestUserFacingStrings` passes.
 Next: T006.
 Watch: `Acceptance._base_manager.bulk_create()` is a plain manager and is not covered, by design.
+
+## 2026-09-29T21:40Z · Implementer US1 · T006
+
+Did: `tests/test_views.py::TestNotice` (200 for anonymous and signed-in with stored html, number and
+date; no "Agreed on" for a signed-in user on the current and earlier versions; the same after an
+acceptance recorded before the document became a notice, on the earlier `?version=` too; an earlier
+version's own html; the side list carries a notice and an agreed document; draft-only notice is 404)
+and `TestVersionPublished::test_publishing_a_notices_version_is_announced_too`.
+Verified: `uv run pytest tests/test_views.py::TestNotice tests/test_models.py::TestVersionPublished -q`
+gave 1 failed, 16 passed; the one failure is the "Agreed on" test for an acceptance from before the
+change, the only case where the line can appear at all.
+Next: T007.
+Watch: a notice made from a document nobody accepted cannot show the line before T007 either, so
+only the earlier-acceptance test is red.

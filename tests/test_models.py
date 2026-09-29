@@ -1921,6 +1921,16 @@ class TestVersionPublished:
         assert call["publisher"] == user
         assert call["replaced"] is None
 
+    def test_publishing_a_notices_version_is_announced_too(
+        self, announcements, django_capture_on_commit_callbacks, db
+    ):
+        version = VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE))
+
+        with django_capture_on_commit_callbacks(execute=True):
+            version.publish()
+
+        assert [call["version"] for call in announcements] == [version]
+
     def test_a_publication_with_nobody_named_passes_none_as_publisher(
         self, announcements, django_capture_on_commit_callbacks, draft
     ):
