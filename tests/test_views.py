@@ -577,6 +577,113 @@ class TestVersionSwitcher:
 
 
 @pytest.mark.django_db
+class TestDocumentList:
+    """FR-004, FR-007: every document page, with or without ``?version=``, lists
+    every document that has a version in force beside the wording, the one shown
+    marked active."""
+
+    @staticmethod
+    def side_list(client, address):
+        content = client.get(address).content.decode()
+        start = content.find('<nav id="document-list"')
+        end = content.find("</nav>", start)
+        return content[start:end] if start != -1 else ""
+
+    @pytest.fixture
+    def documents(self):
+        terms = DocumentFactory(name="Terms of use")
+        cookies = DocumentFactory(name="Cookie policy")
+        privacy = DocumentFactory(name="Privacy policy")
+        for document in (terms, cookies, privacy):
+            published(document)
+        return cookies, privacy, terms
+
+    def test_every_document_in_force_is_listed_alphabetically_and_linked(
+        self, client, documents
+    ):
+        cookies, privacy, terms = documents
+
+        response = client.get(document_address(privacy))
+
+        assert list(response.context["documents"]) == [cookies, privacy, terms]
+        side_list = self.side_list(client, document_address(privacy))
+        addresses = [f'href="{document_address(document)}"' for document in documents]
+        positions = [side_list.index(address) for address in addresses]
+        assert positions == sorted(positions)
+
+    def test_a_version_address_lists_the_same_documents(self, client, documents):
+        _cookies, privacy, _terms = documents
+        earlier = privacy.versions.get()
+        published(privacy, "Second wording")
+
+        side_list = self.side_list(client, version_address(privacy, earlier.number))
+
+        for document in documents:
+            assert f'href="{document_address(document)}"' in side_list
+
+    def test_the_document_shown_is_marked_active_and_no_other(self, client, documents):
+        cookies, privacy, terms = documents
+
+        side_list = self.side_list(client, document_address(privacy))
+
+        assert (
+            f'href="{document_address(privacy)}" class="menu-active" aria-current="page"'
+            in side_list
+        )
+        assert side_list.count("menu-active") == 1
+        assert side_list.count('aria-current="page"') == 1
+
+    def test_the_document_shown_is_marked_active_with_a_version_parameter(
+        self, client, documents
+    ):
+        _cookies, privacy, _terms = documents
+        earlier = privacy.versions.get()
+        published(privacy, "Second wording")
+
+        side_list = self.side_list(client, version_address(privacy, earlier.number))
+
+        assert (
+            f'href="{document_address(privacy)}" class="menu-active" aria-current="page"'
+            in side_list
+        )
+        assert side_list.count("menu-active") == 1
+
+    def test_a_draft_only_document_and_an_empty_one_are_absent(self, client):
+        shown = DocumentFactory(name="Privacy policy")
+        published(shown)
+        VersionFactory(document=DocumentFactory(name="Draft only"))
+        DocumentFactory(name="Empty")
+
+        response = client.get(document_address(shown))
+
+        assert list(response.context["documents"]) == [shown]
+        side_list = self.side_list(client, document_address(shown))
+        assert "Draft only" not in side_list
+        assert "Empty" not in side_list
+
+    @pytest.mark.parametrize("with_version", [False, True], ids=["plain", "version"])
+    def test_the_query_count_does_not_grow_with_the_documents_published(
+        self, client, django_assert_num_queries, with_version
+    ):
+        shown = DocumentFactory(name="Document 0")
+        version = published(shown)
+        published(DocumentFactory(name="Document 1"))
+        address = (
+            version_address(shown, version.number)
+            if with_version
+            else document_address(shown)
+        )
+        client.get(address)  # warm caches
+        with CaptureQueriesContext(connection) as small:
+            client.get(address)
+        for n in range(2, 6):
+            published(DocumentFactory(name=f"Document {n}"))
+
+        with django_assert_num_queries(len(small)):
+            client.get(address)
+
+
+@pytest.mark.django_db
 class TestBreadcrumbTrails:
     """Every page's trail is the document's name alone."""
 

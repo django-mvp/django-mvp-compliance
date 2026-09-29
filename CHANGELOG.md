@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `?version=` value that is not a published version of the document, answers "not found". A
   superseded version's page carries one alert row with the dates it was in force and a "View
   current version" button. Every document page also carries a version switcher among its
-  actions, listing every published version newest first and marking the one shown. The package
+  actions, listing every published version newest first and marking the one shown. Beside the
+  wording, every document page lists every document that has a version in force, alphabetically,
+  with the one shown marked; below the large breakpoint the list stacks above the wording. The package
   adds nothing to your menus, and every page's breadcrumbs are the document's name alone. See
   [docs/pages.md](docs/pages.md).
 - `Document.slug`, a unique slug that forms the document's address, and

@@ -402,7 +402,7 @@ msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
 #: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
-#: mvp_compliance/templates/mvp_compliance/document_detail.html:18
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:31
 msgid "View current version"
 msgstr "View current version"
 
@@ -445,6 +445,10 @@ msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
 
 #: mvp_compliance/templates/mvp_compliance/document_detail.html:17
+msgid "Legal documents"
+msgstr "Legal documents"
+
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:30
 #, python-format
 msgid ""
 "This version has been replaced. It was in force from %(published)s to "
@@ -485,7 +489,7 @@ msgstr "%(name)s: version %(number)s is now in force"
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: mvp_compliance/views.py:86
+#: mvp_compliance/views.py:87
 msgid "No version found"
 msgstr "No version found"
 

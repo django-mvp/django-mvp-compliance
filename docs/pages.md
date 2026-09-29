@@ -48,6 +48,12 @@ shown: the version in force by default, or the one named by `?version=`. When a 
 version is published, the plain address shows it at once; an earlier `?version=` address
 keeps showing what it always showed.
 
+Beside the wording, on wide screens, the page lists every document that has a version in
+force, alphabetically, each linking to its own page, with the one being shown marked. On
+a narrow screen the list stacks above the wording. A document with only drafts, or with
+no versions, is left out. The list is the same on a `?version=` address as on the plain
+one.
+
 The line under the name reads `v2026.1 - 26 September 2026`: the shown version's
 number and the day it was published, in the project's date format. When the signed-in
 visitor has accepted that version it continues `· Agreed on 27 September 2026`, with the
@@ -125,7 +131,7 @@ change, and you do not fork it.
 
 | Template path | Page | Receives |
 |---|---|---|
-| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first |
+| `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
 
