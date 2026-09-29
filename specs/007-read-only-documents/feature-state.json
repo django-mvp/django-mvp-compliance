@@ -60,6 +60,14 @@
         "DR-002 medium: ruled in D3, raised in plan notification",
         "DR-003..DR-006 low: applied as plan/tasks edits"
       ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-09-29T21:11:26Z",
+      "self_resolved": [
+        "CMP-001 low: remedied, historical-model guard in bulk_create, test red before fix",
+        "CMP-002 low: remedied, removed a test that could not fail"
+      ]
     }
   },
   "stories": [

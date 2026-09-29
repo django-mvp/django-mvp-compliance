@@ -184,3 +184,9 @@ Watch: none.
 ## 2026-09-29T20:54Z · Implementer US2 · full verify
 
 Ran `forge verify --repo … --base origin/main`, exit 0: conformance, docs, lint, typecheck, test and build all passed.
+
+## 2026-09-29 — S5 CONVERGE and S6 REVIEW
+
+Both stories accepted. One migration, nothing to squash. Changelog entry shortened. The roadmap now
+shows R2 and R3 as delivered, and R5 stays open (D6). Review: approve, two low findings, both fixed
+and verified (see the review comment on the pull request).
