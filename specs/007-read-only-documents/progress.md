@@ -166,3 +166,10 @@ Did: `"kind"` after `"name"` in `DocumentAdmin.list_display`. No permission chec
 Verified: `uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin tests/test_admin.py::TestDocumentChangelist -q` gave 10 passed (the existing query-count test stays green with the column). `uv run pre-commit run --all-files` passes after ruff-format reformatted my T010 test on its first run.
 Next: T012, the model tests for changing the kind.
 Watch: none.
+
+## 2026-09-29T22:58Z · Implementer US2 · T012
+
+Did: `tests/test_models.py::TestChangingTheKind`, twelve cases (six behaviours, most run through both `save()` and `Document.objects.filter(...).update(kind=...)`): versions and acceptances are identical rows before and after in both directions (FR-007, SC-003); an agreed document made a notice still lists all its acceptances in `records.produce()`; it is not outstanding for someone who never accepted it; a notice made agreed is outstanding for someone who has not accepted its version in force; an acceptance recorded before it became a notice counts again once agreed again. Two module helpers (`change_kind`, `held_about`) and the `produce` import.
+Verified: `uv run pytest tests/test_models.py::TestChangingTheKind -q` gave 12 passed, as expected against US-1 code. Probed both ways: removing the `.exclude(kind=NOTICE)` in `outstanding_for()` failed 4; a `save()` that deletes acceptances once the kind is notice failed 3 (the save route). Both mutations reverted; `git status` shows only the test file. `uv run pre-commit run --all-files` passes.
+Next: T013, the docs.
+Watch: no red step is possible for this task; it pins behaviour US-1 already delivered.

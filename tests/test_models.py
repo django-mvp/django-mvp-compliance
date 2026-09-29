@@ -28,6 +28,7 @@ from mvp_compliance.models import (
     VersionManager,
     keep_or_remove_acceptances,
 )
+from mvp_compliance.records import produce
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import (
     AcceptanceFactory,
@@ -2079,3 +2080,118 @@ class TestVersionPublished:
             assert announcements == []
 
         assert [call["version"] for call in announcements] == [first, second]
+
+
+def change_kind(document, kind, route):
+    """Change ``document``'s kind through ``save()`` or through ``update()``."""
+    if route == "save":
+        document.kind = kind
+        document.save()
+    else:
+        Document.objects.filter(pk=document.pk).update(kind=kind)
+    document.refresh_from_db()
+
+
+def held_about(document):
+    """Every version and acceptance of ``document`` as plain rows, to compare before and after."""
+    versions = document.versions.order_by("pk").values_list(
+        "pk", "number", "status", "markdown", "html", "published_at"
+    )
+    acceptances = Acceptance.objects.filter(version__document=document).order_by("pk")
+    return list(versions), list(
+        acceptances.values_list(
+            "pk", "subject", "version_id", "accepted_at", "ip_address"
+        )
+    )
+
+
+@pytest.mark.django_db
+class TestChangingTheKind:
+    """US-2 scenarios 3-6, FR-007, FR-008, SC-003: the kind changes and nothing recorded does."""
+
+    @pytest.fixture
+    def agreed_document(self, user):
+        """A document people agree to, with two published versions, each accepted by ``user``."""
+        document = DocumentFactory()
+        for wording in ("First wording", "Second wording"):
+            version = VersionFactory(document=document, markdown=wording)
+            version.publish()
+            Acceptance.objects.record(user, version)
+        return document
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_making_a_document_a_notice_leaves_its_versions_and_acceptances_as_they_were(
+        self, agreed_document, route
+    ):
+        before = held_about(agreed_document)
+
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        assert agreed_document.kind == Document.Kind.NOTICE
+        assert held_about(agreed_document) == before
+        assert len(before[0]) == 2
+        assert len(before[1]) == 2
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_making_a_notice_a_document_people_agree_to_leaves_its_versions_and_acceptances_as_they_were(
+        self, agreed_document, route
+    ):
+        change_kind(agreed_document, Document.Kind.NOTICE, "update")
+        before = held_about(agreed_document)
+
+        change_kind(agreed_document, Document.Kind.AGREED, route)
+
+        assert agreed_document.kind == Document.Kind.AGREED
+        assert held_about(agreed_document) == before
+        assert len(before[0]) == 2
+        assert len(before[1]) == 2
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_acceptances_of_a_document_made_a_notice_still_appear_in_the_persons_record(
+        self, agreed_document, user, route
+    ):
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        entries = produce(Acceptance.subject_of(user)).sections[0].entries
+
+        assert [entry.document for entry in entries] == [agreed_document.name] * 2
+        assert {entry.version for entry in entries} == {
+            version.number for version in agreed_document.versions.all()
+        }
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_a_document_made_a_notice_is_not_outstanding_for_someone_who_never_accepted_it(
+        self, agreed_document, route
+    ):
+        stranger = UserFactory()
+        assert agreed_document.is_outstanding_for(stranger)
+
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        assert not agreed_document.is_outstanding_for(stranger)
+        assert agreed_document not in Document.objects.outstanding_for(stranger)
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_a_notice_made_a_document_people_agree_to_is_outstanding_for_someone_who_has_not_accepted_it(
+        self, route
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice).publish()
+        person = UserFactory()
+        assert not notice.is_outstanding_for(person)
+
+        change_kind(notice, Document.Kind.AGREED, route)
+
+        assert notice.is_outstanding_for(person)
+        assert notice in Document.objects.outstanding_for(person)
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_an_acceptance_from_before_it_was_a_notice_counts_again_once_it_is_agreed_to_again(
+        self, agreed_document, user, route
+    ):
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        change_kind(agreed_document, Document.Kind.AGREED, route)
+
+        assert not agreed_document.is_outstanding_for(user)
+        assert agreed_document not in Document.objects.outstanding_for(user)
