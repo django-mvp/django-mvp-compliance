@@ -1,5 +1,12 @@
 # Django MVP Compliance
 
+[![Tests](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/tests.yml/badge.svg)](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/tests.yml)
+[![Build](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/build.yml/badge.svg)](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/build.yml)
+[![Coverage](https://codecov.io/gh/django-mvp/django-mvp-compliance/graph/badge.svg)](https://codecov.io/gh/django-mvp/django-mvp-compliance)
+[![Licence](https://img.shields.io/github/license/django-mvp/django-mvp-compliance)](https://github.com/django-mvp/django-mvp-compliance/blob/main/LICENSE)
+
+Legal documents, consent records and cookie consent for django-mvp projects, managed from the database rather than the repository.
+
 Privacy policies, terms, user agreements and cookie notices for
 [django-mvp](https://github.com/django-mvp/django-mvp) projects — written and
 published from the database, with a record of who accepted which version and
@@ -31,6 +38,123 @@ So the documents live in the database. They are written in Markdown, published
 as ordinary pages on your site, and a published version never changes again —
 a correction is a new version, and the acceptance record points at the exact
 version a person saw.
+
+## Scope & philosophy
+
+**What it is**
+
+- A store for versioned legal documents, authored in Markdown and rendered as
+  pages in your site's shell.
+- A record of consent: which user accepted which version of which document, and
+  at what time.
+- Enforcement, so a user who has not accepted the current version is asked to
+  before continuing.
+- Translations, so a reader sees a document in their own language.
+- Cookie consent, gathered and recorded alongside everything else.
+- A place in the account area where a signed-in person can see what they have
+  agreed to and what they have chosen.
+
+Each version has one canonical text, and that is the text an acceptance points
+at. Translations exist so people can read a document in their own language, and
+carry the usual notice that the canonical version governs. Adding a translation
+later does not create a new version for everyone who already accepted.
+
+**What it deliberately is not**
+
+- **It does not make you compliant.** It provides the mechanics. Whether your
+  policies say the right things, whether you have a lawful basis, and whether
+  you honour what you promise are yours and your lawyers' to answer.
+- **It does not fulfil data subject access requests.** It offers the account
+  pages and the hooks. Gathering, exporting and deleting a person's data across
+  your own models is the project's work, because only the project knows where
+  that data is.
+- **It is not a CMS.** The documents it manages are the legal ones. Nothing
+  here is aimed at general page content.
+
+**When it cannot be recorded, it did not happen**
+
+This is the principle that settles the close calls. Someone who clicks "I
+accept" and whose acceptance fails to save has not accepted: they see the page
+again rather than continuing with nothing behind them. A check that cannot
+reach the data telling it whether someone has accepted does not assume they
+have.
+
+Letting a person through and reconciling afterwards is the other available
+answer, and it is the wrong one here. A gap in enforcement is a gap. A person
+using the site with no record of what they agreed to is the thing this package
+exists to prevent.
+
+**The record is evidence, and evidence outlives convenience**
+
+A published version never changes, and an acceptance is never edited or
+deleted, because both are records of something that happened. A typo in a
+published policy is corrected by publishing another version. A person who
+asks for their data to be deleted still leaves their acceptances behind: they
+are the evidence of what that person agreed to, and a dispute can arrive after
+the account has gone.
+
+The HTML a reader was served is stored at publication and served from then on.
+Rendering the Markdown again later could produce something different after a
+library upgrade or a change to the sanitiser, which would quietly change what
+the record says a person was shown.
+
+**It holds as little about a person as it can**
+
+Everything stored about a person is personal data, so each field has to earn
+its place, and anything optional is off until the project switches it on. An IP
+address on an acceptance is the usual example: it strengthens the evidence, and
+whether to keep it is the project's decision.
+
+The standing directions this package steers by are in [GOALS.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/GOALS.md).
+
+## Contents
+
+- [Why](#why)
+- [Scope & philosophy](#scope--philosophy)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Models](#models)
+- [Writing a version](#writing-a-version)
+- [Previewing a version](#previewing-a-version)
+- [Permissions](#permissions)
+- [Publishing](#publishing)
+- [Starting the next version from the one in force](#starting-the-next-version-from-the-one-in-force)
+- [Documentation](#documentation)
+- [Prior art](#prior-art)
+- [Contributing](#contributing)
+- [Changelog](#changelog)
+- [Licence](#licence)
+
+## Requirements
+
+- Python 3.12 or later.
+- Django 5.2, 6.0 or 6.1.
+- [django-mvp](https://github.com/django-mvp/django-mvp) 0.23 or later, which the pages render in.
+
+The CI matrix is the authoritative statement of what is supported.
+
+## Installation
+
+The package is not on PyPI yet. Install it from GitHub:
+
+```bash
+pip install git+https://github.com/django-mvp/django-mvp-compliance.git
+```
+
+Set up django-mvp first, following its own installation guide. Then add this
+package to `INSTALLED_APPS` and create its tables:
+
+```python
+# settings.py
+INSTALLED_APPS = [
+    # ... django-mvp and its apps ...
+    "mvp_compliance",
+]
+```
+
+```bash
+python manage.py migrate
+```
 
 ## Models
 
@@ -118,7 +242,7 @@ else that identifies anybody once the account is gone. Keeping the default there
 comes with an obligation: the project has to keep its own record of whose identifier
 that was, written when the account is closed, or the surviving acceptances are complete
 and unreachable. See
-[Keeping surviving records findable](docs/models.md#keeping-surviving-records-findable).
+[Keeping surviving records findable](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md#keeping-surviving-records-findable).
 
 By default an acceptance holds nothing about a person beyond who they are, which
 version, and when. A site that wants the address a request came from too, because it
@@ -136,7 +260,7 @@ Off by default, because it is personal data about somebody who did not ask for i
 be kept. On, and recorded from a call that supplies no request, the field stays empty
 rather than inventing a value. Turning the setting on or off only ever affects
 acceptances recorded afterwards — an existing record keeps whatever it held when it
-was written. See [docs/models.md](docs/models.md) for the full surface.
+was written. See [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) for the full surface.
 
 ## Writing a version
 
@@ -216,7 +340,7 @@ message they can read, not as an error page.
 The admin records whoever published a version as its publisher, and shows
 them next to the moment of publication. Code can call
 `version.publish(publisher=user)` to do the same, or `version.publish()` to
-record nobody. See [docs/models.md](docs/models.md) for what a version says
+record nobody. See [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) for what a version says
 about a publisher whose account has since been removed.
 
 Once a version is published, its change page in the admin offers no
@@ -253,87 +377,19 @@ Nothing is copied on the server: the wording is read once and handed to a
 new, unsaved form as a starting point. The version it came from is never
 opened for writing, and the model would refuse it if anything tried.
 
-## Scope & philosophy
-
-**What it is**
-
-- A store for versioned legal documents, authored in Markdown and rendered as
-  pages in your site's shell.
-- A record of consent: which user accepted which version of which document, and
-  at what time.
-- Enforcement, so a user who has not accepted the current version is asked to
-  before continuing.
-- Translations, so a reader sees a document in their own language.
-- Cookie consent, gathered and recorded alongside everything else.
-- A place in the account area where a signed-in person can see what they have
-  agreed to and what they have chosen.
-
-Each version has one canonical text, and that is the text an acceptance points
-at. Translations exist so people can read a document in their own language, and
-carry the usual notice that the canonical version governs. Adding a translation
-later does not create a new version for everyone who already accepted.
-
-**What it deliberately is not**
-
-- **It does not make you compliant.** It provides the mechanics. Whether your
-  policies say the right things, whether you have a lawful basis, and whether
-  you honour what you promise are yours and your lawyers' to answer.
-- **It does not fulfil data subject access requests.** It offers the account
-  pages and the hooks. Gathering, exporting and deleting a person's data across
-  your own models is the project's work, because only the project knows where
-  that data is.
-- **It is not a CMS.** The documents it manages are the legal ones. Nothing
-  here is aimed at general page content.
-
-**When it cannot be recorded, it did not happen**
-
-This is the principle that settles the close calls. Someone who clicks "I
-accept" and whose acceptance fails to save has not accepted: they see the page
-again rather than continuing with nothing behind them. A check that cannot
-reach the data telling it whether someone has accepted does not assume they
-have.
-
-Letting a person through and reconciling afterwards is the other available
-answer, and it is the wrong one here. A gap in enforcement is a gap. A person
-using the site with no record of what they agreed to is the thing this package
-exists to prevent.
-
-**The record is evidence, and evidence outlives convenience**
-
-A published version never changes, and an acceptance is never edited or
-deleted, because both are records of something that happened. A typo in a
-published policy is corrected by publishing another version. A person who
-asks for their data to be deleted still leaves their acceptances behind: they
-are the evidence of what that person agreed to, and a dispute can arrive after
-the account has gone.
-
-The HTML a reader was served is stored at publication and served from then on.
-Rendering the Markdown again later could produce something different after a
-library upgrade or a change to the sanitiser, which would quietly change what
-the record says a person was shown.
-
-**It holds as little about a person as it can**
-
-Everything stored about a person is personal data, so each field has to earn
-its place, and anything optional is off until the project switches it on. An IP
-address on an acceptance is the usual example: it strengthens the evidence, and
-whether to keep it is the project's decision.
-
-The standing directions this package steers by are in [GOALS.md](GOALS.md).
-
 ## Documentation
 
-- [docs/models.md](docs/models.md) — documents, versions, publishing, and what a published
+- [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
-- [docs/pages.md](docs/pages.md) — serving a document as a page of your site: mounting the
+- [docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md) — serving a document as a page of your site: mounting the
   addresses, linking to a document, and what a visitor sees.
-- [docs/announcing.md](docs/announcing.md) — the signal sent when a version is published, what it
+- [docs/announcing.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/announcing.md) — the signal sent when a version is published, what it
   carries, and what happens when a receiver fails.
-- [docs/authoring.md](docs/authoring.md) — the admin surface: the editor and what it offers,
+- [docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md) — the admin surface: the editor and what it offers,
   the form, and reading a version back the way the public will see it.
-- [docs/disclosure.md](docs/disclosure.md) — producing everything held about a person: the
+- [docs/disclosure.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/disclosure.md) — producing everything held about a person: the
   page, its permission, and what the answer contains.
-- [docs/adr](docs/adr) — the decisions behind the design, and why the alternatives were not
+- [docs/adr](https://github.com/django-mvp/django-mvp-compliance/tree/main/docs/adr) — the decisions behind the design, and why the alternatives were not
   taken.
 
 ## Prior art
@@ -342,8 +398,18 @@ The standing directions this package steers by are in [GOALS.md](GOALS.md).
 and track acceptance, and `django-cookie-consent` handles cookie categories and
 script gating well. If you want any of those problems solved on their own, use
 them. The reasoning behind building anyway, and what does and does not overlap,
-is in [docs/brainstorm.md](docs/brainstorm.md).
+is in [docs/brainstorm.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/brainstorm.md).
+
+## Contributing
+
+Changes follow [CONSTITUTION.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/CONSTITUTION.md), the
+[testing standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/testing.md) and the
+[code documentation standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/code-documentation.md).
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/CHANGELOG.md).
 
 ## Licence
 
-MIT.
+MIT. See [LICENSE](https://github.com/django-mvp/django-mvp-compliance/blob/main/LICENSE).

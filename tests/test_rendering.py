@@ -6,8 +6,6 @@ from mvp_compliance.rendering import MarkdownRenderer, get_renderer
 
 
 class TestMarkdownRenderer:
-    """Renders authored Markdown, sanitised through an explicit allow list."""
-
     def test_safe_markup_survives_and_dangerous_markup_does_not(self):
         source = (
             "# Heading\n\n"
@@ -48,13 +46,8 @@ class TestMarkdownRenderer:
         assert "javascript:" not in html
 
     def test_a_link_cannot_open_a_new_browsing_context(self):
-        """What makes dropping ``rel`` safe (D19).
-
-        ``rel="noopener noreferrer"`` only protects a link that opens a new
-        browsing context, and ``target`` is not an attribute this renderer
-        allows. Widen the allow list to include it and this fails, which is
-        the point at which ``link_rel`` has to come back.
-        """
+        # Dropping rel is safe only while target is not allowed; widen the allow list
+        # and link_rel comes back.
         source = '<a href="https://example.com" target="_blank">a link</a>'
 
         html = MarkdownRenderer().render(source)
@@ -64,13 +57,8 @@ class TestMarkdownRenderer:
         assert '<a href="https://example.com">a link</a>' in html
 
     def test_direction_overriding_characters_do_not_survive(self):
-        """A link's visible text must not be able to disagree with its target.
-
-        A right-to-left override reverses the text after it, so the wording a
-        reader sees can be made to name a different site from the one the
-        link points at. The allow list governs tags and attributes, not text,
-        so this is removed separately.
-        """
+        # A right-to-left override lets a link's visible text name a different site from
+        # its target.
         source = "[https://good‮gro.example.com](https://evil.example.com)"
 
         html = MarkdownRenderer().render(source)
@@ -80,7 +68,6 @@ class TestMarkdownRenderer:
         assert 'href="https://evil.example.com"' in html
 
     def test_invisible_characters_do_not_survive(self):
-        """Two words separated by nothing a reader can see are one word."""
         source = "pay​pal.example.com is not pay﻿pal.example.com"
 
         html = MarkdownRenderer().render(source)
@@ -92,8 +79,6 @@ class TestMarkdownRenderer:
 
 
 class TestRendererSetting:
-    """The renderer is resolved from a setting, defaulting to MarkdownRenderer."""
-
     def test_get_renderer_defaults_to_markdown_renderer(self):
         assert get_renderer() is MarkdownRenderer
 

@@ -36,15 +36,15 @@ that keeps it true.
 the S5 consolidation.
 
 **Testing**: pytest with pytest-django, `tests/settings.py`, an in-memory SQLite database.
-`factory_boy` factories per Article X.
+`factory_boy` factories per section 4 of the testing standard.
 
 **Target Platform**: a Django project that has installed django-mvp.
 
 **Project Type**: installable Django application. This feature is its data layer and has no surface
 a person can see.
 
-**Constraints**: Article XII (a published version is immutable, enforced in the model layer), Article
-XIII (the stored HTML is the evidence and is never re-rendered), Article XV (nothing here holds
+**Constraints**: Article XI (a published version is immutable, enforced in the model layer), Article
+XIII (the stored HTML is the evidence and is never re-rendered), Article XIV (nothing here holds
 personal data — a version names no person, and acceptances are R3).
 
 **Scale/Scope**: two models, one renderer, two exceptions, five user stories, 22 functional
@@ -235,11 +235,11 @@ class MarkdownRenderer:
 
 Configuration is one setting, `MVP_COMPLIANCE_RENDERER`, a dotted path resolved with
 `import_string` and defaulting to this class. A host project that wants a different allow list
-subclasses and points the setting at the subclass, which is what Article XI says a class is for. The
-resolver is a module-level function, which Article XI permits as a thin wrapper that returns the
+subclasses and points the setting at the subclass, which is what Article X says a class is for. The
+resolver is a module-level function, which Article X permits as a thin wrapper that returns the
 class.
 
-`render()` is deliberately not called anywhere except `publish()`. Article XIII is the reason, and
+`render()` is deliberately not called anywhere except `publish()`. Article XII is the reason, and
 `tests/test_models.py` asserts a published version's `html` survives a renderer swap.
 
 ### Retrieval
@@ -289,7 +289,7 @@ cleanup pass over the feature diff, and decide the ADR verdict for each entry in
 
 | Violation | Why needed | Simpler alternative rejected because |
 |---|---|---|
-| Two runtime dependencies added (`markdown`, `nh3`) | Article XIII requires rendering through a sanitiser with an explicit allow list, and neither Django nor the standard library renders Markdown or sanitises HTML | Writing either by hand. A hand-rolled sanitiser is the single worst thing to hand-roll: its failure mode is stored script served to every visitor, and it is stored rather than reflected, so one mistake is permanent |
+| Two runtime dependencies added (`markdown`, `nh3`) | Article XII requires rendering through a sanitiser with an explicit allow list, and neither Django nor the standard library renders Markdown or sanitises HTML | Writing either by hand. A hand-rolled sanitiser is the single worst thing to hand-roll: its failure mode is stored script served to every visitor, and it is stored rather than reflected, so one mistake is permanent |
 | `nh3` rather than the more familiar `bleach` | `bleach` was deprecated by its own maintainers in 2023 and its documentation points at `nh3` | Adding a dependency its authors have stopped maintaining, to a package whose reason for existing is that records outlive the code |
 | One setting, `MVP_COMPLIANCE_RENDERER` | US-4 scenario 3 requires a markup rendering configuration that can change, so one has to exist for the scenario to be testable | A setting per knob — extensions, tags, attributes, schemes — which is four settings for the same reach, and none of them composes with the others |
 | `PROTECT` makes a document holding drafts undeletable, one step stricter than D6 | The alternative is `CASCADE` plus overrides on two delete routes, and a missed route destroys published versions | See D8. The stricter rule fails safe; the looser one fails by deleting evidence |

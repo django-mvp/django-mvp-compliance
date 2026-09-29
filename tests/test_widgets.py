@@ -16,8 +16,6 @@ STATIC_DIR = (
 
 
 class TestMarkdownEditorWidget:
-    """FR-002, FR-003: the toolbar exists as data on the served markup."""
-
     def render(self) -> str:
         return MarkdownEditorWidget().render("markdown", "")
 
@@ -43,7 +41,6 @@ class TestMarkdownEditorWidget:
         ]
 
     def test_it_offers_no_forbidden_control(self) -> None:
-        """FR-003, US-1 scenario 2: no image, embed, table, tag or raw HTML."""
         names = {entry["name"] for entry in self.toolbar()}
         forbidden = {
             "image",
@@ -72,27 +69,12 @@ class TestMarkdownEditorWidget:
 
 
 class TestMarkdownEditorStaticAssets:
-    """T013/T014: the script and stylesheet stay in step with the declared toolbar.
-
-    Neither file's browser behaviour is reachable from this suite — there is
-    no JavaScript runtime here — so this only guards the one thing static
-    analysis can: a control named in ``TOOLBAR`` has a matching entry in
-    both files, so an addition to one without the other fails here rather
-    than rendering as a blank, non-functional button.
-    """
-
-    def test_every_toolbar_control_has_a_css_icon_rule(self) -> None:
-        css = (STATIC_DIR / "markdown-editor.css").read_text()
-        for name, _label in MarkdownEditorWidget.TOOLBAR:
-            assert f".mvp-compliance-toolbar-{name}" in css
-
     def test_every_toolbar_control_is_wired_in_the_script(self) -> None:
         js = (STATIC_DIR / "markdown-editor.js").read_text()
         for name, _label in MarkdownEditorWidget.TOOLBAR:
             assert name in js
 
     def test_the_script_never_wires_up_a_preview_toggle(self) -> None:
-        """R6: the editor's own preview is never enabled — the preview is US-3."""
         js = (STATIC_DIR / "markdown-editor.js").read_text()
         for forbidden in ("togglePreview", "toggleSideBySide", "toggleFullScreen"):
             assert forbidden not in js

@@ -351,4 +351,4 @@ document page's template in the demo's templates and confirm it is used.
 - The host project uses the django-mvp shell, which the package already depends on. How the pages
   plug into it is a planning question.
 - The package ships an English catalog only, as for every other string.
-- The slug is not personal data, so Article XV does not apply.
+- The slug is not personal data, so Article XIV does not apply.

@@ -91,7 +91,7 @@ normally. This is stricter than D6 by one step and is recorded as D8 rather than
 
 ## R4 — Markdown and the allow list
 
-**Question**: Article XIII requires rendering through a sanitiser with an explicit allow list, and
+**Question**: Article XII requires rendering through a sanitiser with an explicit allow list, and
 the package declares no Markdown library yet.
 
 **Found**:
@@ -105,7 +105,7 @@ the package declares no Markdown library yet.
 **Plan**: `markdown` for rendering and `nh3` for sanitising, both declared as runtime dependencies
 with the justification Article VII requires. The allow list is explicit class configuration on a
 single renderer class, not a module-level constant, so a host project overrides it by subclassing —
-which is what Article XI says a class is for.
+which is what Article X says a class is for.
 
 ## R5 — How a "markup rendering configuration change" is expressed
 
@@ -134,7 +134,7 @@ From `docs/brainstorm.md`, re-checked against the two packages' current source:
   orders nothing — the two-sources-of-truth defect D2 exists to avoid.
 - **`django-tos`** is genuinely single-document.
 
-Neither stores the rendered output, so both re-render at request time, which is what Article XIII
+Neither stores the rendered output, so both re-render at request time, which is what Article XII
 prohibits.
 
 **Plan**: nothing is borrowed. The observations are already carried by `decisions.md` D2 and by

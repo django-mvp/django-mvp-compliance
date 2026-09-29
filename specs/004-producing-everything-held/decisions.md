@@ -17,7 +17,7 @@ the package holds.
 **Why defensible**: Sam's ruling, and it is the reading the constitution already implies. A site
 fielding a request wants what is held about this person, not what is held about this person in each
 of the package's subsystems. Three places to look is how a partial answer gets handed over by
-accident, which Article XIV singles out as worse than no answer. The cost is one requirement's
+accident, which Article XIII singles out as worse than no answer. The cost is one requirement's
 worth of structure now (FR-017) against a surface that R8 would otherwise have to either duplicate
 or retrofit onto, with real records already in it.
 
@@ -54,7 +54,7 @@ documents.
 **Chosen**: in full.
 
 **Why defensible**: the wording *is* the evidence, which is why FS-001 fixes it at publication and
-Article XIII forbids producing it again later. A reference is a promise that something will still
+Article XII forbids producing it again later. A reference is a promise that something will still
 be there and still say the same thing when somebody follows it, and the whole premise of this
 package is that promises about text are worth less than the text. An answer handed to a regulator
 that says "the wording is at this address" has answered nothing.
@@ -74,7 +74,7 @@ site may also want to evidence that it responded to a request within a deadline.
 **Why defensible**: an audit trail exists to establish that something changed and who changed it,
 and producing an answer changes nothing. Against the case for it, a log of who looked at whose data
 is itself personal data about people who did not ask for it, retained indefinitely, which is
-exactly what Article XV is pointed at. A site that needs to evidence its response to a request
+exactly what Article XIV is pointed at. A site that needs to evidence its response to a request
 needs a record of the request and the response, which is a process it runs rather than a gap in
 this package.
 
@@ -85,7 +85,7 @@ an access log over consent data is a real want and is not this feature.
 
 ## D5 — No hooks for the host project's own data
 
-**Ambiguous**: the README and Article XIV both mention exposing hooks so a project can join its own
+**Ambiguous**: the README and Article XIII both mention exposing hooks so a project can join its own
 data to the view a person has of their consent, which could be read as belonging here.
 
 **Chosen**: not here. The answer covers what this package holds, and says so.
@@ -93,7 +93,7 @@ data to the view a person has of their consent, which could be read as belonging
 **Why defensible**: the hooks are R11, aspirational, and gated behind v2 for a reason. Building
 them now would mean this feature's correctness depends on host projects implementing something
 correctly, and a host project that implements it badly produces an answer that looks complete and
-is not. Article XIV names that as worse than no answer. The statement of coverage in FR-015 is the
+is not. Article XIII names that as worse than no answer. The statement of coverage in FR-015 is the
 honest version of the same thing at a hundredth of the cost.
 
 **ADR:** none — the specification forbids hooks here; ADR 0012 records what was built instead.
@@ -221,7 +221,7 @@ record the address a request came from, off by default, and this specification i
 
 **Why defensible**: FR-001 is "everything it holds about them", and on a site that turned that
 setting on the address is something it holds about them. Omitting it would be a partial answer
-presented as a complete one, which Article XIV names as worse than no answer. Nothing reads the
+presented as a complete one, which Article XIII names as worse than no answer. Nothing reads the
 setting at produce time — what governs the page is whether the record in front of it holds an
 address, which is also what keeps records written before it was turned on looking exactly as they
 did.
@@ -256,7 +256,7 @@ base, and US-3 changed `tests/test_admin.py` and `tests/test_records.py`.
 
 **Why defensible**: the whole diff of both files across that range is new classes, new methods, and
 one import line each. No assertion in either file was weakened, relaxed, skipped or deleted —
-checked by reading every removed line in the range, of which there are two, both imports. Article X
+checked by reading every removed line in the range, of which there are two, both imports. Section 4 of the testing standard
 ties one source module to one test module, so a story that adds a route to the admin has nowhere
 else to put its tests, and the alternative — a test module per story — is the thing that article
 exists to prevent.
@@ -282,7 +282,7 @@ not bare "in full" — see below) live once in `tests/test_admin.py` and are imp
 to catch it.
 
 **Why defensible**: the statement names no regulation, does not say "complete" or "in full", and
-does not reassure — it states what the answer covers and stops, per Article XIV and the
+does not reassure — it states what the answer covers and stops, per Article XIII and the
 conventions note on this story's own wording. Bare "in full" was tried first and rejected: it
 false-positives on `docs/disclosure.md`'s own pre-existing "hands it over in full", which describes
 wording being shown uncut, not a request being satisfied — a different claim the same three words

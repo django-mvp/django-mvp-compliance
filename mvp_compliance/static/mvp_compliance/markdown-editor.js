@@ -1,11 +1,5 @@
-/* Turns every textarea carrying the marker attribute into an EasyMDE editor.
- *
- * The toolbar is never hard-coded here: it is read off `data-toolbar`,
- * which `MarkdownEditorWidget` serialises from its own `TOOLBAR` list, so
- * the button set on the page can only ever be the one the widget declared
- * (D2, D9). No preview, side-by-side or full-screen control is wired up —
- * the preview is a separate, server-rendered page (D3, R6).
- */
+/* The toolbar comes from `data-toolbar`, never from here, so it is the widget's own
+ * list. No preview control: the preview is a server-rendered page (FS-002). */
 (function () {
   "use strict";
 

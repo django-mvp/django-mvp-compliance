@@ -14,13 +14,16 @@ BODY_TEMPLATE = "mvp_compliance/email/version_published_body.txt"
 def render_publication_email(version, replaced, site_url) -> tuple[str, str]:
     """Render the announcement for the people running the site. Sends nothing.
 
-    ``version`` and ``replaced`` are the two values the ``version_published``
-    signal carries that the text needs; the publisher is read from the version.
-    ``site_url`` is the address the site is served at, such as
-    ``"https://example.com"``, and is joined to the admin page for the version.
+    Args:
+        version: The version now in force, as ``version_published`` sends it.
+            The publisher is read from it.
+        replaced: The version it superseded, or ``None`` for a document's first.
+        site_url: The address the site is served at, such as
+            ``"https://example.com"``, joined to the version's admin page.
 
-    Returns ``(subject, body)``. The subject is always one line. Both are plain
-    text and are not escaped, so send the body as plain text, never as HTML.
+    Returns:
+        ``(subject, body)``. The subject is always one line. Both are plain
+        text and are not escaped, so send the body as plain text, never as HTML.
     """
     context = {
         "version": version,

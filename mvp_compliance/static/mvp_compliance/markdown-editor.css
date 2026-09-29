@@ -1,11 +1,5 @@
-/* Icons for the editor's toolbar (D9, R3).
- *
- * EasyMDE ships no icons of its own and writes Font Awesome 4 class names
- * into every button it builds; its stylesheet has no rule for any of them.
- * `markdown-editor.js` gives each button its own class instead, and each
- * rule below draws that button from an inline SVG — no icon font, no web
- * font, no request to anywhere.
- */
+/* EasyMDE ships no icons, only Font Awesome class names, so each button is drawn
+ * from an inline SVG: no icon font and no outbound request (FS-002). */
 
 .editor-toolbar button.mvp-compliance-toolbar-heading,
 .editor-toolbar button.mvp-compliance-toolbar-bold,
@@ -57,11 +51,8 @@
   box-sizing: border-box;
 }
 
-/* `.flex-container` (admin/css/forms.css) puts the field in a flex row
- * with its label. A flex item defaults to its own content's width unless
- * told to grow, and never shrinks below that width unless told it may —
- * without this the editor sits at whatever width it happened to render
- * at rather than filling what the row leaves it, at any window width. */
+/* The admin's `.flex-container` puts the field in a flex row with its label, and a
+ * flex item neither grows nor shrinks below its content unless told to. */
 .field-markdown .EasyMDEContainer {
   flex: 1;
   min-width: 0;

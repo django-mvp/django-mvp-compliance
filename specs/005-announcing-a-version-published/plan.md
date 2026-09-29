@@ -35,7 +35,7 @@ existing check constraint `version_status_agrees_with_its_publication` widened s
 publisher. Existing rows gain `publisher = NULL` and `publisher_subject = ""`, which reads as "no
 publisher recorded" (US-2 scenario 5). No row is rewritten beyond the column defaults.
 
-**Testing**: pytest with pytest-django, `tests/settings.py`, SQLite. Factories per Article X. The
+**Testing**: pytest with pytest-django, `tests/settings.py`, SQLite. Factories per section 4 of the testing standard. The
 signal is asserted through `django_capture_on_commit_callbacks(execute=True)` for the committed
 case and a `transaction.atomic()` block that raises for the rolled-back case. `caplog` on the
 `django.dispatch` logger for FR-005.
@@ -45,10 +45,10 @@ case and a `transaction.atomic()` block that raises for the rolled-back case. `c
 **Project Type**: installable Django application. The admin gains a visible column and field, so
 the diff is walked through on the demo project before the merge gate.
 
-**Constraints**: Article XII (the publisher is frozen with the rest of a published version),
-Article XIV (the email and docs name no regulation and claim no compliance), Article XV (the
+**Constraints**: Article XI (the publisher is frozen with the rest of a published version),
+Article XIII (the email and docs name no regulation and claim no compliance), Article XIV (the
 publisher is new personal data about staff: justified at the field, named in the CHANGELOG, never
-widened to a name or an email address), Article XV's no-outbound-request rule (FR-007: nothing is
+widened to a name or an email address), Article XIV's no-outbound-request rule (FR-007: nothing is
 sent by the package).
 
 **Scale/Scope**: two fields, one migration, one signal module, one email module, two email
@@ -239,7 +239,7 @@ def tell_the_site_owners(sender, version, replaced, **kwargs):
 - `docs/authoring.md`: *Publishing* says the admin records who published, and the lists show it.
 - `CONTEXT.md`: **Publisher** (FR-024).
 - `CHANGELOG.md` `[Unreleased]`: Added entries for the signal and the email, and a plain-language
-  entry naming the new personal data (Article XV).
+  entry naming the new personal data (Article XIV).
 
 ## Stories and order
 

@@ -18,9 +18,8 @@ from mvp_compliance.exceptions import (
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.signals import version_published
 
-#: Everything a published version carries except its standing (FR-013) — the
-#: one change a published version ever undergoes is draft -> current ->
-#: superseded, never a change to what it says or who published it.
+#: Everything a published version carries except its standing. The one change a
+#: published version ever undergoes is draft -> current -> superseded.
 PUBLISHED_FROZEN_FIELDS = (
     "document",
     "number",
@@ -75,13 +74,17 @@ class DocumentQuerySet(models.QuerySet):
         )
 
     def outstanding_for(self, user) -> "DocumentQuerySet":
-        """Every document in this queryset whose version in force ``user`` has not accepted.
+        """Narrow to the documents whose version in force ``user`` has not accepted.
 
         One query with a subquery rather than a loop, so the cost does not
-        grow with the number of documents (FR-012, FR-018, SC-005;
-        research.md R4). A document with no version in force is excluded by
-        the first filter rather than counted as outstanding — there is
-        nothing in force for anybody to accept.
+        grow with the number of documents (FS-003). A document with no version
+        in force is not outstanding: there is nothing in force to accept.
+
+        Args:
+            user: The account to ask about.
+
+        Returns:
+            The documents with a version in force that ``user`` has not accepted.
         """
         subject = Acceptance.subject_of(user)
         accepted = Acceptance.objects.filter(
@@ -96,12 +99,21 @@ class DocumentManager(models.Manager["Document"]):
     """Forwards ``DocumentQuerySet``'s methods, the same shape as ``VersionManager``."""
 
     def get_queryset(self) -> DocumentQuerySet:
+        """Return a ``DocumentQuerySet``."""
         return DocumentQuerySet(self.model, using=self._db)
 
     def in_force(self) -> DocumentQuerySet:
         return self.get_queryset().in_force()
 
     def outstanding_for(self, user) -> DocumentQuerySet:
+        """Return the documents whose version in force ``user`` has not accepted.
+
+        Args:
+            user: The account to ask about.
+
+        Returns:
+            The result of ``DocumentQuerySet.outstanding_for``.
+        """
         return self.get_queryset().outstanding_for(user)
 
 
@@ -139,6 +151,7 @@ class Document(models.Model):
         verbose_name_plural = _("documents")
 
     def __str__(self) -> str:
+        """Return the document's name."""
         return self.name
 
     def save(self, *args, **kwargs) -> None:
@@ -170,17 +183,23 @@ class Document(models.Model):
         return self.versions.current().first()
 
     def is_outstanding_for(self, user) -> bool:
-        """Whether ``user`` has not accepted the version currently in force (FR-011).
+        """Say whether ``user`` has not accepted the version currently in force.
 
-        The ``outstanding_for`` queryset narrowed to this document's primary
-        key, rather than a second expression of the rule (D11). ``False``
-        when nothing is in force — a normal answer, not an error.
+        Asks ``outstanding_for`` about this one document rather than
+        expressing the rule a second time.
+
+        Args:
+            user: The account to ask about.
+
+        Returns:
+            ``True`` when a version is in force and ``user`` has not accepted
+            it. ``False`` when nothing is in force.
         """
         return Document.objects.outstanding_for(user).filter(pk=self.pk).exists()
 
 
 class VersionQuerySet(models.QuerySet):
-    """Enforces that a published version's wording can never change (Article XII).
+    """Enforces that a published version's wording can never change (Article XI).
 
     ``bulk_update()`` gets no override here: it calls
     ``self.filter(pk__in=pks).update(**update_kwargs)`` internally, so the
@@ -188,6 +207,7 @@ class VersionQuerySet(models.QuerySet):
     """
 
     def update(self, **kwargs) -> int:
+        """Refuse an update touching a frozen field while any row is published."""
         touches_frozen_field = bool(Version.frozen_field_keys() & set(kwargs))
         if touches_frozen_field and self.published().exists():
             raise PublishedVersionError(
@@ -196,19 +216,33 @@ class VersionQuerySet(models.QuerySet):
         return super().update(**kwargs)
 
     def delete(self):
+        """Refuse deleting while any row is published."""
         if self.published().exists():
             raise PublishedVersionError(_("A published version cannot be deleted."))
         return super().delete()
 
     def published(self) -> "VersionQuerySet":
-        """Every version that has ever been published, current or superseded."""
+        """Narrow to every version ever published, current or superseded.
+
+        Returns:
+            The published versions.
+        """
         return self.exclude(status=Version.Status.DRAFT)
 
     def drafts(self) -> "VersionQuerySet":
+        """Narrow to the versions never published.
+
+        Returns:
+            The drafts.
+        """
         return self.filter(status=Version.Status.DRAFT)
 
     def current(self) -> "VersionQuerySet":
-        """The version in force, if any — zero or one row."""
+        """Narrow to the version in force.
+
+        Returns:
+            Zero or one row per document.
+        """
         return self.filter(status=Version.Status.CURRENT)
 
     def with_replaced_at(self) -> "VersionQuerySet":
@@ -232,27 +266,42 @@ class VersionQuerySet(models.QuerySet):
 
 
 class VersionManager(models.Manager):
-    """Gives a historical model in a migration the same guards (D10).
+    """Gives a historical model in a migration the same guards.
 
-    Overrides ``get_queryset()`` rather than being built with
-    ``Manager.from_queryset()`` — the latter is a dynamic base class mypy
-    refuses to type-check (D21, decisions.md). A bare override does not
-    forward ``VersionQuerySet``'s own methods onto the manager, so each one
-    a related manager needs to expose is forwarded here explicitly.
+    See docs/adr/0004-migrations-are-the-one-route-immutability-cannot-close.md.
+    ``VersionQuerySet``'s methods are forwarded explicitly rather than through
+    ``Manager.from_queryset()``
+    (docs/adr/0006-version-manager-forwards-queryset-methods-explicitly.md).
     """
 
     use_in_migrations = True
 
     def get_queryset(self) -> VersionQuerySet:
+        """Return a ``VersionQuerySet``."""
         return VersionQuerySet(self.model, using=self._db)
 
     def published(self) -> VersionQuerySet:
+        """Return every version ever published.
+
+        Returns:
+            The result of ``VersionQuerySet.published``.
+        """
         return self.get_queryset().published()
 
     def drafts(self) -> VersionQuerySet:
+        """Return the versions never published.
+
+        Returns:
+            The result of ``VersionQuerySet.drafts``.
+        """
         return self.get_queryset().drafts()
 
     def current(self) -> VersionQuerySet:
+        """Return the version in force.
+
+        Returns:
+            The result of ``VersionQuerySet.current``.
+        """
         return self.get_queryset().current()
 
 
@@ -324,10 +373,9 @@ class Version(models.Model):
             "never been published."
         ),
     )
-    # Cleared by account removal through the plain base manager (research.md
-    # R3), which is what lets it change a frozen field on a published row.
-    # Never set Meta.base_manager_name: that would put VersionQuerySet.update()
-    # in the collector's path and make removing an account raise.
+    # Cleared by account removal through the plain base manager (FS-005). Never set
+    # Meta.base_manager_name: it would route that through VersionQuerySet.update()
+    # and make removing an account raise.
     publisher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name=_("publisher"),
@@ -367,8 +415,7 @@ class Version(models.Model):
             "pk",
         ]
         # Writing a version and making one legally binding are different levels
-        # of trust, so publishing needs a permission Django does not create on
-        # its own (FR-014). A site that wants one person to do both grants both.
+        # of trust, so publishing has a permission of its own (FS-002).
         permissions = [("publish_version", _("Can publish a version"))]
         constraints = [
             models.UniqueConstraint(
@@ -383,14 +430,9 @@ class Version(models.Model):
                 name="one_current_version_per_document",
             ),
             models.CheckConstraint(
-                # A nested Meta class cannot see names bound in Version's own class
-                # body, so these match the Status values directly rather than
-                # referencing the enum.
-                #
-                # The published branch names its two standings rather than
-                # saying "not draft": status is the one field the queryset
-                # guard lets through on a published row, so what it may become
-                # is the database's to say.
+                # Status values are literal: a nested Meta cannot see Version.Status.
+                # The published branch names both standings because status is the
+                # one field the queryset guard lets through on a published row.
                 condition=models.Q(
                     status="draft",
                     number__isnull=True,
@@ -410,6 +452,7 @@ class Version(models.Model):
         ]
 
     def __str__(self) -> str:
+        """Return the document's name with the number, or "(draft)"."""
         if self.number is None:
             return f"{self.document} ({_('draft')})"
         return f"{self.document} #{self.number}"
@@ -421,11 +464,14 @@ class Version(models.Model):
 
     @property
     def publisher_display(self) -> "str | None":
-        """What to say about who published this version.
+        """Say who published this version.
 
-        ``None`` for a draft, which has no publisher to name. Never the
-        subject of an account that has been removed: it names nobody a
-        reader could look up, so the version says the account is gone.
+        Never the subject of an account that has been removed: it names
+        nobody a reader could look up, so the version says the account is gone.
+
+        Returns:
+            The publisher's name, a note that the account was removed, or a
+            note that nobody was recorded. ``None`` for a draft.
         """
         if not self.is_published:
             return None
@@ -437,7 +483,11 @@ class Version(models.Model):
 
     @classmethod
     def frozen_fields(cls) -> list[models.Field]:
-        """The fields a published version may never change."""
+        """Return the fields a published version may never change.
+
+        Returns:
+            The fields named in ``PUBLISHED_FROZEN_FIELDS``.
+        """
         return [
             cast(models.Field, cls._meta.get_field(name))
             for name in PUBLISHED_FROZEN_FIELDS
@@ -445,7 +495,12 @@ class Version(models.Model):
 
     @classmethod
     def frozen_field_keys(cls) -> set[str]:
-        """Each frozen field's name and attname, so ``document_id`` is caught too."""
+        """Return each frozen field's name and attname.
+
+        Returns:
+            The names and attnames, so ``document_id`` is caught as well as
+            ``document``.
+        """
         keys: set[str] = set()
         for field in cls.frozen_fields():
             keys.add(field.name)
@@ -454,31 +509,36 @@ class Version(models.Model):
 
     @staticmethod
     def same_wording(one: str, other: str) -> bool:
-        """Whether two wordings say the same thing.
+        """Say whether two wordings say the same thing.
 
-        Neither difference this ignores is one a reader would see. A
-        browser stores a text area's content with a carriage return before
-        every newline, so a draft written in one carries them and a
-        wording written any other way does not, and a trailing newline is
-        present or absent depending on how each was entered.
+        Line endings and surrounding whitespace are ignored. A browser stores
+        a text area's content with a carriage return before every newline, and
+        a trailing newline depends on how the wording was entered.
+
+        Args:
+            one: A wording in Markdown.
+            other: Another wording in Markdown.
+
+        Returns:
+            ``True`` when a reader would see no difference between them.
         """
         return one.replace("\r\n", "\n").strip() == other.replace("\r\n", "\n").strip()
 
     def publish(self, publisher=None) -> None:
         """Make this draft the version in force, superseding whichever one held it.
 
-        ``publisher`` is the account putting it in force; it is kept on the
-        version with its identifier, frozen with the wording. Left out, the
-        version records nobody.
+        Every refusal comes before anything about this row or the document is
+        touched. Once the publication commits, ``version_published`` is sent,
+        and a receiver that raises cannot undo it
+        (docs/adr/0016-a-publication-is-announced-after-it-commits-and-no-receiver-can-undo-it.md).
 
-        Refuses when this version is not a draft (FR-010), when the
-        rendered output is empty once whitespace is stripped (FR-018, D7),
-        or when it says exactly what the version in force already says
-        (D23) — each before anything about this row or the document is
-        touched.
+        Args:
+            publisher: The account putting it in force, kept on the version and
+                frozen with the wording. ``None`` records nobody.
 
-        Once the publication commits, ``version_published`` is sent, and a
-        receiver that raises cannot undo it.
+        Raises:
+            PublishError: The version is not a draft, its rendered output is
+                empty, or it says exactly what the version in force says.
         """
         if self.status != self.Status.DRAFT:
             raise PublishError(_("This version has already been published."))
@@ -493,23 +553,17 @@ class Version(models.Model):
         )
 
         with transaction.atomic():
-            # Not belt-and-braces: MySQL and MariaDB silently omit the partial
-            # unique index that otherwise holds "one current version per
-            # document" (models.W036), so on those backends this lock is the
-            # only thing enforcing FR-007 (research.md R1, D11).
+            # MySQL and MariaDB silently omit the partial unique index (models.W036),
+            # so there this lock alone holds one current version per document
+            # (docs/adr/0005-one-version-in-force-is-held-by-two-mechanisms.md).
             document = Document.objects.select_for_update().get(pk=self.document_id)
-            # Under the lock, ask the row rather than this instance. The check
-            # above reads a copy of the standing that may be older than the
-            # row, which is what a second process publishing first looks like
-            # from here (FR-010).
+            # Under the lock, ask the row rather than this instance: the check above
+            # read a copy that is stale if a second process published first.
             stored = self.stored_row()
             if stored is None or stored["status"] != self.Status.DRAFT:
                 raise PublishError(_("This version is no longer a draft."))
-            # Read under the same lock, because this is the one refusal whose
-            # answer can change while a draft sits unpublished. A draft that
-            # duplicates today's version in force is a different draft once
-            # somebody publishes another one, so asking any earlier than here
-            # answers a question about a document that has since moved (D23).
+            # Under the same lock, because a draft that duplicates today's version in
+            # force stops being a duplicate once somebody publishes another one.
             current = document.versions.current().first()
             if current is not None and self.same_wording(
                 self.markdown, current.markdown
@@ -560,18 +614,21 @@ class Version(models.Model):
             )
 
     def save(self, *args, **kwargs) -> None:
+        """Refuse a save that changes a frozen field on a published row."""
         stored = self.stored_row()
         if stored is not None:
             self.refuse_if_published_wording_changed(stored)
         super().save(*args, **kwargs)
 
     def stored_row(self) -> dict | None:
-        """This row as the database holds it, or ``None`` when it is new.
+        """Return this row as the database holds it.
 
-        Asking the database, rather than asking Django whether this instance
-        is being added. An instance built with ``Version(pk=...)`` has never
-        been fetched, so Django reports it as being added even though the
-        write it is about to make is an update to a row that already exists.
+        Asks the database rather than Django's ``_state.adding``. An instance
+        built with ``Version(pk=...)`` has never been fetched, so Django
+        reports it as being added even though its write updates a stored row.
+
+        Returns:
+            The stored status and frozen fields, or ``None`` when no row exists.
         """
         if self.pk is None:
             return None
@@ -585,6 +642,12 @@ class Version(models.Model):
         Compares against the stored row rather than this instance's own
         history, so the check survives ``refresh_from_db``, deferred loading
         and an instance built by a third party.
+
+        Args:
+            stored: The row as ``stored_row()`` returned it.
+
+        Raises:
+            PublishedVersionError: The row is published and a frozen field differs.
         """
         if stored["status"] == self.Status.DRAFT:
             return
@@ -595,31 +658,33 @@ class Version(models.Model):
             )
 
     def delete(self, *args, **kwargs):
+        """Refuse deleting a published version."""
         if self.is_published:
             raise PublishedVersionError(_("A published version cannot be deleted."))
         return super().delete(*args, **kwargs)
 
 
 def acceptances_survive_account_removal() -> bool:
-    """Whether the package's default is to keep a person's acceptances (FR-013).
+    """Say whether acceptances survive the removal of the account they name.
 
-    Read at the point of use, not cached, so a change to
-    ``MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL`` takes effect on the
-    next account removal rather than needing a restart (research.md R1).
+    Read at the point of use, not cached, so a change to the setting takes
+    effect on the next account removal
+    (docs/adr/0008-an-acceptance-outlives-the-account-it-names.md).
+
+    Returns:
+        ``MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL``, ``True`` by default.
     """
     return getattr(settings, "MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL", True)
 
 
 def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
-    """The ``on_delete`` callable on ``Acceptance.user`` (D8, research.md R1).
+    """Keep or remove a removed account's acceptances, as the setting says.
 
-    ``on_delete`` accepts any callable with this signature — it is all
-    ``SET_NULL`` and ``CASCADE`` are — so this one reads
-    ``acceptances_survive_account_removal()`` at the moment a delete runs and
-    delegates to Django's own implementation of whichever the setting names.
-    Reading the setting here rather than at import time is what makes it a
-    setting rather than a constant baked in when the model class was built,
-    and what makes it testable with ``override_settings``.
+    The ``on_delete`` callable on ``Acceptance.user``. It reads
+    ``acceptances_survive_account_removal()`` when a delete runs and delegates
+    to ``SET_NULL`` or ``CASCADE``, so the setting is read at delete time
+    rather than baked in when the model class was built
+    (docs/adr/0008-an-acceptance-outlives-the-account-it-names.md).
 
     ``Acceptance.user`` stays ``null=True`` even though this callable is not
     literally ``SET_NULL``: ``ForeignKey._check_on_delete`` compares
@@ -636,6 +701,12 @@ def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
     would put the guarded queryset in the collector's path at all. Neither is
     present, and neither alone does anything — the pair is what a later change
     has to avoid recreating.
+
+    Args:
+        collector: Django's deletion collector.
+        field: The ``Acceptance.user`` field.
+        sub_objs: The acceptances naming the account being removed.
+        using: The database alias.
     """
     if acceptances_survive_account_removal():
         models.SET_NULL(collector, field, sub_objs, using)
@@ -644,26 +715,29 @@ def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
 
 
 class AcceptanceQuerySet(models.QuerySet):
-    """Refuses every route that would change or delete a recorded acceptance (Article XII)."""
+    """Refuses every route that would change or delete a recorded acceptance (Article XI)."""
 
     def update(self, **kwargs) -> int:
-        # Refused outright rather than only when the queryset currently
-        # matches something, which is the shape ``delete()`` below already
-        # has. Checking first and updating afterwards leaves a gap between
-        # the two statements: a record committed in that gap is one the
-        # check did not see and the update would write to anyway. Nothing
-        # in this package updates an acceptance, so the narrower guard was
-        # not letting anything through for a good reason.
+        """Refuse every update."""
+        # Refused outright: a check-then-update guard would write to a record
+        # committed between the two statements.
         raise RecordedAcceptanceError(
             _("An acceptance cannot be changed once it is recorded.")
         )
 
     def delete(self):
+        """Refuse every delete."""
         raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
 
     def for_subject(self, subject) -> "AcceptanceQuerySet":
-        """This queryset narrowed to one person's records, by the identifier that
-        survives their account being removed (FR-014).
+        """Narrow to one person's records.
+
+        Args:
+            subject: The identifier that survives the person's account being
+                removed, as ``Acceptance.subject_of()`` derives it.
+
+        Returns:
+            That person's acceptances.
         """
         return self.filter(subject=subject)
 
@@ -671,40 +745,61 @@ class AcceptanceQuerySet(models.QuerySet):
 class AcceptanceManager(models.Manager["Acceptance"]):
     """Where an acceptance is written — see ``record()``.
 
-    Gives a historical model in a migration the same guards (``use_in_migrations``).
-    Overrides ``get_queryset()`` rather than being built with
-    ``Manager.from_queryset()`` — the latter is a dynamic base class mypy
-    refuses to type-check (specs/001-legal-documents-kept/decisions.md D21).
+    Gives a historical model in a migration the same guards
+    (docs/adr/0004-migrations-are-the-one-route-immutability-cannot-close.md),
+    and forwards its queryset's methods explicitly for the reason
+    docs/adr/0006-version-manager-forwards-queryset-methods-explicitly.md gives.
     """
 
     use_in_migrations = True
 
     def get_queryset(self) -> AcceptanceQuerySet:
+        """Return an ``AcceptanceQuerySet``."""
         return AcceptanceQuerySet(self.model, using=self._db)
 
     def for_subject(self, subject) -> AcceptanceQuerySet:
+        """Return one person's records.
+
+        Args:
+            subject: The identifier ``Acceptance.subject_of()`` derives.
+
+        Returns:
+            The result of ``AcceptanceQuerySet.for_subject``.
+        """
         return self.get_queryset().for_subject(subject)
 
     def for_person(self, user) -> AcceptanceQuerySet:
-        """That person's acceptances, in the order they happened.
+        """Return a person's acceptances, in the order they happened.
 
-        A thin call through ``subject_of()`` into ``for_subject()``, not a
-        second query — the same identifier ``record()`` writes.
+        Args:
+            user: The account whose acceptances to return.
+
+        Returns:
+            The acceptances recorded under the identifier ``record()`` writes.
         """
         return self.for_subject(Acceptance.subject_of(user))
 
     def record(self, user, version, request=None) -> "Acceptance":
         """Record ``user``'s acceptance of ``version``.
 
-        Refuses a version that has never been published (FR-003) before
-        anything is written. Recording the same person's acceptance of the
-        same version again, including when two attempts race, returns the
-        record that already exists rather than raising or writing a second
-        one (FR-009, FR-010). ``request`` is read only when
-        ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on, and only to fill
-        ``ip_address`` on a record being newly created — an existing record
-        is returned untouched, so turning the setting on or off never
-        changes what an earlier record holds (FR-016, FR-017).
+        Recording the same person's acceptance of the same version again,
+        including when two attempts race, returns the record that already
+        exists. An existing record is returned untouched, so turning the IP
+        address setting on or off never changes what an earlier record holds.
+
+        Args:
+            user: The account accepting.
+            version: The published version accepted.
+            request: The current request. Read only when
+                ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on, and only for
+                ``REMOTE_ADDR`` on a record being created.
+
+        Returns:
+            The acceptance, newly created or already recorded.
+
+        Raises:
+            RecordError: ``version`` has never been published, or ``user`` has
+                not been saved.
         """
         if not version.is_published:
             raise RecordError(
@@ -716,12 +811,9 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         if request is not None and getattr(
             settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
         ):
-            # Only REMOTE_ADDR, never X-Forwarded-For or any other forwarded
-            # header: a forwarded header is set by the client, so reading one
-            # would make this evidence field something the person it is
-            # about can fill in themselves. Only the deployment knows which
-            # proxies to trust, and making REMOTE_ADDR correct behind one is
-            # its responsibility, not this package's (research.md R6, D10).
+            # Never a forwarded header: the client sets it, so the person the
+            # evidence is about could fill it in
+            # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
             ip_address = request.META.get("REMOTE_ADDR")
         subject = Acceptance.subject_of(user)
         return self.get_or_create(
@@ -806,24 +898,32 @@ class Acceptance(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["subject", "version"],
-                # Over `subject` rather than `user`: a later story clears the
-                # user foreign key when that account is removed, and a
-                # constraint over `user` would stop holding at exactly the
-                # moment nobody is watching.
+                # Over `subject` rather than `user`, which is cleared when the
+                # account is removed and would stop the constraint holding.
                 name="one_acceptance_per_person_per_version",
             ),
         ]
 
     def __str__(self) -> str:
+        """Return who accepted which version."""
         return f"{self.subject} accepted {self.version}"
 
     @staticmethod
     def subject_of(user) -> str:
-        """The identifier ``record()`` writes and a later story's lookups read back.
+        """Return the identifier ``record()`` writes and every lookup reads back.
 
         The single place the identifier is derived, so writing and reading
-        cannot disagree about what identifies a person. A version's
-        publisher is identified the same way.
+        cannot disagree about what identifies a person. A version's publisher
+        is identified the same way.
+
+        Args:
+            user: A saved account.
+
+        Returns:
+            The account's primary key as text.
+
+        Raises:
+            RecordError: ``user`` has not been saved.
         """
         if user.pk is None:
             raise RecordError(
@@ -835,6 +935,7 @@ class Acceptance(models.Model):
         return str(user.pk)
 
     def save(self, *args, **kwargs) -> None:
+        """Refuse saving an acceptance that is already recorded."""
         if self.pk is not None and Acceptance.objects.filter(pk=self.pk).exists():
             raise RecordedAcceptanceError(
                 _("An acceptance cannot be changed once it is recorded.")
@@ -842,6 +943,7 @@ class Acceptance(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        """Refuse every delete."""
         raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
 
 
@@ -850,8 +952,9 @@ class Disclosure(Acceptance):
 
     Carries no table of its own — a proxy of :class:`Acceptance` with no
     fields added. It exists for three things a ``ModelAdmin`` needs and this
-    package has nowhere else to put: an entry in the admin index, an
-    address, and a permission of its own (plan.md Design -> The route, D7).
+    package has nowhere else to put: an entry in the admin index, an address,
+    and a permission of its own
+    (docs/adr/0011-producing-what-is-held-is-an-admin-page-behind-its-own-permission.md).
     Registering ``Acceptance`` itself would hand everyone holding
     ``view_acceptance`` a changelist of every person's consent history,
     which is the risk this permission exists to close.

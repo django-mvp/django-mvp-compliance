@@ -12,8 +12,7 @@
   </form>
 
   {% if record %}
-    {# The identifier asked about, not the text typed: the two differ whenever #}
-    {# a login name or an email address was resolved to an account. #}
+    {# The identifier asked about, not the text typed: a login name or email resolves to it. #}
     <h2>{% translate "Produced for" %} {{ record.subject }}</h2>
     <p>{{ record.coverage }}</p>
     {% if record.is_empty %}
