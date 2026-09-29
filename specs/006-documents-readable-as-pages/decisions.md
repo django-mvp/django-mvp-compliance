@@ -145,3 +145,18 @@ change is not one of T031's authorised removals in the strict sense (it does not
 removed view, URL or converter directly), so it is logged here rather than folded silently into D7.
 
 **ADR:** none — recorded here and in the T031 completion report's `deviations`.
+
+## D9 — Two tests narrowed to the element they check
+
+**Ambiguous**: with the document list on every page, the page always links to the document being
+shown, and a link follows the version switcher in the markup. Two tests read the whole page: one
+asserted the document's own address appears nowhere when no alert is shown, and one counted every
+link from the switcher to the end of the page.
+
+**Chosen**: the alert test keeps its assertion that no alert is drawn and drops the page-wide link
+check. The switcher test's helper stops at the document list, so it counts the switcher's links only.
+
+**Why defensible**: both tests still prove what their names say. They were only reading beyond the
+element they are about, which the new layout made visible.
+
+**ADR:** none — local to this feature's tests.

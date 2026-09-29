@@ -479,7 +479,6 @@ class TestSupersededVersionAlert:
         content = client.get(document_address(document)).content.decode()
 
         assert 'role="alert"' not in content
-        assert f'href="{document_address(document)}"' not in content
 
     def test_the_version_in_forces_own_number_as_the_parameter_shows_no_alert_either(
         self, client
@@ -502,7 +501,10 @@ class TestVersionSwitcher:
     def switcher(client, address):
         content = client.get(address).content.decode()
         start = content.find("data-mvp-dropdown")
-        return content, content[start:] if start != -1 else ""
+        if start == -1:
+            return content, ""
+        end = content.find('id="document-list"', start)
+        return content, content[start:end] if end != -1 else content[start:]
 
     def test_every_published_version_is_listed_newest_first(self, client):
         document = DocumentFactory()
