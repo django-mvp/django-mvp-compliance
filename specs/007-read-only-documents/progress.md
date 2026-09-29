@@ -111,3 +111,17 @@ Verified: `uv run pytest tests/test_views.py -q` gave 65 passed, the query-count
 (`version.document` is already loaded, so the check costs no query).
 Next: T008.
 Watch: none.
+
+## 2026-09-29T21:55Z · Implementer US1 · T008
+
+Did: `seed_demo` seeds an "Impressum" notice (slug `impressum`, one published version);
+`make_document()` takes `kind`, defaulting to a document people agree to; `SLUGS` gains `impressum`;
+the landing page links it and lists it among the seeded documents. No test: the demo is not part of
+the package and has none.
+Verified: against a throwaway sqlite database outside the repo (removed afterwards), a fresh
+`migrate` and `seed_demo` ran clean and a second `seed_demo` reported the impressum already seeded.
+Through the test client, `/legal/impressum/` answered 200, for the seeded acceptor signed in it
+carried no "Agreed on" while `/legal/privacy-policy/` did, and `/` linked the impressum. No dev
+server was started.
+Next: T009.
+Watch: none.

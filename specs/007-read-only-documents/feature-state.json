@@ -170,8 +170,17 @@
         },
         {
           "id": "T008",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "seed_demo on a throwaway sqlite database (fresh migrate, run twice): clean, second run reports Impressum already seeded",
+              "django test client against that database: GET /legal/impressum/ 200; landing page 200 with link to impressum; no Agreed on for a signed-in acceptor"
+            ],
+            "code": [
+              "demo/management/commands/seed_demo.py:118"
+            ]
+          }
         },
         {
           "id": "T009",
