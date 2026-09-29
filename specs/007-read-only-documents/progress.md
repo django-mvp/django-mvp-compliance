@@ -141,3 +141,14 @@ Verified: `uv run pytest tests/test_admin.py::TestUserFacingStrings -q` passes. 
 once, at the end of the story.
 Next: full verify, then the report.
 Watch: the two admin tests and one model test that T002 cannot keep green are for Forge to triage.
+
+## 2026-09-29T22:25Z · Implementer US1 · full verify
+
+Ran `forge verify --repo … --base origin/main`: conformance, docs, lint, typecheck and build pass;
+`uv:test` fails (exit 1) on three tests written before `kind` existed, which I may not edit:
+`tests/test_models.py::TestDocument::test_document_holds_no_wording` (field set now includes
+`kind`) and two admin tests that post the document change form with no `kind`
+(`TestDocumentSlugInTheAdmin::test_an_unpublished_documents_slug_can_be_edited`,
+`::test_a_post_carrying_a_different_slug_leaves_a_published_slug_alone`). A plain
+`uv run pytest tests -n auto --dist loadscope` gave 3 failed, 420 passed. Each needs one line added
+to the test (`"kind"` in the set; `"kind": "agreed"` in the posted data). Forge triages.
