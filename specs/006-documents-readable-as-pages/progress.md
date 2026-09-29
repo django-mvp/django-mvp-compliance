@@ -390,3 +390,11 @@ shown one active. plan.md brought to the single-page design.
 - **Verified:** the five link, order, active and absence tests observed red before the change (list not present, `documents` not in context); the two query-count tests pass on first run because nothing yet varied with the document count, so they were probed instead: making the list query once per document turned both red, then reverted. `uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py -q` gives 184 passed, 2 failed (the two below). ruff, ruff format, mypy clean. Demo on 8021: `/legal/privacy-policy/`, its `?version=2026.1`, and `/legal/terms-of-use/` list house-rules, privacy-policy, terms-of-use with the shown one `menu-active`; cookie-policy and `/legal/` are 404. Layout classes checked present in mvp's prebuilt CSS.
 - **Next:** Forge triage of two pre-existing tests the new list makes false.
 - **Watch:** `TestSupersededVersionAlert::test_the_version_in_force_shows_no_alert` asserts the page has no link to the document's own address anywhere, and `TestVersionSwitcher::test_a_draft_is_not_listed` counts every `href=` from the switcher to the end of the page. The required list always links the shown document's own address and follows the switcher in the markup. Neither was authorised for change, so both are left as they were and fail.
+
+## 2026-09-29 — Fourth walkthrough changes accepted
+
+T034–T035 verified independently: receipts green. The implementer stopped T035 with two
+pre-existing tests red because they read the whole page, which now carries the document list; the
+orchestrator narrowed both to their own element (decisions.md D9). Full verify green. On the demo:
+`/legal/` is a 404, and every document page shows the document list beside the wording with the
+shown document active. plan.md brought to the one-page design.

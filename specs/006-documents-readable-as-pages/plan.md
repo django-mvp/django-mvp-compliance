@@ -6,15 +6,15 @@
 
 ## Summary
 
-One field, one guard, two read-only views, two templates, one URL module.
+One field, one guard, one read-only view, one template, one URL module.
 
 `Document` gains `slug`. Once the document has a published version, `Document.save()` and the
 queryset's `update()` refuse a change to it, the same way they refuse a change to a published
 version's wording. The admin suggests it from the name and shows it read-only once it is fixed.
 
-`mvp_compliance/urls.py` (`app_name = "mvp_compliance"`) gives a host project two addresses to mount
-under a prefix of its choosing: the document index and a document's page. The document's page is the
-one canonical page for a document: with `?version=<number>` it shows that published version. Each is an MVP view, so it renders inside the django-mvp shell through the packaged
+`mvp_compliance/urls.py` (`app_name = "mvp_compliance"`) gives a host project one address to mount
+under a prefix of its choosing: a document's page, the one canonical page for a document. Beside the
+wording it lists every document with a version in force, and with `?version=<number>` it shows that published version. Each is an MVP view, so it renders inside the django-mvp shell through the packaged
 `page_view.html`, and each template fills `page.content` only. A version's wording is its stored
 `html`, written out unaltered (Article XIII).
 
@@ -46,7 +46,7 @@ Article XIII (pages serve the stored HTML, never a render), Article XIV (no page
 line claims compliance or names a regulation), Article VIII (every template string translatable),
 Article XVI (template names become public surface, recorded in the CHANGELOG).
 
-**Scale/Scope**: one field, one migration, two views, two templates, one URL module, one
+**Scale/Scope**: one field, one migration, one view, one template, one URL module, one
 annotation, admin changes, demo and test settings, four stories, 22 functional requirements.
 
 ## Constitution Check
@@ -126,7 +126,6 @@ case should catch it for the other.
 ```python
 app_name = "mvp_compliance"
 urlpatterns = [
-    path("", DocumentIndexView.as_view(), name="index"),
     path("<slug:slug>/", DocumentView.as_view(), name="document"),
 ]
 ```
@@ -139,8 +138,8 @@ link in a template. An earlier version is `{% url 'mvp_compliance:document' 'pri
 
 - `DocumentQuerySet.in_force()`: documents with a current version, each carrying it on
   `current_versions` through `Prefetch("versions", queryset=Version.objects.current(),
-  to_attr="current_versions")`. The index and the document's page both start here, so a document
-  with only drafts is absent from both (FR-007).
+  to_attr="current_versions")`. The document's page and its document list both start here, so a
+  document with only drafts is absent from both (FR-007).
 - `VersionQuerySet.with_replaced_at()`: annotates `replaced_at`, the `published_at` of the earliest
   published version of the same document published after this one, through a `Subquery` ordered by
   `published_at`. `None` for the version in force. One query for any number of versions (SC-006).
@@ -150,32 +149,28 @@ link in a template. An earlier version is `{% url 'mvp_compliance:document' 'pri
 
 ### Views (`mvp_compliance/views.py`)
 
-Both are readable by anyone: no login or permission mixin (FR-005). None offers a CRUD link:
-`directory = []` on the detail view. Each sets `template_name` explicitly, so the page it renders is
-never an mvp default, and each sets its breadcrumbs.
+The page is readable by anyone: no login or permission mixin (FR-005). It offers no CRUD link:
+`directory = []`. It sets `template_name` explicitly, so the page it renders is never an mvp default,
+and it sets its breadcrumbs.
 
 | View | Base | Object and 404 rule | Template | Page title / subtitle |
 |---|---|---|---|---|
-| `DocumentIndexView` | `MVPTemplateView` | `documents`: `Document.objects.in_force().order_by("name")` | `mvp_compliance/document_index.html` | "Legal documents" |
 | `DocumentView` | `MVPDetailView` | `Document.objects.in_force()` by `slug`, 404 otherwise; `?version=` chooses the version shown, 404 when it is not a published version of the document | `mvp_compliance/document_detail.html` | document name / "vN - D", plus "· Agreed on D" for a visitor who accepted it |
 
 - A slug naming no document, a document with only drafts, and a `?version=` value that is not one of
   its published versions all answer `Http404`. Being signed in, or staff, changes nothing (FR-007,
   US-1 scenario 8).
-- Breadcrumbs: index → document → (versions | version). The index crumb links to
-  `mvp_compliance:index`, so it resolves under whatever prefix the project chose.
+- Breadcrumbs: the document's name alone.
 - What each view overrides, checked against the resolved mvp 0.24.0 (design review):
   - `DocumentView` overrides `get_breadcrumbs()`. mvp's `PageObjectMixin.get_breadcrumbs()`
     builds its own trail and never reads a `breadcrumbs` attribute, so setting one is silently
-    ignored and the default draws a crumb with an empty link. The index view overrides it too,
-    because its link needs `reverse()`.
+    ignored and the default draws a crumb with an empty link.
   - `DocumentView`: `get_queryset()` is `in_force()`. The version shown is the current one, or,
     with `?version=<number>`, that published version of the document from
     `published().with_replaced_at()`, `Http404` when it is not one. `get_context_data()` adds
     `version` (the one shown) and `versions` (every published version, newest first, for the
     switcher). `get_page_title()` is the name; `get_page_subtitle()` builds the line under the name
     with `_()` and `django.utils.formats.date_format`.
-  - `DocumentIndexView`: `get_context_data()` adds `documents`; `page_title` is a lazy string.
 - mvp's title component writes the title and subtitle through autoescaped variables, so a document
   name with markup in it is escaped (checked in `cotton/page/title.html`).
 
@@ -190,8 +185,10 @@ a template at the same path (FR-018).
   linking to `?version=N`, the shown one marked active. For a superseded version, one alert row: the
   warning icon, the replaced message with its dates, and a "View current version" button at the
   end (`alert-horizontal`). Then the wording in `<div class="prose max-w-none">`, written as `{{ version.html|safe }}`. `prose` ships in mvp's stylesheet (research R2).
-- `document_index.html`: one entry per document linking to its page. With none, a sentence saying
-  nothing has been published yet (US-3 scenario 6).
+- The same template lays the page out in two columns (`grid lg:grid-cols-4`): on the side, a
+  `<nav>` holding a daisyUI menu of every document with a version in force, alphabetically, the one
+  shown marked active; as the main content (`lg:col-span-3`), the alert and the wording. The view
+  adds `documents` (`Document.objects.in_force().order_by("name")`, one query).
 
 Use mvp components (`c-card`, `c-alert` and so on) where one fits, checked against mvp's
 `docs/components.md`. Only classes that ship in the prebuilt stylesheet: logical forms (`ps-`,
@@ -204,13 +201,12 @@ The package adds nothing to menus (FR-014). The demo, as a host project, does:
 
 - `demo/settings.py`: `FLEX_MENUS` renderers (`sidebar`, `dock`) and a minimal `MVP_CONFIG` sidebar
   title, which mvp's shell needs before any page renders (research R1).
-- `demo/menus.py`: an `AppMenu` entry "Legal documents" pointing at `mvp_compliance:index`, added
-  with the index in US-3.
+- `demo/menus.py`: an `AppMenu` entry "Legal documents" pointing at the privacy policy's page.
 - `demo/urls.py`: `path("legal/", include("mvp_compliance.urls"))`.
 - `seed_demo`: every seeded document gets a slug (`privacy-policy`, `terms-of-use`,
   `cookie-policy`, `acceptable-use`), so the four states the walkthrough needs exist: two versions
   one superseded, one version, draft only, nothing at all.
-- `demo/templates/demo/landing.html`: "There are no public pages yet" becomes a link to the index.
+- `demo/templates/demo/landing.html`: "There are no public pages yet" becomes links to the document pages.
 
 `tests/settings.py` gains the same `FLEX_MENUS` renderers, and `tests/urls.py` mounts the package
 under `legal/`.
@@ -235,7 +231,7 @@ override proof and the template documentation, once both templates exist.
 |---|---|---|
 | 1 | US-1 Reading the document in force | `models.py` (`slug`, `in_force()`), migration `0007`, `urls.py` (new), `views.py` (new, `DocumentView`), `document_detail.html`, `tests/settings.py`, `tests/urls.py`, `tests/factories.py`, demo settings, menu, URLs, seed and landing, `docs/pages.md` (new), `docs/models.md`, README, CHANGELOG, `en` catalog |
 | 2 | US-2 Reading any version of a document | `models.py` (`with_replaced_at()`), `views.py` (`?version=` on `DocumentView`), `document_detail.html` (the replaced alert), `docs/pages.md`, `docs/models.md`, `en` catalog |
-| 3 | US-3 Finding a document and its earlier versions | `views.py` (`DocumentIndexView`, the previous versions on `DocumentView`), `urls.py`, `document_index.html`, `document_detail.html` (the menu), `docs/pages.md`, `en` catalog |
+| 3 | US-3 Finding a document and its earlier versions | `views.py` (the versions and documents on `DocumentView`), `document_detail.html` (the switcher and the document list), `docs/pages.md`, `en` catalog |
 | 4 | US-4 A stable address, and a project's own presentation | `models.py` (validator, freeze), `admin.py`, `tests/templates/` override, `docs/pages.md` (overriding), `docs/models.md`, `docs/authoring.md`, `CONTEXT.md`, CHANGELOG, `en` catalog |
 
 ## Complexity Tracking
