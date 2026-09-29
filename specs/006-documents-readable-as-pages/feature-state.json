@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -99,6 +99,11 @@
       "state": "PR_READY",
       "at": "2026-09-28T20:36:23Z",
       "note": "third walkthrough changes verified"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-29T10:16:55Z",
+      "note": "fourth walkthrough: drop index, two-column page with document list (T034-T035)"
     }
   ],
   "gates": {
