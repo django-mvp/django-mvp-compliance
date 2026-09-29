@@ -180,3 +180,7 @@ Did: `docs/authoring.md` gains *Documents people agree to, and notices* (choosin
 Verified: `uv run pre-commit run --all-files` passes. The docs gate runs in the full verify below.
 Next: full verify, then the report.
 Watch: none.
+
+## 2026-09-29T23:12Z · Implementer US2 · full verify
+
+Ran `forge verify --repo … --base origin/main`, exit 0: conformance, docs, lint, typecheck, test and build all passed.
