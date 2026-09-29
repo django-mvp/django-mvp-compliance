@@ -78,20 +78,24 @@ class DocumentQuerySet(models.QuerySet):
 
         One query with a subquery rather than a loop, so the cost does not
         grow with the number of documents (FS-003). A document with no version
-        in force is not outstanding: there is nothing in force to accept.
+        in force is not outstanding: there is nothing in force to accept. Nor is
+        a notice: nobody accepts one, so nothing of it is ever outstanding.
 
         Args:
             user: The account to ask about.
 
         Returns:
-            The documents with a version in force that ``user`` has not accepted.
+            The documents with a version in force that ``user`` has not
+            accepted, notices left out.
         """
         subject = Acceptance.subject_of(user)
         accepted = Acceptance.objects.filter(
             subject=subject, version__status=Version.Status.CURRENT
         )
-        return self.filter(versions__status=Version.Status.CURRENT).exclude(
-            pk__in=accepted.values("version__document_id")
+        return (
+            self.filter(versions__status=Version.Status.CURRENT)
+            .exclude(kind=Document.Kind.NOTICE)
+            .exclude(pk__in=accepted.values("version__document_id"))
         )
 
 
@@ -121,8 +125,12 @@ class Document(models.Model):
     """A named legal text with a lasting identity, such as a privacy policy.
 
     A document holds no wording of its own — every word lives in one of its
-    versions.
+    versions. Its kind says whether people agree to it or only read it.
     """
+
+    class Kind(models.TextChoices):
+        AGREED = "agreed", _("Agreed to")
+        NOTICE = "notice", _("Notice")
 
     name = models.CharField(
         _("name"),
@@ -137,6 +145,16 @@ class Document(models.Model):
         validators=[lowercase_slug],
         help_text=_(
             "The document's identifier in its address, such as “privacy-policy”."
+        ),
+    )
+    kind = models.CharField(
+        _("kind"),
+        max_length=10,
+        choices=Kind.choices,
+        default=Kind.AGREED,
+        help_text=_(
+            "Whether people agree to this document, such as a privacy policy, or only "
+            "read it, such as an impressum. Nobody is ever asked to accept a notice."
         ),
     )
 
@@ -193,7 +211,7 @@ class Document(models.Model):
 
         Returns:
             ``True`` when a version is in force and ``user`` has not accepted
-            it. ``False`` when nothing is in force.
+            it. ``False`` when nothing is in force, and always for a notice.
         """
         return Document.objects.outstanding_for(user).filter(pk=self.pk).exists()
 
