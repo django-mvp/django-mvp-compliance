@@ -3,7 +3,7 @@
   "feature": "007-read-only-documents",
   "branch": "007-read-only-documents",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "CONVERGE",
+  "state": "REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -29,6 +29,11 @@
       "state": "CONVERGE",
       "at": "2026-09-29T20:55:54Z",
       "note": "both stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-29T20:57:43Z",
+      "note": "converge green; ADR 0009 amended; roadmap R2/R3 delivered"
     }
   ],
   "gates": {
@@ -278,7 +283,7 @@
       "max": 2
     },
     "review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "design_review_cycles": {

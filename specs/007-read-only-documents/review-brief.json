@@ -1,0 +1,61 @@
+{
+  "role": "reviewer",
+  "stage": "S6",
+  "phase": "1 (correctness + spec-compliance) and 2 (security)",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-007",
+  "branch": "007-read-only-documents",
+  "feature": "007-read-only-documents",
+  "diff": "git diff dfaa960..HEAD \u2014 the whole feature branch against the commit its first story started from. Everything before dfaa960 on this branch is specification and planning artefacts.",
+  "lenses": [
+    "correctness",
+    "spec-compliance",
+    "security"
+  ],
+  "why_security_lens": "The design review carried DR-002 (who may change a document's kind: change_document, not publish_version) as a ruling, decisions.md D3, rather than a fix; and the diff adds a new refusal guarding the evidence records (acceptances).",
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-28/e60c2a95"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/review.md",
+  "inputs": [
+    "specs/007-read-only-documents/spec.md",
+    "specs/007-read-only-documents/decisions.md",
+    "specs/007-read-only-documents/plan.md",
+    "specs/007-read-only-documents/design-review-findings.json",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "README.md",
+    "CHANGELOG.md",
+    "docs/models.md",
+    "docs/pages.md",
+    "docs/authoring.md",
+    "docs/adr/0009-outstanding-is-answered-for-every-published-document.md",
+    "docs/ROADMAP.md",
+    "docs/contributing/standards/testing.md"
+  ],
+  "known_and_not_findings": [
+    "Three pre-existing tests gained the kind field (decisions.md D5) \u2014 authorised; no assertion weakened.",
+    "Changing the kind needs change_document, not publish_version (decisions.md D3) \u2014 ruled, raised with the maintainer. Report only if you find a consequence the D3 entry does not already state.",
+    "Acceptance._base_manager.bulk_create() bypasses the refusal by design; the docs list the routes that refuse.",
+    "kind is not indexed (decisions.md D2).",
+    "docs/ROADMAP.md: R2 and R3 marked delivered with briefs rewritten; R5 deliberately left open (decisions.md D6).",
+    "record() checks the kind and then save() checks it again on insert: one redundant query per new acceptance, accepted at design review."
+  ],
+  "resolved_django": "/home/sam/projects/django-mvp/django-mvp-compliance-007/.venv/lib/python3.13/site-packages/django",
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs007-review-findings.json"
+}
