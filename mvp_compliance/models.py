@@ -765,7 +765,11 @@ class AcceptanceQuerySet(models.QuerySet):
             RecordError: A version in the batch belongs to a notice.
         """
         objs = list(objs)
-        Acceptance.refuse_if_notice([obj.version_id for obj in objs])
+        # A migration's historical model is a separate class whose schema may
+        # predate the kind; like the other model-level guards, this one is not
+        # its to apply (docs/adr/0004-migrations-are-the-one-route-immutability-cannot-close.md).
+        if issubclass(self.model, Acceptance):
+            Acceptance.refuse_if_notice([obj.version_id for obj in objs])
         return super().bulk_create(objs, *args, **kwargs)
 
     def for_subject(self, subject) -> "AcceptanceQuerySet":

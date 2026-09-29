@@ -148,3 +148,41 @@ class TestDocumentKindMigration:
         finally:
             executor = MigrationExecutor(connection)
             executor.migrate(executor.loader.graph.leaf_nodes())
+
+    def test_a_migration_before_the_kind_can_still_bulk_create_acceptances(self):
+        # The historical manager carries the current queryset (use_in_migrations),
+        # so its bulk_create() must not ask about a column that state lacks.
+        before = [("mvp_compliance", "0007_document_slug")]
+        executor = MigrationExecutor(connection)
+        executor.migrate(before)
+        old_apps = executor.loader.project_state(before).apps
+        user = UserFactory()
+        document = old_apps.get_model("mvp_compliance", "Document").objects.create(
+            name="Terms", slug="terms"
+        )
+        version = old_apps.get_model("mvp_compliance", "Version").objects.create(
+            document=document,
+            number="2026.1",
+            markdown="Wording",
+            html="<p>Wording</p>",
+            status="current",
+            published_at=timezone.now(),
+        )
+        Acceptance = old_apps.get_model("mvp_compliance", "Acceptance")
+
+        try:
+            Acceptance.objects.bulk_create(
+                [
+                    Acceptance(
+                        user_id=user.pk,
+                        subject=str(user.pk),
+                        version=version,
+                        accepted_at=timezone.now(),
+                    )
+                ]
+            )
+
+            assert Acceptance.objects.filter(version=version).count() == 1
+        finally:
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())

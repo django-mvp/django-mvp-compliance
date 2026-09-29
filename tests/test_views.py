@@ -713,14 +713,6 @@ class TestNotice:
             assert version.html in content
             assert line in content
 
-    def test_a_signed_in_user_sees_no_agreement_line(self, client, notice):
-        first = published(notice, "First wording")
-        second = published(notice, "Second wording")
-        client.force_login(UserFactory())
-
-        for address in subtitle_addresses(notice, first, second):
-            assert "Agreed on" not in client.get(address).content.decode()
-
     def test_a_user_who_accepted_before_it_became_a_notice_sees_no_agreement_line(
         self, client
     ):

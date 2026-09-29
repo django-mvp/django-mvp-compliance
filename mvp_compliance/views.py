@@ -13,7 +13,7 @@ class VersionSubtitleMixin:
     """The line under a page's name: ``v2026.1 - <date>``.
 
     Continues with ``· Agreed on <date>`` when the signed-in visitor accepted
-    that version, except on a notice, which nobody agrees to (FR-009). Used by
+    that version, except on a notice, which nobody agrees to. Used by
     the document's page, which shows any published version. A view using it
     supplies ``get_version()``.
     """

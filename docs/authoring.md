@@ -157,9 +157,9 @@ What that means for acceptances already recorded:
 - **Agreed to → Notice.** Every acceptance recorded so far stays on record, and still appears in
   what the package holds about the person who made it. The document is no longer outstanding for
   anybody, and nobody can accept another version of it.
-- **Notice → Agreed to.** People are asked to agree again. Somebody who accepted the version now
-  in force, including before it became a notice, is not asked a second time. Everyone else is
-  asked to agree to it, the same as for any newly published document.
+- **Notice → Agreed to.** The document counts again towards what people still have to accept.
+  Somebody who accepted the version now in force, including before it became a notice, has nothing
+  outstanding for it. For everyone else it is outstanding, the same as any newly published document.
 
 Changing the kind needs the same permission as changing anything else about the document. See
 [models.md](models.md#the-kind) for changing it from code.
