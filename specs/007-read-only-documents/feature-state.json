@@ -30,12 +30,21 @@
       ]
     },
     "plan": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "notified",
+      "at": "2026-09-29T20:41:06Z"
     },
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-29T20:41:06Z",
+      "self_resolved": [
+        "DR-001 medium: ADR 0009 amendment added to T009 (D4)",
+        "DR-002 medium: ruled in D3, raised in plan notification",
+        "DR-003..DR-006 low: applied as plan/tasks edits"
+      ]
     }
   },
   "stories": [
