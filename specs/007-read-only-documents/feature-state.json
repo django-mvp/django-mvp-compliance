@@ -206,8 +206,16 @@
       "tasks": [
         {
           "id": "T010",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentKindInTheAdmin"
+            ],
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin -q (1 failed, 3 passed before T011: the changelist has no kind column; the add and change form tests pass against US-1 code)"
+            ]
+          }
         },
         {
           "id": "T011",

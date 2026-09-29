@@ -20,7 +20,7 @@ from django.urls import NoReverseMatch, path, reverse
 from django.utils import formats, timezone
 
 import mvp_compliance
-from mvp_compliance.models import Version
+from mvp_compliance.models import Document, Version
 from mvp_compliance.records import PersonalRecord
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
@@ -919,6 +919,85 @@ class TestDocumentSlugInTheAdmin:
         document.refresh_from_db()
         assert document.slug == original
         assert document.name == "A new name"
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDocumentKindInTheAdmin:
+    """US-2 scenarios 1-3, FR-009: the kind is visible in the list and chosen on the form."""
+
+    def test_the_changelist_shows_each_documents_kind(self, client, editor) -> None:
+        agreed = DocumentFactory()
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_document_changelist"))
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert f'field-kind">{agreed.get_kind_display()}<' in content
+        assert f'field-kind">{notice.get_kind_display()}<' in content
+
+    def test_a_document_added_without_touching_the_kind_is_one_people_agree_to(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_add")
+
+        preselected = client.get(url).context["adminform"].form["kind"].value()
+        response = client.post(
+            url, {"name": "Terms", "slug": "terms", "kind": preselected}
+        )
+
+        assert response.status_code == 302
+        assert Document.objects.get(slug="terms").kind == Document.Kind.AGREED
+
+    def test_a_document_added_as_a_notice_is_a_notice(self, client, editor) -> None:
+        client.force_login(editor)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_document_add"),
+            {"name": "Impressum", "slug": "impressum", "kind": Document.Kind.NOTICE},
+        )
+
+        assert response.status_code == 302
+        assert Document.objects.get(slug="impressum").kind == Document.Kind.NOTICE
+
+    def test_the_change_form_changes_the_kind_of_a_document_with_published_versions(
+        self, client, editor, document
+    ) -> None:
+        first = VersionFactory(document=document, markdown="First wording")
+        first.publish()
+        second = VersionFactory(document=document, markdown="Second wording")
+        second.publish()
+        before = list(
+            document.versions.order_by("pk").values_list(
+                "pk", "number", "status", "markdown", "html"
+            )
+        )
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
+
+        response = client.post(
+            url,
+            {
+                "name": document.name,
+                "slug": document.slug,
+                "kind": Document.Kind.NOTICE,
+            },
+        )
+
+        assert response.status_code == 302
+        document.refresh_from_db()
+        assert document.kind == Document.Kind.NOTICE
+        assert (
+            list(
+                document.versions.order_by("pk").values_list(
+                    "pk", "number", "status", "markdown", "html"
+                )
+            )
+            == before
+        )
 
 
 @pytest.mark.django_db

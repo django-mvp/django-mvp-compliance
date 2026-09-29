@@ -152,3 +152,10 @@ Ran `forge verify --repo … --base origin/main`: conformance, docs, lint, typec
 `::test_a_post_carrying_a_different_slug_leaves_a_published_slug_alone`). A plain
 `uv run pytest tests -n auto --dist loadscope` gave 3 failed, 420 passed. Each needs one line added
 to the test (`"kind"` in the set; `"kind": "agreed"` in the posted data). Forge triages.
+
+## 2026-09-29T22:45Z · Implementer US2 · T010
+
+Did: `tests/test_admin.py::TestDocumentKindInTheAdmin`, four tests: the changelist shows each document's kind (asserted through `get_kind_display()`), an add form saved with the preselected kind makes a document people agree to, an add with Notice makes a notice, and the change form changes the kind of a document with two published versions while every version row (pk, number, status, markdown, html) stays the same. Added the `Document` import.
+Verified: `uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin -q` gave 1 failed, 3 passed, the failure being the missing `field-kind` cell on the changelist. The three form tests pass against US-1's code because `DocumentAdmin` declares no fields.
+Next: T011, `"kind"` in `list_display`.
+Watch: none.
