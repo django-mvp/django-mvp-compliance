@@ -97,3 +97,21 @@ inputs up to date with the document as it now is. Weakening them, for example by
 optional on the form, would change behaviour to suit a test.
 
 **ADR:** none — a test maintenance ruling local to this feature.
+
+## D6 — R5 stays open on the roadmap
+
+**Ambiguous**: `roadmap-status` marked R5 delivered, because #65 is the only issue filed under R5.
+The spec says this feature is one part of R5: per-document enforcement and applying the check across
+the site are the rest of it and have no issues yet.
+
+**Chosen**: R5's status line stays `feature`. R2 and R3, which the same run marked delivered from
+FS-001 to FS-006, keep the delivered status, with their briefs rewritten in the delivered form.
+
+**Why defensible**: a roadmap line reading "delivered" for an item whose main deliverable, enforcement,
+is not built would tell the next planner there is nothing left to do. The tool derives delivery from
+the issues filed so far, and that derivation is only as complete as the decomposition.
+
+**Revisit if**: R5 is decomposed into the rest of its issues. The tool will then derive its status
+correctly.
+
+**ADR:** none — a roadmap bookkeeping correction, not an architectural decision.
