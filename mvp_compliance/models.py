@@ -747,6 +747,27 @@ class AcceptanceQuerySet(models.QuerySet):
         """Refuse every delete."""
         raise RecordedAcceptanceError(_("An acceptance cannot be deleted."))
 
+    def bulk_create(self, objs, *args, **kwargs):
+        """Refuse a batch naming any notice's version, writing none of it.
+
+        ``bulk_create()`` never calls ``save()``, so ``Acceptance.save()``'s
+        refusal would not reach it.
+
+        Args:
+            objs: The acceptances to write.
+            *args: Passed on to ``bulk_create()``.
+            **kwargs: Passed on to ``bulk_create()``.
+
+        Returns:
+            The acceptances written.
+
+        Raises:
+            RecordError: A version in the batch belongs to a notice.
+        """
+        objs = list(objs)
+        Acceptance.refuse_if_notice([obj.version_id for obj in objs])
+        return super().bulk_create(objs, *args, **kwargs)
+
     def for_subject(self, subject) -> "AcceptanceQuerySet":
         """Narrow to one person's records.
 
@@ -816,8 +837,8 @@ class AcceptanceManager(models.Manager["Acceptance"]):
             The acceptance, newly created or already recorded.
 
         Raises:
-            RecordError: ``version`` has never been published, or ``user`` has
-                not been saved.
+            RecordError: ``version`` has never been published or belongs to a
+                notice, or ``user`` has not been saved.
         """
         if not version.is_published:
             raise RecordError(
@@ -825,6 +846,9 @@ class AcceptanceManager(models.Manager["Acceptance"]):
                     "Cannot record an acceptance of a version that has never been published."
                 )
             )
+        # Before get_or_create(), which would return an acceptance recorded before
+        # the document became a notice as though it had just been made.
+        Acceptance.refuse_if_notice([version.pk])
         ip_address = None
         if request is not None and getattr(
             settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
@@ -952,12 +976,37 @@ class Acceptance(models.Model):
             )
         return str(user.pk)
 
+    @staticmethod
+    def refuse_if_notice(version_ids) -> None:
+        """Refuse an acceptance of any version of a notice.
+
+        Asks the database rather than a loaded ``version.document``, so a
+        document instance read before its kind changed cannot let one through.
+        One query whatever the number of versions.
+
+        Args:
+            version_ids: The primary keys of the versions being accepted.
+
+        Raises:
+            RecordError: One of them belongs to a notice.
+        """
+        if Version.objects.filter(
+            pk__in=version_ids, document__kind=Document.Kind.NOTICE
+        ).exists():
+            raise RecordError(
+                _(
+                    "Cannot record an acceptance of a notice. A notice is "
+                    "published to be read, and nobody agrees to it."
+                )
+            )
+
     def save(self, *args, **kwargs) -> None:
-        """Refuse saving an acceptance that is already recorded."""
+        """Refuse saving an acceptance that is already recorded, or one of a notice."""
         if self.pk is not None and Acceptance.objects.filter(pk=self.pk).exists():
             raise RecordedAcceptanceError(
                 _("An acceptance cannot be changed once it is recorded.")
             )
+        self.refuse_if_notice([self.version_id])
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

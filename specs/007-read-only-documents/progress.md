@@ -74,3 +74,15 @@ Verified: `uv run pytest tests/test_models.py::TestRecording -q` gave 6 failed, 
 failure `DID NOT RAISE RecordError`.
 Next: T005.
 Watch: the stale-instance test is what keeps the check reading the database rather than `version.document`.
+
+## 2026-09-29T21:30Z · Implementer US1 · T005
+
+Did: `Acceptance.refuse_if_notice(version_ids)` (one query, reads the database), called by
+`record()` after the "never published" refusal and before `get_or_create()`, by `Acceptance.save()`
+after the "already recorded" guard, and by `AcceptanceQuerySet.bulk_create()` before anything is
+written. `en` catalog gained the refusal message; the catalog tool marked it fuzzy against an
+unrelated entry, so I corrected the entry by hand.
+Verified: `uv run pytest tests/test_models.py::TestRecording tests/test_models.py::TestAcceptanceImmutability -q`
+gave 23 passed; `tests/test_admin.py::TestUserFacingStrings` passes.
+Next: T006.
+Watch: `Acceptance._base_manager.bulk_create()` is a plain manager and is not covered, by design.
