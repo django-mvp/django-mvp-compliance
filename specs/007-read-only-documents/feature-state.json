@@ -254,8 +254,19 @@
         },
         {
           "id": "T013",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pre-commit run --all-files (all hooks pass)",
+              "docs step of forge verify: see the full verify at the end of the story"
+            ],
+            "docs": [
+              "docs/authoring.md",
+              "docs/models.md",
+              "CHANGELOG.md"
+            ]
+          }
         }
       ]
     }

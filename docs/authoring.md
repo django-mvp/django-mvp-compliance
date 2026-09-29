@@ -136,9 +136,38 @@ published: the change page then shows it read-only, because an address that peop
 linked to must keep working. Settle it before the first publication. See
 [models.md](models.md#when-the-slug-is-fixed).
 
+## Documents people agree to, and notices
+
+Every document is one of two kinds, and the **Kind** field on its form says which.
+
+- **Agreed to** is the default. Choose it for a document people are asked to agree to, such as a
+  privacy policy or terms of use. Leave the field alone and this is what you get.
+- **Notice** is for a document that is published to be read and never accepted, such as an
+  impressum. A notice is written, previewed and published exactly like any other document and has
+  a page of its own, but nobody is ever asked to agree to it, and its page never says that the
+  reader agreed to it.
+
+Pick the kind when you add the document. You can change it later, at any time, on the document's
+own page, whether or not it has published versions. Changing the kind touches nothing else: no
+version is edited, renumbered or unpublished, and no recorded acceptance is changed or removed.
+The people asked to agree are the only thing that changes.
+
+What that means for acceptances already recorded:
+
+- **Agreed to → Notice.** Every acceptance recorded so far stays on record, and still appears in
+  what the package holds about the person who made it. The document is no longer outstanding for
+  anybody, and nobody can accept another version of it.
+- **Notice → Agreed to.** People are asked to agree again. Somebody who accepted the version now
+  in force, including before it became a notice, is not asked a second time. Everyone else is
+  asked to agree to it, the same as for any newly published document.
+
+Changing the kind needs the same permission as changing anything else about the document. See
+[models.md](models.md#the-kind) for changing it from code.
+
 ## The documents list
 
-Documents in the admin changelist are more than a list of names. Beside each one: the version in
+Documents in the admin changelist are more than a list of names. Beside each name, its **Kind**,
+so a notice is easy to tell from a document people agree to. Then the version in
 force, linked to its own page, or a plain **No version in force** for a document that has never
 published anything — the ordinary state for a new document, never treated as a gap. How long that
 version has been in force. And how many versions the document has published — current and

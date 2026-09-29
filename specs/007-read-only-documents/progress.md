@@ -173,3 +173,10 @@ Did: `tests/test_models.py::TestChangingTheKind`, twelve cases (six behaviours, 
 Verified: `uv run pytest tests/test_models.py::TestChangingTheKind -q` gave 12 passed, as expected against US-1 code. Probed both ways: removing the `.exclude(kind=NOTICE)` in `outstanding_for()` failed 4; a `save()` that deletes acceptances once the kind is notice failed 3 (the save route). Both mutations reverted; `git status` shows only the test file. `uv run pre-commit run --all-files` passes.
 Next: T013, the docs.
 Watch: no red step is possible for this task; it pins behaviour US-1 already delivered.
+
+## 2026-09-29T23:08Z · Implementer US2 · T013
+
+Did: `docs/authoring.md` gains *Documents people agree to, and notices* (choosing the kind, changing it later on the document's page, what happens to recorded acceptances in each direction, no extra permission) and *The documents list* names the **Kind** column. `docs/models.md` *The kind* says how to change it from code (`save()` and `update()`), that nothing recorded is touched and what flips at once. CHANGELOG's existing Added entry now mentions the column and changing the kind and links the three pages. No string in code changed, so the `en` catalog is untouched.
+Verified: `uv run pre-commit run --all-files` passes. The docs gate runs in the full verify below.
+Next: full verify, then the report.
+Watch: none.

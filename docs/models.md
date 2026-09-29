@@ -40,6 +40,25 @@ published, numbered and read at its own page exactly like any other document. Wh
 that nobody is ever asked to accept it. See [Outstanding](#outstanding) and
 [Acceptance](#acceptance).
 
+The kind can be changed at any time, in either direction, and nothing else changes with it. Set it
+and save, or update it in bulk:
+
+```python
+impressum.kind = Document.Kind.AGREED
+impressum.save()
+
+Document.objects.filter(slug="impressum").update(kind=Document.Kind.NOTICE)
+```
+
+No version and no acceptance is written, edited or removed by either, so a document with published
+versions and recorded acceptances keeps every one of them. What changes is the answer to what is
+outstanding, at once. A document made a notice is outstanding for nobody, and its recorded
+acceptances still appear in [what is held about a person](#producing-what-is-held). A notice made
+a document people agree to is outstanding for everyone who has not accepted the version now in
+force, and an acceptance recorded before it became a notice counts again. No permission beyond
+changing the document is needed. See [Writing and publishing a
+document](authoring.md#documents-people-agree-to-and-notices) for how an editor does it.
+
 A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
 valid and `Privacy_Policy`, `-privacy` and `privacy-` are not. `full_clean()`, which the
 admin calls, refuses the others. The rule is `mvp_compliance.models.lowercase_slug`, a
