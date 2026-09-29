@@ -52,3 +52,13 @@ are older tests that describe the model as it was before, and I may not edit the
   302). Each needs `"kind": "agreed"` in the posted data.
 Next: T003. T002 is marked blocked for Forge to triage those three one-line edits; the code is done.
 Watch: nothing in the model can avoid this: a required field on the change form is the design.
+
+## 2026-09-29T21:12Z · Implementer US1 · T003
+
+Did: `TestDocumentKindMigration` builds two documents, a published version and an acceptance at
+`0007_document_slug` with the historical `.objects.create()` (never `bulk_create`), migrates to
+`0008_document_kind`, and checks every document is `"agreed"` and the version and acceptance are
+unchanged. The database is put back at the latest migration in a `finally`.
+Verified: `uv run pytest tests/test_migrations.py -q` gave 4 passed.
+Next: T004.
+Watch: passes on arrival by design (its done-when is "Passes"); T002 already carried the migration.
