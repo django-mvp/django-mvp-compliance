@@ -22,9 +22,14 @@
           under <a class="link" href="/admin/mvp_compliance/">Compliance</a>.
         </p>
         <p class="mt-2 opacity-75">
-          There are no public pages yet. A document with nothing published is invisible to a
-          visitor, which is why this page shows none of them.
+          A visitor reads the version in force at
+          <code>/legal/&lt;slug&gt;/</code>. A document with nothing published is invisible to
+          a visitor, which is why the list below links only the ones that have something.
         </p>
+        <ul class="mt-2 list-disc pl-6">
+          <li><a class="link" href="{% url 'mvp_compliance:document' 'privacy-policy' %}">Privacy policy</a></li>
+          <li><a class="link" href="{% url 'mvp_compliance:document' 'terms-of-use' %}">Terms of use</a></li>
+        </ul>
         <a class="btn btn-primary mt-4 w-fit" href="/admin/">Open the admin</a>
       </div>
 

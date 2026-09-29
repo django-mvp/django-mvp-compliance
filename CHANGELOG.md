@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- One canonical page for each document that has a version in force, served at an address that
+  never changes: `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
+  `{% url 'mvp_compliance:document' 'privacy-policy' %}` in a template. Anyone can read it,
+  signed in or not, and it renders inside the django-mvp shell. The same address with
+  `?version=<number>` shows that published version, current or superseded, for as long as it
+  stays published. A document with nothing published, a slug that names nothing, or a
+  `?version=` value that is not a published version of the document, answers "not found". A
+  superseded version's page carries one alert row with the dates it was in force and a "View
+  current version" button. Every document page also carries a version switcher among its
+  actions, listing every published version newest first and marking the one shown. Beside the
+  wording, every document page lists every document that has a version in force, alphabetically,
+  with the one shown marked; below the large breakpoint the list stacks above the wording. The package
+  adds nothing to your menus, and every page's breadcrumbs are the document's name alone. See
+  [docs/pages.md](docs/pages.md).
+- `Document.slug`, a unique slug that forms the document's address, and
+  `Document.objects.in_force()`, which returns the documents that have a current version with
+  that version already fetched. Migration `0007_document_slug` adds the column with no data step,
+  so a database that already holds documents needs their slugs set before it can be migrated.
+  See [docs/models.md](docs/models.md).
+- The slug is validated as lowercase letters, digits and single hyphens, and is fixed once a
+  version of the document is published: changing it through `save()`, `update()` or
+  `bulk_update()` raises `PublishedVersionError`. The admin suggests the slug from the name and
+  shows it read-only once it is fixed. A project restyles a page by placing a template at the
+  same path. See [docs/models.md](docs/models.md), [docs/authoring.md](docs/authoring.md) and
+  [docs/pages.md](docs/pages.md).
 - `render_publication_email(version, replaced, site_url)`, in `mvp_compliance.emails`, which
   writes the subject and plain-text body of an email announcing a publication and returns them.
   It sends nothing. The subject is always one line, the text is translatable, and a template at
@@ -152,6 +177,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Django 6.1 is supported, and tested on every change alongside 5.2 and 6.0.
 
 ### Changed
+
+- Requires django-mvp 0.25.0 or later (was 0.23.0). django-mvp 0.25.0 mounts its own URLs at the
+  site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
 
 - A version is numbered when it is published instead of when its draft is created, and the number
   is the year of publication and its place among the document's versions published that year,

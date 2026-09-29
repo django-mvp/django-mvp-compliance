@@ -1,0 +1,38 @@
+{
+  "lens": "correctness",
+  "stage": "code",
+  "verdict": "approve",
+  "risk": "low",
+  "scope": "feature branch 006-documents-readable-as-pages, git diff 8c5ac50..HEAD, plus docs/ pages checked against the branch; full suite run: 390 passed",
+  "skills_loaded": [
+    {"name": "craft-review", "receipt": "craft-review/2026-09-17/b773db2e", "loaded_via": "skill-tool"},
+    {"name": "craft-simplify", "receipt": "craft-simplify/2026-08-04/69038ce1", "loaded_via": "skill-tool"},
+    {"name": "craft-security", "receipt": "craft-security/2026-08-04/ea3d6742", "loaded_via": "skill-tool"}
+  ],
+  "findings": [
+    {
+      "id": "COR-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "Document.save() refuses a slug change even when update_fields excludes slug, so a partial save that would never write the slug still raises.",
+      "evidence": "mvp_compliance/models.py Document.save (~line 144-159): compares the stored slug with self.slug and raises PublishedVersionError without looking at kwargs['update_fields'].",
+      "reproduction": "doc = published document; doc.slug = 'x'; doc.name = 'New'; doc.save(update_fields=['name']) raises PublishedVersionError although only name would be written.",
+      "suggested_fix": "Skip the check when update_fields is given and does not contain 'slug'."
+    },
+    {
+      "id": "COR-002",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "DocumentQuerySet.update(slug=...) refuses on a published document even when the value equals the stored slug, whereas save() with an unchanged slug is allowed; docs/models.md states only the save() half.",
+      "evidence": "mvp_compliance/models.py DocumentQuerySet.update checks only 'slug' in kwargs; docs/models.md 'When the slug is fixed' says saving with the same slug is always allowed.",
+      "reproduction": "Document.objects.filter(pk=published.pk).update(slug=published.slug) raises PublishedVersionError. Same for bulk_update(docs, ['slug']) with unchanged slugs.",
+      "suggested_fix": "Either add one sentence to docs/models.md that update() and bulk_update() refuse any slug value on a published document, or exclude rows whose slug already equals the new literal value."
+    }
+  ],
+  "notes": [
+    "Documentation pass: every example in docs/pages.md, docs/models.md, docs/authoring.md and README.md resolves against the branch (URL names, view paths, lowercase_slug, PublishedVersionError, with_replaced_at, in_force, AppMenu.append/MenuItem signature, template block page.content). No documented value set disagrees with the code.",
+    "Security lens: all lookups are ORM-parameterised; number is constrained by the converter regex; drafts and draft-only documents are unreachable (404) for everybody; |safe applies only to stored, publication-sanitised html (accepted by design); document names in titles/breadcrumbs are escaped by mvp (base.py) and covered by tests for document, version and index pages. The version-list page's title ('Versions of <name>') has no escaping test, but it goes through the same escaped title path.",
+    "demo/settings.py comment says the shell needs MVP_CONFIG sidebar title before any page renders; tests/settings.py sets none and the suite renders every page, and the sidebar header guards {% if title %}. The comment overstates; docs/pages.md correctly names only FLEX_MENUS.",
+    "Slug freeze is check-then-write without a row lock, while publish() locks the document row; a slug edit racing the first publication could slip through. Not reachable from the admin flow in practice."
+  ]
+}

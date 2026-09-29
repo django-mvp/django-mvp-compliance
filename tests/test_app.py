@@ -13,8 +13,12 @@ class TestPackagedApp:
         # Changing the label renames tables that already hold consent records.
         assert apps.get_app_config("mvp_compliance").label == "mvp_compliance"
 
-    def test_it_registers_no_public_urls(self) -> None:
-        assert importlib.util.find_spec("mvp_compliance.urls") is None
+    def test_it_offers_public_urls_for_a_project_to_mount(self) -> None:
+        assert importlib.util.find_spec("mvp_compliance.urls") is not None
+
+        from mvp_compliance import urls
+
+        assert urls.app_name == "mvp_compliance"
 
     def test_it_registers_both_models_in_the_admin(self) -> None:
         from django.contrib import admin

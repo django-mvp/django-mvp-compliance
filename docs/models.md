@@ -6,13 +6,61 @@ identity, and the sequence of versions underneath it.
 ## `Document`
 
 A named legal text — a privacy policy, a set of terms, a cookie policy. It has a
-lasting identity and a unique `name`, and it holds no wording of its own: every word
-lives in one of its versions.
+lasting identity, a unique `name` and a unique `slug`, and it holds no wording of its
+own: every word lives in one of its versions.
 
 ```python
 from mvp_compliance.models import Document
 
-privacy = Document.objects.create(name="Privacy policy")
+privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+```
+
+The `slug` is the document's identifier in its address: the page that shows the version
+in force is served at `<prefix>/privacy-policy/`. See [pages.md](pages.md).
+
+A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
+valid and `Privacy_Policy`, `-privacy` and `privacy-` are not. `full_clean()`, which the
+admin calls, refuses the others. The rule is `mvp_compliance.models.lowercase_slug`, a
+`RegexValidator` you can reuse on your own forms. Writing through the ORM is not validated, the same as every
+other field, and a slug no address matches answers "not found".
+
+### When the slug is fixed
+
+The slug can change until the document's first version is published. From then on it is
+fixed, because an address that has been published must keep working. The name stays
+editable, and the pages keep their addresses and show the new name.
+
+A document is fixed when any of its versions is current or superseded. After that,
+`document.save()` with a different slug, `Document.objects.filter(...).update(slug=...)` and
+`Document.objects.bulk_update(documents, ["slug"])` raise `PublishedVersionError` and leave
+the stored slug as it was:
+
+```python
+from mvp_compliance.exceptions import PublishedVersionError
+
+privacy.slug = "privacy"
+try:
+    privacy.save()
+except PublishedVersionError:
+    ...  # the document has a published version; its slug stays "privacy-policy"
+```
+
+Saving a document with the slug it already has is always allowed, and so is a save whose
+`update_fields` leaves `slug` out. `update()` and `bulk_update()` are stricter: on a document
+with a published version they refuse any slug value, including the one it already has. The
+message is also available as `Document.SLUG_FIXED_MESSAGE`.
+
+### Documents with a version in force
+
+`Document.objects.in_force()` returns every document that has a current version, and
+leaves out one that has only drafts and one that has no versions at all. Each document
+comes back with its current version already fetched, as a list of one on
+`current_versions`, so reading it costs no query per document:
+
+```python
+for document in Document.objects.in_force():
+    version = document.current_versions[0]
+    print(document.name, version.number)
 ```
 
 ## `Version`
@@ -187,6 +235,16 @@ reachable through the related manager on any document:
 
 ```python
 document.versions.published()  # every version that has ever been current, in order
+```
+
+`VersionQuerySet.with_replaced_at()` annotates each version with `replaced_at`, the
+moment the next published version of the same document took over, and `None` for the
+version in force. Drafts never count as a replacement. It costs no extra query however
+many versions are read:
+
+```python
+for version in document.versions.published().with_replaced_at():
+    print(version.number, version.published_at, version.replaced_at)
 ```
 
 `VersionQuerySet` also carries `.drafts()`, the complement — every version that has

@@ -124,6 +124,18 @@ A document's own change page offers **View current version**, leading to that pa
 exists, and **Version history**, leading to the versions list narrowed to this document with
 `VersionAdmin.list_filter`.
 
+## Choosing the slug
+
+The slug is the document's identifier in its address, such as `privacy-policy` in
+`/legal/privacy-policy/`. When you add a document, the admin suggests one from the name as you
+type. Edit it before you save if you want something shorter: lowercase letters, digits and
+single hyphens only.
+
+The name can be reworded at any time. The slug cannot, once the document's first version is
+published: the change page then shows it read-only, because an address that people may have
+linked to must keep working. Settle it before the first publication. See
+[models.md](models.md#when-the-slug-is-fixed).
+
 ## The documents list
 
 Documents in the admin changelist are more than a list of names. Beside each one: the version in

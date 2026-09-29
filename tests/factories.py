@@ -45,6 +45,7 @@ class DocumentFactory(factory.django.DjangoModelFactory):
         model = Document
 
     name = factory.Sequence(lambda n: f"Document {n}")
+    slug = factory.Sequence(lambda n: f"document-{n}")
 
 
 class VersionFactory(factory.django.DjangoModelFactory):
