@@ -100,3 +100,14 @@ change, the only case where the line can appear at all.
 Next: T007.
 Watch: a notice made from a document nobody accepted cannot show the line before T007 either, so
 only the earlier-acceptance test is red.
+
+## 2026-09-29T21:45Z · Implementer US1 · T007
+
+Did: `VersionSubtitleMixin.get_page_subtitle()` returns the version line alone when the version's
+document is a notice, before it looks for an acceptance. The mixin's docstring now says it is used
+by the document's page only (it named a version's page, which does not use it) and mentions the
+exception.
+Verified: `uv run pytest tests/test_views.py -q` gave 65 passed, the query-count tests among them
+(`version.document` is already loaded, so the check costs no query).
+Next: T008.
+Watch: none.
