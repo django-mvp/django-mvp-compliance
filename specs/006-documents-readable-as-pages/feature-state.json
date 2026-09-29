@@ -469,8 +469,18 @@
         },
         {
           "id": "T034",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py -k \"breadcrumb or MountRoot\" -x (before: breadcrumb test failed, index crumb present; after: passed)",
+              "uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py -q (179 passed)",
+              "uv run ruff check / ruff format --check mvp_compliance demo tests (clean)",
+              "uv run mypy mvp_compliance/views.py mvp_compliance/urls.py (clean)",
+              "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, no fuzzy entries",
+              "curl :8021/legal/ -> 404; sidebar link on /legal/terms-of-use/ -> /legal/privacy-policy/"
+            ]
+          }
         },
         {
           "id": "T035",

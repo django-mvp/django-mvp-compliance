@@ -26,7 +26,6 @@ navigation is your decision.
 
 | URL name | Arguments | Address | View |
 |---|---|---|---|
-| `mvp_compliance:index` | none | `<prefix>/` | `mvp_compliance.views.DocumentIndexView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
 There is one page per document: its address always shows the version in force. The same
@@ -65,36 +64,28 @@ configured renderer produced and sanitised at publication, so a project that poi
 `MVP_COMPLIANCE_RENDERER` at a renderer with a looser allow list serves that looseness on
 its own pages.
 
-## The index
+## The menu
 
-`mvp_compliance:index`, at the mount's root, lists every document that has a version in
-force, alphabetically, each linking to its page. A document with only drafts, or with no
-versions, is left out. When nothing is in force it says "Nothing has been published yet."
-
-A site that wants one "Legal" link in its footer points it at the index:
-
-```html
-<a href="{% url 'mvp_compliance:index' %}">Legal</a>
-```
-
-The package adds nothing to your menus. A host project adds its own entry, as the demo
-does in `demo/menus.py`:
+The package adds nothing to your menus: which pages appear in navigation is your
+decision. A host project adds its own entry, as the demo does in `demo/menus.py`, here
+pointing at one document's page:
 
 ```python
+from django.urls import reverse_lazy
 from flex_menu import MenuItem
 from mvp.menus import AppMenu
 
 AppMenu.append(
     MenuItem(
         name="legal-documents",
-        view_name="mvp_compliance:index",
+        url=reverse_lazy("mvp_compliance:document", args=["privacy-policy"]),
         extra_context={"label": "Legal documents", "icon": "file-earmark-text"},
     )
 )
 ```
 
-Every page's breadcrumbs start with a "Legal documents" crumb linking to the index. A
-`?version=` address shows the same trail as the plain one.
+Every page's breadcrumbs are the document's name alone. A `?version=` address shows the
+same trail as the plain one.
 
 ## The version switcher
 
@@ -134,7 +125,6 @@ change, and you do not fork it.
 
 | Template path | Page | Receives |
 |---|---|---|
-| `mvp_compliance/document_index.html` | `mvp_compliance:index` | `documents`, the documents in force in name order, each with its current version |
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.

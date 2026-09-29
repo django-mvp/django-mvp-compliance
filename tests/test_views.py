@@ -226,16 +226,13 @@ class TestDocumentView:
         assert f"v{version.number} - " in content
         assert date_format(timezone.localdate(version.published_at)) in content
 
-    def test_the_breadcrumb_trail_is_the_title_with_no_empty_link(self, client):
+    def test_the_breadcrumb_trail_is_the_documents_name_alone(self, client):
         document = DocumentFactory(name="Privacy policy")
         published(document)
 
         response = client.get(reverse("mvp_compliance:document", args=[document.slug]))
 
-        assert response.context["page"]["breadcrumbs"] == [
-            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
-            {"text": "Privacy policy"},
-        ]
+        assert response.context["page"]["breadcrumbs"] == [{"text": "Privacy policy"}]
 
     def test_the_page_renders_in_the_shell_with_no_project_template(self, client):
         document = DocumentFactory()
@@ -580,87 +577,8 @@ class TestVersionSwitcher:
 
 
 @pytest.mark.django_db
-class TestDocumentIndexView:
-    """A visitor finds every document that has a version in force."""
-
-    def test_every_document_in_force_is_listed_alphabetically_and_linked(self, client):
-        terms = DocumentFactory(name="Terms of use")
-        cookies = DocumentFactory(name="Cookie policy")
-        privacy = DocumentFactory(name="Privacy policy")
-        for document in (terms, cookies, privacy):
-            published(document)
-
-        response = client.get(reverse("mvp_compliance:index"))
-
-        assert response.status_code == 200
-        assert list(response.context["documents"]) == [cookies, privacy, terms]
-        content = response.content.decode()
-        for document in (cookies, privacy, terms):
-            address = reverse("mvp_compliance:document", args=[document.slug])
-            assert f'href="{address}"' in content
-        assert content.index("Cookie policy") < content.index("Privacy policy")
-        assert content.index("Privacy policy") < content.index("Terms of use")
-
-    def test_a_draft_only_document_and_an_empty_one_are_absent(self, client):
-        shown = DocumentFactory(name="Privacy policy")
-        published(shown)
-        VersionFactory(document=DocumentFactory(name="Draft only"))
-        DocumentFactory(name="Empty")
-
-        response = client.get(reverse("mvp_compliance:index"))
-
-        assert list(response.context["documents"]) == [shown]
-        content = response.content.decode()
-        assert "Draft only" not in content
-        assert "Empty" not in content
-
-    def test_with_nothing_in_force_it_says_nothing_has_been_published_yet(self, client):
-        VersionFactory(document=DocumentFactory())
-
-        response = client.get(reverse("mvp_compliance:index"))
-
-        assert response.status_code == 200
-        assert "Nothing has been published yet." in response.content.decode()
-
-    def test_the_page_renders_in_the_shell_and_is_titled_legal_documents(self, client):
-        response = client.get(reverse("mvp_compliance:index"))
-
-        names = [template.name for template in response.templates]
-        assert names[0] == "mvp_compliance/document_index.html"
-        assert "mvp/base.html" in names
-        assert "Legal documents" in response.content.decode()
-
-    def test_markup_in_a_document_name_is_escaped(self, client):
-        published(DocumentFactory(name="<script>alert(1)</script>"))
-
-        content = client.get(reverse("mvp_compliance:index")).content.decode()
-
-        assert "<script>alert(1)</script>" not in content
-        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
-
-    def test_the_query_count_does_not_grow_with_the_documents_published(
-        self, client, django_assert_num_queries
-    ):
-        for n in range(2):
-            published(DocumentFactory(name=f"Document {n}"))
-        client.get(reverse("mvp_compliance:index"))  # warm caches
-        with CaptureQueriesContext(connection) as small:
-            client.get(reverse("mvp_compliance:index"))
-        for n in range(2, 6):
-            published(DocumentFactory(name=f"Document {n}"))
-
-        with django_assert_num_queries(len(small)):
-            client.get(reverse("mvp_compliance:index"))
-
-
-@pytest.mark.django_db
 class TestBreadcrumbTrails:
-    """Every page's trail starts at the index of documents."""
-
-    def test_the_index_is_the_root_and_its_own_trail_is_its_title(self, client):
-        response = client.get(reverse("mvp_compliance:index"))
-
-        assert response.context["page"]["breadcrumbs"] == [{"text": "Legal documents"}]
+    """Every page's trail is the document's name alone."""
 
     def test_the_trail_is_unchanged_by_the_version_parameter(self, client):
         document = DocumentFactory(name="Privacy policy")
@@ -669,10 +587,17 @@ class TestBreadcrumbTrails:
 
         response = client.get(version_address(document, first.number))
 
-        assert response.context["page"]["breadcrumbs"] == [
-            {"text": "Legal documents", "href": reverse("mvp_compliance:index")},
-            {"text": "Privacy policy"},
-        ]
+        assert response.context["page"]["breadcrumbs"] == [{"text": "Privacy policy"}]
+
+
+@pytest.mark.django_db
+class TestMountRoot:
+    """There is no page listing every document: the mount's root is "not found"."""
+
+    def test_the_mount_root_is_not_found(self, client):
+        published(DocumentFactory())
+
+        assert client.get("/legal/").status_code == 404
 
 
 PROJECT_TEMPLATES = Path(__file__).parent / "project_templates"
@@ -703,14 +628,6 @@ class TestTemplateOverride:
         assert version.html in content
         assert "Earlier versions" not in content
 
-    def test_a_page_with_no_project_template_still_renders_the_packaged_one(
-        self, client, project_templates
-    ):
-        response = client.get(reverse("mvp_compliance:index"))
-
-        names = [template.name for template in response.templates]
-        assert names[0] == "mvp_compliance/document_index.html"
-
 
 @pytest.mark.django_db
 class TestNoMenuEntry:
@@ -722,7 +639,6 @@ class TestNoMenuEntry:
         version = published(document)
 
         for address in [
-            reverse("mvp_compliance:index"),
             reverse("mvp_compliance:document", args=[document.slug]),
             version_address(document, version.number),
         ]:
@@ -772,11 +688,8 @@ class TestPageStrings:
     """SC-008, FR-019, FR-020: every string the pages show is translatable, and none
     claims compliance."""
 
-    def test_the_page_templates_are_the_two_pages(self):
-        assert [path.name for path in PAGE_TEMPLATES] == [
-            "document_detail.html",
-            "document_index.html",
-        ]
+    def test_the_page_template_is_the_document_page(self):
+        assert [path.name for path in PAGE_TEMPLATES] == ["document_detail.html"]
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
     def test_every_string_in_a_page_template_is_in_the_english_catalog(self, path):
@@ -815,7 +728,6 @@ class TestPageStrings:
         replaced = published(current, "Second wording")
         earlier = current.versions.exclude(pk=replaced.pk).get()
         addresses = [
-            reverse("mvp_compliance:index"),
             reverse("mvp_compliance:document", args=[current.slug]),
             version_address(current, replaced.number),
             version_address(current, earlier.number),

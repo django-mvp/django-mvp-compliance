@@ -1,13 +1,10 @@
 """The pages that show a document's wording to a visitor."""
 
 from django.http import Http404
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
-from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.models import Acceptance, Document, Version
 
@@ -46,31 +43,6 @@ class VersionSubtitleMixin:
             "published": line,
             "date": date_format(timezone.localdate(agreed_at)),
         }
-
-
-class DocumentIndexView(MVPTemplateView):
-    """Every document that has a version in force, alphabetically.
-
-    Readable by anyone (FR-005). A document with only drafts, or no versions,
-    is not listed (FR-007). The index is the root of every page's trail, so its
-    own trail is its title alone.
-    """
-
-    template_name = "mvp_compliance/document_index.html"
-    page_title = gettext_lazy("Legal documents")
-
-    @staticmethod
-    def crumb() -> dict[str, str]:
-        """The first crumb of every page's trail, linking to this index."""
-        return {"text": _("Legal documents"), "href": reverse("mvp_compliance:index")}
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["documents"] = Document.objects.in_force().order_by("name")
-        return context
-
-    def get_breadcrumbs(self):
-        return [{"text": self.get_page_title()}]
 
 
 class DocumentView(VersionSubtitleMixin, MVPDetailView):
@@ -119,4 +91,4 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
 
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
-        return [DocumentIndexView.crumb(), {"text": self.get_page_title()}]
+        return [{"text": self.get_page_title()}]

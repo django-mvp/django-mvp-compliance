@@ -439,7 +439,7 @@ msgid "Back"
 msgstr "Back"
 
 #: mvp_compliance/templates/mvp_compliance/document_detail.html:8
-#: mvp_compliance/views.py:30
+#: mvp_compliance/views.py:27
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
@@ -452,10 +452,6 @@ msgid ""
 msgstr ""
 "This version has been replaced. It was in force from %(published)s to "
 "%(replaced)s."
-
-#: mvp_compliance/templates/mvp_compliance/document_index.html:11
-msgid "Nothing has been published yet."
-msgstr "Nothing has been published yet."
 
 #: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:1
 #, python-format
@@ -484,16 +480,12 @@ msgstr "See it in the admin"
 msgid "%(name)s: version %(number)s is now in force"
 msgstr "%(name)s: version %(number)s is now in force"
 
-#: mvp_compliance/views.py:45
+#: mvp_compliance/views.py:42
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: mvp_compliance/views.py:60 mvp_compliance/views.py:65
-msgid "Legal documents"
-msgstr "Legal documents"
-
-#: mvp_compliance/views.py:114
+#: mvp_compliance/views.py:86
 msgid "No version found"
 msgstr "No version found"
 

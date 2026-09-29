@@ -6,11 +6,10 @@ with ``{% url 'mvp_compliance:document' 'privacy-policy' %}``.
 
 from django.urls import path
 
-from mvp_compliance.views import DocumentIndexView, DocumentView
+from mvp_compliance.views import DocumentView
 
 app_name = "mvp_compliance"
 
 urlpatterns = [
-    path("", DocumentIndexView.as_view(), name="index"),
     path("<slug:slug>/", DocumentView.as_view(), name="document"),
 ]

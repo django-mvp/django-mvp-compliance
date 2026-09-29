@@ -376,3 +376,10 @@ edit, now removed. Full verify green. Tamper-check flags only the removals the b
 demo: `?version=` selects the version, a bad value is a 404, the old version address is a 404, the
 replaced alert is one row with the button at the end, and the switcher lists every version with the
 shown one active. plan.md brought to the single-page design.
+
+## 2026-09-29T10:30Z · Implementer US3 · T034
+
+- **Did:** Removed the document index: `DocumentIndexView` and its `crumb()`, the `index` URL pattern, `document_index.html`. `DocumentView.get_breadcrumbs` now returns the document's name alone. Demo sidebar entry points at the privacy policy's page (`reverse_lazy`, since the menu module loads before the URLconf). Rewrote the breadcrumb tests, added `TestMountRoot` (`/legal/` is 404), deleted `TestDocumentIndexView`, the index leg of the template-override test, and the index address from the menu and no-claims tests. `docs/pages.md` and CHANGELOG say nothing of an index; en catalog regenerated.
+- **Verified:** breadcrumb test observed red (index crumb present) before the change. `uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py -q` 179 passed; ruff, ruff format, mypy clean. Demo on 8021: `/legal/` 404, sidebar entry links `/legal/privacy-policy/`.
+- **Next:** T035, the document list beside every document page.
+- **Watch:** the `demo/menus.py` entry uses `url=` not `view_name=`, because flex_menu's `view_name` reverse takes no fixed args.

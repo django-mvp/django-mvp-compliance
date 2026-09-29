@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   superseded version's page carries one alert row with the dates it was in force and a "View
   current version" button. Every document page also carries a version switcher among its
   actions, listing every published version newest first and marking the one shown. The package
-  adds nothing to your menus. `mvp_compliance:index` lists every document that has a version in
-  force, and every page's breadcrumbs start with it. See [docs/pages.md](docs/pages.md).
+  adds nothing to your menus, and every page's breadcrumbs are the document's name alone. See
+  [docs/pages.md](docs/pages.md).
 - `Document.slug`, a unique slug that forms the document's address, and
   `Document.objects.in_force()`, which returns the documents that have a current version with
   that version already fetched. Migration `0007_document_slug` adds the column with no data step,
