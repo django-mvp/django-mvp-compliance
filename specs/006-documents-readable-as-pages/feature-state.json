@@ -129,10 +129,10 @@
       "approved_by": "SamuelJennings",
       "at": "2026-09-28T20:36:24Z",
       "self_resolved": [
-        "Version line reads 'v2026.2 - <date>' — done",
-        "One canonical page per document, version chosen by ?version= — T031",
-        "Replaced alert as one row with a View current version button at the end — T032",
-        "Version switcher on every document page — T033"
+        "Version line reads 'v2026.2 - <date>' \u2014 done",
+        "One canonical page per document, version chosen by ?version= \u2014 T031",
+        "Replaced alert as one row with a View current version button at the end \u2014 T032",
+        "Version switcher on every document page \u2014 T033"
       ]
     }
   },
@@ -458,9 +458,19 @@
               "uv run mypy mvp_compliance/views.py (clean)",
               "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, no fuzzy entries, no .mo",
               "uv run python manage.py check (no issues)",
-              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 — switcher, alert, 404 all as expected"
+              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 \u2014 switcher, alert, 404 all as expected"
             ]
           }
+        },
+        {
+          "id": "T034",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T035",
+          "status": "todo",
+          "attempts": 0
         }
       ]
     },

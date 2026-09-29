@@ -20,15 +20,16 @@ different should be able to change that without forking the package.
 ## Scope
 
 Anyone reading the site, signed in or not, can read published documents as ordinary pages of the
-host site. There are two kinds of page, and a menu:
+host site, on one kind of page:
 
 - **The document's page** is the one canonical page for a document. Its address shows the version
   in force, and is the address a footer links to. The same address with `?version=<number>` shows
   that published version, current or superseded, and keeps doing so for ever.
 - **A version switcher** on every document page lists each published version, so a reader can reach
   earlier wording without already having its address.
-- **The document index** lists every document that has a version in force. A project can link to it
-  from its footer as a single "Legal" link.
+- **A document list** beside the wording on every document page lists every document that has a
+  version in force, marking the one being read, so a reader moves between a site's documents
+  without leaving the page.
 
 Every page serves the HTML stored when the version was published. The pages take their layout,
 navigation and theme from the django-mvp shell the site already uses. The project mounts the
@@ -127,18 +128,18 @@ A reader who knows a document was reworded, but has no link to the old wording, 
 Every document page has a version switcher among its actions listing every published version,
 newest first. Choosing one reloads the same page with `?version=` and that number.
 
-A site that publishes several documents usually wants a single "Legal" link in its footer rather
-than one link per document. The document index gives it one address listing every document that has
-a version in force, each linking to its page.
+A site usually publishes several documents. Every document page is laid out in two columns: a list
+of every document that has a version in force on the side, marking the one being read, and the
+document itself as the main content.
 
 **Why this priority**: The `?version=` addresses from US-2 work without it, but only for someone who
-already has the link. This makes them findable. The index saves each project building the same
-list.
+already has the link. This makes them findable. The document list saves each project building the
+same navigation.
 
 **Independent Test**: Publish three versions of one document and one version of another, and leave a
 third document with only a draft. Open the first document's page and confirm its version switcher
-lists the three versions, newest first. Open the index and confirm it lists the two
-documents that have a version in force and not the third.
+lists the three versions, newest first, and that the document list beside it shows the two
+documents that have a version in force, not the third, with the first one marked.
 
 **Acceptance Scenarios**:
 
@@ -151,13 +152,11 @@ documents that have a version in force and not the third.
    caret.
 4. **Given** a document that has drafts as well as published versions, **When** the switcher is
    opened, **Then** no draft appears.
-5. **Given** documents with a version in force and documents with only drafts, **When** the index is
-   opened, **Then** it lists every document that has a version in force, each linking to its page,
-   and no other document.
-6. **Given** no document has a version in force, **When** the index is opened, **Then** it says there
-   is nothing published yet, rather than showing an empty list.
-7. **Given** the index, **When** it is served, **Then** it carries the shell's
-   layout, navigation and theme.
+5. **Given** documents with a version in force and documents with only drafts, **When** any document
+   page is opened, with or without `?version=`, **Then** the document list beside the wording shows
+   every document that has a version in force, each linking to its page, and no other document.
+6. **Given** that list, **When** it is read, **Then** the document being shown is marked as the
+   current one.
 
 ---
 
@@ -230,15 +229,17 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-003**: Every document page MUST list the document's published versions newest first, each as
   `v<number> - <date>` linking to the same page with `?version=<number>`, and mark the version being
   shown. No draft is listed. *(US-3)*
-- **FR-004**: The package MUST provide a document index at its own address, listing every document
-  that has a version in force and linking to each document's page. *(US-3)*
+- **FR-004**: Every document page MUST be laid out in two columns: a list of every document that has
+  a version in force, linking to each document's page and marking the one shown, on the side, and
+  the version being shown as the main content. There is no separate page listing documents.
+  *(US-3)*
 - **FR-005**: Every page this feature adds MUST be readable by any visitor, signed in or not, with
   no permission required. *(US-1, US-2, US-3)*
 - **FR-006**: A page MUST serve the version's HTML exactly as stored at publication, and MUST NOT
   render Markdown when it is requested. *(US-1, US-2)*
 - **FR-007**: A draft MUST NOT be shown or listed on any page this feature adds, to anyone. A document
   with nothing in force MUST answer "not found" at its page, and MUST NOT appear in
-  the index. *(US-1, US-2, US-3)*
+  the document list. *(US-1, US-2, US-3)*
 - **FR-008**: An address naming no document, or a `?version=` value that is not a published version
   of the named document, MUST answer "not found". *(US-1, US-2)*
 - **FR-009**: The document's page MUST name the document, and under it show the version being shown
@@ -272,7 +273,7 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-020**: Nothing this feature adds MAY claim that publishing a document makes a site compliant,
   or name a regulation. *(US-1)*
 - **FR-021**: The documentation MUST show how to mount the addresses, how to link to a document's
-  page and the index from a template, and list each page template with what it is given. *(US-4)*
+  page from a template, and list each page template with what it is given. *(US-4)*
 - **FR-022**: The glossary MUST define *Slug* as the document's identifier in its address, fixed once
   a version is published. *(US-4)*
 
@@ -282,7 +283,7 @@ document page's template in the demo's templates and confirm it is used.
   versions have. Fixed once the document has a published version.
 - **Version** (FS-001, FS-002): unchanged. Its number and the dates it was in force identify it on
   the page.
-- **Document's page** and **document index**: read-only views
+- **Document's page**: a read-only view
   of published data. Nothing about them is stored.
 
 ## Success Criteria *(mandatory)*
@@ -298,8 +299,8 @@ document page's template in the demo's templates and confirm it is used.
   version's address still answers with the wording it answered with before.
 - **SC-005**: Once a document has a published version, no route that refuses other changes to
   published content accepts a change to its slug.
-- **SC-006**: The number of database queries for a document's page, with or without `?version=`, and the index does
-  not grow with the number of versions or documents.
+- **SC-006**: The number of database queries for a document's page, with or without `?version=`, does not
+  grow with the number of versions or documents.
 - **SC-007**: A developer can make the pages reachable and link to a document from the site's footer
   with one line in the project's URLs and one link in a template.
 - **SC-008**: `makemessages` over the package picks up every string on the pages.
@@ -328,8 +329,11 @@ document page's template in the demo's templates and confirm it is used.
 - **Q**: Does upgrading need to give existing documents a slug? → **A**: No. Nothing has been
   released and no site uses the package, so there are no existing documents to carry forward.
   Development databases are updated by hand. Maintainer's ruling at the specification review.
-- **Q**: Does the index include a document with only drafts? → **A**: No (FR-004). Its page answers
-  "not found", so listing it would give the reader a dead link.
+- **Q**: Does the document list include a document with only drafts? → **A**: No (FR-004). Its page
+  answers "not found", so listing it would give the reader a dead link.
+- **Q**: Is there a page listing every document? → **A**: No. Every document page carries the list of
+  documents beside its wording (FR-004), so a separate page adds nothing. Maintainer's ruling at the
+  walkthrough.
 
 - **Q**: How does a page say which version it is, and where do earlier versions go? → **A**: The
   line under the name reads `v2026.1 - <date>`, with `· Agreed on <date>` added for a
