@@ -377,14 +377,14 @@ demo: `?version=` selects the version, a bad value is a 404, the old version add
 replaced alert is one row with the button at the end, and the switcher lists every version with the
 shown one active. plan.md brought to the single-page design.
 
-## 2026-09-29T10:30Z · Implementer US3 · T034
+## 2026-09-29T10:19Z · Implementer US3 · T034
 
 - **Did:** Removed the document index: `DocumentIndexView` and its `crumb()`, the `index` URL pattern, `document_index.html`. `DocumentView.get_breadcrumbs` now returns the document's name alone. Demo sidebar entry points at the privacy policy's page (`reverse_lazy`, since the menu module loads before the URLconf). Rewrote the breadcrumb tests, added `TestMountRoot` (`/legal/` is 404), deleted `TestDocumentIndexView`, the index leg of the template-override test, and the index address from the menu and no-claims tests. `docs/pages.md` and CHANGELOG say nothing of an index; en catalog regenerated.
 - **Verified:** breadcrumb test observed red (index crumb present) before the change. `uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py -q` 179 passed; ruff, ruff format, mypy clean. Demo on 8021: `/legal/` 404, sidebar entry links `/legal/privacy-policy/`.
 - **Next:** T035, the document list beside every document page.
 - **Watch:** the `demo/menus.py` entry uses `url=` not `view_name=`, because flex_menu's `view_name` reverse takes no fixed args.
 
-## 2026-09-29T10:50Z · Implementer US3 · T035
+## 2026-09-29T10:24Z · Implementer US3 · T035
 
 - **Did:** `TestDocumentList` in `tests/test_views.py` (list order and links, same list on a `?version=` address, shown document active and only that one, draft-only and empty documents absent, query count constant for 2 and 6 documents on the plain and versioned address). `DocumentView` adds `documents` (`Document.objects.in_force().order_by("name")`). `document_detail.html` lays out two columns at `lg` (the list in a `<nav id="document-list">` inside `<aside>`, the alert and wording in the main column). `docs/pages.md`, CHANGELOG and the en catalog updated (new msgid "Legal documents" for the nav's label).
 - **Verified:** the five link, order, active and absence tests observed red before the change (list not present, `documents` not in context); the two query-count tests pass on first run because nothing yet varied with the document count, so they were probed instead: making the list query once per document turned both red, then reverted. `uv run pytest tests/test_views.py tests/test_admin.py tests/test_records.py -q` gives 184 passed, 2 failed (the two below). ruff, ruff format, mypy clean. Demo on 8021: `/legal/privacy-policy/`, its `?version=2026.1`, and `/legal/terms-of-use/` list house-rules, privacy-policy, terms-of-use with the shown one `menu-active`; cookie-policy and `/legal/` are 404. Layout classes checked present in mvp's prebuilt CSS.
