@@ -3,7 +3,7 @@
   "feature": "007-read-only-documents",
   "branch": "007-read-only-documents",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -19,6 +19,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-09-29T20:35:22Z",
       "note": "plan, research, tasks committed; draft PR #76 opened"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-29T20:41:11Z",
+      "note": "design review applied; plan notification sent"
     }
   ],
   "gates": {
