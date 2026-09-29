@@ -29,7 +29,12 @@ from mvp_compliance.models import (
     keep_or_remove_acceptances,
 )
 from mvp_compliance.rendering import MarkdownRenderer
-from tests.factories import DocumentFactory, UserFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 
 
 class UppercaseRenderer(MarkdownRenderer):
@@ -1097,6 +1102,120 @@ class TestRecording:
 
         assert acceptance.version == first
 
+    def test_recording_against_a_notice_is_refused_whether_or_not_it_is_in_force(
+        self, user
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        superseded = VersionFactory(document=notice)
+        superseded.publish()
+        current = VersionFactory(document=notice)
+        current.publish()
+        superseded.refresh_from_db()
+
+        for version in (current, superseded):
+            with pytest.raises(RecordError):
+                Acceptance.objects.record(user, version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_recording_against_a_notice_is_refused_every_time(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        version = VersionFactory(document=notice)
+        version.publish()
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, version)
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_recording_against_a_document_made_a_notice_since_is_refused_and_the_old_record_stays(
+        self, user, published_version
+    ):
+        old = Acceptance.objects.record(user, published_version)
+        Document.objects.filter(pk=published_version.document_id).update(
+            kind=Document.Kind.NOTICE
+        )
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, published_version)
+
+        assert list(Acceptance.objects.all()) == [old]
+        stored = Acceptance.objects.get()
+        assert stored.accepted_at == old.accepted_at
+
+    def test_a_document_instance_loaded_before_it_became_a_notice_lets_nothing_through(
+        self, user
+    ):
+        version = VersionFactory()
+        version.publish()
+        assert version.document.kind == Document.Kind.AGREED
+        Document.objects.filter(pk=version.document_id).update(
+            kind=Document.Kind.NOTICE
+        )
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_creating_an_acceptance_of_a_notice_is_refused(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        version = VersionFactory(document=notice)
+        version.publish()
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.create(
+                user=user,
+                subject=Acceptance.subject_of(user),
+                version=version,
+                accepted_at=timezone.now(),
+            )
+        with pytest.raises(RecordError):
+            AcceptanceFactory(user=user, version=version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_bulk_creating_with_one_notice_in_the_batch_writes_none_of_it(self, user):
+        agreed = VersionFactory()
+        agreed.publish()
+        notice = VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE))
+        notice.publish()
+        other = UserFactory()
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.bulk_create(
+                [
+                    Acceptance(
+                        user=person,
+                        subject=Acceptance.subject_of(person),
+                        version=version,
+                        accepted_at=timezone.now(),
+                    )
+                    for person, version in [(user, agreed), (other, notice)]
+                ]
+            )
+
+        assert not Acceptance.objects.exists()
+
+    def test_bulk_creating_acceptances_of_agreed_documents_is_unaffected(self, user):
+        version = VersionFactory()
+        version.publish()
+
+        Acceptance.objects.bulk_create(
+            [
+                Acceptance(
+                    user=user,
+                    subject=Acceptance.subject_of(user),
+                    version=version,
+                    accepted_at=timezone.now(),
+                )
+            ]
+        )
+
+        assert Acceptance.objects.count() == 1
+
     def test_recording_for_a_user_with_no_primary_key_is_refused(
         self, published_version
     ):
@@ -1384,7 +1503,6 @@ class TestOutstanding:
         assert len(at_two_documents.captured_queries) == len(
             at_ten_documents.captured_queries
         )
-
 
     def test_a_notice_with_a_version_in_force_is_not_outstanding(self, user):
         notice = DocumentFactory(kind=Document.Kind.NOTICE)

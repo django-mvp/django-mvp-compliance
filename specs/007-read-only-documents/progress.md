@@ -62,3 +62,15 @@ unchanged. The database is put back at the latest migration in a `finally`.
 Verified: `uv run pytest tests/test_migrations.py -q` gave 4 passed.
 Next: T004.
 Watch: passes on arrival by design (its done-when is "Passes"); T002 already carried the migration.
+
+## 2026-09-29T21:20Z · Implementer US1 · T004
+
+Did: `TestRecording` gains seven tests. `record()` against a notice's version in force and its
+superseded one; twice in a row; a user who accepted before the document became a notice (`RecordError`,
+old record unchanged); a version whose `document` instance was loaded before the kind changed;
+`Acceptance.objects.create()` and `AcceptanceFactory`; `bulk_create()` with one notice in a batch of
+two (none written); and `bulk_create()` of agreed documents still works.
+Verified: `uv run pytest tests/test_models.py::TestRecording -q` gave 6 failed, 10 passed, each
+failure `DID NOT RAISE RecordError`.
+Next: T005.
+Watch: the stale-instance test is what keeps the check reading the database rather than `version.document`.
