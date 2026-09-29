@@ -37,3 +37,45 @@ on every document save for no read it could speed up.
 the roadmap anticipates.
 
 **ADR:** none — a sizing call about one column, recorded here as Article IX asks.
+
+## D3 — Changing the kind needs the document change permission, not the publish permission
+
+**Ambiguous**: the design review (DR-002) pointed out that publishing needs `publish_version`
+because making something legally binding is a higher trust level than writing a draft, while the
+kind sits on the document form behind `change_document`. An editor who cannot publish could make a
+published privacy policy a notice, and it would stop being outstanding for everybody.
+
+**Chosen**: `change_document` is enough. No extra permission check on the kind.
+
+**Why defensible**: the spec asks for the kind to be changeable at any time from the admin (FR-007,
+FR-009) and names no permission beyond the admin's own, so gating it would be a requirement the spec
+does not state. The kind changes no wording and no record: every acceptance stays as it was
+(FR-007) and turning it back restores the answer exactly (edge case 3), so it is a document setting
+rather than a publication. Nothing blocks a request on "outstanding" yet (R4 and R5 are unbuilt),
+so today the change has no effect on any user. This is raised with the maintainer in the plan
+notification. If they want it behind `publish_version` once a version is published, that is a
+change to FR-009 and goes through a delta brief.
+
+**Revisit if**: R5 makes "outstanding" block requests, at which point turning a document into a
+notice lets people through without accepting it.
+
+**ADR:** none — follows from the spec's own wording; revisited with R5, which owns enforcement.
+
+## D4 — ADR 0009 is amended, not superseded
+
+**Ambiguous**: ADR 0009's decision sentence says `outstanding_for()` returns every document with a
+version in force that the person has not accepted. FR-003 leaves notices out. The design review
+(DR-001) found that the ADR's reasoning, which is about keeping enforcement policy out of the
+answer, still holds.
+
+**Chosen**: amend ADR 0009 in place so its decision says a notice is never outstanding, with the
+reason, and leave its reasoning unchanged. No new ADR.
+
+**Why defensible**: a notice is not a document the site chose not to enforce. Nobody can accept one,
+so leaving it out is about what the answer means, not a policy on top of it. The ADR's argument
+against filtering (callers want the unfiltered answer, one rule in one place) applies unchanged to
+enforcement and does not apply to a kind of document that nobody can accept.
+
+**Revisit if**: a caller ever needs notices in the answer. None of the three the ADR names does.
+
+**ADR:** docs/adr/0009-outstanding-is-answered-for-every-published-document.md (amended)

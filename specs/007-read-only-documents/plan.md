@@ -9,8 +9,7 @@
 One field, one filter, three refusals, one condition on the page, one admin column.
 
 `Document` gains `kind`, a choice between `Document.Kind.AGREED` (a document people agree to, the
-default) and `Document.Kind.NOTICE`. `DocumentQuerySet.outstanding_for()` keeps only documents
-people agree to. That covers every route that asks the question, because
+default) and `Document.Kind.NOTICE`. `DocumentQuerySet.outstanding_for()` leaves notices out. That covers every route that asks the question, because
 `Document.is_outstanding_for()` already goes through that method. Recording an acceptance of a
 notice's version is refused with `RecordError` by `AcceptanceManager.record()`, by
 `Acceptance.save()` on a new row, and by `AcceptanceQuerySet.bulk_create()`. A notice's page leaves
@@ -91,8 +90,9 @@ neither `Document.save()` nor `DocumentQuerySet.update()` gains a guard for it (
 
 ### What is outstanding (US-1)
 
-`DocumentQuerySet.outstanding_for()` gains `kind=Document.Kind.AGREED` in the filter it already
-applies. `Document.is_outstanding_for()` asks through it and needs no change (FR-003). The docstring
+`DocumentQuerySet.outstanding_for()` gains `.exclude(kind=Document.Kind.NOTICE)`, so it tests the
+same predicate as the refusal below: a notice is the one exception and everything else is agreed to
+(design review DR-003). `Document.is_outstanding_for()` asks through it and needs no change (FR-003). The docstring
 says that a notice is never outstanding.
 
 Acceptances recorded before a document became a notice are not treated differently: the method
@@ -106,23 +106,30 @@ The rule: an acceptance can never be created for a version whose document is a n
 checked where a row is created, and nowhere else, because an acceptance recorded before the document
 became a notice must stay exactly as it is (FR-007).
 
-- `Acceptance.refuse_if_notice(version)`, a static method, raises `RecordError` with *"Cannot record
-  an acceptance of a notice. A notice is published to be read, and nobody agrees to it."* when the
-  version's document is a notice. It reads the kind from the database with
-  `Document.objects.filter(pk=version.document_id).values_list("kind", flat=True)` rather than from
-  `version.document`, so a document instance cached before the kind changed cannot let a record
-  through.
-- `AcceptanceManager.record()` calls it after the existing "never published" refusal and **before**
+- `Acceptance.refuse_if_notice(version_ids)`, a static method, runs
+  `Version.objects.filter(pk__in=version_ids, document__kind=Document.Kind.NOTICE).exists()` and
+  raises `RecordError` with *"Cannot record an acceptance of a notice. A notice is published to be
+  read, and nobody agrees to it."* when it is true. One query whatever the number of ids, read from
+  the database rather than from a cached `version.document`, so a document instance loaded before
+  the kind changed cannot let a record through (design review DR-004).
+- `AcceptanceManager.record()` calls it with `[version.pk]` after the existing "never published" refusal and **before**
   `get_or_create()`. The order matters: `get_or_create()` first looks for an existing row, so for a
   document made a notice after a user accepted it, a check inside `save()` alone would never run and
   `record()` would hand back the old record as if the acceptance had just been recorded (edge case
   4 requires a refusal every time).
-- `Acceptance.save()` calls it when the row is being created, which covers
+- `Acceptance.save()` calls it with `[self.version_id]` after the existing "already recorded"
+  guard, so every save that reaches it is an insert and a re-save of an old record is still refused
+  as `RecordedAcceptanceError`. It is the row being created, which covers
   `Acceptance.objects.create()`, `get_or_create()` called directly, and a hand-built instance
   (FR-004 "every route that records an acceptance", SC-002).
-- `AcceptanceQuerySet.bulk_create()` refuses the whole batch when any of its versions belongs to a
-  notice, with one query over the batch's document ids, before anything is written. `bulk_create()`
+- `AcceptanceQuerySet.bulk_create()` calls it with every object's `version_id` before anything is
+  written, so one notice version refuses the whole batch. `bulk_create()`
   never calls `save()`, so without this it would be the one route left open.
+
+The async forms (`acreate()`, `aget_or_create()`, `abulk_create()`) wrap these and are covered.
+`Acceptance._base_manager.bulk_create()` is a plain manager and is not: it is deliberate
+circumvention, the package never calls it, and the documentation lists the routes that refuse
+rather than claiming every conceivable one.
 
 `RecordError` is the existing exception for "this acceptance cannot be recorded" (ADR 0003). No new
 exception class.
@@ -132,7 +139,7 @@ exception class.
 `VersionSubtitleMixin.get_page_subtitle()` returns the version line alone when the version's
 document is a notice, before it looks for an acceptance. A notice's page therefore never says the
 reader agreed to it, whether or not an acceptance from before the change exists (FR-006, edge case
-2). `DocumentView.get_version()` reads versions through `self.object.versions`, whose results
+2), on the version in force and on an earlier version shown with `?version=` alike. `DocumentView.get_version()` reads versions through `self.object.versions`, whose results
 already carry `self.object` as their `document`, so the check costs no query.
 
 Nothing else on the page changes. `Document.objects.in_force()` does not filter by kind, so the
@@ -160,9 +167,11 @@ shows: a signed-in user sees its page with no agreement line, and the admin list
 
 ### Documentation
 
-- US-1: `docs/models.md` (the `kind` field and `Document.Kind` under `Document`; the *Outstanding*
-  section says a notice is never outstanding; the `Acceptance` section says recording against a
-  notice is refused, and by which routes), `docs/pages.md` (a notice's page carries no agreement
+- US-1: ADR 0009 amended: its decision says a notice is never outstanding, because it cannot be
+  accepted at all, which is not an enforcement choice; its reasoning stands (design review DR-001).
+  `docs/models.md` (the `kind` field and `Document.Kind` under `Document`; the *Outstanding*
+  section says a notice is never outstanding; the sentence saying the answer is deliberately unfiltered now says it ignores enforcement but not
+  kind; the `Acceptance` section says recording against a notice is refused, and by which routes), `docs/pages.md` (a notice's page carries no agreement
   line; linking an impressum from the footer), `CONTEXT.md` **Notice** (FR-014), README feature
   list, CHANGELOG Added entry, `en` catalog.
 - US-2: `docs/authoring.md` (a new section, *Documents people agree to, and notices*: choosing the
