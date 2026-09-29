@@ -3,7 +3,7 @@
   "feature": "006-documents-readable-as-pages",
   "branch": "006-documents-readable-as-pages",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "MERGED",
   "state_history": [
     {
       "state": "QUEUED",
@@ -119,6 +119,11 @@
       "state": "PR_READY",
       "at": "2026-09-29T10:24:52Z",
       "note": "fourth walkthrough changes verified"
+    },
+    {
+      "state": "MERGED",
+      "at": "2026-09-29T12:57:38Z",
+      "note": "PR #64 merged; approved by SamuelJennings"
     }
   ],
   "gates": {
@@ -134,8 +139,8 @@
       "at": "2026-09-26T15:55:00Z"
     },
     "merge": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-29T12:57:30Z"
     },
     "design_review": {
       "approved_by": "design-panel",
@@ -149,8 +154,8 @@
       "approved_by": "SamuelJennings",
       "at": "2026-09-29T10:24:53Z",
       "self_resolved": [
-        "Scrap the documents list page — T034",
-        "Two-column page with the document list on the side, current document highlighted — T035"
+        "Scrap the documents list page \u2014 T034",
+        "Two-column page with the document list on the side, current document highlighted \u2014 T035"
       ]
     }
   },
@@ -476,7 +481,7 @@
               "uv run mypy mvp_compliance/views.py (clean)",
               "uv run python manage.py makemessages -l en --no-obsolete; POT-Creation-Date removed, no fuzzy entries, no .mo",
               "uv run python manage.py check (no issues)",
-              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 — switcher, alert, 404 all as expected"
+              "curl :8021/legal/privacy-policy/ and /legal/terms-of-use/ and ?version=2026.1 and ?version=9999.9 \u2014 switcher, alert, 404 all as expected"
             ]
           }
         },
@@ -594,7 +599,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 0,
+      "used": 54.4,
       "max": 120
     }
   },
