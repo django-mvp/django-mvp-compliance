@@ -41,6 +41,13 @@ else in a template:
 <a href="{% url 'mvp_compliance:document' 'privacy-policy' %}">Privacy policy</a>
 ```
 
+An impressum is linked the same way, from the footer of the site, wherever the law of your
+country expects to find it:
+
+```html
+<a href="{% url 'mvp_compliance:document' 'impressum' %}">Impressum</a>
+```
+
 ## What a visitor sees
 
 The page shows the document's name, a line under it, and the wording of the version
@@ -59,6 +66,12 @@ number and the day it was published, in the project's date format. When the sign
 visitor has accepted that version it continues `· Agreed on 27 September 2026`, with the
 date of their acceptance. An anonymous visitor, and someone who has accepted a different
 version of the document but not this one, see the first part only.
+
+A notice, such as an impressum, is read and never accepted, so its line is the first part
+only for everybody: no `Agreed on`, even for a signed-in visitor who accepted the document
+before it became a notice, and on an earlier `?version=` address as on the plain one. The
+rest of the page is the same as any document's, and the list beside the wording names it
+along with the documents people agree to.
 
 The page builds this line with `mvp_compliance.views.VersionSubtitleMixin`. A project
 view that shows a version and wants the same line mixes it in ahead of the django-mvp

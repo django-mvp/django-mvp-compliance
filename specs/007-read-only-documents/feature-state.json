@@ -184,8 +184,14 @@
         },
         {
           "id": "T009",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestUserFacingStrings -q (1 passed)",
+              "forge verify at the end of the story (see report)"
+            ]
+          }
         }
       ]
     },

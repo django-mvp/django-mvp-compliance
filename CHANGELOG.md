@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Document.kind`, which says whether people agree to a document or only read it. A document is
+  `Document.Kind.AGREED`, "Agreed to", unless it is made `Document.Kind.NOTICE`, "Notice": a
+  document such as an impressum that is published to be read and never accepted. A notice is
+  never outstanding for anybody, so `Document.objects.outstanding_for()` and
+  `is_outstanding_for()` leave it out. Recording an acceptance of any version of a notice is
+  refused with `RecordError` by `Acceptance.objects.record()`, `create()`, saving a new
+  `Acceptance`, `bulk_create()` and the async forms of those, and an acceptance recorded before
+  a document became a notice is left as it was. A notice's page has the same wording, number and
+  date as any other and never says `Agreed on`. Migration `0008_document_kind` adds the column
+  with the default `agreed`, so every existing document is one people agree to and nothing
+  changes for it. The demo gains an Impressum notice. See [docs/models.md](docs/models.md) and
+  [docs/pages.md](docs/pages.md).
 - One canonical page for each document that has a version in force, served at an address that
   never changes: `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
   `{% url 'mvp_compliance:document' 'privacy-policy' %}` in a template. Anyone can read it,

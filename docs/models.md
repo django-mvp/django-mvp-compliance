@@ -18,6 +18,28 @@ privacy = Document.objects.create(name="Privacy policy", slug="privacy-policy")
 The `slug` is the document's identifier in its address: the page that shows the version
 in force is served at `<prefix>/privacy-policy/`. See [pages.md](pages.md).
 
+### The kind
+
+A document is one of two kinds, held on `kind` and named by `Document.Kind`:
+
+- `Document.Kind.AGREED`, "Agreed to", is the default: a document people agree to, such as a
+  privacy policy or terms of use.
+- `Document.Kind.NOTICE`, "Notice", is a document published to be read and never accepted,
+  such as an impressum.
+
+```python
+impressum = Document.objects.create(
+    name="Impressum", slug="impressum", kind=Document.Kind.NOTICE
+)
+```
+
+A document created without a kind is one people agree to, so nothing written before `kind`
+existed behaves any differently. Migration `0008_document_kind` adds the column with that default
+and no data step. The kind says nothing about the document's versions: a notice is versioned,
+published, numbered and read at its own page exactly like any other document. What differs is
+that nobody is ever asked to accept it. See [Outstanding](#outstanding) and
+[Acceptance](#acceptance).
+
 A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
 valid and `Privacy_Policy`, `-privacy` and `privacy-` are not. `full_clean()`, which the
 admin calls, refuses the others. The rule is `mvp_compliance.models.lowercase_slug`, a
@@ -280,6 +302,28 @@ A superseded version is accepted; only a draft is refused, because a draft has n
 standing for anybody to agree to. There is no way to record an acceptance of a
 `Document` — `Acceptance` has no field and no manager method that takes one.
 
+A version of a [notice](#the-kind) is refused too, the version in force and a superseded
+one alike, every time it is asked:
+
+```python
+Acceptance.objects.record(user, impressum.current)  # raises RecordError; writes nothing
+```
+
+The refusal reads the document's kind from the database when the acceptance is made, so it
+holds for a document that became a notice after a person accepted it: `record()` raises
+rather than handing back the record that is already there, and that record is left exactly
+as it was. These routes refuse, each with `RecordError`:
+
+- `Acceptance.objects.record()`,
+- `Acceptance.objects.create()` and saving a new `Acceptance(...)`, which is what
+  `get_or_create()` does when it creates,
+- `Acceptance.objects.bulk_create()`, which refuses the whole batch when any version in it
+  belongs to a notice, and writes none of it,
+- the async forms of those: `acreate()`, `aget_or_create()` and `abulk_create()`.
+
+`Acceptance._base_manager.bulk_create()` is a plain manager and is not one of them. Nothing in
+this package calls it, and it is not a route to rely on.
+
 Accepting a later version of the same document is a second record, not a change to
 the first: the earlier acceptance is left exactly as it was, and both stand.
 
@@ -352,10 +396,21 @@ accepted a version that has since been superseded. `outstanding_for` names every
 document in that state, in one query regardless of how many documents exist.
 
 A document with no published version is never outstanding for anybody, because
-there is nothing in force to accept.
+there is nothing in force to accept. Nor is a notice, whatever it has published:
+nobody can accept one, so it is left out of both answers.
 
-This answer is deliberately unfiltered by whether a site chooses to enforce a
-document — that decision belongs elsewhere, and this method does not carry it.
+```python
+notice = Document.objects.create(
+    name="Impressum", slug="impressum", kind=Document.Kind.NOTICE
+)
+notice.versions.create(markdown="# Impressum\n\n...").publish()
+notice.is_outstanding_for(user)  # False
+```
+
+This answer ignores whether a site chooses to enforce a document, and does not
+ignore the kind. Whether a site stops people until they have accepted something is
+decided elsewhere, and this method does not carry it. Whether a document can be
+accepted at all is not a decision, and this method does.
 
 ### Account removal
 

@@ -125,3 +125,19 @@ carried no "Agreed on" while `/legal/privacy-policy/` did, and `/` linked the im
 server was started.
 Next: T009.
 Watch: none.
+
+## 2026-09-29T22:15Z · Implementer US1 · T009
+
+Did: ADR 0009 amended in place (its Decision says a notice is never outstanding because nobody can
+accept one, marked amended 2026-09-29; the Why is untouched). `docs/models.md`: a *The kind*
+section under `Document`, *Outstanding* says a notice is left out, the "deliberately unfiltered"
+sentence now says the answer ignores enforcement and not kind, and *Acceptance* lists the routes
+that refuse (`record()`, `create()` and a new save, `bulk_create()`, the async forms) and names
+`_base_manager.bulk_create()` as not covered. `docs/pages.md`: a notice's page has no agreement line,
+linking an impressum from the footer. `CONTEXT.md` **Notice**, README feature list and Models
+section, CHANGELOG `[Unreleased]` Added entry. The `en` catalog regenerated; it has no new string
+beyond T002 and T005, and nothing is fuzzy.
+Verified: `uv run pytest tests/test_admin.py::TestUserFacingStrings -q` passes. The full verify runs
+once, at the end of the story.
+Next: full verify, then the report.
+Watch: the two admin tests and one model test that T002 cannot keep green are for Forge to triage.
