@@ -46,49 +46,26 @@ Serves G1, G2 and G6. Does not cover how any of it is displayed, which is R2.
 
 ### R2 — The documents, readable as pages
 
-*feature · advances G1, G5*
+*delivered in [#58](https://github.com/django-mvp/django-mvp-compliance/issues/58) · advances G1, G5*
 
-A published document is something a person reads, usually by following a link in a footer, often
-long before they have an account. This item gives every document an address that does not change,
-gives every version an address of its own, and renders both as ordinary pages of the site rather
-than as something that looks bolted on.
-
-It comes second because a document nobody can read is not published in any sense that matters, and
-because the acceptance flow in R4 needs a page to show. The superseded versions get addresses too:
-somebody who agreed to the old wording is entitled to go and read it.
-
-**Deliverables:**
-
-- Each document has a stable, predictable address that always shows what is currently in force.
-- Each version has its own permanent address, including versions that have been superseded.
-- Pages take their layout, navigation and theme from the site they are installed in, with the
-  project writing no templates to get that.
-- Documents are written in a plain, readable markup and come out as properly structured pages.
-- A project can override the presentation without forking the package.
+Every document with a version in force has a page at an address built from its slug, which is
+fixed once a version is published, so a footer link keeps working when the document is renamed. The
+page shows the version in force by default and any published version with `?version=`, including
+superseded ones, with a note saying when a superseded one was replaced. Pages render inside the
+site's own django-mvp shell with no project templates, show the wording stored at publication, and
+can be overridden template by template.
 
 Serves G1 and G5. Does not cover asking anybody to agree to anything.
 
 ### R3 — The record of who agreed to what
 
-*feature · advances G2*
+*delivered in [#20](https://github.com/django-mvp/django-mvp-compliance/issues/20), [#21](https://github.com/django-mvp/django-mvp-compliance/issues/21) · advances G2*
 
-The point of the package. When a person agrees to a version, that fact is written down and kept:
-who, which version, when. It is never revised afterwards, and somebody who agrees to a later
-version has two records rather than an updated one, because both things genuinely happened.
-
-The value of the record is only realised when somebody asks for it, which is usually a complaint,
-a dispute or a regulator with a deadline. So this item includes getting the records back out in a
-form a person can actually be shown, alongside the exact text they saw at the time.
-
-A person asking for their data to be deleted does not remove these records. They are the
-evidence of what that person agreed to, and a request to delete an account is R11's.
-
-**Deliverables:**
-
-- Agreement to a version is recorded with the person, the version and the time.
-- Records are never edited, and agreeing to a later version does not overwrite an earlier record.
-- Everything held about one person's agreements can be produced on request, together with the text
-  they were shown.
+Agreement to a published version is recorded with the person, the version and the time, and a
+record is never edited or deleted by anything the package offers. Agreeing to a later version adds
+a second record rather than changing the first. Everything held about one person, with the exact
+text of each version they accepted, can be produced from the admin behind its own permission, and a
+person's records outlive the removal of their account unless the project decides otherwise.
 
 Serves G2. Does not cover the flow that collects the agreement, which is R4.
 

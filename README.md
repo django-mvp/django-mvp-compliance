@@ -47,6 +47,9 @@ version a person saw.
   pages in your site's shell.
 - A record of consent: which user accepted which version of which document, and
   at what time.
+- Notices, documents such as an impressum that are published to be read and never
+  accepted: a notice has a page like any other document, is never outstanding, and
+  refuses an acceptance.
 - Enforcement, so a user who has not accepted the current version is asked to
   before continuing.
 - Translations, so a reader sees a document in their own language.
@@ -223,6 +226,20 @@ Recording against a version that has never been published is refused; there
 is no way to record an acceptance of a `Document`, only of one of its
 versions. `outstanding_for()` answers which documents have a version in force
 that this user has not accepted.
+
+A document is one people agree to unless it is made a notice, for a document such as an
+impressum that is read and never accepted:
+
+```python
+impressum = Document.objects.create(
+    name="Impressum", slug="impressum", kind=Document.Kind.NOTICE
+)
+```
+
+A notice is never outstanding, and recording an acceptance of any of its versions is
+refused with `RecordError`. See
+[docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md#the-kind)
+for which routes refuse.
 
 By default an acceptance survives the removal of the account it names — closing an
 account does not remove what this package holds about that person:

@@ -1,6 +1,6 @@
 # ADR 0009 — "Outstanding" covers every published document, and carries no enforcement policy
 
-**Status:** accepted
+**Status:** accepted. Amended 2026-09-29: a notice is never outstanding.
 
 ## Decision
 
@@ -10,6 +10,11 @@ to be accepted. A cookie policy that is published and never enforced appears in 
 
 `document.is_outstanding_for(user)` answers the same question about one document, and is that same
 queryset narrowed to one primary key rather than a second expression of the rule.
+
+*Amended 2026-09-29.* A document that is a notice is never in the answer. A notice is published to
+be read, and recording an acceptance of one is refused, so nobody can accept it. That is what a
+notice is, not a decision about whether a site enforces it, and the answer is still unfiltered by
+enforcement. The reasoning below stands.
 
 ## Why
 

@@ -28,8 +28,14 @@ from mvp_compliance.models import (
     VersionManager,
     keep_or_remove_acceptances,
 )
+from mvp_compliance.records import produce
 from mvp_compliance.rendering import MarkdownRenderer
-from tests.factories import DocumentFactory, UserFactory, VersionFactory
+from tests.factories import (
+    AcceptanceFactory,
+    DocumentFactory,
+    UserFactory,
+    VersionFactory,
+)
 
 
 class UppercaseRenderer(MarkdownRenderer):
@@ -75,7 +81,24 @@ class TestDocument:
         field_names = {
             field.name for field in Document._meta.get_fields() if field.concrete
         }
-        assert field_names == {"id", "name", "slug"}
+        assert field_names == {"id", "name", "slug", "kind"}
+
+
+@pytest.mark.django_db
+class TestDocumentKind:
+    def test_a_document_created_without_a_kind_is_one_people_agree_to(self):
+        document = Document.objects.create(name="Privacy policy", slug="privacy-policy")
+
+        document.refresh_from_db()
+
+        assert document.kind == Document.Kind.AGREED
+
+    def test_a_document_created_as_a_notice_keeps_it(self):
+        document = DocumentFactory(kind=Document.Kind.NOTICE)
+
+        document.refresh_from_db()
+
+        assert document.kind == Document.Kind.NOTICE
 
 
 @pytest.mark.django_db
@@ -1080,6 +1103,120 @@ class TestRecording:
 
         assert acceptance.version == first
 
+    def test_recording_against_a_notice_is_refused_whether_or_not_it_is_in_force(
+        self, user
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        superseded = VersionFactory(document=notice)
+        superseded.publish()
+        current = VersionFactory(document=notice)
+        current.publish()
+        superseded.refresh_from_db()
+
+        for version in (current, superseded):
+            with pytest.raises(RecordError):
+                Acceptance.objects.record(user, version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_recording_against_a_notice_is_refused_every_time(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        version = VersionFactory(document=notice)
+        version.publish()
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, version)
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_recording_against_a_document_made_a_notice_since_is_refused_and_the_old_record_stays(
+        self, user, published_version
+    ):
+        old = Acceptance.objects.record(user, published_version)
+        Document.objects.filter(pk=published_version.document_id).update(
+            kind=Document.Kind.NOTICE
+        )
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, published_version)
+
+        assert list(Acceptance.objects.all()) == [old]
+        stored = Acceptance.objects.get()
+        assert stored.accepted_at == old.accepted_at
+
+    def test_a_document_instance_loaded_before_it_became_a_notice_lets_nothing_through(
+        self, user
+    ):
+        version = VersionFactory()
+        version.publish()
+        assert version.document.kind == Document.Kind.AGREED
+        Document.objects.filter(pk=version.document_id).update(
+            kind=Document.Kind.NOTICE
+        )
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_creating_an_acceptance_of_a_notice_is_refused(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        version = VersionFactory(document=notice)
+        version.publish()
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.create(
+                user=user,
+                subject=Acceptance.subject_of(user),
+                version=version,
+                accepted_at=timezone.now(),
+            )
+        with pytest.raises(RecordError):
+            AcceptanceFactory(user=user, version=version)
+
+        assert not Acceptance.objects.exists()
+
+    def test_bulk_creating_with_one_notice_in_the_batch_writes_none_of_it(self, user):
+        agreed = VersionFactory()
+        agreed.publish()
+        notice = VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE))
+        notice.publish()
+        other = UserFactory()
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.bulk_create(
+                [
+                    Acceptance(
+                        user=person,
+                        subject=Acceptance.subject_of(person),
+                        version=version,
+                        accepted_at=timezone.now(),
+                    )
+                    for person, version in [(user, agreed), (other, notice)]
+                ]
+            )
+
+        assert not Acceptance.objects.exists()
+
+    def test_bulk_creating_acceptances_of_agreed_documents_is_unaffected(self, user):
+        version = VersionFactory()
+        version.publish()
+
+        Acceptance.objects.bulk_create(
+            [
+                Acceptance(
+                    user=user,
+                    subject=Acceptance.subject_of(user),
+                    version=version,
+                    accepted_at=timezone.now(),
+                )
+            ]
+        )
+
+        assert Acceptance.objects.count() == 1
+
     def test_recording_for_a_user_with_no_primary_key_is_refused(
         self, published_version
     ):
@@ -1366,6 +1503,67 @@ class TestOutstanding:
 
         assert len(at_two_documents.captured_queries) == len(
             at_ten_documents.captured_queries
+        )
+
+    def test_a_notice_with_a_version_in_force_is_not_outstanding(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice).publish()
+
+        assert not notice.is_outstanding_for(user)
+        assert notice not in Document.objects.outstanding_for(user)
+
+    def test_a_document_created_without_a_kind_is_outstanding_until_accepted(
+        self, user
+    ):
+        document = Document.objects.create(name="Terms", slug="terms")
+        VersionFactory(document=document).publish()
+
+        assert document.is_outstanding_for(user)
+
+    def test_outstanding_for_names_the_agreed_documents_not_yet_accepted_among_notices(
+        self, user
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice).publish()
+        unaccepted = DocumentFactory()
+        VersionFactory(document=unaccepted).publish()
+        accepted = DocumentFactory()
+        accepted_version = VersionFactory(document=accepted)
+        accepted_version.publish()
+        Acceptance.objects.record(user, accepted_version)
+
+        assert set(Document.objects.outstanding_for(user)) == {unaccepted}
+
+    def test_a_notice_with_only_drafts_is_outstanding_for_nobody(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice)
+
+        assert not notice.is_outstanding_for(user)
+
+    def test_a_kind_that_is_not_a_notice_leaves_the_document_outstanding(self, user):
+        document = DocumentFactory()
+        VersionFactory(document=document).publish()
+        Document.objects.filter(pk=document.pk).update(kind="something-else")
+
+        assert document.is_outstanding_for(user)
+
+    def test_the_answer_costs_the_same_with_one_document_as_with_fifty_with_notices(
+        self, user, django_assert_num_queries
+    ):
+        VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE)).publish()
+
+        with django_assert_num_queries(1) as at_two_documents:
+            list(Document.objects.outstanding_for(user))
+
+        for n in range(49):
+            kind = Document.Kind.NOTICE if n % 5 == 0 else Document.Kind.AGREED
+            VersionFactory(document=DocumentFactory(kind=kind)).publish()
+
+        with django_assert_num_queries(1) as at_fifty_documents:
+            list(Document.objects.outstanding_for(user))
+
+        assert len(at_two_documents.captured_queries) == len(
+            at_fifty_documents.captured_queries
         )
 
 
@@ -1724,6 +1922,16 @@ class TestVersionPublished:
         assert call["publisher"] == user
         assert call["replaced"] is None
 
+    def test_publishing_a_notices_version_is_announced_too(
+        self, announcements, django_capture_on_commit_callbacks, db
+    ):
+        version = VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE))
+
+        with django_capture_on_commit_callbacks(execute=True):
+            version.publish()
+
+        assert [call["version"] for call in announcements] == [version]
+
     def test_a_publication_with_nobody_named_passes_none_as_publisher(
         self, announcements, django_capture_on_commit_callbacks, draft
     ):
@@ -1872,3 +2080,118 @@ class TestVersionPublished:
             assert announcements == []
 
         assert [call["version"] for call in announcements] == [first, second]
+
+
+def change_kind(document, kind, route):
+    """Change ``document``'s kind through ``save()`` or through ``update()``."""
+    if route == "save":
+        document.kind = kind
+        document.save()
+    else:
+        Document.objects.filter(pk=document.pk).update(kind=kind)
+    document.refresh_from_db()
+
+
+def held_about(document):
+    """Every version and acceptance of ``document`` as plain rows, to compare before and after."""
+    versions = document.versions.order_by("pk").values_list(
+        "pk", "number", "status", "markdown", "html", "published_at"
+    )
+    acceptances = Acceptance.objects.filter(version__document=document).order_by("pk")
+    return list(versions), list(
+        acceptances.values_list(
+            "pk", "subject", "version_id", "accepted_at", "ip_address"
+        )
+    )
+
+
+@pytest.mark.django_db
+class TestChangingTheKind:
+    """US-2 scenarios 3-6, FR-007, FR-008, SC-003: the kind changes and nothing recorded does."""
+
+    @pytest.fixture
+    def agreed_document(self, user):
+        """A document people agree to, with two published versions, each accepted by ``user``."""
+        document = DocumentFactory()
+        for wording in ("First wording", "Second wording"):
+            version = VersionFactory(document=document, markdown=wording)
+            version.publish()
+            Acceptance.objects.record(user, version)
+        return document
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_making_a_document_a_notice_leaves_its_versions_and_acceptances_as_they_were(
+        self, agreed_document, route
+    ):
+        before = held_about(agreed_document)
+
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        assert agreed_document.kind == Document.Kind.NOTICE
+        assert held_about(agreed_document) == before
+        assert len(before[0]) == 2
+        assert len(before[1]) == 2
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_making_a_notice_a_document_people_agree_to_leaves_its_versions_and_acceptances_as_they_were(
+        self, agreed_document, route
+    ):
+        change_kind(agreed_document, Document.Kind.NOTICE, "update")
+        before = held_about(agreed_document)
+
+        change_kind(agreed_document, Document.Kind.AGREED, route)
+
+        assert agreed_document.kind == Document.Kind.AGREED
+        assert held_about(agreed_document) == before
+        assert len(before[0]) == 2
+        assert len(before[1]) == 2
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_acceptances_of_a_document_made_a_notice_still_appear_in_the_persons_record(
+        self, agreed_document, user, route
+    ):
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        entries = produce(Acceptance.subject_of(user)).sections[0].entries
+
+        assert [entry.document for entry in entries] == [agreed_document.name] * 2
+        assert {entry.version for entry in entries} == {
+            version.number for version in agreed_document.versions.all()
+        }
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_a_document_made_a_notice_is_not_outstanding_for_someone_who_never_accepted_it(
+        self, agreed_document, route
+    ):
+        stranger = UserFactory()
+        assert agreed_document.is_outstanding_for(stranger)
+
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        assert not agreed_document.is_outstanding_for(stranger)
+        assert agreed_document not in Document.objects.outstanding_for(stranger)
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_a_notice_made_a_document_people_agree_to_is_outstanding_for_someone_who_has_not_accepted_it(
+        self, route
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=notice).publish()
+        person = UserFactory()
+        assert not notice.is_outstanding_for(person)
+
+        change_kind(notice, Document.Kind.AGREED, route)
+
+        assert notice.is_outstanding_for(person)
+        assert notice in Document.objects.outstanding_for(person)
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_an_acceptance_from_before_it_was_a_notice_counts_again_once_it_is_agreed_to_again(
+        self, agreed_document, user, route
+    ):
+        change_kind(agreed_document, Document.Kind.NOTICE, route)
+
+        change_kind(agreed_document, Document.Kind.AGREED, route)
+
+        assert not agreed_document.is_outstanding_for(user)
+        assert agreed_document not in Document.objects.outstanding_for(user)

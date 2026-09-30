@@ -1,0 +1,315 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "007-read-only-documents",
+  "branch": "007-read-only-documents",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-09-29T20:22:22Z",
+      "note": "specification merged in #73; issue graph built (#65, #74, #75)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-09-29T20:34:47Z",
+      "note": "picked up from the queue; branch cut from origin/main 4e7973f; verify green on base"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-09-29T20:35:22Z",
+      "note": "plan, research, tasks committed; draft PR #76 opened"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-09-29T20:41:11Z",
+      "note": "design review applied; plan notification sent"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-09-29T20:55:54Z",
+      "note": "both stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-09-29T20:57:43Z",
+      "note": "converge green; ADR 0009 amended; roadmap R2/R3 delivered"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-09-29T21:11:59Z",
+      "note": "review approved; PR #76 ready; walkthrough sent"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-29T20:22:22Z",
+      "self_resolved": [
+        "merge commit 4e7973f2b0, pull request #73"
+      ]
+    },
+    "plan": {
+      "approved_by": "notified",
+      "at": "2026-09-29T20:41:06Z"
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-panel",
+      "at": "2026-09-29T20:41:06Z",
+      "self_resolved": [
+        "DR-001 medium: ADR 0009 amendment added to T009 (D4)",
+        "DR-002 medium: ruled in D3, raised in plan notification",
+        "DR-003..DR-006 low: applied as plan/tasks edits"
+      ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-09-29T21:11:26Z",
+      "self_resolved": [
+        "CMP-001 low: remedied, historical-model guard in bulk_create, test red before fix",
+        "CMP-002 low: remedied, removed a test that could not fail"
+      ]
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 74,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-007",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestDocumentKind",
+              "tests/test_models.py::TestOutstanding"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDocumentKind tests/test_models.py::TestOutstanding -q (7 failed, 8 passed before T002: no Document.Kind / kind field)"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestDocumentKind",
+              "tests/test_models.py::TestOutstanding"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDocumentKind tests/test_models.py::TestOutstanding -q (15 passed)",
+              "uv run pytest tests -q -n auto --dist loadscope (3 failed, 405 passed: three pre-existing tests must change, see progress.md)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)",
+              "orchestrator: three pre-existing tests gain the kind field (decisions.md D5); uv run pytest tests -q -n auto (423 passed)"
+            ],
+            "code": [
+              "mvp_compliance/models.py:124",
+              "mvp_compliance/migrations/0008_document_kind.py:1"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_migrations.py::TestDocumentKindMigration"
+            ],
+            "commands": [
+              "uv run pytest tests/test_migrations.py -q (4 passed)"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestRecording -q (6 failed, 10 passed before T005: DID NOT RAISE RecordError)"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecording"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestRecording tests/test_models.py::TestAcceptanceImmutability -q (23 passed)"
+            ],
+            "code": [
+              "mvp_compliance/models.py:750",
+              "mvp_compliance/models.py:980"
+            ]
+          }
+        },
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestNotice",
+              "tests/test_models.py::TestVersionPublished"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestNotice tests/test_models.py::TestVersionPublished -q (1 failed, 16 passed before T007: Agreed on shown for an acceptance from before the document became a notice)"
+            ]
+          }
+        },
+        {
+          "id": "T007",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestNotice"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py -q (65 passed)"
+            ],
+            "code": [
+              "mvp_compliance/views.py:25"
+            ]
+          }
+        },
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "seed_demo on a throwaway sqlite database (fresh migrate, run twice): clean, second run reports Impressum already seeded",
+              "django test client against that database: GET /legal/impressum/ 200; landing page 200 with link to impressum; no Agreed on for a signed-in acceptor"
+            ],
+            "code": [
+              "demo/management/commands/seed_demo.py:178"
+            ]
+          }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestUserFacingStrings -q (1 passed)",
+              "forge verify at the end of the story (see report)"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P2",
+      "issue": 75,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-007",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentKindInTheAdmin"
+            ],
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin -q (1 failed, 3 passed before T011: the changelist has no kind column; the add and change form tests pass against US-1 code)"
+            ]
+          }
+        },
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentKindInTheAdmin",
+              "tests/test_admin.py::TestDocumentChangelist"
+            ],
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentKindInTheAdmin tests/test_admin.py::TestDocumentChangelist -q (10 passed)",
+              "uv run pre-commit run --all-files (all hooks pass)"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:26"
+            ]
+          }
+        },
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestChangingTheKind"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestChangingTheKind -q (12 passed, against US-1 code)",
+              "probe: removed the notice exclusion in outstanding_for(): 4 failed; probe: a save() that deletes acceptances when the kind is notice: 3 failed (save route); both reverted",
+              "criteria: SC-003"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pre-commit run --all-files (all hooks pass)",
+              "docs step of forge verify: see the full verify at the end of the story",
+              "docs: docs/authoring.md",
+              "docs: docs/models.md",
+              "docs: CHANGELOG.md"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 76,
+    "draft": false
+  }
+}

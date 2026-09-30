@@ -19,6 +19,7 @@ from django.db.migrations.operations.special import RunPython, RunSQL
 from django.utils import timezone
 
 import mvp_compliance.migrations as migrations_package
+from tests.factories import UserFactory
 
 
 class TestMigrationOperations:
@@ -80,5 +81,108 @@ class TestPublisherMigration:
             assert carried.publisher_subject == ""
         finally:
             # Leave the database at the latest migration for whatever runs next.
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())
+
+
+@pytest.mark.django_db(transaction=True)
+class TestDocumentKindMigration:
+    def test_documents_versions_and_acceptances_are_carried_and_every_document_is_agreed(
+        self,
+    ):
+        before = [("mvp_compliance", "0007_document_slug")]
+        after = [("mvp_compliance", "0008_document_kind")]
+        executor = MigrationExecutor(connection)
+        executor.migrate(before)
+        old_apps = executor.loader.project_state(before).apps
+        published_at = timezone.now()
+        accepted_at = timezone.now()
+        user = UserFactory()
+        document = old_apps.get_model("mvp_compliance", "Document").objects.create(
+            name="Terms", slug="terms"
+        )
+        other = old_apps.get_model("mvp_compliance", "Document").objects.create(
+            name="Privacy", slug="privacy"
+        )
+        version = old_apps.get_model("mvp_compliance", "Version").objects.create(
+            document=document,
+            number="2026.1",
+            markdown="Wording",
+            html="<p>Wording</p>",
+            status="current",
+            published_at=published_at,
+        )
+        acceptance = old_apps.get_model("mvp_compliance", "Acceptance").objects.create(
+            user_id=user.pk,
+            subject=str(user.pk),
+            version=version,
+            accepted_at=accepted_at,
+        )
+
+        try:
+            executor = MigrationExecutor(connection)
+            executor.migrate(after)
+            new_apps = executor.loader.project_state(after).apps
+            documents = new_apps.get_model("mvp_compliance", "Document").objects
+            carried_version = new_apps.get_model(
+                "mvp_compliance", "Version"
+            ).objects.get(pk=version.pk)
+            carried_acceptance = new_apps.get_model(
+                "mvp_compliance", "Acceptance"
+            ).objects.get(pk=acceptance.pk)
+
+            assert {(d.name, d.slug, d.kind) for d in documents.all()} == {
+                ("Terms", "terms", "agreed"),
+                ("Privacy", "privacy", "agreed"),
+            }
+            assert documents.get(pk=other.pk).kind == "agreed"
+            assert carried_version.document_id == document.pk
+            assert carried_version.number == "2026.1"
+            assert carried_version.markdown == "Wording"
+            assert carried_version.html == "<p>Wording</p>"
+            assert carried_version.status == "current"
+            assert carried_version.published_at == published_at
+            assert carried_acceptance.version_id == version.pk
+            assert carried_acceptance.subject == str(user.pk)
+            assert carried_acceptance.accepted_at == accepted_at
+        finally:
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())
+
+    def test_a_migration_before_the_kind_can_still_bulk_create_acceptances(self):
+        # The historical manager carries the current queryset (use_in_migrations),
+        # so its bulk_create() must not ask about a column that state lacks.
+        before = [("mvp_compliance", "0007_document_slug")]
+        executor = MigrationExecutor(connection)
+        executor.migrate(before)
+        old_apps = executor.loader.project_state(before).apps
+        user = UserFactory()
+        document = old_apps.get_model("mvp_compliance", "Document").objects.create(
+            name="Terms", slug="terms"
+        )
+        version = old_apps.get_model("mvp_compliance", "Version").objects.create(
+            document=document,
+            number="2026.1",
+            markdown="Wording",
+            html="<p>Wording</p>",
+            status="current",
+            published_at=timezone.now(),
+        )
+        Acceptance = old_apps.get_model("mvp_compliance", "Acceptance")
+
+        try:
+            Acceptance.objects.bulk_create(
+                [
+                    Acceptance(
+                        user_id=user.pk,
+                        subject=str(user.pk),
+                        version=version,
+                        accepted_at=timezone.now(),
+                    )
+                ]
+            )
+
+            assert Acceptance.objects.filter(version=version).count() == 1
+        finally:
             executor = MigrationExecutor(connection)
             executor.migrate(executor.loader.graph.leaf_nodes())

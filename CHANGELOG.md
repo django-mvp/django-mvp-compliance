@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Notices: `Document.kind` is `Document.Kind.AGREED` by default or `Document.Kind.NOTICE`, for a
+  document such as an impressum that is published to be read and never accepted. A notice is never
+  outstanding, recording an acceptance of one of its versions is refused with `RecordError`, and
+  its page never says the reader agreed to it. The kind shows in the admin's documents list and can
+  be changed at any time without touching a version or a recorded acceptance. Migration
+  `0008_document_kind` makes every existing document one people agree to. See
+  [docs/models.md](docs/models.md) and [docs/authoring.md](docs/authoring.md).
 - One canonical page for each document that has a version in force, served at an address that
   never changes: `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
   `{% url 'mvp_compliance:document' 'privacy-policy' %}` in a template. Anyone can read it,

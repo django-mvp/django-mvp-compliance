@@ -1,0 +1,50 @@
+{
+  "lens": "correctness",
+  "stage": "code",
+  "verdict": "approve",
+  "risk": "low",
+  "scope": "Feature branch 007-read-only-documents: git diff dfaa960..HEAD (22 commits, 23 files), reviewed under the correctness, spec-compliance and security lenses, plus the documentation pass over README.md, CHANGELOG.md, CONTEXT.md, docs/models.md, docs/pages.md, docs/authoring.md and ADR 0009. Every Python example in the touched docs was executed against the branch in a throwaway in-memory test DB and ran as documented, including the async routes docs/models.md lists. Every new guard was mutation-probed out of tree (a pytest plugin in /tmp, with no repo edits): refuse_if_notice made a no-op (6 failures), AcceptanceQuerySet.bulk_create override removed (1), the record() pre-check removed (1), the save() check removed (1), the outstanding_for exclude removed (6), the view's notice guard removed (1). Full suite: 439 passed. makemigrations --check clean.",
+  "skills_loaded": [
+    {
+      "name": "craft-review",
+      "receipt": "RECEIPT: craft-review/2026-09-28/e60c2a95",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-simplify",
+      "receipt": "RECEIPT: craft-simplify/2026-08-04/69038ce1",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-security",
+      "receipt": "RECEIPT: craft-security/2026-08-04/ea3d6742",
+      "loaded_via": "path-read"
+    }
+  ],
+  "findings": [
+    {
+      "id": "CMP-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "The new AcceptanceQuerySet.bulk_create() refusal queries the concrete Version/Document models, and AcceptanceManager has use_in_migrations = True. So a historical Acceptance manager inside a data migration at a state before 0008 crashes on any non-empty bulk_create, because the kind column does not exist yet.",
+      "evidence": "mvp_compliance/models.py:768 calls Acceptance.refuse_if_notice(...), which is the real model's static method. models.py:993 runs Version.objects.filter(pk__in=..., document__kind=Document.Kind.NOTICE) against the concrete models whatever self.model is. models.py:793 has use_in_migrations = True, so apps.get_model('mvp_compliance','Acceptance').objects in a migration is an AcceptanceManager returning this AcceptanceQuerySet. The same queryset used to work at every migration state (ADR 0004 relies on that). Now it depends on the latest schema.",
+      "reproduction": "In a throwaway test DB: MigrationExecutor(connection).migrate([('mvp_compliance','0007_document_slug')]). Then apps = loader.project_state(...).apps and A = apps.get_model('mvp_compliance','Acceptance'). A.objects.bulk_create([A(subject='1', version_id=1, accepted_at=now())]) raises OperationalError: no such column: mvp_compliance_document.kind. An empty list passes because pk__in=[] issues no query. Reachable only by a consumer data migration that depends on mvp_compliance <= 0007 and bulk-creates acceptances (for example an import of consent history), running on a database where 0008 is not yet applied, such as migrate-from-zero with data present. No current consumer is known to do this, hence low.",
+      "suggested_fix": "In AcceptanceQuerySet.bulk_create, only call the refusal for the real model. Historical models are fresh classes, not subclasses, so guard it with `if issubclass(self.model, Acceptance):`. That matches ADR 0004's existing statement that model-level guards do not reach historical models. Alternatively, add one sentence to ADR 0004 stating the dependency."
+    },
+    {
+      "id": "CMP-002",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "TestNotice::test_a_signed_in_user_sees_no_agreement_line cannot fail when the view's notice guard is removed. The signed-in user has no acceptance, and none can be recorded for a notice, so the line reads 'no Agreed on' with or without the guard. US-1 scenario 5 / FR-006 regression coverage rests on the sibling test alone.",
+      "evidence": "tests/test_views.py:716-722: client.force_login(UserFactory()) with no acceptance recorded. The guard is mvp_compliance/views.py:32 (`or version.document.kind == Document.Kind.NOTICE`). Mutation probe: with that clause removed, only test_a_user_who_accepted_before_it_became_a_notice_sees_no_agreement_line fails. This test stays green.",
+      "reproduction": "Remove ` or version.document.kind == Document.Kind.NOTICE` from views.py:32 (done out of tree via a pytest plugin) and run tests/test_views.py. Result: 1 failed, 64 passed, and the failure is the sibling test, not this one.",
+      "suggested_fix": "Delete the test, or merge its three-address loop into the sibling test, which already walks subtitle_addresses() with a real prior acceptance. A test that cannot fail reports coverage that does not exist."
+    }
+  ],
+  "notes": [
+    "mvp_compliance/views.py:16 — the mixin docstring now attaches '(FR-009)' to 'except on a notice'. In this feature's spec the notice rule is FR-006 and FR-009 is the admin list, so the citation reads ambiguously. Pre-existing citation style, wording only.",
+    "docs/authoring.md 'Notice → Agreed to. People are asked to agree again.': nothing asks anybody yet (R4 is unbuilt). What changes today is the outstanding answer. Wording only; docs/models.md states it precisely.",
+    "Outside this diff, not verified: AcceptanceQuerySet.bulk_create forwards **kwargs, so update_conflicts=True (an upsert) passes through to Django and may rewrite a recorded acceptance without going through the refused update(). That was already the case before this branch, since bulk_create was not overridden. Worth an issue against Article XI, not a finding here.",
+    "Known and not re-raised per the brief: D3 (kind behind change_document), _base_manager.bulk_create bypass, kind unindexed (D2), the D5 test edits, the roadmap edits (D6), the double kind query on record(). The security lens found no consequence of D3 beyond what the D3 entry states: the kind is a plain model field on the admin form, with no new entry point, no mark_safe and no user-controlled query input."
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "stage": "design",
+  "lens": "spec-compliance",
+  "verdict": "approve",
+  "risk": "low",
+  "scope": "FS-007 design (S3R): specs/007-read-only-documents/{spec,plan,research,tasks,decisions}.md against CONSTITUTION.md, CONTEXT.md, AGENTS.md, ADR 0003, ADR 0009, docs/models.md (Outstanding section), README Permissions, mvp_compliance/{models,views,admin,records,exceptions}.py, tests/{factories,conftest,test_migrations}.py, test_models.py/test_views.py/test_admin.py class lists and query-count tests, seed_demo.py, and the resolved Django 6.1.1 in .venv (db/models/query.py, manager.py, fields/related_descriptors.py). All three lenses ran in order: spec-compliance, security, architecture. The schema allows only one top-level lens, so each finding's claim starts with its lens. Every side checked: the refusal's create branch and its existing-row branch (get_or_create / update_or_create), sync and async ORM routes, manager, related-manager, proxy and _base_manager routes, account-removal SET_NULL and CASCADE, the migration's historical-model path, and the outstanding filter's predicate against the refusal's predicate.",
+  "skills_loaded": [
+    {"name": "craft-review", "receipt": "RECEIPT: craft-review/2026-09-28/e60c2a95", "loaded_via": "path-read"},
+    {"name": "craft-security", "receipt": "RECEIPT: craft-security/2026-08-04/ea3d6742", "loaded_via": "path-read"},
+    {"name": "craft-simplify", "receipt": "RECEIPT: craft-simplify/2026-08-04/69038ce1", "loaded_via": "path-read"}
+  ],
+  "findings": [
+    {
+      "id": "DR-001",
+      "severity": "medium",
+      "confidence": "verified",
+      "claim": "[spec-compliance] Once FR-003 lands, the Decision sentence of the accepted ADR 0009 is false, and no task amends it. Its rationale still holds. This is a stale-ADR problem, not a spec fault.",
+      "evidence": "docs/adr/0009-outstanding-is-answered-for-every-published-document.md, Decision: '`outstanding_for(user)` returns every document that has a version in force which this person has not accepted'. The title also says 'covers every published document'. spec.md FR-003 and plan.md 'What is outstanding' leave notices out of that answer. The ADR's Why section is about enforcement policy, and the spec keeps enforcement out of scope (Scope, first bullet). The ADR's point about the account page is also consistent, because spec.md Scope says #66 leaves notices out. So the spec and the ADR's reasoning agree, and only the ADR's normative sentence and title go stale. docs/models.md:357 ('This answer is deliberately unfiltered…') has the same problem. T009 updates the Outstanding section but does not mention either the ADR or that sentence. AGENTS.md:121 says decisions that harden live in ADRs, and Article VI requires docs to ship with an API change.",
+      "suggested_fix": "Add to T009: amend ADR 0009's Decision (and its title, or add a one-line 'Amended by FS-007' status) to say that a notice is never outstanding. The reason: a notice cannot be accepted at all, so it is not an enforcement choice. Leave the rationale as it is. In the same task, reconcile docs/models.md:357 so it says the answer ignores enforcement but not kind. No spec change and no re-gate."
+    },
+    {
+      "id": "DR-002",
+      "severity": "medium",
+      "confidence": "likely",
+      "claim": "[security] The plan lets anyone holding change_document switch the kind of a document that already has published versions. Doing that adds or removes the obligation to accept, and the package's own trust model otherwise reserves that level of change for publish_version. The gap is in spec.md: FR-007 and FR-009 say who may do what only as 'from the admin'.",
+      "evidence": "plan.md Constitution Check, Article V: 'behind the existing change permission'. README.md 'Permissions' and admin.py publish_view docstring (~line 347): 'Writing a draft and making something legally binding are different levels of trust'. That is why publishing checks publish_version and not change_document. tests/conftest.py DOCUMENT_WORK gives the editor change_document without publish_version. Consequence: an editor who cannot publish can make a published privacy policy a notice, so it stops being outstanding for everyone, or turn a notice into something every user now owes acceptance of. Reach today is limited because R4/R5 (the consumers that block requests) are not built. That is why this is medium and not high.",
+      "suggested_fix": "Do not add a task. Have Forge record a ruling as decisions.md D3: either 'change_document is sufficient, because the kind is a document setting and not a publication', or escalate to Sam. If Sam wants the kind gated on publish_version once something is published, that is a delta brief against FR-007/FR-009, not a plan edit."
+    },
+    {
+      "id": "DR-003",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[architecture] The two sides of the rule test different predicates. outstanding_for() keeps kind == AGREED, and the refusal fires on kind == NOTICE. A document holding any other stored value would therefore be outstanding for nobody and still accept records.",
+      "evidence": "plan.md 'What is outstanding': 'gains kind=Document.Kind.AGREED in the filter'. plan.md 'Refusing an acceptance of a notice': raises 'when the version's document is a notice'. Model choices are not enforced on save(), and DocumentQuerySet.update() (models.py:47) guards only the slug. So Document.objects.filter(...).update(kind='x') stores a value that falls on the wrong side of one rule. spec.md Scope: 'A document is one people agree to unless it is made a notice.' That makes NOTICE the only exception.",
+      "suggested_fix": "In plan.md 'What is outstanding', change the filter to .exclude(kind=Document.Kind.NOTICE) so that both sides test the same predicate. This costs the same one WHERE term. Nothing else changes."
+    },
+    {
+      "id": "DR-004",
+      "severity": "low",
+      "confidence": "likely",
+      "claim": "[architecture] The refusal is planned as two query mechanisms: a per-version Document lookup in refuse_if_notice(version) and a separate batch query in bulk_create(). One method taking version ids would serve all three callers. It would also avoid loading self.version in save() when an instance was built with version_id only.",
+      "evidence": "plan.md 'Refusing an acceptance of a notice': refuse_if_notice reads Document.objects.filter(pk=version.document_id). The bulk_create bullet adds 'one query over the batch's document ids'. Getting those ids needs every version loaded, or a join. In save(), version.document_id on an instance built with Acceptance(version_id=…) costs one extra query to fetch the Version.",
+      "suggested_fix": "In plan.md, define one static method, Acceptance.refuse_if_notice(version_ids), that runs Version.objects.filter(pk__in=version_ids, document__kind=Document.Kind.NOTICE).exists() and raises RecordError. record() passes [version.pk], save() passes [self.version_id], and bulk_create() passes [o.version_id for o in objs]. Drop the separate batch-query design."
+    },
+    {
+      "id": "DR-005",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[spec-compliance] T010's clause 'the changelist's query count is unchanged by the column (#39)' repeats a test that already exists and will cover the new column automatically.",
+      "evidence": "tests/test_admin.py:1187 TestDocumentChangelist.test_the_changelist_costs_a_fixed_number_of_queries renders the real changelist at two and at ten documents and asserts equal query counts. Once T011 adds 'kind' to list_display, that test exercises the column.",
+      "suggested_fix": "Remove the query-count clause from T010."
+    },
+    {
+      "id": "DR-006",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "[spec-compliance] FR-006 covers 'its current or an earlier version', but T006 tests the absence of the agreement line only on the current version.",
+      "evidence": "spec.md FR-006. tasks.md T006 tests 'no Agreed on' for the version in force (scenario 5, edge case 2). The ?version= test (scenario 6) checks only the html. With no test where a user accepted v1 before the kind change and then opens ?version=1, an implementation that checks the kind only on the in-force path would pass.",
+      "suggested_fix": "Add one assertion to T006: a user accepted v1 of an agreed document, the document is then made a notice and v2 is published, and ?version=1 carries no 'Agreed on'."
+    }
+  ],
+  "notes": [
+    "ORCHESTRATOR QUESTION, other create routes: in Django 6.1.1, acreate, abulk_create, aget_or_create and aupdate_or_create (query.py:758, 971, 1087, 1143) each wrap sync_to_async(self.<sync method>), so they reach the save() check and the bulk_create() override. Manager methods dispatch dynamically through getattr(self.get_queryset(), name) (manager.py:83-87). Reverse related managers are built from _default_manager.__class__ (related_descriptors.py:682). Disclosure inherits AcceptanceManager and save(). All of these are covered.",
+    "ORCHESTRATOR QUESTION, update_or_create (query.py:1095-1138): the create branch goes through get_or_create → create → save(), which the refusal catches. The existing-row branch calls obj.save(), which the existing pk guard refuses with RecordedAcceptanceError. That is refused, though with a different exception from record(). No escape.",
+    "ORCHESTRATOR QUESTION, direct get_or_create() for a row accepted before the document became a notice: this returns the old row and creates nothing (query.py:1070). That is not recording, so FR-004 holds. The plan is right that only record() needs the pre-check. The plan's claim that save() covers 'get_or_create() called directly' is true of the create branch only.",
+    "ORCHESTRATOR QUESTION, the one real escape: Acceptance._base_manager.bulk_create(...), or QuerySet(Acceptance).bulk_create(...). _base_manager is a plain Manager, because Meta.base_manager_name is unset (models.py:695-703 explains why it must stay unset), so this bypasses AcceptanceQuerySet.bulk_create. The package never calls it, so SC-002 holds. It is deliberate circumvention by a project, so this is not a finding. The T009 docs should list the covered routes and not claim 'every route'.",
+    "ORCHESTRATOR QUESTION, save() placement: call refuse_if_notice after the existing 'pk exists → RecordedAcceptanceError' guard (models.py:939). Every save that gets past that guard is an insert, so no separate insert test is needed. If the call went first, re-saving an old acceptance of a now-notice document would raise RecordError and not RecordedAcceptanceError. It would still be refused, but reported as the wrong kind of refusal.",
+    "ORCHESTRATOR QUESTION, account removal: keep_or_remove_acceptances delegates to SET_NULL or CASCADE (models.py:711-714). The collector writes these as a raw field update or a delete. It never calls save() or bulk_create(), so the new refusals cannot interfere with account removal.",
+    "ORCHESTRATOR QUESTION, ADR 0009: its Decision sentence is literally contradicted and its rationale is not. That makes it a stale-ADR finding (DR-001), fixed with a doc edit. It is not a spec-vs-ADR conflict and does not need a re-gate.",
+    "Migration watch item for T003: AcceptanceManager has use_in_migrations=True (models.py:754), so historical Acceptance.objects carries the current AcceptanceQuerySet. A bulk_create() at state 0007 would run the new override against a schema with no kind column. Build the pre-migration rows with .objects.create(), as TestPublisherMigration does (tests/test_migrations.py:53).",
+    "Pre-existing Article XI gap, outside FS-007's scope, worth its own issue: version.acceptances.add(existing_acceptance) with bulk=True updates through _base_manager (related_descriptors.py:873). That bypasses AcceptanceQuerySet.update() and moves an existing acceptance to a different version, including a notice's version.",
+    "record() will check the kind twice for a new row: once in record() and again in save() on insert. That is one redundant query per new acceptance. Acceptable; leave it unless it is cheap to avoid.",
+    "Research spot-checks against the resolved Django 6.1.1: get_or_create at query.py:1070, bulk_create at query.py:833 and _known_related_objects at related_descriptors.py:784 all match. research.md's claim that nothing else asks 'outstanding' is confirmed by grep: records.py reads only Acceptance.objects.for_subject.",
+    "T010 'shows each document's kind in words': assert on the field-kind cell's value through get_kind_display(), not on hard-coded label copy (testing standard §1).",
+    "VersionSubtitleMixin's docstring (views.py:14-18) says the mixin is 'Used by the document's page and a version's page', but only DocumentView uses it. Worth correcting while T007 is updating that docstring.",
+    "Coverage both ways: every FR and SC traces to a task (FR-001/002/003/010 → T001; FR-011/SC-005 → T003; FR-004/SC-002 → T004; FR-005/006 → T006; FR-009 → T010; FR-007/008/SC-003 → T012; FR-012/013/014 → T009/T013; SC-006 → T008). Every task traces to the spec. The stories run in sequence in one worktree, so they cannot collide."
+  ]
+}

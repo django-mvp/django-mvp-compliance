@@ -14,6 +14,7 @@ from django.utils.formats import date_format
 from mvp.menus import AppMenu
 
 import mvp_compliance
+from mvp_compliance.models import Document
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import (
     AcceptanceFactory,
@@ -683,6 +684,76 @@ class TestDocumentList:
 
         with django_assert_num_queries(len(small)):
             client.get(address)
+
+
+@pytest.mark.django_db
+class TestNotice:
+    """A notice is published to be read: its page is the same as any document's, and
+    says nothing about the reader having agreed to it."""
+
+    @pytest.fixture
+    def notice(self):
+        return DocumentFactory(name="Impressum", kind=Document.Kind.NOTICE)
+
+    def test_anonymous_and_signed_in_visitors_read_the_stored_html_number_and_date(
+        self, client, notice
+    ):
+        version = published(notice, "Some **bold** wording")
+        line = f"v{version.number} - " + date_format(
+            timezone.localdate(version.published_at)
+        )
+
+        for signed_in in (False, True):
+            if signed_in:
+                client.force_login(UserFactory())
+            response = client.get(document_address(notice))
+
+            assert response.status_code == 200
+            content = response.content.decode()
+            assert version.html in content
+            assert line in content
+
+    def test_a_user_who_accepted_before_it_became_a_notice_sees_no_agreement_line(
+        self, client
+    ):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        user = UserFactory()
+        AcceptanceFactory(user=user, version=first)
+        Document.objects.filter(pk=document.pk).update(kind=Document.Kind.NOTICE)
+        second = published(document, "Second wording")
+        client.force_login(user)
+
+        for address in subtitle_addresses(document, first, second):
+            assert "Agreed on" not in client.get(address).content.decode()
+
+    def test_an_earlier_version_shows_its_own_html(self, client, notice):
+        first = published(notice, "First wording")
+        second = published(notice, "Second wording")
+
+        content = client.get(version_address(notice, first.number)).content.decode()
+
+        assert first.html in content
+        assert second.html not in content
+
+    def test_the_document_list_names_a_notice_and_an_agreed_document(
+        self, client, notice
+    ):
+        published(notice)
+        agreed = DocumentFactory()
+        published(agreed)
+
+        response = client.get(document_address(notice))
+
+        assert set(response.context["documents"]) == {notice, agreed}
+        content = response.content.decode()
+        assert f'href="{document_address(notice)}"' in content
+        assert f'href="{document_address(agreed)}"' in content
+
+    def test_a_notice_with_only_a_draft_is_not_found(self, client, notice):
+        VersionFactory(document=notice)
+
+        assert client.get(document_address(notice)).status_code == 404
 
 
 @pytest.mark.django_db

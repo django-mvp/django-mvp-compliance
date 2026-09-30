@@ -62,6 +62,7 @@ SLUGS = {
     "Cookie policy": "cookie-policy",
     "Acceptable use": "acceptable-use",
     "House rules": "house-rules",
+    "Impressum": "impressum",
 }
 
 PRIVACY = """\
@@ -140,6 +141,16 @@ Treat the people here the way you would want to be treated.
 Keep each thread to what it started about.
 """
 
+IMPRESSUM = """\
+## Publisher
+
+Example Site GmbH, Musterstrasse 1, 10115 Berlin.
+
+## Contact
+
+Write to hello@example.com.
+"""
+
 
 class Command(BaseCommand):
     help = "Seed the demo with the standard accounts and a document in every state."
@@ -163,6 +174,13 @@ class Command(BaseCommand):
             note="one version, in force, published from code with nobody named",
         )
         self.make_departed_publisher_document()
+        self.make_document(
+            "Impressum",
+            drafts=[],
+            published=[IMPRESSUM],
+            note="a notice, one version in force: read, never agreed to",
+            kind=Document.Kind.NOTICE,
+        )
         self.make_document(
             "Cookie policy",
             drafts=[COOKIES],
@@ -255,14 +273,22 @@ class Command(BaseCommand):
         self.stdout.write(f"  {'created' if created else 'updated'} {email}")
         return user
 
-    def make_document(self, name, drafts, published, note, publisher=None):
+    def make_document(
+        self,
+        name,
+        drafts,
+        published,
+        note,
+        publisher=None,
+        kind=Document.Kind.AGREED,
+    ):
         """Create a document and its versions, once.
 
         A document that already has versions is left alone. Publishing is
         one-way, so re-seeding one cannot be made idempotent by rewriting it.
         """
         document, created = Document.objects.get_or_create(
-            name=name, defaults={"slug": SLUGS[name]}
+            name=name, defaults={"slug": SLUGS[name], "kind": kind}
         )
         if not created and document.versions.exists():
             self.stdout.write(f"  {name}: already seeded")

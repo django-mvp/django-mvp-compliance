@@ -13,9 +13,9 @@ class VersionSubtitleMixin:
     """The line under a page's name: ``v2026.1 - <date>``.
 
     Continues with ``· Agreed on <date>`` when the signed-in visitor accepted
-    that version. Used by the document's page and a version's page, which say
-    the same thing in the same words (FR-009). A view using it supplies
-    ``get_version()``.
+    that version, except on a notice, which nobody agrees to. Used by
+    the document's page, which shows any published version. A view using it
+    supplies ``get_version()``.
     """
 
     def get_version(self) -> Version:
@@ -29,7 +29,7 @@ class VersionSubtitleMixin:
             "date": date_format(timezone.localdate(version.published_at)),
         }
         user = self.request.user
-        if not user.is_authenticated:
+        if not user.is_authenticated or version.document.kind == Document.Kind.NOTICE:
             return line
         agreed_at = (
             Acceptance.objects.for_person(user)

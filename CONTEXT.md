@@ -15,6 +15,13 @@ policy. It is the thing with a stable identity and a URL. A document holds no te
 every word lives in one of its versions.
 _Avoid_: policy (that names one kind of document, not the category), agreement, terms, page.
 
+**Notice**:
+A document published to be read and never accepted, such as an impressum. It is versioned and
+published like any other document and has a page of its own, but nobody is ever asked to agree to
+it: it is never outstanding, and recording an acceptance of one of its versions is refused.
+Whether a document is a notice is its kind; the other kind is a document people agree to.
+_Avoid_: information page, static page, legal notice (which names a legal category, not the kind).
+
 **Slug**:
 The document's identifier in its address, such as `privacy-policy`: lowercase letters, digits and
 single hyphens. It can change until the document's first version is published and is fixed from
