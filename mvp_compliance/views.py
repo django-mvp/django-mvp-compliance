@@ -1,10 +1,14 @@
 """The pages that show a document's wording to a visitor."""
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
+from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.models import Acceptance, Document, Version
 
@@ -93,3 +97,61 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
         return [{"text": self.get_page_title()}]
+
+
+class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
+    """The signed-in person's own list of what they agreed to, in the account area.
+
+    One entry per document people agree to, with the versions this person
+    accepted under it, newest first. Takes nothing from the address that could
+    name another person, and writes nothing.
+    """
+
+    http_method_names = ["get", "head"]
+    template_name = "mvp_compliance/agreed_documents.html"
+    #: How many of a document's accepted versions are shown before the rest
+    #: are folded away. One more than this is shown in full, so that a single
+    #: version is never folded on its own.
+    shown_first = 3
+    page_title = gettext_lazy("Documents you agreed to")
+    page_subtitle = gettext_lazy(
+        "Each version you accepted on this site, and the date you accepted it. "
+        "Open a version to read it exactly as it was."
+    )
+
+    def get_breadcrumbs(self):
+        return [
+            {"text": _("Account Center"), "href": reverse("account-center")},
+            {"text": self.page_title},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["entries"] = self.get_entries()
+        return context
+
+    def get_entries(self) -> list[dict]:
+        """Group the person's acceptances into one entry per document.
+
+        Returns:
+            One dict per document, in the document's name order, with the
+            ``document``, the acceptances ``shown`` and the ``earlier`` ones
+            folded away, and ``newer``, the version in force that the person
+            has not accepted, which is ``None``.
+        """
+        acceptances = Acceptance.objects.for_person(
+            self.request.user
+        ).of_agreed_documents()
+        entries: dict[int, dict] = {}
+        for acceptance in acceptances:
+            document = acceptance.version.document
+            entry = entries.setdefault(
+                document.pk, {"document": document, "accepted": [], "newer": None}
+            )
+            entry["accepted"].append(acceptance)
+        for entry in entries.values():
+            accepted = entry.pop("accepted")
+            fold = len(accepted) > self.shown_first + 1
+            entry["shown"] = accepted[: self.shown_first] if fold else accepted
+            entry["earlier"] = accepted[self.shown_first :] if fold else []
+        return list(entries.values())

@@ -1004,6 +1004,7 @@ class TestAgreedDocuments:
         document = DocumentFactory()
         superseded, current = accept(user, document, 2)
 
+        superseded.version.refresh_from_db()
         content = signed_in.get(agreed_address()).content.decode()
 
         assert superseded.version.status == superseded.version.Status.SUPERSEDED

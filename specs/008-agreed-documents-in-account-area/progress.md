@@ -60,3 +60,10 @@ Did: `tests/test_views.py::TestAgreedDocuments`, 22 cases covering the scenarios
 Verified: `uv run pytest tests/test_views.py::TestAgreedDocuments -q` gives 21 failed, 1 passed. All 21 failures are `NoReverseMatch: Reverse for 'agreed' not found`. The pass is the test that follows a version link on the existing document page.
 Next: T006 view, route and catalog.
 Watch: `test_following_a_link_serves_that_versions_stored_html` passes before T006 by design: it exercises the document page that already exists.
+
+## 2026-10-01T22:25:00Z · Implementer US1 · T006
+
+Did: `AgreedDocumentsView` (sign-in required, GET and HEAD only, `get_entries()` grouping each document's acceptances into `shown` and `earlier` with `newer` always `None`), the `agreed/` route ahead of the slug route, and the `en` catalog regenerated for the title, subtitle and "Account Center". One fault in my own T005 test fixed: it asserted a version's status from a stale in-memory object, so it now refreshes it first; no assertion changed.
+Verified: `uv run pytest tests/test_views.py::TestAgreedDocuments -q` gives 22 passed; `uv run pytest -q` gives 471 passed. Probes: removing `LoginRequiredMixin` fails the anonymous test; calling `of_agreed_documents()` on every acceptance instead of the person's fails the staff and query-string tests; folding at four instead of five fails the four-versions test. Adding `post` to `http_method_names` fails nothing, because `TemplateView` has no `post` handler and refuses it with 405 either way.
+Next: T007 menu tests.
+Watch: the 405 test passes by the framework's own behaviour as well as by the explicit `http_method_names`.

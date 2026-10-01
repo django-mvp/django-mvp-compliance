@@ -149,8 +149,19 @@
         },
         {
           "id": "T006",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreedDocuments -q (22 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (3 msgids added, none fuzzy)",
+              "uv run pytest -q (471 passed)",
+              "mutation probes: dropping LoginRequiredMixin, calling of_agreed_documents() on all acceptances and folding at four each fail tests"
+            ],
+            "tests": [
+              "tests/test_views.py::TestAgreedDocuments"
+            ]
+          }
         },
         {
           "id": "T007",
