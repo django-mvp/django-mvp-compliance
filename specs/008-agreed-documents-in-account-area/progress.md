@@ -88,3 +88,10 @@ Did: the demo landing page links the list again (the saved card, after the "Writ
 Verified: `uv run python manage.py makemessages -l en --no-obsolete` leaves the catalog unchanged; `uv run python manage.py check` reports no issues; a test client request for the demo's landing page returns 200 with the link to `/legal/agreed/`.
 Next: the full verify, then the report.
 Watch: `newer` is documented as `None` on every entry, which is true until the next story.
+
+## 2026-10-01 — US-1 accepted
+
+Seven tasks, seven commits. Checked again independently on `df67f0c`: lint, types, tests, build and
+the documentation check all pass. The check for edits to existing tests flagged one, the narrowing
+of the menu test that decisions.md D2 authorises. The approved templates and stylesheet are
+untouched.
