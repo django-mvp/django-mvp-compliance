@@ -135,3 +135,10 @@ Did: `tests/test_models.py::TestReservedSlug` (`full_clean()` on the slug `agree
 Verified: `uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_views.py::TestAgreedDocuments -q` gives 2 failed, 30 passed. The failures are the two that need the validator: `DID NOT RAISE ValidationError`, and the add form answering 302 instead of 200. The route-order test and the three valid-slug cases pass today and guard the validator.
 Next: T015 adds `RESERVED_SLUGS`, `unreserved_slug` and migration 0009.
 Watch: none.
+
+## 2026-10-01T22:55:00Z · Implementer US3 · T015
+
+Did: `Document.RESERVED_SLUGS = frozenset({"agreed"})` and the module-level validator `unreserved_slug` beside `lowercase_slug` in `models.py`, raising `ValidationError(code="reserved")` with a translatable message, added to `Document.slug`'s validators. `makemigrations -n document_reserved_slug` wrote `0009_document_reserved_slug.py`, one `AlterField` that references the validator by path; it runs no SQL and touches no row. The `en` catalog is regenerated (POT-Creation-Date line removed, the new msgstr equal to its msgid; the rest of the diff is line-number references moving).
+Verified: `uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_views.py::TestAgreedDocuments tests/test_migrations.py -q` gives 37 passed. `uv run python manage.py makemigrations --check --dry-run` reports no changes. Pre-commit hooks pass on the changed files.
+Next: T016 documentation.
+Watch: the validator runs in forms and `full_clean()` only; `Document.objects.create(slug="agreed")` still works and the route order keeps the list's address.

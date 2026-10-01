@@ -4,6 +4,7 @@ from functools import partial
 from typing import cast
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils import timezone
@@ -39,6 +40,23 @@ lowercase_slug = RegexValidator(
     message=_("Use lowercase letters, digits and single hyphens only."),
     code="invalid",
 )
+
+
+def unreserved_slug(value: str) -> None:
+    """Refuse a slug that an address of the package's pages already answers to.
+
+    Args:
+        value: The slug being validated.
+
+    Raises:
+        ValidationError: With code ``reserved`` when ``value`` is in
+            ``Document.RESERVED_SLUGS``.
+    """
+    if value in Document.RESERVED_SLUGS:
+        raise ValidationError(
+            _("This slug is reserved for another page. Choose a different one."),
+            code="reserved",
+        )
 
 
 class DocumentQuerySet(models.QuerySet):
@@ -142,7 +160,7 @@ class Document(models.Model):
         _("slug"),
         max_length=100,
         unique=True,
-        validators=[lowercase_slug],
+        validators=[lowercase_slug, unreserved_slug],
         help_text=_(
             "The document's identifier in its address, such as “privacy-policy”."
         ),
@@ -157,6 +175,10 @@ class Document(models.Model):
             "read it, such as an impressum. Nobody is ever asked to accept a notice."
         ),
     )
+
+    #: Slugs that name a page of the package, not a document. ``agreed`` is the
+    #: list of what a person agreed to and sits ahead of the slug route.
+    RESERVED_SLUGS = frozenset({"agreed"})
 
     SLUG_FIXED_MESSAGE = _(
         "A document's slug cannot be changed once a version of it has been published."
