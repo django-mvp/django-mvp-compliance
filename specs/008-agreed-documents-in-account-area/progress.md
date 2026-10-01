@@ -109,3 +109,8 @@ Did: `AgreedDocumentsView.get_entries()` reads `Version.objects.current().filter
 Verified: `uv run pytest tests/test_views.py::TestNewerVersionInForce tests/test_views.py::TestAgreedDocuments -q` gives 30 passed. `uv run python manage.py makemessages -l en --no-obsolete` changes only the POT-Creation-Date line, reverted, so the catalog is unchanged. Pre-commit hooks pass on the changed files.
 Next: the full verify, then the report.
 Watch: a person with no acceptances issues no current-version query (an empty `__in`), one fewer than a person with any; the query-count test compares one acceptance with fifty, both with a newer version present.
+
+## 2026-10-01 — US-2 accepted
+
+Two tasks, two commits. Checked again independently on `5cd3f01`: lint, types, tests, build and the
+documentation check all pass, and no existing test was changed.
