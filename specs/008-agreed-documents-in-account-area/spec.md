@@ -4,7 +4,10 @@
 
 **Created**: 2026-10-01
 
-**Status**: Draft
+**Status**: Refined
+
+**Refined**: 2026-10-01. After the prototype was reviewed on screen: the document page's layout
+changes with this feature, and a long history is folded (FR-019).
 
 **Serves**: G8 · **Roadmap**: R9 · **Issue**: #66
 
@@ -38,8 +41,10 @@ Some things stay out of this feature:
 - The page staff use to produce everything held about one person (FS-004) is unchanged. This page
   shows the document, the version and the date. Anything else kept on an acceptance is shown only
   there.
-- The design of the document page is issue #71. This feature links to that page and changes
-  nothing on it.
+- ~~The design of the document page is issue #71. This feature links to that page and changes
+  nothing on it.~~ Changed in review of the prototype: the document page's layout changes with this
+  feature. Its list of documents moves into a column of its own beside the document. What the page
+  shows, who can read it and its addresses do not change. The rest of #71 stays open.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -84,6 +89,11 @@ version's page.
 10. **Given** a signed-in user anywhere in the account area, **When** they look at the area's
     menu, **Then** it has an entry leading to this page, and on this page that entry is marked as
     the current one.
+11. **Given** a user who accepted more than four versions of one document, **When** they open the
+    page, **Then** the three most recently published are shown, the others are on the page in a
+    part the user opens in place, and that part says how many it holds.
+12. **Given** a user who accepted four versions of one document or fewer, **When** they open the
+    page, **Then** all of them are shown and nothing is held back.
 
 ---
 
@@ -211,6 +221,10 @@ area and check the entry and the page appear without further configuration.
 - **FR-018**: The documentation MUST explain what the page shows, what a project mounts for it to
   appear, and that it is left out safely when the account area is absent. *(US-3)*
 
+- **FR-019**: A listed document with more than four accepted versions MUST show the three most
+  recently published and hold the others, still on the page, in a part the user opens in place,
+  stating how many it holds. With four or fewer, all are shown. *(US-1; added 2026-10-01)*
+
 ### Key Entities
 
 - **Acceptance** (FS-003): unchanged, and read only. The page reads the user's acceptances through
@@ -278,5 +292,5 @@ area and check the entry and the page appear without further configuration.
   how acceptances are tied to an account sees the list follow that choice.
 - The page shows a person's acceptances to that person only and stores nothing new, so Article XIV
   does not apply.
-- The list is not paginated. It is bounded by the number of documents a site publishes and the
-  versions of each that one person accepted.
+- The list is not paginated. A long history is folded in place (FR-019). It is bounded by the
+  number of documents a site publishes and the versions of each that one person accepted.

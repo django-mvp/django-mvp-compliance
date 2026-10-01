@@ -1,0 +1,184 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "008-agreed-documents-in-account-area",
+  "branch": "008-agreed-documents-in-account-area",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PLAN",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-10-01T16:40:44Z",
+      "note": "specification approved by review on #77 at 6d67542; issue graph built (#66, #78, #79, #80)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-10-01T20:34:18Z",
+      "note": "sketch approved; claim taken; branch level with origin/main 33eb41a; research, plan and tasks written"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-10-01T16:40:44Z",
+      "self_resolved": [
+        "approving review 5382483443 on #77 at commit 6d6754287ac097e2ecae0bbde055ea8e6f7d8d63",
+        "refined 2026-10-01 after the prototype review: document page layout in scope (decisions.md D1), FR-019 added; both asked for by Sam in review"
+      ]
+    },
+    "sketch": {
+      "approved_by": "Sam",
+      "at": "2026-10-01T20:27:01Z",
+      "self_resolved": [
+        "approved at commit b1f3e459cc1e9ed978a1412199f2545a5d470a2f",
+        "Menu entry to read \"Agreements\": renamed",
+        "Document page as two columns with the list on the left, title only over the document: rebuilt that way",
+        "List in a card that stops below the top bar while the document scrolls, no dividing line: done, with a 5rem offset",
+        "Card did not look right: the column was clipping it; the card now carries the pinning itself",
+        "Sidebar card titled \"Documents\": retitled",
+        "How a very long history should look: three most recent versions shown, the rest folded and opened in place"
+      ]
+    },
+    "plan": {
+      "approved_by": null,
+      "at": null
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 78,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T002",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T003",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T004",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T005",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T006",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T007",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T008",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T009",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P2",
+      "issue": 79,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T010",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T011",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P3",
+      "issue": 80,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T012",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T013",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T014",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T015",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T016",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 0,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 77,
+    "draft": true
+  }
+}
