@@ -1,0 +1,53 @@
+{% extends "mvp/account/base.html" %}
+{% load i18n %}
+{% block account.content %}
+  <c-page>
+    <c-page.title :title="page.title" :subtitle="page.subtitle" />
+    <div id="agreed-documents" class="flex flex-col gap-4 max-w-3xl">
+      {% for entry in entries %}
+        <c-card title="{{ entry.document.name }}">
+          {% if entry.newer %}
+            <c-alert variant="warning" soft class="alert-horizontal">
+              <span>{% blocktranslate with number=entry.newer.number date=entry.newer.published_at|date %}A newer version, v{{ number }}, has been in force since {{ date }}. You have not agreed to it.{% endblocktranslate %}</span>
+              <a class="btn btn-sm" href="{% url 'mvp_compliance:document' entry.document.slug %}">{% blocktranslate with number=entry.newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
+            </c-alert>
+          {% endif %}
+          <div class="overflow-x-auto">
+            <table class="table">
+              <caption class="sr-only">{% blocktranslate with name=entry.document.name %}Versions of {{ name }} you agreed to{% endblocktranslate %}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{% translate "Version" %}</th>
+                  <th scope="col">{% translate "You agreed on" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for acceptance in entry.acceptances %}
+                  <tr>
+                    <th scope="row" class="font-normal">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <a class="link" href="{% url 'mvp_compliance:document' entry.document.slug %}?version={{ acceptance.version.number }}">{% blocktranslate with number=acceptance.version.number %}v{{ number }}{% endblocktranslate %}<span class="sr-only">, {{ entry.document.name }}</span></a>
+                        {% if acceptance.version.status == "current" %}
+                          <c-badge size="sm" variant="success" class="badge-soft" text="{% translate "In force" %}" />
+                        {% else %}
+                          <c-badge size="sm" variant="ghost" text="{% translate "Replaced" %}" />
+                        {% endif %}
+                      </span>
+                    </th>
+                    <td class="whitespace-nowrap tabular-nums">
+                      <time datetime="{{ acceptance.accepted_at|date:"c" }}">{{ acceptance.accepted_at|date }}</time>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </c-card>
+      {% empty %}
+        <c-page.list.empty icon="document"
+                           heading="{% translate "Nothing to show yet" %}"
+                           message="{% translate "When you agree to a document on this site, it appears here with the version and the date." %}" />
+      {% endfor %}
+    </div>
+  </c-page>
+{% endblock account.content %}

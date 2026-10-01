@@ -1,10 +1,14 @@
 """The pages that show a document's wording to a visitor."""
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
+from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.models import Acceptance, Document, Version
 
@@ -93,3 +97,55 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
         return [{"text": self.get_page_title()}]
+
+
+class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
+    """The signed-in person's own list of what they agreed to, in the account area.
+
+    One entry per document people agree to, with the versions this person
+    accepted under it, newest first. Takes nothing from the address that could
+    name another person, and writes nothing.
+    """
+
+    template_name = "mvp_compliance/agreed_documents.html"
+    page_title = gettext_lazy("Documents you agreed to")
+    page_subtitle = gettext_lazy(
+        "Each version you accepted on this site, and the date you accepted it. "
+        "Open a version to read it exactly as it was."
+    )
+
+    def get_breadcrumbs(self):
+        return [
+            {"text": _("Account Center"), "href": reverse("account-center")},
+            {"text": self.page_title},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["entries"] = self.get_entries()
+        return context
+
+    def get_entries(self) -> list[dict]:
+        """One entry per document, each with the acceptances under it.
+
+        ``newer`` is the version in force when this person has not accepted
+        it, and ``None`` when they have.
+        """
+        acceptances = (
+            Acceptance.objects.for_person(self.request.user)
+            .filter(version__document__kind=Document.Kind.AGREED)
+            .select_related("version__document")
+            .order_by("version__document__name", "-version__published_at")
+        )
+        entries: dict[int, dict] = {}
+        for acceptance in acceptances:
+            document = acceptance.version.document
+            entry = entries.setdefault(
+                document.pk, {"document": document, "acceptances": [], "newer": None}
+            )
+            entry["acceptances"].append(acceptance)
+        for version in Version.objects.current().filter(document__in=entries):
+            entry = entries[version.document_id]
+            if all(item.version_id != version.pk for item in entry["acceptances"]):
+                entry["newer"] = version
+        return list(entries.values())

@@ -35,6 +35,15 @@
       </div>
 
       <div class="card bg-base-200 mt-6 p-6">
+        <h2 class="text-xl font-semibold">What a person has agreed to</h2>
+        <p class="mt-2 opacity-75">
+          A signed-in person finds their own list in the account area, under
+          <em>Agreed documents</em>. The accounts below reach each state of it.
+        </p>
+        <a class="btn btn-primary mt-4 w-fit" href="{% url 'mvp_compliance:agreed' %}">Open the list</a>
+      </div>
+
+      <div class="card bg-base-200 mt-6 p-6">
         <h2 class="text-xl font-semibold">Accounts</h2>
         <p class="mt-2 opacity-75">Password for every one of them is <code>password</code>.</p>
         <table class="table mt-4">
@@ -63,7 +72,23 @@
             </tr>
             <tr>
               <td><code>regular.user@example.com</code></td>
-              <td>Not staff. Cannot reach the admin at all.</td>
+              <td>Not staff. Cannot reach the admin at all. Has agreed to nothing.</td>
+            </tr>
+            <tr>
+              <td><code>acceptor.user@example.com</code></td>
+              <td>Agreed to the privacy policy twice and the terms once. All of it is in force.</td>
+            </tr>
+            <tr>
+              <td><code>newcomer.user@example.com</code></td>
+              <td>Agreed to one version of one document.</td>
+            </tr>
+            <tr>
+              <td><code>returning.user@example.com</code></td>
+              <td>Agreed to the privacy policy before it was reworded, and not since.</td>
+            </tr>
+            <tr>
+              <td><code>longstanding.user@example.com</code></td>
+              <td>A long history across four documents, and one more that has since become a notice.</td>
             </tr>
           </tbody>
         </table>
@@ -75,6 +100,8 @@
           <li><strong>Privacy policy</strong> — two published versions, one in force and one superseded.</li>
           <li><strong>Terms of use</strong> — one version, in force.</li>
           <li><strong>Impressum</strong> — a notice with one version in force. People read it and are never asked to agree to it.</li>
+          <li><strong>Community guidelines</strong> — five published versions over three years, under a long name.</li>
+          <li><strong>Delivery information</strong> — agreed to once, then made a notice.</li>
           <li><strong>Cookie policy</strong> — a draft and nothing published.</li>
           <li><strong>Acceptable use</strong> — no versions at all.</li>
         </ul>
