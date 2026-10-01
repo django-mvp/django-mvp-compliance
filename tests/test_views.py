@@ -932,6 +932,26 @@ def agreed_address():
     return reverse("mvp_compliance:agreed")
 
 
+@pytest.mark.django_db
+class TestAgreedDocumentsStrings:
+    """FR-017: the list as rendered, title, trail and menu entry included, claims nothing."""
+
+    def test_the_rendered_list_claims_no_compliance_and_names_no_regulation(
+        self, client
+    ):
+        user = UserFactory()
+        document = DocumentFactory(name="Privacy policy")
+        Acceptance.objects.record(user, published(document, "First wording"))
+        published(document, "Second wording")
+        client.force_login(user)
+
+        content = client.get(agreed_address()).content.decode()
+
+        lowered = re.sub(r"<[^>]+>", " ", content).lower()
+        for word in FORBIDDEN_WORDS:
+            assert word not in lowered, word
+
+
 def accept(user, document, count=1):
     """Publish ``count`` new versions of ``document``, accepted by ``user``, oldest first."""
     accepted = []

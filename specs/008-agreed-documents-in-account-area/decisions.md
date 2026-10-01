@@ -139,3 +139,27 @@ the same way. The marker also clears the URL caches around each test, so no reso
 **Revisit if:** the suite moves to `TestCase` classes.
 
 **ADR:** none — a test-suite detail that follows what `tests/test_admin.py` already does.
+
+## D9 — What the code review found, and what was done
+
+One reviewer read the whole branch for correctness, against the specification, and for security.
+Verdict: approve. No critical, high or medium finding, and nothing on access to a person's records.
+
+- **The documentation named the wrong template blocks (low).** `docs/pages.md` said the document
+  page fills `page.content` and `page.actions`. It now fills `styles` and `page.content-wrapper`,
+  so a project template that extends the package's and overrides the old blocks is silently
+  ignored. The page and the changelog now say so.
+- **The rendered list was not swept for a claim of compliance (low).** The existing sweep reads the
+  templates' strings and the document pages. A new test opens the list signed in and checks the
+  whole page, which covers its title, trail and menu entry. It was confirmed to fail when a
+  forbidden word is put in the subtitle.
+
+Both were small enough to fix in place. Also corrected from the reviewer's notes: a broken table in
+`docs/pages.md`, two sentences that predated the list, the mention of `LOGIN_URL`, and a changelog
+line about running `collectstatic` after the upgrade.
+
+Left as it is: the singular form of the folded-versions count can never be shown, since a fold
+always holds at least two. The plural block stays because the number is a class attribute a project
+may change, and the approved template is not edited for it.
+
+**ADR:** none — a record of review findings, not a decision that constrains later work.

@@ -162,3 +162,8 @@ migration, `0009_document_reserved_slug`, so there is nothing to consolidate. Th
 the diff found nothing worth changing: one view, one queryset method and one validator, each in the
 place the codebase already keeps that kind of code. Decisions D2 and D4 graduate to ADR 0020, and
 every decision carries its verdict. The roadmap notes that the first half of R9 is delivered.
+
+## 2026-10-01 — Code review
+
+One reviewer, three lenses. Verdict: approve, with two low findings and no blocking one. Both were
+fixed in place, along with the documentation notes (decisions.md D9). No second review round.

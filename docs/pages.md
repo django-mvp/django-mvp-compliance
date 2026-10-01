@@ -159,7 +159,9 @@ version it points to and no form of any kind: reading the document is the only t
 
 The records are the reader's own and no one else's. The page needs a signed-in person and
 sends anyone else to the project's sign-in page, so a visitor who is not signed in receives
-none of the content. It reads only the signed-in account, never a value in the address, so
+none of the content. That page is whatever `LOGIN_URL` names. A project that mounts
+django-mvp's account area sets `LOGIN_URL = "account_login"`, as django-mvp's own
+documentation says, because Django's default address is one nothing registers. It reads only the signed-in account, never a value in the address, so
 a staff member sees their own acceptances, not other people's. The records are found through
 `Acceptance.objects.for_person()`, the same way as everywhere else in the package. The page
 answers `GET` and `HEAD` only, and opening it writes nothing.
@@ -190,8 +192,8 @@ AppMenu.append(
 )
 ```
 
-Every page's breadcrumbs are the document's name alone. A `?version=` address shows the
-same trail as the plain one.
+A document page's breadcrumbs are the document's name alone. A `?version=` address shows the
+same trail as the plain one. The list's trail is the account area, then the list.
 
 ## The version switcher
 
@@ -223,16 +225,19 @@ Nothing on the page links to editing or deleting a document. That is done in the
 
 ## Overriding a template
 
-Every page is one template under `mvp_compliance/`. The document page extends django-mvp's
-`page_view.html` and fills only its `page.content` and, where it has one, `page.actions`
-block. The list extends `mvp/account/base.html` and fills its `account.content` block. To restyle a page, place a template at the same path in your project. Django finds
-yours first, and the package's is never used for that page. The package needs no other
+Every page has one template under `mvp_compliance/`. The document page extends django-mvp's
+`page_view.html` and fills its `styles` and `page.content-wrapper` blocks. It replaces the
+wrapper whole, so the `page.title`, `page.actions` and `page.content` blocks inside it are not
+drawn on this page, and a project template that extends the package's and overrides one of
+them has no effect. The list extends `mvp/account/base.html` and fills its `account.content`
+block, and draws its rows through the partial `mvp_compliance/_agreed_version_rows.html`. To
+restyle a page, place a template at the same path in your project. Django finds yours first,
+and the package's is never used for that page. The package needs no other
 change, and you do not fork it.
 
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
-
 | `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.

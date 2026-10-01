@@ -203,8 +203,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "Documents", and the document's name sits over the wording, not across the whole page. On
   wide screens the card stays in view while the document scrolls. The page loads a new stylesheet,
   `mvp_compliance/pages.css`, which sets the card's offset below the top bar through the custom
-  property `--mvp-compliance-header-clearance`. A project that overrides `document_detail.html`
-  keeps its own layout. See [docs/pages.md](docs/pages.md).
+  property `--mvp-compliance-header-clearance`. A project that replaces `document_detail.html`
+  keeps its own layout. A project template that extends the package's and overrides `page.content`
+  or `page.actions` must be updated, because the page no longer draws those blocks. The stylesheet
+  is the first static file a public page of the package loads, so a deployment that uses a static
+  files manifest runs `collectstatic` after upgrading. See [docs/pages.md](docs/pages.md).
 - Requires django-mvp 0.25.0 or later (was 0.23.0). django-mvp 0.25.0 mounts its own URLs at the
   site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
 - The slug `agreed` is no longer available to a document, because it is the address of the list of

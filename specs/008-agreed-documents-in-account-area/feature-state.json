@@ -81,6 +81,15 @@
         "ARCH-002 low: admin reserved-slug case moved to tests/test_admin.py",
         "watch: 404 check before super().dispatch() (T013)"
       ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-10-01T21:44:52Z",
+      "self_resolved": [
+        "DOC-001 low: remedied, docs/pages.md names the blocks the template fills and the changelog tells extending projects to update",
+        "TEST-001 low: remedied, new test opens the rendered list; fails when a forbidden word is added to the subtitle",
+        "notes: table, two stale sentences, LOGIN_URL, collectstatic line corrected"
+      ]
     }
   },
   "stories": [
