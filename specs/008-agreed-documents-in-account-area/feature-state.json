@@ -109,8 +109,16 @@
         },
         {
           "id": "T003",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q (6 failed: AttributeError, no of_agreed_documents, before T004)"
+            ],
+            "tests": [
+              "tests/test_models.py::TestAcceptancesOfAgreedDocuments"
+            ]
+          }
         },
         {
           "id": "T004",

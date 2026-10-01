@@ -2195,3 +2195,85 @@ class TestChangingTheKind:
 
         assert not agreed_document.is_outstanding_for(user)
         assert agreed_document not in Document.objects.outstanding_for(user)
+
+
+@pytest.mark.django_db
+class TestAcceptancesOfAgreedDocuments:
+    """US-1 scenarios 2 and 8, edge cases 1 and 2, FR-002, SC-001: the page's records."""
+
+    def accept_published(self, user, document, markdown="Wording"):
+        """Publish a new version of ``document``, accept it as ``user`` and return the acceptance."""
+        version = VersionFactory(document=document, markdown=markdown)
+        version.publish()
+        return Acceptance.objects.record(user, version)
+
+    def test_holds_exactly_the_persons_own_acceptances_of_documents_people_agree_to(
+        self, user
+    ):
+        agreed = DocumentFactory()
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        mine = self.accept_published(user, agreed)
+        self.accept_published(UserFactory(), agreed)
+        VersionFactory(document=notice).publish()
+
+        result = list(Acceptance.objects.for_person(user).of_agreed_documents())
+
+        assert result == [mine]
+
+    def test_is_ordered_by_document_name_then_newest_published_first(self, user):
+        beta = DocumentFactory(name="Beta terms")
+        alpha = DocumentFactory(name="Alpha terms")
+        beta_first = self.accept_published(user, beta)
+        alpha_first = self.accept_published(user, alpha)
+        beta_second = self.accept_published(user, beta)
+        alpha_second = self.accept_published(user, alpha)
+
+        result = list(Acceptance.objects.for_person(user).of_agreed_documents())
+
+        assert result == [alpha_second, alpha_first, beta_second, beta_first]
+
+    def test_leaves_out_a_version_the_person_never_accepted_between_two_they_did(
+        self, user
+    ):
+        document = DocumentFactory()
+        first = self.accept_published(user, document)
+        skipped = VersionFactory(document=document)
+        skipped.publish()
+        third = self.accept_published(user, document)
+
+        result = Acceptance.objects.for_person(user).of_agreed_documents()
+
+        assert [acceptance.version for acceptance in result] == [
+            third.version,
+            first.version,
+        ]
+        assert skipped not in [acceptance.version for acceptance in result]
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_drops_a_document_made_a_notice_and_brings_it_back_when_agreed_to_again(
+        self, user, route
+    ):
+        document = DocumentFactory()
+        acceptance = self.accept_published(user, document)
+
+        change_kind(document, Document.Kind.NOTICE, route)
+        while_a_notice = list(Acceptance.objects.for_person(user).of_agreed_documents())
+        change_kind(document, Document.Kind.AGREED, route)
+        once_agreed_again = list(
+            Acceptance.objects.for_person(user).of_agreed_documents()
+        )
+
+        assert while_a_notice == []
+        assert once_agreed_again == [acceptance]
+
+    def test_reads_in_one_query_with_the_version_and_document_loaded(
+        self, user, django_assert_num_queries
+    ):
+        for _ in range(3):
+            self.accept_published(user, DocumentFactory())
+
+        with django_assert_num_queries(1):
+            result = list(Acceptance.objects.for_person(user).of_agreed_documents())
+            names = [acceptance.version.document.name for acceptance in result]
+
+        assert len(names) == 3

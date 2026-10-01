@@ -39,3 +39,10 @@ demo's link to the list with them. The two helpers behind the string tests read 
 the `en` catalog is regenerated for the three page templates: fourteen strings added, none removed
 or changed. T002: `docs/pages.md` and the changelog describe the document page's new layout and the
 custom property for the card's offset. Full suite: 443 passed.
+
+## 2026-10-01T21:30:00Z · Implementer US1 · T003
+
+Did: `tests/test_models.py::TestAcceptancesOfAgreedDocuments`, five tests (six cases): own records of documents people agree to only, ordering by document name then newest published first, a version never accepted between two accepted ones is absent, a document made a notice drops out and returns (`save` and `update` routes), one query with version and document loaded.
+Verified: `uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q` gives 6 failed, all `AttributeError: 'AcceptanceQuerySet' object has no attribute 'of_agreed_documents'`.
+Next: T004 adds the method and the manager forwarder.
+Watch: none.
