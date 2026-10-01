@@ -111,3 +111,15 @@ person reads, not a name in the code.
 T001 and T002 remove code and edit two test helpers, the catalog and two documents. There is no
 design in them and nothing to build, so they were done in place and checked with the full suite
 before the first story was handed out.
+
+## D8 — The projects that leave part out are tested with `pytest.mark.urls`
+
+**Decision:** `TestWithoutTheAccountArea` and `TestWithoutThePackagePages` select their URLconf with
+`@pytest.mark.urls("tests.urls_package_only")` and `@pytest.mark.urls("tests.urls_mvp_only")`, not
+`@override_settings(ROOT_URLCONF=...)`.
+
+**Why:** the suite's tests are plain classes, and Django refuses to decorate anything but a
+`SimpleTestCase` subclass with `override_settings`. `tests/test_admin.py` already selects its URLconf
+the same way. The marker also clears the URL caches around each test, so no resolver outlives it.
+
+**Revisit if:** the suite moves to `TestCase` classes.
