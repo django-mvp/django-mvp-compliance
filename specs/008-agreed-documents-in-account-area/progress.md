@@ -167,3 +167,8 @@ every decision carries its verdict. The roadmap notes that the first half of R9 
 
 One reviewer, three lenses. Verdict: approve, with two low findings and no blocking one. Both were
 fixed in place, along with the documentation notes (decisions.md D9). No second review round.
+
+## 2026-10-01 — Ready for review
+
+The pull request is marked ready, with its description rewritten and the walkthrough laid out in a
+comment. 494 tests pass. It waits for the maintainer to walk the pages and merge.

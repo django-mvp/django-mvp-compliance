@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "QUEUED",
@@ -34,6 +34,11 @@
       "state": "REVIEW",
       "at": "2026-10-01T21:36:50Z",
       "note": "converged: verify green, ADR 0020, 8 verdicts"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-10-01T21:46:06Z",
+      "note": "review approve; two lows fixed in place (D9)"
     }
   ],
   "gates": {
@@ -90,6 +95,11 @@
         "TEST-001 low: remedied, new test opens the rendered list; fails when a forbidden word is added to the subtitle",
         "notes: table, two stale sentences, LOGIN_URL, collectstatic line corrected"
       ]
+    },
+    "walkthrough": {
+      "approved_by": null,
+      "at": "2026-10-01T21:46:28Z",
+      "self_resolved": []
     }
   },
   "stories": [
@@ -371,6 +381,6 @@
   },
   "pr": {
     "number": 77,
-    "draft": true
+    "draft": false
   }
 }
