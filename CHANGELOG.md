@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A page in django-mvp's account area, at `<prefix>/agreed/` (`mvp_compliance:agreed`), where a
+  signed-in person sees the documents they agreed to: for each, the versions they accepted, newest
+  published first, the day they accepted each, and a link to read that version as it was published.
+  Three versions are shown and the rest fold under a count when a document has more than four. It
+  shows only the signed-in person's own records and nothing else, answers `GET` and `HEAD` only and
+  writes nothing. The package adds one entry, "Agreements", to the account area's menu, and nothing
+  to your own `AppMenu` or `MobileFooterMenu`. Mount django-mvp's URLs as well as the package's for
+  the page to resolve. `AcceptanceQuerySet.of_agreed_documents()` and the same method on the
+  manager return the acceptances the page lists. `django-flex-menus>=0.4.5` is now a dependency.
+  See [docs/pages.md](docs/pages.md) and [docs/models.md](docs/models.md).
 - Notices: `Document.kind` is `Document.Kind.AGREED` by default or `Document.Kind.NOTICE`, for a
   document such as an impressum that is published to be read and never accepted. A notice is never
   outstanding, recording an acceptance of one of its versions is refused with `RecordError`, and

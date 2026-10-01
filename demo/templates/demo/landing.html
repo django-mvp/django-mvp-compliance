@@ -35,6 +35,15 @@
       </div>
 
       <div class="card bg-base-200 mt-6 p-6">
+        <h2 class="text-xl font-semibold">What a person has agreed to</h2>
+        <p class="mt-2 opacity-75">
+          A signed-in person finds their own list in the account area, under
+          <em>Agreements</em>. The accounts below reach each state of it.
+        </p>
+        <a class="btn btn-primary mt-4 w-fit" href="{% url 'mvp_compliance:agreed' %}">Open the list</a>
+      </div>
+
+      <div class="card bg-base-200 mt-6 p-6">
         <h2 class="text-xl font-semibold">Accounts</h2>
         <p class="mt-2 opacity-75">Password for every one of them is <code>password</code>.</p>
         <table class="table mt-4">

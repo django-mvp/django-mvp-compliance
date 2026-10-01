@@ -462,6 +462,19 @@ Both come back in the order the acceptances happened. `for_person(user)` is a th
 through `Acceptance.subject_of(user)` into `for_subject()`, so the two never disagree
 about which records belong to whom.
 
+To list what a person agreed to, ask for the acceptances of documents people agree to:
+
+```python
+Acceptance.objects.for_person(user).of_agreed_documents()
+```
+
+`of_agreed_documents()` is also a method on `AcceptanceQuerySet`, so it follows any other
+narrowing. It leaves out acceptances of a notice, each result comes with its version and
+document already loaded, and the order is the document's name, then newest published first.
+A notice's acceptance, recorded before the document became a notice, is left out only while
+it is one: it returns when the document is made one people agree to again. The agreed
+documents page in [pages.md](pages.md#what-a-person-has-agreed-to) reads from it.
+
 A new account created with a username an old, removed account once had inherits
 nothing: `subject` is derived from the account's primary key, never its username, so
 the two accounts are never mistaken for one another.

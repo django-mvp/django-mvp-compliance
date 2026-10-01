@@ -4,6 +4,10 @@ Each document that has a version in force is readable as a page of your site, in
 django-mvp shell, at an address that does not change when a new version is published.
 Anyone can read it, signed in or not.
 
+The package serves one more page, in django-mvp's account area: a signed-in person's own
+list of the documents they agreed to. It is described under
+[What a person has agreed to](#what-a-person-has-agreed-to).
+
 ## Mounting the addresses
 
 Include the package's URLs under a prefix of your choosing:
@@ -19,14 +23,28 @@ urlpatterns = [
 
 The pages render inside the shell, and the shell needs the menu renderers django-mvp
 documents for its install. Without `FLEX_MENUS` in your settings, rendering any
-django-mvp page raises. The package adds nothing to your menus: which pages appear in
-navigation is your decision.
+django-mvp page raises. The package adds nothing to your own menus: which pages appear in
+navigation is your decision. It adds one entry, described under [The menu](#the-menu), to
+the account area's menu.
+
+The list of what a person agreed to belongs to the account area, whose breadcrumb it links
+to. Mount django-mvp's own URLs as well, as django-mvp documents:
+
+```python
+urlpatterns = [
+    path("", include("mvp.urls")),
+    path("legal/", include("mvp_compliance.urls")),
+]
+```
 
 ## The address
 
 | URL name | Arguments | Address | View |
 |---|---|---|---|
+| `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
+
+The list's address is checked first, so no document is served at the slug `agreed`.
 
 There is one page per document: its address always shows the version in force. The same
 address with `?version=<number>` shows that published version, current or superseded,
@@ -94,10 +112,44 @@ configured renderer produced and sanitised at publication, so a project that poi
 `MVP_COMPLIANCE_RENDERER` at a renderer with a looser allow list serves that looseness on
 its own pages.
 
+## What a person has agreed to
+
+A signed-in person finds their own list at `<prefix>/agreed/`, in django-mvp's account area.
+It has one card for each document people agree to that the person has accepted at least one
+version of. Documents are in alphabetical order by their present name, so a renamed document
+appears under its new name. Each card holds a table with one row per version the person
+accepted, newest published first: the version's number, linking to that version's page with
+`?version=`, a badge saying whether it is in force or has been replaced, and the day the person
+accepted it. The link works for a replaced version as for the one in force, and shows the
+wording exactly as it was published.
+
+Three things are left out. A document the person never accepted is not listed. A version the
+person never accepted is not a row, even between two they did accept. A notice is not
+listed, because nobody agrees to it. If a document is made a notice, its entry disappears;
+change it back and the entry returns with the same acceptances, because nothing recorded is
+touched. A person who has accepted nothing sees the page with a line saying so.
+
+A document with more than four accepted versions shows the three newest in its table. The
+rest sit under a line that counts them, which opens in place. With four or fewer, every
+version is shown. Setting `shown_first` on a subclass of `AgreedDocumentsView` changes the
+three.
+
+The records are the reader's own and no one else's. The page needs a signed-in person and
+sends anyone else to the project's sign-in page, so a visitor who is not signed in receives
+none of the content. It reads only the signed-in account, never a value in the address, so
+a staff member sees their own acceptances, not other people's. The records are found through
+`Acceptance.objects.for_person()`, the same way as everywhere else in the package. The page
+answers `GET` and `HEAD` only, and opening it writes nothing.
+
 ## The menu
 
-The package adds nothing to your menus: which pages appear in navigation is your
-decision. A host project adds its own entry, as the demo does in `demo/menus.py`, here
+The package adds nothing to your own menus, `AppMenu` and `MobileFooterMenu`: which pages
+appear in navigation is your decision. It adds one entry, labelled "Agreements", to
+django-mvp's account area menu, `AccountCenterMenu`. The entry leads to the list above and is
+the selected one on it. If your project does not mount the package's URLs, the address does
+not resolve and the menu leaves the entry out.
+
+A host project adds its own entry, as the demo does in `demo/menus.py`, here
 pointing at one document's page:
 
 ```python
@@ -147,15 +199,17 @@ Nothing on the page links to editing or deleting a document. That is done in the
 
 ## Overriding a template
 
-Every page is one template under `mvp_compliance/`, and each extends django-mvp's
+Every page is one template under `mvp_compliance/`. The document page extends django-mvp's
 `page_view.html` and fills only its `page.content` and, where it has one, `page.actions`
-block. To restyle a page, place a template at the same path in your project. Django finds
+block. The list extends `mvp/account/base.html` and fills its `account.content` block. To restyle a page, place a template at the same path in your project. Django finds
 yours first, and the package's is never used for that page. The package needs no other
 change, and you do not fork it.
 
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
+
+| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, which is `None` on every entry. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
 

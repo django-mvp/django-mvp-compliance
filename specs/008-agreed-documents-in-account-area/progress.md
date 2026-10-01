@@ -81,3 +81,10 @@ Did: `mvp_compliance/menus.py` appends the "Agreements" entry (name `agreed-docu
 Verified: `uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q` gives 4 passed; `uv run pre-commit run --all-files` passes every hook, deptry included; `uv run pytest -q` gives 473 passed.
 Next: T009 documentation and the demo's landing page.
 Watch: the `DEP002` ignore for django-mvp is kept as it was, with a comment that is now true. Whether it is still needed is not something this task asked about.
+
+## 2026-10-01T23:05:00Z · Implementer US1 · T009
+
+Did: the demo landing page links the list again (the saved card, after the "Writing and publishing a document" card). `docs/pages.md`: the list's address and view in the address table, a section on what the page shows, the folded history and whose records they are, the introduction and the menu section corrected to say the package adds nothing to the project's own menus and one entry to the account area's menu, the list's template in the override table, and the need to mount django-mvp's URLs. `docs/models.md`: `of_agreed_documents()`. README: the feature bullet and the pages.md entry. CHANGELOG: an *Added* entry.
+Verified: `uv run python manage.py makemessages -l en --no-obsolete` leaves the catalog unchanged; `uv run python manage.py check` reports no issues; a test client request for the demo's landing page returns 200 with the link to `/legal/agreed/`.
+Next: the full verify, then the report.
+Watch: `newer` is documented as `None` on every entry, which is true until the next story.

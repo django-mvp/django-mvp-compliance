@@ -196,8 +196,16 @@
         },
         {
           "id": "T009",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py makemessages -l en --no-obsolete (catalog unchanged)",
+              "uv run python manage.py check (no issues)",
+              "Client().get(\"/\") on the demo project: 200, the landing page carries the link to /legal/agreed/"
+            ],
+            "tests": []
+          }
         }
       ]
     },

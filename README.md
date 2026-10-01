@@ -54,8 +54,8 @@ version a person saw.
   before continuing.
 - Translations, so a reader sees a document in their own language.
 - Cookie consent, gathered and recorded alongside everything else.
-- A place in the account area where a signed-in person can see what they have
-  agreed to and what they have chosen.
+- A page in the account area where a signed-in person sees each document they
+  agreed to, the versions they accepted and the day they accepted each.
 
 Each version has one canonical text, and that is the text an acceptance points
 at. Translations exist so people can read a document in their own language, and
@@ -399,7 +399,8 @@ opened for writing, and the model would refuse it if anything tried.
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
 - [docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md) — serving a document as a page of your site: mounting the
-  addresses, linking to a document, and what a visitor sees.
+  addresses, linking to a document, what a visitor sees, and the page where a
+  signed-in person sees what they agreed to.
 - [docs/announcing.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/announcing.md) — the signal sent when a version is published, what it
   carries, and what happens when a receiver fails.
 - [docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md) — the admin surface: the editor and what it offers,
