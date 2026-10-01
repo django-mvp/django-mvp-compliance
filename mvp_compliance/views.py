@@ -136,8 +136,10 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
         Returns:
             One dict per document, in the document's name order, with the
             ``document``, the acceptances ``shown`` and the ``earlier`` ones
-            folded away, and ``newer``, the version in force that the person
-            has not accepted, which is ``None``.
+            folded away, and ``newer``: the version in force when none of the
+            person's acceptances of the document is of it, otherwise ``None``.
+            It is read on each request, in one query for the whole page, and
+            a person with no acceptances costs no such query.
         """
         acceptances = Acceptance.objects.for_person(
             self.request.user
@@ -149,8 +151,17 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
                 document.pk, {"document": document, "accepted": [], "newer": None}
             )
             entry["accepted"].append(acceptance)
-        for entry in entries.values():
+        in_force = {
+            version.document_id: version
+            for version in Version.objects.current().filter(document__in=list(entries))
+        }
+        for pk, entry in entries.items():
             accepted = entry.pop("accepted")
+            current = in_force.get(pk)
+            if current and all(
+                acceptance.version_id != current.pk for acceptance in accepted
+            ):
+                entry["newer"] = current
             fold = len(accepted) > self.shown_first + 1
             entry["shown"] = accepted[: self.shown_first] if fold else accepted
             entry["earlier"] = accepted[self.shown_first :] if fold else []

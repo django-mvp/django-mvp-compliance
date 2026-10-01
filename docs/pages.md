@@ -134,6 +134,15 @@ rest sit under a line that counts them, which opens in place. With four or fewer
 version is shown. Setting `shown_first` on a subclass of `AgreedDocumentsView` changes the
 three.
 
+When a document's version in force is one the person has not accepted, its card opens with a
+statement of that: the version's number, the day it came into force, and that the person has not
+agreed to it. A link beside it leads to the document's own page, which shows the version in
+force. The statement is there only when none of the person's acceptances of the document is of
+the version in force, so a person who accepted the version in force, with or without earlier
+ones, sees none. The page is read each time it is opened, so a version published after the
+person's last visit appears with nothing else done. The page has no button to accept the
+version it points to and no form of any kind: reading the document is the only thing it offers.
+
 The records are the reader's own and no one else's. The page needs a signed-in person and
 sends anyone else to the project's sign-in page, so a visitor who is not signed in receives
 none of the content. It reads only the signed-in account, never a value in the address, so
@@ -209,7 +218,7 @@ change, and you do not fork it.
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
 
-| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, which is `None` on every entry. Each acceptance carries its `version` and `accepted_at` |
+| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
 

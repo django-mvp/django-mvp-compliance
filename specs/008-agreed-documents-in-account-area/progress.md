@@ -102,3 +102,10 @@ Did: `tests/test_views.py::TestNewerVersionInForce`, eight tests. A latest accep
 Verified: `uv run pytest tests/test_views.py::TestNewerVersionInForce -q` gives 4 failed, 4 passed. Each failure is `newer` being `None` where the version in force is expected. The four that pass (the two `None` cases, the no-form check and the query count) hold today because every `newer` is `None`; they guard T011.
 Next: T011 sets `newer` in `get_entries()`.
 Watch: the shell draws a sign-out form, so the no-form check reads only the page from the list's container onward.
+
+## 2026-10-01T23:50:00Z · Implementer US2 · T011
+
+Did: `AgreedDocumentsView.get_entries()` reads `Version.objects.current().filter(document__in=...)` once for the page and sets `newer` to the version in force when none of the person's acceptances of that document is of it; `None` otherwise. The docstring says so. `docs/pages.md` gained the statement about a newer version (what it says, when it shows, that it is read each request, that the page has no form) and the template table row for `newer` is corrected. The CHANGELOG entry from the first story gained a sentence.
+Verified: `uv run pytest tests/test_views.py::TestNewerVersionInForce tests/test_views.py::TestAgreedDocuments -q` gives 30 passed. `uv run python manage.py makemessages -l en --no-obsolete` changes only the POT-Creation-Date line, reverted, so the catalog is unchanged. Pre-commit hooks pass on the changed files.
+Next: the full verify, then the report.
+Watch: a person with no acceptances issues no current-version query (an empty `__in`), one fewer than a person with any; the query-count test compares one acceptance with fifty, both with a newer version present.

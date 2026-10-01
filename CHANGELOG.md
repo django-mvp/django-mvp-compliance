@@ -16,8 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shows only the signed-in person's own records and nothing else, answers `GET` and `HEAD` only and
   writes nothing. The package adds one entry, "Agreements", to the account area's menu, and nothing
   to your own `AppMenu` or `MobileFooterMenu`. Mount django-mvp's URLs as well as the package's for
-  the page to resolve. `AcceptanceQuerySet.of_agreed_documents()` and the same method on the
-  manager return the acceptances the page lists. `django-flex-menus>=0.4.5` is now a dependency.
+  the page to resolve. When the version in force of a listed document is one the person has not
+  accepted, its card says so and links to the document's page. `AcceptanceQuerySet.of_agreed_documents()`
+  and the same method on the manager return the acceptances the page lists.
+  `django-flex-menus>=0.4.5` is now a dependency.
   See [docs/pages.md](docs/pages.md) and [docs/models.md](docs/models.md).
 - Notices: `Document.kind` is `Document.Kind.AGREED` by default or `Document.Kind.NOTICE`, for a
   document such as an impressum that is published to be read and never accepted. A notice is never

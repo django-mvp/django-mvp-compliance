@@ -232,8 +232,19 @@
         },
         {
           "id": "T011",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestNewerVersionInForce tests/test_views.py::TestAgreedDocuments -q (30 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (only the POT-Creation-Date line differed; reverted, catalog unchanged)",
+              "uv run pre-commit run --files mvp_compliance/views.py docs/pages.md CHANGELOG.md (all hooks passed)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestNewerVersionInForce",
+              "tests/test_views.py::TestAgreedDocuments"
+            ]
+          }
         }
       ]
     },
