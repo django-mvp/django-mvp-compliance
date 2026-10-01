@@ -2,7 +2,7 @@
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
@@ -104,7 +104,8 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
 
     One entry per document people agree to, with the versions this person
     accepted under it, newest first. Takes nothing from the address that could
-    name another person, and writes nothing.
+    name another person, and writes nothing. Not found in a project that mounts
+    no account area.
     """
 
     http_method_names = ["get", "head"]
@@ -118,6 +119,21 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
         "Each version you accepted on this site, and the date you accepted it. "
         "Open a version to read it exactly as it was."
     )
+
+    def dispatch(self, request, *args, **kwargs):
+        """Answer "not found" when the project mounts no account area.
+
+        Runs before the sign-in check, so an anonymous visitor to such a project
+        is told there is no page rather than sent to sign in for one.
+
+        Raises:
+            Http404: When ``account-center`` does not reverse.
+        """
+        try:
+            reverse("account-center")
+        except NoReverseMatch:
+            raise Http404(_("No account area")) from None
+        return super().dispatch(request, *args, **kwargs)
 
     def get_breadcrumbs(self):
         return [

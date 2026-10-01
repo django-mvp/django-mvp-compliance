@@ -121,3 +121,10 @@ Did: two URLconf modules under `tests/` (`urls_package_only.py` mounts `mvp_comp
 Verified: `uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages -q` gives 2 failed, 4 passed. The signed-in case fails with `NoReverseMatch: 'account-center'` from the breadcrumb, the anonymous case with `NoReverseMatch: 'account_login'` from the sign-in redirect; both are the exceptions T013 turns into 404. The four that pass hold today and guard the project that leaves out the package (and the document page in the project that leaves out the account area).
 Next: T013 makes `dispatch()` answer 404 first.
 Watch: `pytest.mark.urls` rather than `override_settings`, because the suite's tests are plain classes, not `SimpleTestCase`; `override_settings` refuses to decorate them.
+
+## 2026-10-01T22:25:00Z · Implementer US3 · T013
+
+Did: `AgreedDocumentsView.dispatch()` tries `reverse("account-center")` and raises `Http404` on `NoReverseMatch` before `super().dispatch()`, so the sign-in redirect never runs in a project without the account area. The class docstring says so. The 404's message is a new translatable string; the `en` catalog is regenerated (POT-Creation-Date line removed, the fuzzy guess cleared, msgstr equal to msgid).
+Verified: `uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages tests/test_views.py::TestAgreedDocuments -q` gives 28 passed. `uv run pytest tests/test_views.py::TestPageStrings tests/test_admin.py::TestUserFacingStrings -q` gives 11 passed.
+Next: T014 tests for the reserved slug.
+Watch: with the account area mounted the check costs one extra `reverse()` per request, no query.

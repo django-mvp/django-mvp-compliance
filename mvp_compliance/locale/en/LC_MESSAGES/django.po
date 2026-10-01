@@ -595,11 +595,11 @@ msgstr "%(published)s · Agreed on %(date)s"
 msgid "No version found"
 msgstr "No version found"
 
-#: mvp_compliance/views.py:116
+#: mvp_compliance/views.py:117
 msgid "Documents you agreed to"
 msgstr "Documents you agreed to"
 
-#: mvp_compliance/views.py:118
+#: mvp_compliance/views.py:119
 msgid ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
@@ -607,7 +607,11 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: mvp_compliance/views.py:124
+#: mvp_compliance/views.py:135
+msgid "No account area"
+msgstr "No account area"
+
+#: mvp_compliance/views.py:140
 msgid "Account Center"
 msgstr "Account Center"
 
