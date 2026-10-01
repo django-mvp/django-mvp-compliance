@@ -219,8 +219,16 @@
       "tasks": [
         {
           "id": "T010",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestNewerVersionInForce -q (4 failed, 4 passed; each failure is entry[\"newer\"] being None where the version in force is expected)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestNewerVersionInForce"
+            ]
+          }
         },
         {
           "id": "T011",

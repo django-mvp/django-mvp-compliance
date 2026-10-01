@@ -95,3 +95,10 @@ Seven tasks, seven commits. Checked again independently on `df67f0c`: lint, type
 the documentation check all pass. The check for edits to existing tests flagged one, the narrowing
 of the menu test that decisions.md D2 authorises. The approved templates and stylesheet are
 untouched.
+
+## 2026-10-01T23:35:00Z · Implementer US2 · T010
+
+Did: `tests/test_views.py::TestNewerVersionInForce`, eight tests. A latest acceptance of a superseded version gets `newer` as the version in force and the page links the document's plain address with no `?version=`; the version in force accepted, alone or after earlier ones, gives `None`; each document is judged on its own versions; another person's acceptance of the version in force does not count; the list part of the page holds no form; a version published between two requests shows on the second; the query count is the same for one acceptance as for fifty across ten documents, with a newer version present in both.
+Verified: `uv run pytest tests/test_views.py::TestNewerVersionInForce -q` gives 4 failed, 4 passed. Each failure is `newer` being `None` where the version in force is expected. The four that pass (the two `None` cases, the no-form check and the query count) hold today because every `newer` is `None`; they guard T011.
+Next: T011 sets `newer` in `get_entries()`.
+Watch: the shell draws a sign-out form, so the no-form check reads only the page from the list's container onward.

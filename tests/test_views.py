@@ -1185,3 +1185,121 @@ class TestAgreedDocuments:
 
         assert response.status_code == 405
         assert Acceptance.objects.count() == before
+
+
+@pytest.mark.django_db
+class TestNewerVersionInForce:
+    """US-2: a listed document whose version in force the person has not accepted
+    carries that version (FR-009, FR-010, FR-015, SC-003, SC-005)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def newer(response):
+        """What the page carries as ``newer``: ``{document: version in force or None}``."""
+        return {
+            entry["document"]: entry["newer"] for entry in response.context["entries"]
+        }
+
+    def test_a_superseded_latest_acceptance_gets_the_version_in_force_and_its_plain_address(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+        in_force = published(document, "Newer wording")
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: in_force}
+        content = response.content.decode()
+        assert f'href="{document_address(document)}"' in content
+        assert f"{document_address(document)}?version={in_force.number}" not in content
+
+    def test_a_person_who_accepted_the_version_in_force_gets_none(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: None}
+
+    def test_earlier_acceptances_do_not_change_that_the_version_in_force_was_accepted(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document, 3)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: None}
+
+    def test_each_document_is_judged_on_its_own_versions(self, signed_in, user):
+        behind = DocumentFactory(name="Behind terms")
+        level = DocumentFactory(name="Level terms")
+        accept(user, behind, 2)
+        accept(user, level, 2)
+        in_force = published(behind)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {behind: in_force, level: None}
+
+    def test_another_persons_acceptance_of_the_version_in_force_does_not_count(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+        in_force = published(document)
+        Acceptance.objects.record(UserFactory(), in_force)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: in_force}
+
+    def test_the_page_holds_no_form(self, signed_in, user):
+        document = DocumentFactory()
+        accept(user, document)
+        published(document)
+
+        response = signed_in.get(agreed_address())
+
+        content = response.content.decode()
+        listing = content[content.index('id="agreed-documents"') :]
+        assert "<form" not in listing
+
+    def test_a_version_published_between_two_requests_shows_on_the_second(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+        assert self.newer(signed_in.get(agreed_address())) == {document: None}
+
+        in_force = published(document)
+
+        assert self.newer(signed_in.get(agreed_address())) == {document: in_force}
+
+    def test_the_query_count_does_not_grow_with_the_acceptances_held(
+        self, client, django_assert_num_queries
+    ):
+        one, many = UserFactory(), UserFactory()
+        behind = DocumentFactory()
+        accept(one, behind)
+        published(behind)
+        for index in range(10):
+            document = DocumentFactory()
+            accept(many, document, 5)
+            if index == 0:
+                published(document)
+        client.force_login(one)
+        client.get(agreed_address())  # warm caches
+
+        with CaptureQueriesContext(connection) as single:
+            client.get(agreed_address())
+        client.force_login(many)
+        with django_assert_num_queries(len(single)):
+            client.get(agreed_address())
