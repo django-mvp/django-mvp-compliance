@@ -7,8 +7,8 @@
 {% block page.content-wrapper %}
   <c-page.content class="py-4">
     <div class="flex flex-1 flex-col gap-6 lg:flex-row">
-      <aside class="mvp-compliance-document-list shrink-0 overflow-y-auto lg:sticky lg:self-start lg:w-1/4">
-        <c-card title="{% translate "Agreements" %}">
+      <aside class="shrink-0 lg:w-1/4">
+        <c-card title="{% translate "Agreements" %}" class="mvp-compliance-document-list overflow-y-auto lg:sticky">
         <nav id="document-list" aria-label="{% translate "Agreements" %}">
           <ul class="menu w-full p-0">
             {% for item in documents %}
