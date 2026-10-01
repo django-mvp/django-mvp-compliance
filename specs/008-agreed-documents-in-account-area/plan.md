@@ -72,7 +72,8 @@ Kept as approved: `agreed_documents.html`, `_agreed_version_rows.html`, `documen
 `static/mvp_compliance/pages.css`, and the demo's seed data and landing page.
 
 Rebuilt: `AgreedDocumentsView`, the route and `menus.py`. A foundational task removes them, so each
-comes back behind a failing test. The demo's link to the list is removed with them and returns with
+comes back behind a failing test. The same task teaches the two helpers behind the string tests to
+read a plural, because the list's template holds the package's first one. No assertion changes. The demo's link to the list is removed with them and returns with
 the route.
 
 ### The query (US-1)
@@ -102,11 +103,12 @@ to again comes back with its acceptances untouched (edge case 2).
 `AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView)` in `mvp_compliance/views.py`:
 
 - `http_method_names = ["get", "head"]`. There is nothing to submit (FR-010).
-- `dispatch()` answers `Http404` when `account-center` does not reverse, before anything else, so a
+- `dispatch()` answers `Http404` when `account-center` does not reverse, before it calls
+  `super().dispatch()` and so before the sign-in redirect, so a
   project without the account area has no such page for anyone (FR-013).
 - The route takes no argument and the view reads only `request.user` (FR-004).
 - `get_entries()` returns one entry per document: the document, `shown`, `earlier` and `newer`.
-  - US-1 builds the grouping and the split. `fold_after = 3`: with more than `fold_after + 1`
+  - US-1 builds the grouping and the split. `shown_first = 3`: with more than `shown_first + 1`
     accepted versions the first three are `shown` and the others `earlier`; otherwise all are
     `shown` (FR-019). The attribute is the one place the number lives.
   - US-2 adds `newer`: the version in force when none of the person's acceptances is of it, read
@@ -123,8 +125,7 @@ to again comes back with its acceptances untouched (edge case 2).
 `Document.RESERVED_SLUGS = frozenset({"agreed"})` and a validator `unreserved_slug` beside
 `lowercase_slug`, raising `ValidationError(code="reserved")`. It joins `Document.slug`'s
 `validators`, so the admin form refuses the slug where it already refuses capitals (US-3
-scenario 4). A test walks the URLconf and asserts that every fixed route's segment is in
-`RESERVED_SLUGS`, so a later fixed route cannot be added without reserving it.
+scenario 4).
 
 The validator runs where field validators run: forms and `full_clean()`. Code that calls
 `Document.objects.create(slug="agreed")` is not stopped, which matches how `lowercase_slug` already
@@ -148,7 +149,8 @@ No `check`: the area's landing page already requires sign-in, and the entry is d
 package's pages are not mounted because its address does not reverse.
 
 `TestNoMenuEntry.test_the_package_does_not_touch_the_menu_library` is narrowed to what FS-006's
-FR-014 asks: no module in the package names `AppMenu`, the project's own menu (decisions.md D2).
+FR-014 asks: no module in the package names `AppMenu` or `MobileFooterMenu`, the project's own menus
+(decisions.md D2).
 
 ### The pages (kept as approved)
 
@@ -173,7 +175,7 @@ The seed command publishes and accepts on past dates and seeds the accounts that
   CHANGELOG *Changed*: the document page's markup.
 - US-1: `docs/pages.md` gains a section on the list: what it shows, the folded history, that it is
   the reader's own records. `docs/models.md`: `of_agreed_documents()`. README feature list.
-  CHANGELOG *Added*. `en` catalog.
+  CHANGELOG *Added*. The `en` catalog is regenerated in each task that adds a string.
 - US-3: `docs/pages.md`: what a project mounts for the page to appear, and that it is left out
   safely (FR-018). `docs/models.md`: the reserved slug. CHANGELOG: the slug `agreed` is no longer
   available, and what happens to a document already published under it.

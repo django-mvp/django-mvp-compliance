@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PLAN",
+  "state": "DESIGN_REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -14,6 +14,11 @@
       "state": "PLAN",
       "at": "2026-10-01T20:34:18Z",
       "note": "sketch approved; claim taken; branch level with origin/main 33eb41a; research, plan and tasks written"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-10-01T20:34:36Z",
+      "note": "plan committed at 491fb3c"
     }
   ],
   "gates": {
@@ -45,6 +50,19 @@
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-reviewer",
+      "at": "2026-10-01T20:42:12Z",
+      "self_resolved": [
+        "SPEC-001 high: T001 teaches the string-test helpers to read a plural; verified against the stated evidence",
+        "SPEC-002 medium: catalog regenerated in each task that adds a string (T006, T008, T015)",
+        "SPEC-003 low: T009 corrects the docs lines that say the package adds nothing to menus",
+        "SPEC-004 low: narrowed menu test names AppMenu and MobileFooterMenu (D2)",
+        "ARCH-001 low: URLconf walk dropped from T014",
+        "ARCH-002 low: admin reserved-slug case moved to tests/test_admin.py",
+        "watch: 404 check before super().dispatch() (T013)"
+      ]
     }
   },
   "stories": [
@@ -169,7 +187,7 @@
       "max": 1
     },
     "design_review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "tokens": {

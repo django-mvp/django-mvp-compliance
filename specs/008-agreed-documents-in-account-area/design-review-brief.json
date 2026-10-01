@@ -1,0 +1,68 @@
+{
+  "role": "design_reviewer",
+  "stage": "S3R",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+  "branch": "008-agreed-documents-in-account-area",
+  "feature": "008-agreed-documents-in-account-area",
+  "lenses": [
+    "spec-compliance",
+    "security",
+    "architecture"
+  ],
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-28/e60c2a95"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/design-review.md",
+  "inputs": [
+    "specs/008-agreed-documents-in-account-area/spec.md",
+    "specs/008-agreed-documents-in-account-area/sketch.md",
+    "specs/008-agreed-documents-in-account-area/decisions.md",
+    "specs/008-agreed-documents-in-account-area/research.md",
+    "specs/008-agreed-documents-in-account-area/plan.md",
+    "specs/008-agreed-documents-in-account-area/tasks.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "AGENTS.md",
+    "docs/pages.md",
+    "docs/models.md",
+    "docs/contributing/standards/testing.md",
+    "mvp_compliance/models.py",
+    "mvp_compliance/views.py",
+    "mvp_compliance/urls.py",
+    "mvp_compliance/menus.py",
+    "mvp_compliance/templates/mvp_compliance/agreed_documents.html",
+    "mvp_compliance/templates/mvp_compliance/_agreed_version_rows.html",
+    "mvp_compliance/templates/mvp_compliance/document_detail.html",
+    "mvp_compliance/static/mvp_compliance/pages.css",
+    "tests/test_views.py",
+    "tests/urls.py",
+    "tests/settings.py",
+    "tests/factories.py",
+    "pyproject.toml",
+    "specs/006-documents-readable-as-pages/spec.md"
+  ],
+  "resolved_packages": {
+    "django": "/home/sam/projects/django-mvp/django-mvp-compliance-008/.venv/lib/python3.13/site-packages/django",
+    "mvp": "/home/sam/projects/django-mvp/django-mvp-compliance-008/.venv/lib/python3.13/site-packages/mvp",
+    "flex_menu": "/home/sam/projects/django-mvp/django-mvp-compliance-008/.venv/lib/python3.13/site-packages/flex_menu"
+  },
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs008-design-findings.json",
+  "context": "The branch already carries an approved on-screen prototype (templates, static CSS, demo seed, and untested view/url/menu Python). The templates, markup and wording were approved by the maintainer and are NOT under review. The plan removes the prototype's Python (T001) and rebuilds it test-first. spec.md was refined after the prototype review: the document page's layout is in scope (decisions.md D1) and FR-019 was added; both were asked for by the maintainer.",
+  "orchestrator_question": "Verify against the RESOLVED packages, both sides of each rule: (1) flex_menu drops a MenuItem whose view_name does not reverse (research cites flex_menu/menu.py:518) and nothing else on AccountCenterMenu processing raises when mvp_compliance.urls is not mounted; (2) MountedApp.claiming_menu (mvp/mounted.py:286) really makes a page served from another app's URLs draw the account area's sidebar when the entry is selected, and what happens on that page when mvp.urls is NOT mounted; (3) the plan's 404-in-dispatch for a project without the account area: does LoginRequiredMixin's dispatch run first in the MRO and redirect an anonymous visitor before the 404, contradicting T012; (4) adding a validator to Document.slug: does makemigrations produce a migration, and does tests/test_migrations.py or ADR 0004 object; (5) is narrowing TestNoMenuEntry (decisions.md D2) faithful to FS-006 FR-014; (6) FR-015: is two queries really constant given select_related and the template's use of acceptance.version.status and entry.document; (7) anything in the plan with no spec provenance."
+}

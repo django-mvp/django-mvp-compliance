@@ -26,7 +26,8 @@ criterion, so there is nothing for a story to carry. The rest of #71 stays open.
 **Ambiguous**: `TestNoMenuEntry.test_the_package_does_not_touch_the_menu_library` refuses any
 mention of the menu library in the package. FR-011 requires a menu entry in the account area.
 
-**Chosen**: the test asserts that no module in the package names `AppMenu`. Its sibling, which
+**Chosen**: the test asserts that no module in the package names `AppMenu` or `MobileFooterMenu`, the
+two menus django-mvp gives a project. Its sibling, which
 checks the project's menu is unchanged after serving every page, stays as it is.
 
 **Why defensible**: FS-006's FR-014 reads "the package MUST NOT add anything to the host project's
@@ -47,8 +48,7 @@ code `reserved`.
 
 **Why defensible**: a slug is already validated by a field validator, so the admin refuses a
 reserved slug in the same place and the same way as an upper-case one. Route order alone guarantees
-the address never answers with a document, including for a document created from code. A test ties
-the fixed routes to the reserved set.
+the address never answers with a document, including for a document created from code.
 
 **Revisit if**: the package gains more fixed addresses beside the document pages. A prefix that no
 slug can match would then be cheaper than a growing reserved set.
@@ -71,9 +71,37 @@ import time, because reversing while URLconfs are still loading is circular.
 **Ambiguous**: FR-019 fixes three shown and a fold above four. Whether the number should be a
 setting was open.
 
-**Chosen**: a class attribute on the view, `fold_after = 3`. No setting.
+**Chosen**: a class attribute on the view, `shown_first = 3`. No setting.
 
 **Why defensible**: the number was settled on the prototype. A project that wants another
 subclasses the view and mounts its own route, which needs no new public setting to maintain.
 
 **Revisit if**: a project asks for it.
+
+## D6 — What the design review found, and what was done
+
+One reviewer read the plan against the specification, the constitution and the resolved packages.
+No finding against the specification, and none on security.
+
+- **The string tests cannot read a plural (high).** The list's template holds the package's first
+  `{% plural %}` block, and the two helpers behind the catalog tests would have reported it missing
+  however the catalog was generated. T001 now teaches both helpers to read a plural. No assertion is
+  loosened.
+- **The catalog was regenerated a task too late (medium).** A task that adds a string now
+  regenerates the catalog itself, so the suite is green at each task and not only at the story's
+  last one.
+- **Documentation still said the package adds nothing to menus (low).** T009 corrects those lines.
+- **The narrowed menu test left the mobile dock unguarded (low).** It now names both of the
+  project's menus (D2).
+- **A test walking the URLconf for fixed routes was speculative (low).** Dropped. There is one fixed
+  route, and both halves of FR-014 are tested without it (D3).
+- **The admin case of the reserved slug sat in the models test module (low).** Moved to
+  `tests/test_admin.py`.
+
+Carried to the build as things to watch: the "not found" check comes before `super().dispatch()`
+(T013), and a person with no acceptances costs one query fewer than a person with any, which
+SC-005 does not compare.
+
+`CONTEXT.md` lists *agreement* among the words to avoid for an acceptance. The menu entry's label,
+"Agreements", was chosen in review of the prototype and is kept as approved wording. It is a label a
+person reads, not a name in the code.

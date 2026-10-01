@@ -23,3 +23,11 @@ one task.
 
 The suite on the prototype commit: 437 passed, 6 failed. All six are accounted for in the tasks:
 the menu test narrowed in T007 (decisions.md D2), and five string and catalog tests fixed in T001.
+
+## 2026-10-01 — Design review
+
+One reviewer, three lenses. Verdict: changes requested, on one high finding about the test helpers
+for translated strings, which could not read a plural. Six findings in all, none against the
+specification and none on security. All six were applied as edits to the plan and tasks
+(decisions.md D6). Each premise the plan rests on about django-mvp and its menu library was checked
+against the installed packages and holds.
