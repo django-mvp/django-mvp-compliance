@@ -179,8 +179,20 @@
         },
         {
           "id": "T008",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q (4 passed)",
+              "uv lock (django-flex-menus added to the lock)",
+              "uv run python manage.py makemessages -l en --no-obsolete (1 msgid added, fuzzy flag cleared)",
+              "uv run pre-commit run --all-files (all hooks passed, deptry included)",
+              "uv run pytest -q (473 passed)"
+            ],
+            "tests": [
+              "tests/test_menus.py::TestAccountAreaEntry"
+            ]
+          }
         },
         {
           "id": "T009",

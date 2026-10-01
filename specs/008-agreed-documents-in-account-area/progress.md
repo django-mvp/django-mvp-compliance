@@ -74,3 +74,10 @@ Did: `tests/test_menus.py::TestAccountAreaEntry`, two tests: a signed-in request
 Verified: `uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q` gives 2 failed, 2 passed. Both failures are an empty list of entries named `agreed-documents`.
 Next: T008 menu entry, dependency and catalog.
 Watch: the entry is found by name in the processed menu's children; if T008 shows `children` is not the processed list, the helper changes, not an assertion.
+
+## 2026-10-01T22:55:00Z · Implementer US1 · T008
+
+Did: `mvp_compliance/menus.py` appends the "Agreements" entry (name `agreed-documents`, view `mvp_compliance:agreed`, icon `document`) to `AccountCenterMenu`. `pyproject.toml` names `django-flex-menus>=0.4.5` and `uv lock` records it. The comment on the `DEP002` ignore no longer says no module imports django-mvp. The `en` catalog gained the entry's label.
+Verified: `uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q` gives 4 passed; `uv run pre-commit run --all-files` passes every hook, deptry included; `uv run pytest -q` gives 473 passed.
+Next: T009 documentation and the demo's landing page.
+Watch: the `DEP002` ignore for django-mvp is kept as it was, with a comment that is now true. Whether it is still needed is not something this task asked about.
