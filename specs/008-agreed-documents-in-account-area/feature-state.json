@@ -165,8 +165,17 @@
         },
         {
           "id": "T007",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q (2 failed, 2 passed; both failures: no agreed-documents entry in AccountCenterMenu)"
+            ],
+            "tests": [
+              "tests/test_menus.py::TestAccountAreaEntry",
+              "tests/test_views.py::TestNoMenuEntry::test_the_package_does_not_touch_the_menu_library"
+            ]
+          }
         },
         {
           "id": "T008",

@@ -832,8 +832,8 @@ class TestNoMenuEntry:
         offenders = [
             path.name
             for path in package.rglob("*.py")
-            if "flex_menu" in path.read_text(encoding="utf-8")
-            or "AppMenu" in path.read_text(encoding="utf-8")
+            if "AppMenu" in path.read_text(encoding="utf-8")
+            or "MobileFooterMenu" in path.read_text(encoding="utf-8")
         ]
 
         assert offenders == []
