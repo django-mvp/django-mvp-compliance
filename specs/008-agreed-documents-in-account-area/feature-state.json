@@ -136,8 +136,16 @@
         },
         {
           "id": "T005",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreedDocuments -q (21 failed, 1 passed; every failure is NoReverseMatch for mvp_compliance:agreed; the one pass follows a version link on the existing document page)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestAgreedDocuments"
+            ]
+          }
         },
         {
           "id": "T006",

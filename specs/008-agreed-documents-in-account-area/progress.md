@@ -53,3 +53,10 @@ Did: `AcceptanceQuerySet.of_agreed_documents()` and the `AcceptanceManager` forw
 Verified: `uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q` gives 6 passed. Probes: the kind filter replaced by `all()` fails the two notice cases; `-version__published_at` flipped fails the ordering and skipped-version tests. `uv run ruff check` and `ruff format --check` clean.
 Next: T005 view tests.
 Watch: the first test's notice has no acceptance (none can be recorded against one), so notice handling is tested through the kind-change cases.
+
+## 2026-10-01T22:00:00Z · Implementer US1 · T005
+
+Did: `tests/test_views.py::TestAgreedDocuments`, 22 cases covering the scenarios listed in tasks.md T005 (records and ordering, links to `?version=`, own records only for people and staff, nothing appended to the address, nothing in the query string naming a person, empty page, anonymous redirect, notice and never-accepted documents absent, rename, escaping, the three-and-rest fold at five and none at four, query count for one acceptance against fifty across ten documents, nothing written, POST 405). The test URLconf now mounts `mvp.urls` at the root, and `tests/settings.py` sets `LOGIN_URL = "account_login"` so the anonymous redirect has a target.
+Verified: `uv run pytest tests/test_views.py::TestAgreedDocuments -q` gives 21 failed, 1 passed. All 21 failures are `NoReverseMatch: Reverse for 'agreed' not found`. The pass is the test that follows a version link on the existing document page.
+Next: T006 view, route and catalog.
+Watch: `test_following_a_link_serves_that_versions_stored_html` passes before T006 by design: it exercises the document page that already exists.
