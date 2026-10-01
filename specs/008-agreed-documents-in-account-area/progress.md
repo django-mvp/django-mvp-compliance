@@ -149,3 +149,16 @@ Did: `docs/pages.md` says what a project mounts for the list to appear (the pack
 Verified: `uv run python manage.py makemessages -l en --no-obsolete` changes only the POT-Creation-Date line (reverted), so the catalog is unchanged. `uv run pre-commit run --all-files` passes every hook.
 Next: the full verify, then the report.
 Watch: none.
+
+## 2026-10-01 — US-3 accepted
+
+Five tasks, six commits. Checked again independently on `761702a`: lint, types, tests, build and the
+documentation check all pass, and no existing test was changed. All three stories are done.
+
+## 2026-10-01 — Convergence
+
+Every functional requirement and success criterion is covered by a done task. The branch adds one
+migration, `0009_document_reserved_slug`, so there is nothing to consolidate. The cleanup pass over
+the diff found nothing worth changing: one view, one queryset method and one validator, each in the
+place the codebase already keeps that kind of code. Decisions D2 and D4 graduate to ADR 0020, and
+every decision carries its verdict. The roadmap notes that the first half of R9 is delivered.

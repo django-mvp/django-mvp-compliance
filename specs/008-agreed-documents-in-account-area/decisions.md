@@ -21,6 +21,8 @@ criterion, so there is nothing for a story to carry. The rest of #71 stays open.
 
 **Revisit if**: #71 settles a different layout for the page.
 
+**ADR:** none — a scope ruling for this feature; nothing later inherits it.
+
 ## D2 — The FS-006 menu test is narrowed, not removed
 
 **Ambiguous**: `TestNoMenuEntry.test_the_package_does_not_touch_the_menu_library` refuses any
@@ -36,6 +38,8 @@ packages to add to. The original assertion was wider than its requirement, and t
 still fails if the package ever touches the project's own menu.
 
 **Revisit if**: a later feature wants an entry in the project's own menu, which FS-006 forbids.
+
+**ADR:** docs/adr/0020-the-package-adds-to-the-account-areas-menu-and-to-none-of-the-projects.md
 
 ## D3 — The list's address is `agreed/`, and the slug is refused by a field validator
 
@@ -53,6 +57,8 @@ the address never answers with a document, including for a document created from
 **Revisit if**: the package gains more fixed addresses beside the document pages. A prefix that no
 slug can match would then be cheaper than a growing reserved set.
 
+**ADR:** none — local to one field and one route; the reserved slug is documented in `docs/models.md`.
+
 ## D4 — A project without the account area gets "not found", decided by whether the area's address resolves
 
 **Ambiguous**: FR-013 wants the page absent when the account area is not mounted. django-mvp has no
@@ -66,6 +72,8 @@ import time, because reversing while URLconfs are still loading is circular.
 
 **Revisit if**: django-mvp publishes a way to ask whether the area is mounted.
 
+**ADR:** docs/adr/0020-the-package-adds-to-the-account-areas-menu-and-to-none-of-the-projects.md
+
 ## D5 — Three versions shown before the fold
 
 **Ambiguous**: FR-019 fixes three shown and a fold above four. Whether the number should be a
@@ -77,6 +85,8 @@ setting was open.
 subclasses the view and mounts its own route, which needs no new public setting to maintain.
 
 **Revisit if**: a project asks for it.
+
+**ADR:** none — one attribute on one view, documented in `docs/pages.md`.
 
 ## D6 — What the design review found, and what was done
 
@@ -106,11 +116,15 @@ SC-005 does not compare.
 "Agreements", was chosen in review of the prototype and is kept as approved wording. It is a label a
 person reads, not a name in the code.
 
+**ADR:** none — a record of review findings, not a decision that constrains later work.
+
 ## D7 — The groundwork was done directly, without a separate implementer
 
 T001 and T002 remove code and edit two test helpers, the catalog and two documents. There is no
 design in them and nothing to build, so they were done in place and checked with the full suite
 before the first story was handed out.
+
+**ADR:** none — how this run was carried out; nothing in the code depends on it.
 
 ## D8 — The projects that leave part out are tested with `pytest.mark.urls`
 
@@ -123,3 +137,5 @@ before the first story was handed out.
 the same way. The marker also clears the URL caches around each test, so no resolver outlives it.
 
 **Revisit if:** the suite moves to `TestCase` classes.
+
+**ADR:** none — a test-suite detail that follows what `tests/test_admin.py` already does.

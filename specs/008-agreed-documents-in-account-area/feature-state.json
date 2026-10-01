@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "CONVERGE",
   "state_history": [
     {
       "state": "QUEUED",
@@ -24,6 +24,11 @@
       "state": "IMPLEMENT",
       "at": "2026-10-01T21:05:55Z",
       "note": "plan passed by Sam"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-01T21:35:16Z",
+      "note": "all three stories accepted"
     }
   ],
   "gates": {
@@ -253,7 +258,7 @@
       "priority": "P3",
       "issue": 80,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -334,7 +339,7 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 2
     },
     "review_cycles": {
