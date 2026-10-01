@@ -128,3 +128,10 @@ Did: `AgreedDocumentsView.dispatch()` tries `reverse("account-center")` and rais
 Verified: `uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages tests/test_views.py::TestAgreedDocuments -q` gives 28 passed. `uv run pytest tests/test_views.py::TestPageStrings tests/test_admin.py::TestUserFacingStrings -q` gives 11 passed.
 Next: T014 tests for the reserved slug.
 Watch: with the account area mounted the check costs one extra `reverse()` per request, no query.
+
+## 2026-10-01T22:40:00Z · Implementer US3 · T014
+
+Did: `tests/test_models.py::TestReservedSlug` (`full_clean()` on the slug `agreed` raises on `slug` with code `reserved`; three slugs that only contain the word, such as `agreed-terms`, stay valid). `tests/test_admin.py::TestDocumentSlugInTheAdmin::test_the_add_form_refuses_the_slug_of_the_list_of_agreed_documents` (the add form re-renders with an error on `slug` and nothing is saved). `tests/test_views.py::TestAgreedDocuments::test_a_document_created_under_the_lists_slug_does_not_take_its_address` (a document created from code under the slug, with a published version, leaves the list's address serving the list). The last two are new methods on existing classes; no existing test was edited.
+Verified: `uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_views.py::TestAgreedDocuments -q` gives 2 failed, 30 passed. The failures are the two that need the validator: `DID NOT RAISE ValidationError`, and the add form answering 302 instead of 200. The route-order test and the three valid-slug cases pass today and guard the validator.
+Next: T015 adds `RESERVED_SLUGS`, `unreserved_slug` and migration 0009.
+Watch: none.

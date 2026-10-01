@@ -229,6 +229,23 @@ class TestDocumentSlug:
 
 
 @pytest.mark.django_db
+class TestReservedSlug:
+    """US-3 scenario 4, FR-014: the slug of the list of agreed documents is not available."""
+
+    def test_the_slug_of_the_list_is_refused_with_the_reserved_code(self):
+        document = Document(name="Agreed", slug="agreed")
+
+        with pytest.raises(ValidationError) as error:
+            document.full_clean()
+
+        assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
+
+    @pytest.mark.parametrize("slug", ["agreed-terms", "agree", "not-agreed"])
+    def test_a_slug_that_only_contains_the_reserved_one_is_valid(self, slug):
+        Document(name="Terms", slug=slug).full_clean()
+
+
+@pytest.mark.django_db
 class TestDocumentInForce:
     """Only a document with a version in force is one a visitor can read."""
 

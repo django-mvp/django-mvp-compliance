@@ -1187,6 +1187,20 @@ class TestAgreedDocuments:
         assert response.status_code == 405
         assert Acceptance.objects.count() == before
 
+    def test_a_document_created_under_the_lists_slug_does_not_take_its_address(
+        self, signed_in, user
+    ):
+        reserved = Document.objects.create(name="Agreed", slug="agreed")
+        published(reserved)
+        (acceptance,) = accept(user, DocumentFactory())
+
+        response = signed_in.get(agreed_address())
+
+        assert response.status_code == 200
+        assert self.listed(response) == [
+            (acceptance.version.document, [acceptance.version], [])
+        ]
+
 
 @pytest.mark.django_db
 class TestNewerVersionInForce:

@@ -933,6 +933,20 @@ class TestDocumentSlugInTheAdmin:
         assert document.slug == original
         assert document.name == "A new name"
 
+    def test_the_add_form_refuses_the_slug_of_the_list_of_agreed_documents(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_document_add"),
+            {"name": "Agreed", "slug": "agreed", "kind": "agreed"},
+        )
+
+        assert response.status_code == 200
+        assert "slug" in response.context["adminform"].form.errors
+        assert not Document.objects.filter(slug="agreed").exists()
+
 
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
