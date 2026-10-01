@@ -12,6 +12,6 @@ AccountCenterMenu.append(
     MenuItem(
         name="agreed-documents",
         view_name="mvp_compliance:agreed",
-        extra_context={"label": _("Agreed documents"), "icon": "document"},
+        extra_context={"label": _("Agreements"), "icon": "document"},
     )
 )

@@ -77,5 +77,13 @@ These are choices with no settled answer. Each is open to change in review.
   soft warning with one button that opens the version in force.
 - The statement names the newer version and the date it came into force.
 - Dates are shown without the time of day.
-- The page is titled "Documents you agreed to". Its menu entry reads "Agreed documents".
+- The page is titled "Documents you agreed to".
 - The empty state reads "Nothing to show yet", followed by one line about when an entry appears.
+
+### Changed in review
+
+- The menu entry reads "Agreements", not "Agreed documents".
+- The document page is two columns that run the full height of the page. The list of documents is
+  the left column, under its own title, "Agreements". The document's title, its version menu and
+  its wording are the right column, so the title no longer spans the full width. This changes the
+  document page, which the specification left to issue #71.
