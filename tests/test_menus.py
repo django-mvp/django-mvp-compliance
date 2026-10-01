@@ -38,3 +38,23 @@ class TestAccountAreaEntry:
         entries = agreed_entries(response.wsgi_request)
         assert [entry.selected for entry in entries] == [True]
         assert response.context["mounted_menu"].name == AccountCenterMenu.name
+
+
+@pytest.mark.django_db
+@pytest.mark.urls("tests.urls_mvp_only")
+class TestWithoutThePackagePages:
+    """US-3 scenario 3: a project that mounts only django-mvp's pages gets no entry
+    for the list and no failure."""
+
+    def test_the_account_menu_has_no_entry_for_the_list(self, rf, user):
+        request = rf.get("/account/")
+        request.user = user
+
+        assert agreed_entries(request) == []
+
+    def test_the_account_areas_landing_page_answers(self, client, user):
+        client.force_login(user)
+
+        response = client.get(reverse("account-center"))
+
+        assert response.status_code == 200

@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from django.core.management import call_command
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -1303,3 +1304,32 @@ class TestNewerVersionInForce:
         client.force_login(many)
         with django_assert_num_queries(len(single)):
             client.get(agreed_address())
+
+
+@pytest.mark.django_db
+@pytest.mark.urls("tests.urls_package_only")
+class TestWithoutTheAccountArea:
+    """US-3 scenario 2, FR-013, SC-007: a project that mounts only the package's pages
+    has no list, and its document pages keep working."""
+
+    def test_the_system_checks_pass(self):
+        call_command("check")
+
+    def test_a_document_page_answers_and_holds_no_link_to_the_list(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        response = client.get(document_address(document))
+
+        assert response.status_code == 200
+        assert agreed_address() not in response.content.decode()
+
+    def test_the_lists_address_is_not_found_for_a_signed_in_person(self, client, user):
+        client.force_login(user)
+
+        assert client.get(agreed_address()).status_code == 404
+
+    def test_the_lists_address_is_not_found_for_an_anonymous_visitor(self, client):
+        response = client.get(agreed_address())
+
+        assert response.status_code == 404

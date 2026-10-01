@@ -258,8 +258,17 @@
       "tasks": [
         {
           "id": "T012",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages -q (2 failed, 4 passed; the two failures are NoReverseMatch for account-center and account_login, before T013)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestWithoutTheAccountArea",
+              "tests/test_menus.py::TestWithoutThePackagePages"
+            ]
+          }
         },
         {
           "id": "T013",

@@ -114,3 +114,10 @@ Watch: a person with no acceptances issues no current-version query (an empty `_
 
 Two tasks, two commits. Checked again independently on `5cd3f01`: lint, types, tests, build and the
 documentation check all pass, and no existing test was changed.
+
+## 2026-10-01T22:10:00Z · Implementer US3 · T012
+
+Did: two URLconf modules under `tests/` (`urls_package_only.py` mounts `mvp_compliance.urls` alone, `urls_mvp_only.py` mounts `mvp.urls` alone), applied with `@pytest.mark.urls`, which clears the URL caches. `tests/test_views.py::TestWithoutTheAccountArea`: system checks pass, a document page answers 200 and holds no link to the list, the list's address answers 404 for a signed-in person and for an anonymous visitor. `tests/test_menus.py::TestWithoutThePackagePages`: the processed `AccountCenterMenu` has no entry for the list and the account area's landing page answers 200.
+Verified: `uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages -q` gives 2 failed, 4 passed. The signed-in case fails with `NoReverseMatch: 'account-center'` from the breadcrumb, the anonymous case with `NoReverseMatch: 'account_login'` from the sign-in redirect; both are the exceptions T013 turns into 404. The four that pass hold today and guard the project that leaves out the package (and the document page in the project that leaves out the account area).
+Next: T013 makes `dispatch()` answer 404 first.
+Watch: `pytest.mark.urls` rather than `override_settings`, because the suite's tests are plain classes, not `SimpleTestCase`; `override_settings` refuses to decorate them.
