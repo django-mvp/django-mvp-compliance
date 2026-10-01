@@ -1,0 +1,71 @@
+{
+  "role": "reviewer",
+  "stage": "S6",
+  "phase": "1 (correctness + spec-compliance) and 2 (security)",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+  "branch": "008-agreed-documents-in-account-area",
+  "feature": "008-agreed-documents-in-account-area",
+  "diff": "git diff origin/main..HEAD \u2014 the whole feature branch. origin/main is 33eb41a.",
+  "lenses": [
+    "correctness",
+    "spec-compliance",
+    "security"
+  ],
+  "why_security_lens": "The diff adds a view that shows a person's own acceptance records behind sign-in, with access decided by request.user, and a new validator on a field edited through the admin.",
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-28/e60c2a95"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/review.md",
+  "inputs": [
+    "specs/008-agreed-documents-in-account-area/spec.md",
+    "specs/008-agreed-documents-in-account-area/sketch.md",
+    "specs/008-agreed-documents-in-account-area/decisions.md",
+    "specs/008-agreed-documents-in-account-area/plan.md",
+    "specs/008-agreed-documents-in-account-area/tasks.md",
+    "specs/008-agreed-documents-in-account-area/design-review-findings.json",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "README.md",
+    "CHANGELOG.md",
+    "docs/pages.md",
+    "docs/models.md",
+    "docs/ROADMAP.md",
+    "docs/adr/0020-the-package-adds-to-the-account-areas-menu-and-to-none-of-the-projects.md",
+    "docs/contributing/standards/testing.md"
+  ],
+  "known_and_not_findings": [
+    "The templates agreed_documents.html, _agreed_version_rows.html, document_detail.html, static pages.css, and their wording were approved on screen by the maintainer (sketch.md). Their layout, wording and CSS are not under review. What they are fed, their escaping, link targets and translatability are.",
+    "The document page's layout changed although the original spec said it would not: spec.md is marked Refined and decisions.md D1 records it. Asked for by the maintainer.",
+    "TestNoMenuEntry.test_the_package_does_not_touch_the_menu_library was narrowed to AppMenu and MobileFooterMenu (decisions.md D2, ADR 0020). Authorised.",
+    "tests/test_views.py::template_msgids and tests/test_admin.py::catalog_entries were extended to read plural entries (design review SPEC-001). No assertion loosened.",
+    "Document.objects.create(slug='agreed') is not refused: the validator runs in forms and full_clean() only, like lowercase_slug (decisions.md D3). Route order keeps the list's address from serving such a document, and the CHANGELOG says a document already published under that slug stops being reachable.",
+    "The menu label 'Agreements' uses a word CONTEXT.md lists to avoid for an acceptance; kept as approved wording (decisions.md D6).",
+    "A person with no acceptances costs one query fewer than a person with any; SC-005 compares one acceptance with fifty.",
+    "Some new tests passed before their implementation task because they assert the unchanged side of a rule; the implementers flagged each. Report one only if it cannot fail for any regression.",
+    "demo/ is a development demo: its seed command patches the clock to publish and accept on past dates. Not shipped behaviour.",
+    "http_method_names on the view is redundant with TemplateView having no post handler; kept as the explicit statement of FR-010."
+  ],
+  "resolved_packages": {
+    "django": "/home/sam/projects/django-mvp/django-mvp-compliance-008/.venv/lib/python3.13/site-packages/django",
+    "mvp": "/home/sam/projects/django-mvp/django-mvp-compliance-008/.venv/lib/python3.13/site-packages/mvp",
+    "flex_menu": "/home/sam/projects/django-mvp/django-mvp-compliance-008/.venv/lib/python3.13/site-packages/flex_menu"
+  },
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/tmp/fs008-review-findings.json",
+  "orchestrator_question": "Try to break: (1) can any request make AgreedDocumentsView show another person's acceptances, or a notice's, or leak through the 404/redirect ordering; (2) get_entries(): the `newer` rule when a document has no version in force, when the person accepted the current version among others, and the fold boundary at exactly 4 and 5 accepted versions; (3) ordering by version__published_at with document name ties (two documents cannot share a name: unique) ; (4) the `?version=` links for version numbers and the escaping of document names in the three templates including the sr-only span and the table caption; (5) migration 0009 against ADR 0004 and tests/test_migrations.py; (6) every example and claim on docs/pages.md and docs/models.md against the branch; (7) pages.css is referenced with {% static %}: what happens to the document page in a project without staticfiles' manifest entry or that overrides document_detail.html."
+}

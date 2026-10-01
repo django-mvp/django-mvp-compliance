@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "CONVERGE",
+  "state": "REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -29,6 +29,11 @@
       "state": "CONVERGE",
       "at": "2026-10-01T21:35:16Z",
       "note": "all three stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-10-01T21:36:50Z",
+      "note": "converged: verify green, ADR 0020, 8 verdicts"
     }
   ],
   "gates": {
@@ -343,7 +348,7 @@
       "max": 2
     },
     "review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "design_review_cycles": {
