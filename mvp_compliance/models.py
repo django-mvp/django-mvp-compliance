@@ -784,6 +784,23 @@ class AcceptanceQuerySet(models.QuerySet):
         """
         return self.filter(subject=subject)
 
+    def of_agreed_documents(self) -> "AcceptanceQuerySet":
+        """Narrow to acceptances of documents people agree to.
+
+        Each acceptance comes with its version and document loaded, ordered by
+        the document's name, then by publication, newest first. A notice is
+        left out by its kind, so its acceptances return if it is made a
+        document people agree to again.
+
+        Returns:
+            The acceptances, with ``version`` and ``version.document`` loaded.
+        """
+        return (
+            self.filter(version__document__kind=Document.Kind.AGREED)
+            .select_related("version__document")
+            .order_by("version__document__name", "-version__published_at")
+        )
+
 
 class AcceptanceManager(models.Manager["Acceptance"]):
     """Where an acceptance is written — see ``record()``.
@@ -810,6 +827,14 @@ class AcceptanceManager(models.Manager["Acceptance"]):
             The result of ``AcceptanceQuerySet.for_subject``.
         """
         return self.get_queryset().for_subject(subject)
+
+    def of_agreed_documents(self) -> AcceptanceQuerySet:
+        """Return the acceptances of documents people agree to.
+
+        Returns:
+            The result of ``AcceptanceQuerySet.of_agreed_documents``.
+        """
+        return self.get_queryset().of_agreed_documents()
 
     def for_person(self, user) -> AcceptanceQuerySet:
         """Return a person's acceptances, in the order they happened.

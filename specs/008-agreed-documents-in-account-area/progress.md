@@ -46,3 +46,10 @@ Did: `tests/test_models.py::TestAcceptancesOfAgreedDocuments`, five tests (six c
 Verified: `uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q` gives 6 failed, all `AttributeError: 'AcceptanceQuerySet' object has no attribute 'of_agreed_documents'`.
 Next: T004 adds the method and the manager forwarder.
 Watch: none.
+
+## 2026-10-01T21:40:00Z · Implementer US1 · T004
+
+Did: `AcceptanceQuerySet.of_agreed_documents()` and the `AcceptanceManager` forwarder, as plan.md gives them. Fixed a fault in my own T003 helper: it published identical wording twice for one document, which the model refuses (PublishError), a failure the red run had hidden behind the AttributeError. Each call now publishes distinct wording. No assertion changed.
+Verified: `uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q` gives 6 passed. Probes: the kind filter replaced by `all()` fails the two notice cases; `-version__published_at` flipped fails the ordering and skipped-version tests. `uv run ruff check` and `ruff format --check` clean.
+Next: T005 view tests.
+Watch: the first test's notice has no acceptance (none can be recorded against one), so notice handling is tested through the kind-change cases.

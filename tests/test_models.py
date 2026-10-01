@@ -2201,9 +2201,10 @@ class TestChangingTheKind:
 class TestAcceptancesOfAgreedDocuments:
     """US-1 scenarios 2 and 8, edge cases 1 and 2, FR-002, SC-001: the page's records."""
 
-    def accept_published(self, user, document, markdown="Wording"):
+    def accept_published(self, user, document):
         """Publish a new version of ``document``, accept it as ``user`` and return the acceptance."""
-        version = VersionFactory(document=document, markdown=markdown)
+        wording = f"Wording {document.versions.count() + 1}"
+        version = VersionFactory(document=document, markdown=wording)
         version.publish()
         return Acceptance.objects.record(user, version)
 
