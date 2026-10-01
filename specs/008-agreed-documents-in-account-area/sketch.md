@@ -84,7 +84,7 @@ These are choices with no settled answer. Each is open to change in review.
 
 - The menu entry reads "Agreements", not "Agreed documents".
 - The document page is two columns. The list of documents is the left column, in a card titled
-  "Agreements". The document's title, its version menu and its wording are the right column, so
+  "Documents". The document's title, its version menu and its wording are the right column, so
   the title no longer spans the full width. No line divides the columns. This changes the document
   page, which the specification left to issue #71.
 - The card stays in view while the document scrolls: it stops 5rem below the top of the window,
