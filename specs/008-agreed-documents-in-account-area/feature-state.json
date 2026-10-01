@@ -319,8 +319,15 @@
         },
         {
           "id": "T016",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py makemessages -l en --no-obsolete (catalog unchanged apart from POT-Creation-Date, reverted)",
+              "uv run pre-commit run --all-files (all hooks passed)"
+            ],
+            "tests": []
+          }
         }
       ]
     }

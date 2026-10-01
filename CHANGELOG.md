@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shows only the signed-in person's own records and nothing else, answers `GET` and `HEAD` only and
   writes nothing. The package adds one entry, "Agreements", to the account area's menu, and nothing
   to your own `AppMenu` or `MobileFooterMenu`. Mount django-mvp's URLs as well as the package's for
-  the page to resolve. When the version in force of a listed document is one the person has not
+  the page to appear. A project without django-mvp's URLs has no account area: the address answers
+  "not found" for everyone and the document pages keep working. A project without the package's
+  URLs gets no entry in the account area's menu and nothing fails. When the version in force of a listed document is one the person has not
   accepted, its card says so and links to the document's page. `AcceptanceQuerySet.of_agreed_documents()`
   and the same method on the manager return the acceptances the page lists.
   `django-flex-menus>=0.4.5` is now a dependency.
@@ -205,6 +207,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps its own layout. See [docs/pages.md](docs/pages.md).
 - Requires django-mvp 0.25.0 or later (was 0.23.0). django-mvp 0.25.0 mounts its own URLs at the
   site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
+- The slug `agreed` is no longer available to a document, because it is the address of the list of
+  agreed documents. The admin and `full_clean()` refuse it, through `Document.RESERVED_SLUGS` and
+  the validator `mvp_compliance.models.unreserved_slug`. Migration `0009_document_reserved_slug`
+  records the validator and changes no row. A document already published under `agreed` keeps its
+  slug, since a published slug is fixed, but its page is no longer reachable: the address now
+  answers with the list. See [docs/models.md](docs/models.md).
 
 - A version is numbered when it is published instead of when its draft is created, and the number
   is the year of publication and its place among the document's versions published that year,

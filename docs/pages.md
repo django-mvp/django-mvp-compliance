@@ -37,6 +37,19 @@ urlpatterns = [
 ]
 ```
 
+The list of what a person agreed to appears when a project mounts both: the package's URLs,
+for the page, and django-mvp's, for the account area it belongs to. Leaving either out breaks
+nothing and changes nothing else:
+
+- **Without django-mvp's URLs**, the account area does not exist. The list's address answers
+  "not found" for everyone, signed in or not, and an anonymous visitor is not sent to sign in
+  for a page that is not there. The document pages keep working and hold no link to the list.
+- **Without the package's URLs**, the account area has no entry for the list and nothing
+  fails. Its other pages and its menu are as they were.
+
+The package checks for the account area on each request, by looking for django-mvp's
+`account-center` address, so there is no setting to change in either case.
+
 ## The address
 
 | URL name | Arguments | Address | View |
@@ -44,7 +57,8 @@ urlpatterns = [
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
-The list's address is checked first, so no document is served at the slug `agreed`.
+The list's address is checked first, so no document is served at the slug `agreed`. The
+admin and `full_clean()` refuse that slug; see [Documents](models.md#document).
 
 There is one page per document: its address always shows the version in force. The same
 address with `?version=<number>` shows that published version, current or superseded,
@@ -156,7 +170,8 @@ The package adds nothing to your own menus, `AppMenu` and `MobileFooterMenu`: wh
 appear in navigation is your decision. It adds one entry, labelled "Agreements", to
 django-mvp's account area menu, `AccountCenterMenu`. The entry leads to the list above and is
 the selected one on it. If your project does not mount the package's URLs, the address does
-not resolve and the menu leaves the entry out.
+not resolve and the menu leaves the entry out. If it does not mount django-mvp's URLs, there
+is no account area menu to hold the entry; see [Mounting the addresses](#mounting-the-addresses).
 
 A host project adds its own entry, as the demo does in `demo/menus.py`, here
 pointing at one document's page:

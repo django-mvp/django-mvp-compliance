@@ -142,3 +142,10 @@ Did: `Document.RESERVED_SLUGS = frozenset({"agreed"})` and the module-level vali
 Verified: `uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_views.py::TestAgreedDocuments tests/test_migrations.py -q` gives 37 passed. `uv run python manage.py makemigrations --check --dry-run` reports no changes. Pre-commit hooks pass on the changed files.
 Next: T016 documentation.
 Watch: the validator runs in forms and `full_clean()` only; `Document.objects.create(slug="agreed")` still works and the route order keeps the list's address.
+
+## 2026-10-01T23:10:00Z · Implementer US3 · T016
+
+Did: `docs/pages.md` says what a project mounts for the list to appear (the package's URLs and django-mvp's), and that with either missing the page is absent with nothing else changed: no django-mvp URLs gives "not found" for everyone and working document pages; no package URLs gives no menu entry and no failure. It cross-links the reserved slug and the menu section. `docs/models.md` describes `Document.RESERVED_SLUGS`, `unreserved_slug`, where the validator runs and what it does not stop. `CHANGELOG.md`: the *Added* entry says what a project without either part gets; a *Changed* entry says the slug `agreed` is no longer available, that migration `0009_document_reserved_slug` changes no row, and that a document already published under it stops being reachable.
+Verified: `uv run python manage.py makemessages -l en --no-obsolete` changes only the POT-Creation-Date line (reverted), so the catalog is unchanged. `uv run pre-commit run --all-files` passes every hook.
+Next: the full verify, then the report.
+Watch: none.
