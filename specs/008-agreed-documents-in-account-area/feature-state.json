@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "GATE_MERGE",
   "state_history": [
     {
       "state": "QUEUED",
@@ -39,6 +39,11 @@
       "state": "PR_READY",
       "at": "2026-10-01T21:46:06Z",
       "note": "review approve; two lows fixed in place (D9)"
+    },
+    {
+      "state": "GATE_MERGE",
+      "at": "2026-10-01T21:48:53Z",
+      "note": "ready for review; walkthrough laid out; merge gate shut"
     }
   ],
   "gates": {
