@@ -852,6 +852,7 @@ BLOCKTRANSLATE_TAG = re.compile(
     r"{%\s*(?:blocktranslate|blocktrans)\b[^%]*%}(.*?){%\s*(?:endblocktranslate|endblocktrans)\s*%}",
     re.DOTALL,
 )
+PLURAL_TAG = re.compile(r"{%\s*plural\s*%}")
 VARIABLE = re.compile(r"{{\s*(\w+)[^}]*}}")
 
 
@@ -860,7 +861,9 @@ def template_msgids(path):
     source = path.read_text(encoding="utf-8")
     msgids = set(TRANSLATE_TAG.findall(source))
     for body in BLOCKTRANSLATE_TAG.findall(source):
-        msgids.add(VARIABLE.sub(r"%(\1)s", body.strip()))
+        # A plural block holds two strings, which the catalog lists apart.
+        for part in PLURAL_TAG.split(body):
+            msgids.add(VARIABLE.sub(r"%(\1)s", part.strip()))
     return msgids
 
 
@@ -869,7 +872,11 @@ class TestPageStrings:
     claims compliance."""
 
     def test_the_page_template_is_the_document_page(self):
-        assert [path.name for path in PAGE_TEMPLATES] == ["document_detail.html"]
+        assert [path.name for path in PAGE_TEMPLATES] == [
+            "_agreed_version_rows.html",
+            "agreed_documents.html",
+            "document_detail.html",
+        ]
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
     def test_every_string_in_a_page_template_is_in_the_english_catalog(self, path):

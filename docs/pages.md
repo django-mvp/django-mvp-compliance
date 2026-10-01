@@ -55,11 +55,22 @@ shown: the version in force by default, or the one named by `?version=`. When a 
 version is published, the plain address shows it at once; an earlier `?version=` address
 keeps showing what it always showed.
 
-Beside the wording, on wide screens, the page lists every document that has a version in
-force, alphabetically, each linking to its own page, with the one being shown marked. On
-a narrow screen the list stacks above the wording. A document with only drafts, or with
-no versions, is left out. The list is the same on a `?version=` address as on the plain
-one.
+On wide screens the page is two columns. The left column is a card titled "Documents" that
+lists every document with a version in force, alphabetically, each linking to its own page,
+with the one being shown marked. The right column holds the document's name, the version
+switcher and the wording. On a narrow screen the card stacks above the document. A document
+with only drafts, or with no versions, is left out. The list is the same on a `?version=`
+address as on the plain one.
+
+The card stays in view while a long document scrolls. It stops below the shell's top bar,
+at an offset the package's stylesheet, `mvp_compliance/pages.css`, sets to `5rem`. If your
+project's top bar is a different height, set the custom property in your own stylesheet:
+
+```css
+:root {
+  --mvp-compliance-header-clearance: 6rem;
+}
+```
 
 The line under the name reads `v2026.1 - 26 September 2026`: the shown version's
 number and the day it was published, in the project's date format. When the signed-in

@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -19,6 +19,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-10-01T20:34:36Z",
       "note": "plan committed at 491fb3c"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-10-01T21:05:55Z",
+      "note": "plan passed by Sam"
     }
   ],
   "gates": {
@@ -44,8 +49,11 @@
       ]
     },
     "plan": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "Sam",
+      "at": "2026-10-01T21:05:55Z",
+      "self_resolved": [
+        "plan gate shut for this feature; passed in session: \"Looks good. Approved.\" Nothing asked for"
+      ]
     },
     "merge": {
       "approved_by": null,
@@ -71,18 +79,33 @@
       "priority": "P1",
       "issue": 78,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
-      "status": "todo",
+      "status": "in_progress",
       "replans": 0,
       "tasks": [
         {
           "id": "T001",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest -q (443 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (catalog: 14 msgids added, none removed or changed)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestPageStrings",
+              "tests/test_admin.py::TestUserFacingStrings"
+            ]
+          }
         },
         {
           "id": "T002",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "forge verify --base origin/main (lint, typecheck, test, build, conformance, docs green)"
+            ]
+          }
         },
         {
           "id": "T003",

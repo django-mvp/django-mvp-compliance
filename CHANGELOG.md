@@ -185,6 +185,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The document page's layout. The list of documents is now a card in a column of its own, titled
+  "Documents", and the document's name sits over the wording, not across the whole page. On
+  wide screens the card stays in view while the document scrolls. The page loads a new stylesheet,
+  `mvp_compliance/pages.css`, which sets the card's offset below the top bar through the custom
+  property `--mvp-compliance-header-clearance`. A project that overrides `document_detail.html`
+  keeps its own layout. See [docs/pages.md](docs/pages.md).
 - Requires django-mvp 0.25.0 or later (was 0.23.0). django-mvp 0.25.0 mounts its own URLs at the
   site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
 

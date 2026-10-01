@@ -31,3 +31,11 @@ for translated strings, which could not read a plural. Six findings in all, none
 specification and none on security. All six were applied as edits to the plan and tasks
 (decisions.md D6). Each premise the plan rests on about django-mvp and its menu library was checked
 against the installed packages and holds.
+
+## 2026-10-01 — Plan passed; groundwork
+
+The plan was passed as written. T001: the prototype's view, route and menu entry are removed, the
+demo's link to the list with them. The two helpers behind the string tests read plural entries, and
+the `en` catalog is regenerated for the three page templates: fourteen strings added, none removed
+or changed. T002: `docs/pages.md` and the changelog describe the document page's new layout and the
+custom property for the card's offset. Full suite: 443 passed.

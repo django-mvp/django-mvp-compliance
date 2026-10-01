@@ -42,6 +42,13 @@ PO_ENTRY_RE = re.compile(
     r'^msgid((?:\s*"(?:[^"\\]|\\.)*")+)\s*\n^msgstr((?:\s*"(?:[^"\\]|\\.)*")+)',
     re.MULTILINE,
 )
+#: Matches a plural entry, whose ``msgid_plural`` sits between the ``msgid``
+#: and its numbered ``msgstr`` lines.
+PO_PLURAL_ENTRY_RE = re.compile(
+    r'^msgid((?:\s*"(?:[^"\\]|\\.)*")+)\s*\n^msgid_plural((?:\s*"(?:[^"\\]|\\.)*")+)'
+    r'\s*\n^msgstr\[0\]((?:\s*"(?:[^"\\]|\\.)*")+)\s*\n^msgstr\[1\]((?:\s*"(?:[^"\\]|\\.)*")+)',
+    re.MULTILINE,
+)
 PO_LINE_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
 
 
@@ -58,6 +65,12 @@ def catalog_entries() -> list[tuple[str, str]]:
         msgid = "".join(PO_LINE_RE.findall(msgid_block))
         msgstr = "".join(PO_LINE_RE.findall(msgstr_block))
         entries.append((msgid, msgstr))
+    # A plural entry carries two strings, each with its own translation.
+    for blocks in PO_PLURAL_ENTRY_RE.findall(text):
+        singular, plural, first, second = (
+            "".join(PO_LINE_RE.findall(block)) for block in blocks
+        )
+        entries.extend([(singular, first), (plural, second)])
     return entries
 
 

@@ -105,3 +105,9 @@ SC-005 does not compare.
 `CONTEXT.md` lists *agreement* among the words to avoid for an acceptance. The menu entry's label,
 "Agreements", was chosen in review of the prototype and is kept as approved wording. It is a label a
 person reads, not a name in the code.
+
+## D7 — The groundwork was done directly, without a separate implementer
+
+T001 and T002 remove code and edit two test helpers, the catalog and two documents. There is no
+design in them and nothing to build, so they were done in place and checked with the full suite
+before the first story was handed out.
