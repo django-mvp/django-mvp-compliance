@@ -47,6 +47,21 @@ COMMUNITY = (
     "Community guidelines for members, guests and organisations posting for them"
 )
 
+#: A document as old as the site, reworded three times a year.
+MEMBERSHIP = "Membership terms"
+MEMBERSHIP_DAYS = [
+    (year, month, 3) for year in range(2013, 2026) for month in (2, 6, 10)
+] + [(2026, 2, 3)]
+
+
+def numbers(days):
+    """The number each publication day gives its version: the year and its place in it."""
+    seen: dict[int, int] = {}
+    for year, _month, _day in days:
+        seen[year] = seen.get(year, 0) + 1
+        yield f"{year}.{seen[year]}"
+
+
 #: The people the demo holds acceptances for, so every state a page can be in
 #: is reachable. Each line is a document, the number of the version accepted
 #: and the day it was accepted. regular.user holds none at all.
@@ -79,6 +94,25 @@ ACCEPTORS = {
         ("House rules", "2025.1", (2025, 9, 3)),
         ("Delivery information", "2025.1", (2025, 3, 11)),
     ],
+    # On the site since it opened: every version of a document reworded forty
+    # times, and everything else there is to agree to.
+    "veteran.user@example.com": [
+        *[
+            (MEMBERSHIP, number, (year, month, day + 1))
+            for number, (year, month, day) in zip(
+                numbers(MEMBERSHIP_DAYS), MEMBERSHIP_DAYS, strict=True
+            )
+        ],
+        (COMMUNITY, "2024.1", (2024, 2, 6)),
+        (COMMUNITY, "2024.2", (2024, 11, 20)),
+        (COMMUNITY, "2025.1", (2025, 7, 2)),
+        (COMMUNITY, "2026.1", (2026, 2, 10)),
+        (COMMUNITY, "2026.2", (2026, 9, 15)),
+        ("Privacy policy", "2025.1", (2025, 3, 11)),
+        ("Privacy policy", "2026.1", (2026, 6, 3)),
+        ("Terms of use", "2025.1", (2025, 3, 11)),
+        ("House rules", "2025.1", (2025, 9, 3)),
+    ],
 }
 
 #: Someone whose account is closed and whose records outlived it, which is the
@@ -99,6 +133,7 @@ SLUGS = {
     "House rules": "house-rules",
     "Impressum": "impressum",
     COMMUNITY: "community-guidelines",
+    MEMBERSHIP: "membership-terms",
     "Delivery information": "delivery-information",
 }
 
@@ -203,6 +238,16 @@ Be accurate, be civil, and say who you are posting for.
 This is the wording as revised for the {revision} time.
 """
 
+MEMBERSHIP_WORDING = """\
+## Joining
+
+Anyone may join. Membership runs for a year and renews until you end it.
+
+## Revision {revision}
+
+This is revision {revision} of these terms.
+"""
+
 DELIVERY = """\
 ## Where we deliver
 
@@ -279,6 +324,15 @@ class Command(BaseCommand):
                 ]
             ],
             note="five published versions over three years, and a long name",
+        )
+        self.make_document(
+            MEMBERSHIP,
+            drafts=[],
+            published=[
+                (MEMBERSHIP_WORDING.format(revision=revision), day)
+                for revision, day in enumerate(MEMBERSHIP_DAYS, start=1)
+            ],
+            note="forty published versions since 2013",
         )
         self.make_document(
             "Delivery information",

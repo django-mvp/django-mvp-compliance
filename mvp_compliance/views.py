@@ -108,6 +108,10 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
     """
 
     template_name = "mvp_compliance/agreed_documents.html"
+    #: How many of a document's accepted versions are shown before the rest
+    #: are folded away. One more than this is shown in full, so that a single
+    #: version is never folded on its own.
+    shown_first = 3
     page_title = gettext_lazy("Documents you agreed to")
     page_subtitle = gettext_lazy(
         "Each version you accepted on this site, and the date you accepted it. "
@@ -148,4 +152,9 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
             entry = entries[version.document_id]
             if all(item.version_id != version.pk for item in entry["acceptances"]):
                 entry["newer"] = version
+        for entry in entries.values():
+            accepted = entry["acceptances"]
+            fold = len(accepted) > self.shown_first + 1
+            entry["shown"] = accepted[: self.shown_first] if fold else accepted
+            entry["earlier"] = accepted[self.shown_first :] if fold else []
         return list(entries.values())

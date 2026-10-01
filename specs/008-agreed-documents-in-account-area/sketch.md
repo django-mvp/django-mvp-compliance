@@ -44,6 +44,8 @@ is a stand-in that the plan may keep, change or rebuild.
 - For each listed document, its version in force and whether the person accepted it. When they did
   not, that version's number and publication date for the statement.
 - A count of database queries that stays the same however long the list is.
+- For each document, the accepted versions split into the few shown first and the earlier ones
+  folded away, with the number folded.
 - An address for the list that sits beside the document pages and cannot be taken by a slug.
 - A menu entry in the account area that is present only when both the account area and the
   package's pages are mounted.
@@ -91,3 +93,8 @@ These are choices with no settled answer. Each is open to change in review.
   clear of the shell's top bar. The package ships a small stylesheet for that offset, because the
   shell's stylesheet has no utility for it. django-mvp-sphinx pins its "on this page" list the
   same way. The offset is a custom property a project can override.
+- A document with a long history shows its three most recent accepted versions. The rest are
+  folded under one line, such as "37 earlier versions you agreed to", which opens them in place.
+  Nothing is left off the page and nothing is paginated. A document with four accepted versions or
+  fewer shows them all, so one version is never folded on its own. The number shown first is a
+  choice and can change.

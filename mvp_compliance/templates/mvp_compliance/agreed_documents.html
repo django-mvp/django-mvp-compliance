@@ -17,31 +17,34 @@
               <caption class="sr-only">{% blocktranslate with name=entry.document.name %}Versions of {{ name }} you agreed to{% endblocktranslate %}</caption>
               <thead>
                 <tr>
-                  <th scope="col">{% translate "Version" %}</th>
+                  <th scope="col" class="w-1/2">{% translate "Version" %}</th>
                   <th scope="col">{% translate "You agreed on" %}</th>
                 </tr>
               </thead>
               <tbody>
-                {% for acceptance in entry.acceptances %}
-                  <tr>
-                    <th scope="row" class="font-normal">
-                      <span class="flex flex-wrap items-center gap-2">
-                        <a class="link" href="{% url 'mvp_compliance:document' entry.document.slug %}?version={{ acceptance.version.number }}">{% blocktranslate with number=acceptance.version.number %}v{{ number }}{% endblocktranslate %}<span class="sr-only">, {{ entry.document.name }}</span></a>
-                        {% if acceptance.version.status == "current" %}
-                          <c-badge size="sm" variant="success" class="badge-soft" text="{% translate "In force" %}" />
-                        {% else %}
-                          <c-badge size="sm" variant="ghost" text="{% translate "Replaced" %}" />
-                        {% endif %}
-                      </span>
-                    </th>
-                    <td class="whitespace-nowrap tabular-nums">
-                      <time datetime="{{ acceptance.accepted_at|date:"c" }}">{{ acceptance.accepted_at|date }}</time>
-                    </td>
-                  </tr>
-                {% endfor %}
+                {% include "mvp_compliance/_agreed_version_rows.html" with acceptances=entry.shown document=entry.document %}
               </tbody>
             </table>
           </div>
+          {% if entry.earlier %}
+            <details>
+              <summary class="link link-hover cursor-pointer ps-4 text-sm">{% blocktranslate count counter=entry.earlier|length %}{{ counter }} earlier version you agreed to{% plural %}{{ counter }} earlier versions you agreed to{% endblocktranslate %}</summary>
+              <div class="overflow-x-auto">
+                <table class="table">
+                  <caption class="sr-only">{% blocktranslate with name=entry.document.name %}Earlier versions of {{ name }} you agreed to{% endblocktranslate %}</caption>
+                  <thead class="sr-only">
+                    <tr>
+                      <th scope="col" class="w-1/2">{% translate "Version" %}</th>
+                      <th scope="col">{% translate "You agreed on" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% include "mvp_compliance/_agreed_version_rows.html" with acceptances=entry.earlier document=entry.document %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          {% endif %}
         </c-card>
       {% empty %}
         <c-page.list.empty icon="document"
