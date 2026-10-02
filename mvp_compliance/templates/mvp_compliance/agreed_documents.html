@@ -1,0 +1,56 @@
+{% extends "mvp/account/base.html" %}
+{% load i18n %}
+{% block account.content %}
+  <c-page>
+    <c-page.title :title="page.title" :subtitle="page.subtitle" />
+    <div id="agreed-documents" class="flex flex-col gap-4 max-w-3xl">
+      {% for entry in entries %}
+        <c-card title="{{ entry.document.name }}">
+          {% if entry.newer %}
+            <c-alert variant="warning" soft class="alert-horizontal">
+              <span>{% blocktranslate with number=entry.newer.number date=entry.newer.published_at|date %}A newer version, v{{ number }}, has been in force since {{ date }}. You have not agreed to it.{% endblocktranslate %}</span>
+              <a class="btn btn-sm" href="{% url 'mvp_compliance:document' entry.document.slug %}">{% blocktranslate with number=entry.newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
+            </c-alert>
+          {% endif %}
+          <div class="overflow-x-auto">
+            <table class="table">
+              <caption class="sr-only">{% blocktranslate with name=entry.document.name %}Versions of {{ name }} you agreed to{% endblocktranslate %}</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="w-1/2">{% translate "Version" %}</th>
+                  <th scope="col">{% translate "You agreed on" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% include "mvp_compliance/_agreed_version_rows.html" with acceptances=entry.shown document=entry.document %}
+              </tbody>
+            </table>
+          </div>
+          {% if entry.earlier %}
+            <details>
+              <summary class="link link-hover cursor-pointer ps-4 text-sm">{% blocktranslate count counter=entry.earlier|length %}{{ counter }} earlier version you agreed to{% plural %}{{ counter }} earlier versions you agreed to{% endblocktranslate %}</summary>
+              <div class="overflow-x-auto">
+                <table class="table">
+                  <caption class="sr-only">{% blocktranslate with name=entry.document.name %}Earlier versions of {{ name }} you agreed to{% endblocktranslate %}</caption>
+                  <thead class="sr-only">
+                    <tr>
+                      <th scope="col" class="w-1/2">{% translate "Version" %}</th>
+                      <th scope="col">{% translate "You agreed on" %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% include "mvp_compliance/_agreed_version_rows.html" with acceptances=entry.earlier document=entry.document %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          {% endif %}
+        </c-card>
+      {% empty %}
+        <c-page.list.empty icon="document"
+                           heading="{% translate "Nothing to show yet" %}"
+                           message="{% translate "When you agree to a document on this site, it appears here with the version and the date." %}" />
+      {% endfor %}
+    </div>
+  </c-page>
+{% endblock account.content %}

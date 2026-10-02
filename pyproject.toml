@@ -15,6 +15,7 @@ requires-python = ">=3.12,<4.0"
 # package owns renders unstyled.
 dependencies = [
     "django>=5.2",
+    "django-flex-menus>=0.4.5", # the account area's menu entry is built from its MenuItem
     "django-mvp>=0.25.0",
     "markdown>=3.7", # turns an authored version's wording into HTML at publication
     "nh3>=0.2", # sanitises that HTML against an explicit allow list before it is stored
@@ -149,9 +150,8 @@ non-mirror-paths = ["tests/test_app.py", "tests/test_migrations.py"]
 extend_exclude = ["tests/", "demo/", "docs/"]
 
 [tool.deptry.per_rule_ignores]
-# django-mvp is a real runtime dependency that no Python module here imports.
-# This package depends on it at the template and theme level: its pages render
-# inside django-mvp's layout and read their colours from the daisyUI theme it
-# supplies. Dropping the dependency would leave every page unthemed while every
-# import still resolved.
+# The views and the menu import from django-mvp, but most of what this package
+# takes from it is not an import: its pages render inside django-mvp's layout
+# and read their colours from the daisyUI theme it supplies. Dropping the
+# dependency would leave every page unthemed even if the imports still resolved.
 DEP002 = ["django-mvp"]

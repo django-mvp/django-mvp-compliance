@@ -161,6 +161,10 @@ Somewhere in the account area, a signed-in person can see what they have agreed 
 they currently allow, and can read again anything they agreed to. It is the visible half of a
 package that is otherwise entirely invisible when it is working.
 
+The first half is delivered in [#66](https://github.com/django-mvp/django-mvp-compliance/issues/66):
+the list of documents a person agreed to, with each version and its date. What a person currently
+allows for cookies is still to come, and waits on R8.
+
 Serves G8.
 
 ### R10 — Knowing where a site stands

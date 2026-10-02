@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from django.core.management import call_command
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -14,7 +15,7 @@ from django.utils.formats import date_format
 from mvp.menus import AppMenu
 
 import mvp_compliance
-from mvp_compliance.models import Document
+from mvp_compliance.models import Acceptance, Disclosure, Document, Version
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import (
     AcceptanceFactory,
@@ -832,8 +833,8 @@ class TestNoMenuEntry:
         offenders = [
             path.name
             for path in package.rglob("*.py")
-            if "flex_menu" in path.read_text(encoding="utf-8")
-            or "AppMenu" in path.read_text(encoding="utf-8")
+            if "AppMenu" in path.read_text(encoding="utf-8")
+            or "MobileFooterMenu" in path.read_text(encoding="utf-8")
         ]
 
         assert offenders == []
@@ -852,6 +853,7 @@ BLOCKTRANSLATE_TAG = re.compile(
     r"{%\s*(?:blocktranslate|blocktrans)\b[^%]*%}(.*?){%\s*(?:endblocktranslate|endblocktrans)\s*%}",
     re.DOTALL,
 )
+PLURAL_TAG = re.compile(r"{%\s*plural\s*%}")
 VARIABLE = re.compile(r"{{\s*(\w+)[^}]*}}")
 
 
@@ -860,7 +862,9 @@ def template_msgids(path):
     source = path.read_text(encoding="utf-8")
     msgids = set(TRANSLATE_TAG.findall(source))
     for body in BLOCKTRANSLATE_TAG.findall(source):
-        msgids.add(VARIABLE.sub(r"%(\1)s", body.strip()))
+        # A plural block holds two strings, which the catalog lists apart.
+        for part in PLURAL_TAG.split(body):
+            msgids.add(VARIABLE.sub(r"%(\1)s", part.strip()))
     return msgids
 
 
@@ -869,7 +873,11 @@ class TestPageStrings:
     claims compliance."""
 
     def test_the_page_template_is_the_document_page(self):
-        assert [path.name for path in PAGE_TEMPLATES] == ["document_detail.html"]
+        assert [path.name for path in PAGE_TEMPLATES] == [
+            "_agreed_version_rows.html",
+            "agreed_documents.html",
+            "document_detail.html",
+        ]
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)
     def test_every_string_in_a_page_template_is_in_the_english_catalog(self, path):
@@ -918,3 +926,444 @@ class TestPageStrings:
             lowered = text.lower()
             for word in FORBIDDEN_WORDS:
                 assert word not in lowered, (address, word)
+
+
+def agreed_address():
+    return reverse("mvp_compliance:agreed")
+
+
+@pytest.mark.django_db
+class TestAgreedDocumentsStrings:
+    """FR-017: the list as rendered, title, trail and menu entry included, claims nothing."""
+
+    def test_the_rendered_list_claims_no_compliance_and_names_no_regulation(
+        self, client
+    ):
+        user = UserFactory()
+        document = DocumentFactory(name="Privacy policy")
+        Acceptance.objects.record(user, published(document, "First wording"))
+        published(document, "Second wording")
+        client.force_login(user)
+
+        content = client.get(agreed_address()).content.decode()
+
+        lowered = re.sub(r"<[^>]+>", " ", content).lower()
+        for word in FORBIDDEN_WORDS:
+            assert word not in lowered, word
+
+
+def accept(user, document, count=1):
+    """Publish ``count`` new versions of ``document``, accepted by ``user``, oldest first."""
+    accepted = []
+    for _ in range(count):
+        wording = f"Wording {document.versions.count() + 1}"
+        accepted.append(Acceptance.objects.record(user, published(document, wording)))
+    return accepted
+
+
+@pytest.mark.django_db
+class TestAgreedDocuments:
+    """US-1: a signed-in person's own list of what they agreed to (FR-001 to FR-008, FR-010,
+    FR-011, FR-015, FR-016, FR-019, SC-001, SC-002, SC-004, SC-005)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def listed(response):
+        """What the page lists: ``[(document, [version, ...], [earlier version, ...])]``."""
+        return [
+            (
+                entry["document"],
+                [acceptance.version for acceptance in entry["shown"]],
+                [acceptance.version for acceptance in entry["earlier"]],
+            )
+            for entry in response.context["entries"]
+        ]
+
+    def test_one_accepted_version_is_listed_with_its_number_and_the_day_it_was_accepted(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        (acceptance,) = accept(user, document)
+
+        response = signed_in.get(agreed_address())
+
+        assert response.status_code == 200
+        assert self.listed(response) == [(document, [acceptance.version], [])]
+        content = response.content.decode()
+        assert version_address(document, acceptance.version.number) in content
+        assert date_format(timezone.localdate(acceptance.accepted_at)) in content
+
+    def test_versions_of_one_document_are_under_one_entry_newest_published_first(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        first, second, third = accept(user, document, 3)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.listed(response) == [
+            (document, [third.version, second.version, first.version], [])
+        ]
+
+    def test_documents_are_listed_by_name(self, signed_in, user):
+        beta = DocumentFactory(name="Beta terms")
+        alpha = DocumentFactory(name="Alpha terms")
+        accept(user, beta)
+        accept(user, alpha)
+
+        response = signed_in.get(agreed_address())
+
+        assert [document for document, _, _ in self.listed(response)] == [alpha, beta]
+
+    def test_every_listed_version_links_to_its_own_page_current_and_superseded_alike(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        superseded, current = accept(user, document, 2)
+
+        superseded.version.refresh_from_db()
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert superseded.version.status == superseded.version.Status.SUPERSEDED
+        assert current.version.status == current.version.Status.CURRENT
+        for acceptance in (superseded, current):
+            address = version_address(document, acceptance.version.number)
+            assert address in content
+
+    def test_following_a_link_serves_that_versions_stored_html(self, signed_in, user):
+        document = DocumentFactory()
+        superseded, _current = accept(user, document, 2)
+
+        page = signed_in.get(version_address(document, superseded.version.number))
+
+        assert page.status_code == 200
+        assert superseded.version.html in page.content.decode()
+
+    def test_each_person_sees_only_their_own_acceptances(self, client, user):
+        other = UserFactory()
+        document = DocumentFactory()
+        mine, theirs = accept(user, document)[0], accept(other, document)[0]
+
+        client.force_login(user)
+        mine_listed = self.listed(client.get(agreed_address()))
+        client.force_login(other)
+        theirs_listed = self.listed(client.get(agreed_address()))
+
+        assert mine_listed == [(document, [mine.version], [])]
+        assert theirs_listed == [(document, [theirs.version], [])]
+
+    def test_a_staff_member_sees_only_their_own_acceptances(self, client):
+        staff = UserFactory(is_staff=True, is_superuser=True)
+        accept(UserFactory(), DocumentFactory())
+        client.force_login(staff)
+
+        response = client.get(agreed_address())
+
+        assert response.status_code == 200
+        assert list(response.context["entries"]) == []
+
+    @pytest.mark.parametrize("appended", ["x/", "1/", "x/y/"])
+    def test_an_address_with_anything_appended_is_not_found(self, signed_in, appended):
+        response = signed_in.get(agreed_address() + appended)
+
+        assert response.status_code == 404
+
+    def test_nothing_in_the_query_string_names_another_person(self, client, user):
+        other = UserFactory()
+        accept(other, DocumentFactory())
+        client.force_login(user)
+
+        response = client.get(
+            agreed_address(),
+            {"user": other.pk, "subject": other.pk, "person": other.pk},
+        )
+
+        assert list(response.context["entries"]) == []
+
+    def test_a_person_with_no_acceptances_gets_the_page_with_no_entries(
+        self, signed_in
+    ):
+        response = signed_in.get(agreed_address())
+
+        assert response.status_code == 200
+        assert list(response.context["entries"]) == []
+
+    def test_an_anonymous_visitor_is_sent_to_sign_in_and_sees_no_record(
+        self, client, user
+    ):
+        document = DocumentFactory(name="Visible only to its acceptor")
+        accept(user, document)
+
+        response = client.get(agreed_address())
+
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_login"))
+        assert document.name not in response.content.decode()
+
+    def test_a_document_made_a_notice_is_not_listed(self, signed_in, user):
+        document = DocumentFactory()
+        accept(user, document)
+        Document.objects.filter(pk=document.pk).update(kind=Document.Kind.NOTICE)
+
+        response = signed_in.get(agreed_address())
+
+        assert list(response.context["entries"]) == []
+
+    def test_a_document_the_person_never_accepted_is_not_listed(self, signed_in, user):
+        accepted = DocumentFactory()
+        accept(user, accepted)
+        published(DocumentFactory())
+
+        response = signed_in.get(agreed_address())
+
+        assert [document for document, _, _ in self.listed(response)] == [accepted]
+
+    def test_a_renamed_document_is_shown_under_its_present_name(self, signed_in, user):
+        document = DocumentFactory(name="Old name")
+        accept(user, document)
+        document.name = "Present name"
+        document.save()
+
+        response = signed_in.get(agreed_address())
+
+        assert [entry["document"].name for entry in response.context["entries"]] == [
+            "Present name"
+        ]
+        assert "Present name" in response.content.decode()
+        assert "Old name" not in response.content.decode()
+
+    def test_markup_in_a_document_name_is_escaped(self, signed_in, user):
+        document = DocumentFactory(name="<script>alert(1)</script>")
+        accept(user, document)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert "<script>alert(1)</script>" not in content
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
+
+    def test_more_than_four_accepted_versions_show_the_newest_three_and_fold_the_rest(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = accept(user, document, 5)
+        newest_first = [acceptance.version for acceptance in reversed(accepted)]
+
+        response = signed_in.get(agreed_address())
+
+        assert self.listed(response) == [(document, newest_first[:3], newest_first[3:])]
+        content = response.content.decode()
+        for version in newest_first:
+            assert version_address(document, version.number) in content
+
+    def test_four_accepted_versions_are_all_shown_and_none_folded(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = accept(user, document, 4)
+        newest_first = [acceptance.version for acceptance in reversed(accepted)]
+
+        response = signed_in.get(agreed_address())
+
+        assert self.listed(response) == [(document, newest_first, [])]
+
+    def test_the_query_count_does_not_grow_with_the_acceptances_held(
+        self, client, django_assert_num_queries
+    ):
+        one, many = UserFactory(), UserFactory()
+        accept(one, DocumentFactory())
+        for _ in range(10):
+            accept(many, DocumentFactory(), 5)
+        client.force_login(one)
+        client.get(agreed_address())  # warm caches
+
+        with CaptureQueriesContext(connection) as single:
+            client.get(agreed_address())
+        client.force_login(many)
+        with django_assert_num_queries(len(single)):
+            client.get(agreed_address())
+
+    def test_opening_the_page_writes_nothing(self, signed_in, user):
+        accept(user, DocumentFactory(), 2)
+        counts = lambda: [
+            model.objects.count()
+            for model in (Acceptance, Disclosure, Version, Document)
+        ]
+        before = counts()
+
+        signed_in.get(agreed_address())
+
+        assert counts() == before
+
+    def test_posting_to_the_page_is_refused(self, signed_in, user):
+        accept(user, DocumentFactory())
+        before = Acceptance.objects.count()
+
+        response = signed_in.post(agreed_address())
+
+        assert response.status_code == 405
+        assert Acceptance.objects.count() == before
+
+    def test_a_document_created_under_the_lists_slug_does_not_take_its_address(
+        self, signed_in, user
+    ):
+        reserved = Document.objects.create(name="Agreed", slug="agreed")
+        published(reserved)
+        (acceptance,) = accept(user, DocumentFactory())
+
+        response = signed_in.get(agreed_address())
+
+        assert response.status_code == 200
+        assert self.listed(response) == [
+            (acceptance.version.document, [acceptance.version], [])
+        ]
+
+
+@pytest.mark.django_db
+class TestNewerVersionInForce:
+    """US-2: a listed document whose version in force the person has not accepted
+    carries that version (FR-009, FR-010, FR-015, SC-003, SC-005)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def newer(response):
+        """What the page carries as ``newer``: ``{document: version in force or None}``."""
+        return {
+            entry["document"]: entry["newer"] for entry in response.context["entries"]
+        }
+
+    def test_a_superseded_latest_acceptance_gets_the_version_in_force_and_its_plain_address(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+        in_force = published(document, "Newer wording")
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: in_force}
+        content = response.content.decode()
+        assert f'href="{document_address(document)}"' in content
+        assert f"{document_address(document)}?version={in_force.number}" not in content
+
+    def test_a_person_who_accepted_the_version_in_force_gets_none(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: None}
+
+    def test_earlier_acceptances_do_not_change_that_the_version_in_force_was_accepted(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document, 3)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: None}
+
+    def test_each_document_is_judged_on_its_own_versions(self, signed_in, user):
+        behind = DocumentFactory(name="Behind terms")
+        level = DocumentFactory(name="Level terms")
+        accept(user, behind, 2)
+        accept(user, level, 2)
+        in_force = published(behind)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {behind: in_force, level: None}
+
+    def test_another_persons_acceptance_of_the_version_in_force_does_not_count(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+        in_force = published(document)
+        Acceptance.objects.record(UserFactory(), in_force)
+
+        response = signed_in.get(agreed_address())
+
+        assert self.newer(response) == {document: in_force}
+
+    def test_the_page_holds_no_form(self, signed_in, user):
+        document = DocumentFactory()
+        accept(user, document)
+        published(document)
+
+        response = signed_in.get(agreed_address())
+
+        content = response.content.decode()
+        listing = content[content.index('id="agreed-documents"') :]
+        assert "<form" not in listing
+
+    def test_a_version_published_between_two_requests_shows_on_the_second(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document)
+        assert self.newer(signed_in.get(agreed_address())) == {document: None}
+
+        in_force = published(document)
+
+        assert self.newer(signed_in.get(agreed_address())) == {document: in_force}
+
+    def test_the_query_count_does_not_grow_with_the_acceptances_held(
+        self, client, django_assert_num_queries
+    ):
+        one, many = UserFactory(), UserFactory()
+        behind = DocumentFactory()
+        accept(one, behind)
+        published(behind)
+        for index in range(10):
+            document = DocumentFactory()
+            accept(many, document, 5)
+            if index == 0:
+                published(document)
+        client.force_login(one)
+        client.get(agreed_address())  # warm caches
+
+        with CaptureQueriesContext(connection) as single:
+            client.get(agreed_address())
+        client.force_login(many)
+        with django_assert_num_queries(len(single)):
+            client.get(agreed_address())
+
+
+@pytest.mark.django_db
+@pytest.mark.urls("tests.urls_package_only")
+class TestWithoutTheAccountArea:
+    """US-3 scenario 2, FR-013, SC-007: a project that mounts only the package's pages
+    has no list, and its document pages keep working."""
+
+    def test_the_system_checks_pass(self):
+        call_command("check")
+
+    def test_a_document_page_answers_and_holds_no_link_to_the_list(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        response = client.get(document_address(document))
+
+        assert response.status_code == 200
+        assert agreed_address() not in response.content.decode()
+
+    def test_the_lists_address_is_not_found_for_a_signed_in_person(self, client, user):
+        client.force_login(user)
+
+        assert client.get(agreed_address()).status_code == 404
+
+    def test_the_lists_address_is_not_found_for_an_anonymous_visitor(self, client):
+        response = client.get(agreed_address())
+
+        assert response.status_code == 404

@@ -109,6 +109,10 @@ FLEX_MENUS = {
 # The title the shell shows beside the brand icon in the sidebar.
 MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
 
+# django-mvp's sign-in page. Django's own default address is one nothing here
+# registers, so a visitor sent to sign in would land on a page that is not there.
+LOGIN_URL = "account_login"
+
 STATIC_URL = "/static/"
 
 USE_TZ = True

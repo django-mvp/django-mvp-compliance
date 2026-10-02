@@ -87,6 +87,10 @@ FLEX_MENUS = {
     }
 }
 
+# A page behind LoginRequiredMixin sends an anonymous visitor to the sign-in page
+# django-mvp mounts with its URLs.
+LOGIN_URL = "account_login"
+
 STATIC_URL = "/static/"
 
 USE_TZ = True

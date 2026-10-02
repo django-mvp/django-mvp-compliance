@@ -1,0 +1,14 @@
+/* Styles for the pages a visitor reads. */
+
+/* Clearance below the shell's sticky top bar, whose height django-mvp does not
+   publish. :where() gives it no weight, so a host's own :root rule wins. */
+:where(:root) {
+  --mvp-compliance-header-clearance: 5rem;
+}
+
+/* Set here because the shell's stylesheet emits no utility for this offset.
+   The list is only pinned where the template makes it sticky. */
+.mvp-compliance-document-list {
+  top: var(--mvp-compliance-header-clearance);
+  max-height: calc(100vh - var(--mvp-compliance-header-clearance) - 1rem);
+}

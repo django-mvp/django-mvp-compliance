@@ -5,6 +5,10 @@ surface can be used rather than read about — every state the admin can put a
 version in is reachable without anybody creating a row by hand.
 """
 
+from contextlib import contextmanager
+from datetime import UTC, datetime
+from unittest import mock
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.management.base import BaseCommand
@@ -38,12 +42,77 @@ ACCOUNTS = {
     "disclosure.user@example.com": (True, False, ["produce_disclosure"]),
 }
 
-#: The people the demo holds acceptances for, so every state the page can be
-#: in is reachable: somebody with a history across documents, somebody with
-#: one record, and somebody with none at all.
+#: A name long enough to wrap, on a document with many versions.
+COMMUNITY = (
+    "Community guidelines for members, guests and organisations posting for them"
+)
+
+#: A document as old as the site, reworded three times a year.
+MEMBERSHIP = "Membership terms"
+MEMBERSHIP_DAYS = [
+    (year, month, 3) for year in range(2013, 2026) for month in (2, 6, 10)
+] + [(2026, 2, 3)]
+
+
+def numbers(days):
+    """The number each publication day gives its version: the year and its place in it."""
+    seen: dict[int, int] = {}
+    for year, _month, _day in days:
+        seen[year] = seen.get(year, 0) + 1
+        yield f"{year}.{seen[year]}"
+
+
+#: The people the demo holds acceptances for, so every state a page can be in
+#: is reachable. Each line is a document, the number of the version accepted
+#: and the day it was accepted. regular.user holds none at all.
 ACCEPTORS = {
-    "acceptor.user@example.com": ("Privacy policy", "Terms of use"),
-    "newcomer.user@example.com": ("Terms of use",),
+    # Everything accepted is in force, with an earlier version under one.
+    "acceptor.user@example.com": [
+        ("Privacy policy", "2025.1", (2025, 3, 12)),
+        ("Terms of use", "2025.1", (2025, 3, 12)),
+        ("Privacy policy", "2026.1", (2026, 6, 5)),
+    ],
+    # One document, one version.
+    "newcomer.user@example.com": [
+        ("Terms of use", "2025.1", (2026, 9, 22)),
+    ],
+    # Accepted the privacy policy before it was reworded and nothing since.
+    "returning.user@example.com": [
+        ("Privacy policy", "2025.1", (2025, 4, 2)),
+        ("Terms of use", "2025.1", (2025, 4, 2)),
+    ],
+    # A long history: many versions of one document with one never accepted
+    # and the newest not accepted yet, and a document that was made a notice
+    # after it was accepted.
+    "longstanding.user@example.com": [
+        (COMMUNITY, "2024.1", (2024, 2, 6)),
+        (COMMUNITY, "2024.2", (2024, 11, 20)),
+        (COMMUNITY, "2026.1", (2026, 2, 10)),
+        ("Privacy policy", "2025.1", (2025, 3, 11)),
+        ("Privacy policy", "2026.1", (2026, 6, 3)),
+        ("Terms of use", "2025.1", (2025, 3, 11)),
+        ("House rules", "2025.1", (2025, 9, 3)),
+        ("Delivery information", "2025.1", (2025, 3, 11)),
+    ],
+    # On the site since it opened: every version of a document reworded forty
+    # times, and everything else there is to agree to.
+    "veteran.user@example.com": [
+        *[
+            (MEMBERSHIP, number, (year, month, day + 1))
+            for number, (year, month, day) in zip(
+                numbers(MEMBERSHIP_DAYS), MEMBERSHIP_DAYS, strict=True
+            )
+        ],
+        (COMMUNITY, "2024.1", (2024, 2, 6)),
+        (COMMUNITY, "2024.2", (2024, 11, 20)),
+        (COMMUNITY, "2025.1", (2025, 7, 2)),
+        (COMMUNITY, "2026.1", (2026, 2, 10)),
+        (COMMUNITY, "2026.2", (2026, 9, 15)),
+        ("Privacy policy", "2025.1", (2025, 3, 11)),
+        ("Privacy policy", "2026.1", (2026, 6, 3)),
+        ("Terms of use", "2025.1", (2025, 3, 11)),
+        ("House rules", "2025.1", (2025, 9, 3)),
+    ],
 }
 
 #: Someone whose account is closed and whose records outlived it, which is the
@@ -63,6 +132,9 @@ SLUGS = {
     "Acceptable use": "acceptable-use",
     "House rules": "house-rules",
     "Impressum": "impressum",
+    COMMUNITY: "community-guidelines",
+    MEMBERSHIP: "membership-terms",
+    "Delivery information": "delivery-information",
 }
 
 PRIVACY = """\
@@ -152,6 +224,50 @@ Write to hello@example.com.
 """
 
 
+COMMUNITY_WORDING = """\
+## Who this covers
+
+Members, guests, and anyone posting for an organisation.
+
+## What we ask
+
+Be accurate, be civil, and say who you are posting for.
+
+## Revision {revision}
+
+This is the wording as revised for the {revision} time.
+"""
+
+MEMBERSHIP_WORDING = """\
+## Joining
+
+Anyone may join. Membership runs for a year and renews until you end it.
+
+## Revision {revision}
+
+This is revision {revision} of these terms.
+"""
+
+DELIVERY = """\
+## Where we deliver
+
+Anywhere in Germany, within three working days.
+"""
+
+
+@contextmanager
+def on(year, month, day):
+    """Run what is inside as though it were that day.
+
+    Publishing and accepting both stamp the present moment and neither can be
+    rewritten afterwards, so a history spread over years has to be made on
+    the days it happened.
+    """
+    moment = datetime(year, month, day, 10, 0, tzinfo=UTC)
+    with mock.patch("django.utils.timezone.now", return_value=moment):
+        yield
+
+
 class Command(BaseCommand):
     help = "Seed the demo with the standard accounts and a document in every state."
 
@@ -163,21 +279,21 @@ class Command(BaseCommand):
         self.make_document(
             "Privacy policy",
             drafts=[],
-            published=[PRIVACY, PRIVACY_NEXT],
+            published=[(PRIVACY, (2025, 3, 10)), (PRIVACY_NEXT, (2026, 6, 2))],
             note="two published versions: one in force, one superseded",
             publisher=publisher,
         )
         self.make_document(
             "Terms of use",
             drafts=[],
-            published=[TERMS],
+            published=[(TERMS, (2025, 3, 10))],
             note="one version, in force, published from code with nobody named",
         )
         self.make_departed_publisher_document()
         self.make_document(
             "Impressum",
             drafts=[],
-            published=[IMPRESSUM],
+            published=[(IMPRESSUM, (2025, 3, 10))],
             note="a notice, one version in force: read, never agreed to",
             kind=Document.Kind.NOTICE,
         )
@@ -194,7 +310,43 @@ class Command(BaseCommand):
             note="no versions at all",
         )
 
+        self.make_document(
+            COMMUNITY,
+            drafts=[],
+            published=[
+                (COMMUNITY_WORDING.format(revision=revision), day)
+                for revision, day in [
+                    ("first", (2024, 2, 5)),
+                    ("second", (2024, 11, 18)),
+                    ("third", (2025, 7, 1)),
+                    ("fourth", (2026, 2, 9)),
+                    ("fifth", (2026, 9, 14)),
+                ]
+            ],
+            note="five published versions over three years, and a long name",
+        )
+        self.make_document(
+            MEMBERSHIP,
+            drafts=[],
+            published=[
+                (MEMBERSHIP_WORDING.format(revision=revision), day)
+                for revision, day in enumerate(MEMBERSHIP_DAYS, start=1)
+            ],
+            note="forty published versions since 2013",
+        )
+        self.make_document(
+            "Delivery information",
+            drafts=[],
+            published=[(DELIVERY, (2025, 3, 10))],
+            note="agreed to once, and made a notice afterwards",
+        )
+
         self.make_acceptances()
+        # After the acceptances: one of a notice is refused, so it has to be
+        # recorded while the document is still one people agree to.
+        Document.objects.filter(name="Delivery information").update(
+            kind=Document.Kind.NOTICE
+        )
 
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
 
@@ -207,7 +359,7 @@ class Command(BaseCommand):
         self.make_document(
             "House rules",
             drafts=[],
-            published=[HOUSE_RULES],
+            published=[(HOUSE_RULES, (2025, 9, 1))],
             note="published by an account since removed",
             publisher=departed,
         )
@@ -224,13 +376,13 @@ class Command(BaseCommand):
             self.stdout.write("  acceptances: already seeded")
             return
 
-        for email, document_names in ACCEPTORS.items():
+        for email, accepted in ACCEPTORS.items():
             person = self.make_account(email, False, False, [])
-            for name in document_names:
-                document = Document.objects.get(name=name)
-                for version in document.versions.published():
+            for name, number, day in accepted:
+                version = Version.objects.get(document__name=name, number=number)
+                with on(*day):
                     Acceptance.objects.record(person, version, request=self.request())
-            self.stdout.write(f"  {email}: accepted {', '.join(document_names)}")
+            self.stdout.write(f"  {email}: {len(accepted)} acceptances")
 
         departed = self.make_account(DEPARTED, False, False, [])
         privacy = Document.objects.get(name="Privacy policy")
@@ -294,9 +446,10 @@ class Command(BaseCommand):
             self.stdout.write(f"  {name}: already seeded")
             return
 
-        for markdown in published:
+        for markdown, day in published:
             version = Version.objects.create(document=document, markdown=markdown)
-            version.publish(publisher=publisher)
+            with on(*day):
+                version.publish(publisher=publisher)
         for markdown in drafts:
             Version.objects.create(document=document, markdown=markdown)
 

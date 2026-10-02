@@ -1,0 +1,391 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "008-agreed-documents-in-account-area",
+  "branch": "008-agreed-documents-in-account-area",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "GATE_MERGE",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-10-01T16:40:44Z",
+      "note": "specification approved by review on #77 at 6d67542; issue graph built (#66, #78, #79, #80)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-10-01T20:34:18Z",
+      "note": "sketch approved; claim taken; branch level with origin/main 33eb41a; research, plan and tasks written"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-10-01T20:34:36Z",
+      "note": "plan committed at 491fb3c"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-10-01T21:05:55Z",
+      "note": "plan passed by Sam"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-01T21:35:16Z",
+      "note": "all three stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-10-01T21:36:50Z",
+      "note": "converged: verify green, ADR 0020, 8 verdicts"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-10-01T21:46:06Z",
+      "note": "review approve; two lows fixed in place (D9)"
+    },
+    {
+      "state": "GATE_MERGE",
+      "at": "2026-10-01T21:48:53Z",
+      "note": "ready for review; walkthrough laid out; merge gate shut"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "SamuelJennings",
+      "at": "2026-10-01T16:40:44Z",
+      "self_resolved": [
+        "approving review 5382483443 on #77 at commit 6d6754287ac097e2ecae0bbde055ea8e6f7d8d63",
+        "refined 2026-10-01 after the prototype review: document page layout in scope (decisions.md D1), FR-019 added; both asked for by Sam in review"
+      ]
+    },
+    "sketch": {
+      "approved_by": "Sam",
+      "at": "2026-10-01T20:27:01Z",
+      "self_resolved": [
+        "approved at commit b1f3e459cc1e9ed978a1412199f2545a5d470a2f",
+        "Menu entry to read \"Agreements\": renamed",
+        "Document page as two columns with the list on the left, title only over the document: rebuilt that way",
+        "List in a card that stops below the top bar while the document scrolls, no dividing line: done, with a 5rem offset",
+        "Card did not look right: the column was clipping it; the card now carries the pinning itself",
+        "Sidebar card titled \"Documents\": retitled",
+        "How a very long history should look: three most recent versions shown, the rest folded and opened in place"
+      ]
+    },
+    "plan": {
+      "approved_by": "Sam",
+      "at": "2026-10-01T21:05:55Z",
+      "self_resolved": [
+        "plan gate shut for this feature; passed in session: \"Looks good. Approved.\" Nothing asked for"
+      ]
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-reviewer",
+      "at": "2026-10-01T20:42:12Z",
+      "self_resolved": [
+        "SPEC-001 high: T001 teaches the string-test helpers to read a plural; verified against the stated evidence",
+        "SPEC-002 medium: catalog regenerated in each task that adds a string (T006, T008, T015)",
+        "SPEC-003 low: T009 corrects the docs lines that say the package adds nothing to menus",
+        "SPEC-004 low: narrowed menu test names AppMenu and MobileFooterMenu (D2)",
+        "ARCH-001 low: URLconf walk dropped from T014",
+        "ARCH-002 low: admin reserved-slug case moved to tests/test_admin.py",
+        "watch: 404 check before super().dispatch() (T013)"
+      ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-10-01T21:44:52Z",
+      "self_resolved": [
+        "DOC-001 low: remedied, docs/pages.md names the blocks the template fills and the changelog tells extending projects to update",
+        "TEST-001 low: remedied, new test opens the rendered list; fails when a forbidden word is added to the subtitle",
+        "notes: table, two stale sentences, LOGIN_URL, collectstatic line corrected"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": null,
+      "at": "2026-10-01T21:46:28Z",
+      "self_resolved": []
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 78,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest -q (443 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (catalog: 14 msgids added, none removed or changed)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestPageStrings",
+              "tests/test_admin.py::TestUserFacingStrings"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "forge verify --base origin/main (lint, typecheck, test, build, conformance, docs green)"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q (6 failed: AttributeError, no of_agreed_documents, before T004)"
+            ],
+            "tests": [
+              "tests/test_models.py::TestAcceptancesOfAgreedDocuments"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestAcceptancesOfAgreedDocuments -q (6 passed)",
+              "mutation probe: replacing the kind filter with all() fails the two notice cases; flipping the order fails the ordering and skipped-version tests"
+            ],
+            "tests": [
+              "tests/test_models.py::TestAcceptancesOfAgreedDocuments"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreedDocuments -q (21 failed, 1 passed; every failure is NoReverseMatch for mvp_compliance:agreed; the one pass follows a version link on the existing document page)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestAgreedDocuments"
+            ]
+          }
+        },
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreedDocuments -q (22 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (3 msgids added, none fuzzy)",
+              "uv run pytest -q (471 passed)",
+              "mutation probes: dropping LoginRequiredMixin, calling of_agreed_documents() on all acceptances and folding at four each fail tests"
+            ],
+            "tests": [
+              "tests/test_views.py::TestAgreedDocuments"
+            ]
+          }
+        },
+        {
+          "id": "T007",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q (2 failed, 2 passed; both failures: no agreed-documents entry in AccountCenterMenu)"
+            ],
+            "tests": [
+              "tests/test_menus.py::TestAccountAreaEntry",
+              "tests/test_views.py::TestNoMenuEntry::test_the_package_does_not_touch_the_menu_library"
+            ]
+          }
+        },
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_menus.py tests/test_views.py::TestNoMenuEntry -q (4 passed)",
+              "uv lock (django-flex-menus added to the lock)",
+              "uv run python manage.py makemessages -l en --no-obsolete (1 msgid added, fuzzy flag cleared)",
+              "uv run pre-commit run --all-files (all hooks passed, deptry included)",
+              "uv run pytest -q (473 passed)"
+            ],
+            "tests": [
+              "tests/test_menus.py::TestAccountAreaEntry"
+            ]
+          }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py makemessages -l en --no-obsolete (catalog unchanged)",
+              "uv run python manage.py check (no issues)",
+              "Client().get(\"/\") on the demo project: 200, the landing page carries the link to /legal/agreed/"
+            ],
+            "tests": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P2",
+      "issue": 79,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestNewerVersionInForce -q (4 failed, 4 passed; each failure is entry[\"newer\"] being None where the version in force is expected)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestNewerVersionInForce"
+            ]
+          }
+        },
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestNewerVersionInForce tests/test_views.py::TestAgreedDocuments -q (30 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (only the POT-Creation-Date line differed; reverted, catalog unchanged)",
+              "uv run pre-commit run --files mvp_compliance/views.py docs/pages.md CHANGELOG.md (all hooks passed)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestNewerVersionInForce",
+              "tests/test_views.py::TestAgreedDocuments"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P3",
+      "issue": 80,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-008",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages -q (2 failed, 4 passed; the two failures are NoReverseMatch for account-center and account_login, before T013)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestWithoutTheAccountArea",
+              "tests/test_menus.py::TestWithoutThePackagePages"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_views.py::TestWithoutTheAccountArea tests/test_menus.py::TestWithoutThePackagePages tests/test_views.py::TestAgreedDocuments -q (28 passed)",
+              "uv run python manage.py makemessages -l en --no-obsolete (one msgid added: No account area)"
+            ],
+            "tests": [
+              "tests/test_views.py::TestWithoutTheAccountArea",
+              "tests/test_menus.py::TestWithoutThePackagePages"
+            ]
+          }
+        },
+        {
+          "id": "T014",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_views.py::TestAgreedDocuments -q (2 failed, 30 passed; the failures are DID NOT RAISE ValidationError and the add form answering 302, before T015)"
+            ],
+            "tests": [
+              "tests/test_models.py::TestReservedSlug",
+              "tests/test_admin.py::TestDocumentSlugInTheAdmin::test_the_add_form_refuses_the_slug_of_the_list_of_agreed_documents",
+              "tests/test_views.py::TestAgreedDocuments::test_a_document_created_under_the_lists_slug_does_not_take_its_address"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_views.py::TestAgreedDocuments tests/test_migrations.py -q (37 passed)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)",
+              "uv run python manage.py makemessages -l en --no-obsolete (one msgid added: the validator message)"
+            ],
+            "tests": [
+              "tests/test_models.py::TestReservedSlug",
+              "tests/test_admin.py::TestDocumentSlugInTheAdmin",
+              "tests/test_migrations.py"
+            ]
+          }
+        },
+        {
+          "id": "T016",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py makemessages -l en --no-obsolete (catalog unchanged apart from POT-Creation-Date, reverted)",
+              "uv run pre-commit run --all-files (all hooks passed)"
+            ],
+            "tests": []
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 77,
+    "draft": false
+  }
+}

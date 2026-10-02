@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A page in django-mvp's account area, at `<prefix>/agreed/` (`mvp_compliance:agreed`), where a
+  signed-in person sees the documents they agreed to: for each, the versions they accepted, newest
+  published first, the day they accepted each, and a link to read that version as it was published.
+  Three versions are shown and the rest fold under a count when a document has more than four. It
+  shows only the signed-in person's own records and nothing else, answers `GET` and `HEAD` only and
+  writes nothing. The package adds one entry, "Agreements", to the account area's menu, and nothing
+  to your own `AppMenu` or `MobileFooterMenu`. Mount django-mvp's URLs as well as the package's for
+  the page to appear. A project without django-mvp's URLs has no account area: the address answers
+  "not found" for everyone and the document pages keep working. A project without the package's
+  URLs gets no entry in the account area's menu and nothing fails. When the version in force of a listed document is one the person has not
+  accepted, its card says so and links to the document's page. `AcceptanceQuerySet.of_agreed_documents()`
+  and the same method on the manager return the acceptances the page lists.
+  `django-flex-menus>=0.4.5` is now a dependency.
+  See [docs/pages.md](docs/pages.md) and [docs/models.md](docs/models.md).
 - Notices: `Document.kind` is `Document.Kind.AGREED` by default or `Document.Kind.NOTICE`, for a
   document such as an impressum that is published to be read and never accepted. A notice is never
   outstanding, recording an acceptance of one of its versions is refused with `RecordError`, and
@@ -185,8 +199,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The document page's layout. The list of documents is now a card in a column of its own, titled
+  "Documents", and the document's name sits over the wording, not across the whole page. On
+  wide screens the card stays in view while the document scrolls. The page loads a new stylesheet,
+  `mvp_compliance/pages.css`, which sets the card's offset below the top bar through the custom
+  property `--mvp-compliance-header-clearance`. A project that replaces `document_detail.html`
+  keeps its own layout. A project template that extends the package's and overrides `page.content`
+  or `page.actions` must be updated, because the page no longer draws those blocks. The stylesheet
+  is the first static file a public page of the package loads, so a deployment that uses a static
+  files manifest runs `collectstatic` after upgrading. See [docs/pages.md](docs/pages.md).
 - Requires django-mvp 0.25.0 or later (was 0.23.0). django-mvp 0.25.0 mounts its own URLs at the
   site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
+- The slug `agreed` is no longer available to a document, because it is the address of the list of
+  agreed documents. The admin and `full_clean()` refuse it, through `Document.RESERVED_SLUGS` and
+  the validator `mvp_compliance.models.unreserved_slug`. Migration `0009_document_reserved_slug`
+  records the validator and changes no row. A document already published under `agreed` keeps its
+  slug, since a published slug is fixed, but its page is no longer reachable: the address now
+  answers with the list. See [docs/models.md](docs/models.md).
 
 - A version is numbered when it is published instead of when its draft is created, and the number
   is the year of publication and its place among the document's versions published that year,

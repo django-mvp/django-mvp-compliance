@@ -1,0 +1,58 @@
+{
+  "lens": "correctness",
+  "stage": "code",
+  "verdict": "approve",
+  "risk": "low",
+  "scope": "Feature branch 008-agreed-documents-in-account-area vs origin/main (33eb41a), git diff origin/main..HEAD at 5ede62e. One reviewer, three lenses as briefed: correctness, spec-compliance, security. Documentation pass done on the opened pages (docs/pages.md, docs/models.md, CHANGELOG.md, README.md, ADR 0020), not only the hunks. Full suite run: 493 passed. Eight defect-reinstatement probes run in a /tmp copy of the branch (nothing written in the repo): dropping the kind filter, dropping the person filter, judging `newer` on one acceptance instead of all, moving the fold boundary to 4, removing the 404 for a project with no account area, dropping the version ordering, dropping `?version=` from the row link, and pointing the newer-version link at a `?version=` address. Each made a named test fail. A rendering probe with document names carrying `&`, quotes, `<b>`, an attribute-breaking `\" onmouseover=\"` and literal `{{ }}` / `{% %}` showed single escaping and no template re-evaluation in the card title, both captions, the sr-only span and the document page's list.",
+  "skills_loaded": [
+    {
+      "name": "craft-review",
+      "receipt": "craft-review/2026-09-28/e60c2a95",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-simplify",
+      "receipt": "craft-simplify/2026-08-04/69038ce1",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-security",
+      "receipt": "craft-security/2026-08-04/ea3d6742",
+      "loaded_via": "path-read"
+    }
+  ],
+  "findings": [
+    {
+      "id": "DOC-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "docs/pages.md states which blocks the document page fills, and the statement is no longer true. A project template that extends the package's template and overrides those blocks now has its override silently dropped, and nothing tells it so.",
+      "evidence": "docs/pages.md:226-228 reads: \"The document page extends django-mvp's `page_view.html` and fills only its `page.content` and, where it has one, `page.actions` block.\" On the branch, mvp_compliance/templates/mvp_compliance/document_detail.html:3-6 fills `styles` and :7-47 fills `page.content-wrapper`; it defines neither `page.content` nor `page.actions` any more (both were defined on origin/main). Because `page.content-wrapper` is replaced whole, page_view.html's nested `page.title`, `page.actions` and `page.content` blocks are not rendered on this page. CHANGELOG.md's Changed entry says only that a project that overrides document_detail.html keeps its own layout, which is true for a full replacement and not for an extension.",
+      "reproduction": "A project template in a directory ahead of the package's, `{% extends \"mvp_compliance/document_detail.html\" %}{% block page.actions %}<a href=\"/print/\">Print</a>{% endblock %}` (or overriding `page.content`). On origin/main the link is drawn among the page's actions. On this branch the page returns 200 without it, with no error.",
+      "suggested_fix": "Correct the sentence at docs/pages.md:226-228 to name the blocks the template fills now (`styles` and `page.content-wrapper`), and add one clause to the CHANGELOG layout entry saying a template that extends the package's and overrides `page.content` or `page.actions` must be updated. No code change."
+    },
+    {
+      "id": "TEST-001",
+      "severity": "low",
+      "confidence": "verified",
+      "claim": "FR-017's rule that no string this feature adds claims compliance is tested for the strings in the templates only. The strings the feature adds in Python, and the list page as rendered, are checked by no test.",
+      "evidence": "tests/test_views.py:911-928 `test_no_rendered_page_claims_compliance_or_names_a_regulation` builds its `addresses` from three document-page addresses and never requests `mvp_compliance:agreed`. `test_no_page_string_claims_compliance_or_names_a_regulation` (tests/test_views.py:904-909) reads `template_msgids(path)`, so it sees agreed_documents.html and _agreed_version_rows.html but not `page_title` and `page_subtitle` (mvp_compliance/views.py:117-121), the breadcrumb, or the menu label (mvp_compliance/menus.py:15). The strings as written are clean; this is a gap in the guard, not a defect in the page.",
+      "reproduction": "Change `page_subtitle` in mvp_compliance/views.py to a sentence containing \"compliant\". By reading, no test fails: the rendered-page test does not open the list and the template test does not read views.py. This case was not run as a probe.",
+      "suggested_fix": "Add the list's address, requested as a signed-in user with one acceptance, to the `addresses` of the existing rendered-page test. One request covers the title, subtitle, breadcrumb and menu label together."
+    }
+  ],
+  "notes": [
+    "Orchestrator question 1 (access): nothing found. The view reads only request.user through Acceptance.subject_of, takes no URL argument and reads no query parameter; the 404 for a project with no account area is raised before the sign-in check and carries no record; an anonymous visitor in a project with the area gets a 302 with an empty body. Dropping the person filter fails test_each_person_sees_only_their_own_acceptances.",
+    "Orchestrator question 2 (get_entries): a document with no version in force yields newer=None (in_force.get returns None), and `document__in=[]` for a person with no acceptances issues no query. Accepting the current version among others yields None. 4 accepted versions are all shown, 5 give 3 shown and 2 folded; both boundaries are tested and the boundary probe failed the 4 case.",
+    "Orchestrator question 3 (ordering): matches DocumentView's order_by('name'). The version order has no tie-break when two versions of one document share a published_at to the microsecond; publish() stamps timezone.now() per call, so only the demo's patched clock can produce it.",
+    "Orchestrator question 4 (links and escaping): version numbers are package-assigned (year.sequence) and need no URL encoding; escaping verified by rendering, see scope.",
+    "Orchestrator question 5 (migration 0009): one AlterField, no RunPython or RunSQL, consistent with ADR 0004; tests/test_migrations.py passes including makemigrations --check. The migration imports mvp_compliance.models.unreserved_slug, so that name must stay importable for as long as the migration ships.",
+    "Orchestrator question 7 (pages.css): the wheel ships the whole mvp_compliance package, static included. A project that overrides document_detail.html gets no link tag and no pinned card, as the CHANGELOG says. Under ManifestStaticFilesStorage the document page raises until collectstatic is re-run after the upgrade; that is the normal deployment step, but this is the first public page of the package to use {% static %} and the CHANGELOG does not say so.",
+    "docs/pages.md:234-236: a blank line between the two rows of the 'Template path' table ends the table, so the agreed_documents.html row renders as a paragraph of pipes.",
+    "docs/pages.md:193: 'Every page's breadcrumbs are the document's name alone' predates the list, whose trail is Account Center followed by the page title.",
+    "docs/pages.md:226: 'Every page is one template' — the list is agreed_documents.html plus the partial _agreed_version_rows.html, which the table of overridable templates does not name.",
+    "docs/pages.md:160-161 says an anonymous visitor is sent to 'the project's sign-in page' without naming LOGIN_URL. Both tests/settings.py and demo/settings.py had to add LOGIN_URL = \"account_login\" for this branch. django-mvp's own account landing page is behind LoginRequiredMixin too, so a project that mounts the area already needs the setting.",
+    "mvp_compliance/views.py:123-131: the dispatch docstring has Raises but no Args or Returns; get_breadcrumbs and get_context_data have no docstring, like their neighbours on DocumentView.",
+    "The singular form of the folded-versions count ('{{ counter }} earlier version you agreed to') cannot be reached: a fold always holds at least two, for any shown_first."
+  ]
+}
