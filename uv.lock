@@ -591,7 +591,7 @@ wheels = [
 
 [[package]]
 name = "django-mvp"
-version = "0.25.0"
+version = "0.25.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "crispy-tailwind" },
@@ -602,9 +602,9 @@ dependencies = [
     { name = "django-flex-menus" },
     { name = "mergedeep" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/39/3d/14555e3c7c444b97c2aae568e37336ebda5b87795be35d8590296d53a430/django_mvp-0.25.0.tar.gz", hash = "sha256:b3dfbda570a610a7ec735f1236a9fc7db5e0b43645178cf0da07dfcc09238eb0", size = 286500, upload-time = "2026-09-26T06:25:59.365Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/e9/a48b73cd2b36833f6eb5af0c4c12afab59c42b3f791ed28f88b55e7edab4/django_mvp-0.25.1.tar.gz", hash = "sha256:38873d643593af1bfdd50b993e7003cf7942ef5161bec16575ffd331c81ba88b", size = 284427, upload-time = "2026-09-29T20:27:11.028Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/41/e94229ccb3feb1510adbf8fa54a3f676d34867434c723f85b2d87f0cff4a/django_mvp-0.25.0-py3-none-any.whl", hash = "sha256:fcb0879b13bb805ff350167b588d9b005e7751e4ebe9f71b0b6dd0549943e83c", size = 337334, upload-time = "2026-09-26T06:25:56.813Z" },
+    { url = "https://files.pythonhosted.org/packages/32/3c/a24d5635ac959716a3d9f68ca8d48f70a77ca6e4e581af1ef9f87aa09edf/django_mvp-0.25.1-py3-none-any.whl", hash = "sha256:ff22f75f4466f2a478747ba70294be0d3edc6226c8f60e2838b7fdc4577409c9", size = 340677, upload-time = "2026-09-29T20:27:09.448Z" },
 ]
 
 [[package]]
