@@ -3,7 +3,7 @@
   "feature": "003-record-who-accepted",
   "branch": "003-record-who-accepted",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "MERGED",
   "state_history": [
     {
       "state": "PLAN",
@@ -24,6 +24,11 @@
       "state": "PR_READY",
       "at": "2026-09-22T17:10:13Z",
       "note": "All five stories accepted and independently re-verified. Convergence done. Review approve at low risk; both findings closed, each fix checked against the defect. 201 tests green."
+    },
+    {
+      "state": "MERGED",
+      "at": "2026-09-22T21:58:36Z",
+      "note": "PR #37 merged; approved by SamuelJennings"
     }
   ],
   "gates": {
@@ -39,8 +44,8 @@
       "at": "2026-09-22T14:55:00Z"
     },
     "merge": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T21:58:28Z"
     },
     "design_review": {
       "approved_by": "design-panel",
@@ -692,7 +697,7 @@
   },
   "pr": {
     "number": 37,
-    "draft": true
+    "draft": false
   },
   "escalations": []
 }
