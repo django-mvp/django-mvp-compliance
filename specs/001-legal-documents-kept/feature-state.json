@@ -3,7 +3,7 @@
   "feature": "001-legal-documents-kept",
   "branch": "feat/001-legal-documents-kept",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "MERGED",
   "state_history": [
     {
       "state": "DESIGN_REVIEW",
@@ -29,6 +29,11 @@
       "state": "PR_READY",
       "at": "2026-09-22T08:35:00Z",
       "note": "Branch re-verified independently from a cleared lint cache: 65 tests pass, pre-commit clean across all files including ruff, format, mypy and deptry, makemigrations --check reports no changes, tamper-check clean against origin/main. Walkthrough approved by Sam on the message catalog wording. PR #19 taken out of draft for his merge gate."
+    },
+    {
+      "state": "MERGED",
+      "at": "2026-09-22T09:06:19Z",
+      "note": "PR #19 merged; approved by SamuelJennings"
     }
   ],
   "gates": {
@@ -44,8 +49,8 @@
       "at": "2026-09-21T21:05:00Z"
     },
     "merge": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "SamuelJennings",
+      "at": "2026-09-22T09:06:10Z"
     },
     "design_review": {
       "approved_by": "design-panel",
@@ -426,7 +431,7 @@
   },
   "pr": {
     "number": 19,
-    "draft": true
+    "draft": false
   },
   "escalations": []
 }

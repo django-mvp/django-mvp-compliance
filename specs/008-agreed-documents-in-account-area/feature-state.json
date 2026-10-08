@@ -3,7 +3,7 @@
   "feature": "008-agreed-documents-in-account-area",
   "branch": "008-agreed-documents-in-account-area",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "GATE_MERGE",
+  "state": "MERGED",
   "state_history": [
     {
       "state": "QUEUED",
@@ -44,6 +44,11 @@
       "state": "GATE_MERGE",
       "at": "2026-10-01T21:48:53Z",
       "note": "ready for review; walkthrough laid out; merge gate shut"
+    },
+    {
+      "state": "MERGED",
+      "at": "2026-10-02T08:44:33Z",
+      "note": "PR #77 merged; approved by SamuelJennings"
     }
   ],
   "gates": {
@@ -76,8 +81,8 @@
       ]
     },
     "merge": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "SamuelJennings",
+      "at": "2026-10-02T08:44:20Z"
     },
     "design_review": {
       "approved_by": "design-reviewer",
@@ -102,8 +107,8 @@
       ]
     },
     "walkthrough": {
-      "approved_by": null,
-      "at": "2026-10-01T21:46:28Z",
+      "approved_by": "SamuelJennings",
+      "at": "2026-10-02T08:44:20Z",
       "self_resolved": []
     }
   },
@@ -380,7 +385,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 0,
+      "used": 18.96,
       "max": 120
     }
   },
