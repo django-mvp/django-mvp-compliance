@@ -115,6 +115,10 @@ document is enforced at all is a decision made per document.
 - Enforcement is decided per document, and publishing without enforcing is an ordinary thing to do.
 - The check does not become a per-request cost on every page of the site.
 
+One part is delivered in [#65](https://github.com/django-mvp/django-mvp-compliance/issues/65):
+whether a document is one people agree to, or a notice that is published and only read, is decided
+per document. Applying the check across the site is still to come.
+
 Serves G3. Completes the Essential set and gates `v0.1.0`.
 
 ## Expected goals: v1.0.0
