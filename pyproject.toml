@@ -1,6 +1,6 @@
 [project]
 name = "django-mvp-compliance"
-version = "0.0.1"
+version = "0.1.0"
 description = "Legal documents, consent records and cookie consent for django-mvp projects, managed from the database rather than the repository"
 authors = [
     { name = "Samuel Jennings", email = "samuel.scott.jennings@gmail.com" },
