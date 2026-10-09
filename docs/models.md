@@ -33,11 +33,9 @@ impressum = Document.objects.create(
 )
 ```
 
-A document created without a kind is one people agree to, so nothing written before `kind`
-existed behaves any differently. Migration `0008_document_kind` adds the column with that default
-and no data step. The kind says nothing about the document's versions: a notice is versioned,
-published, numbered and read at its own page exactly like any other document. What differs is
-that nobody is ever asked to accept it. See [Outstanding](#outstanding) and
+A document created without a kind is one people agree to. The kind says nothing about the
+document's versions: a notice is versioned, published, numbered and read at its own page exactly
+like any other document. What differs is that nobody is ever asked to accept it. See [Outstanding](#outstanding) and
 [Acceptance](#acceptance).
 
 The kind can be changed at any time, in either direction, and nothing else changes with it. Set it
