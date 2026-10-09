@@ -27,8 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document such as an impressum that is published to be read and never accepted. A notice is never
   outstanding, recording an acceptance of one of its versions is refused with `RecordError`, and
   its page never says the reader agreed to it. The kind shows in the admin's documents list and can
-  be changed at any time without touching a version or a recorded acceptance. Migration
-  `0008_document_kind` makes every existing document one people agree to. See
+  be changed at any time without touching a version or a recorded acceptance. See
   [docs/models.md](docs/models.md) and [docs/authoring.md](docs/authoring.md).
 - One canonical page for each document that has a version in force, served at an address that
   never changes: `path("legal/", include("mvp_compliance.urls"))` in your URLs, then
@@ -46,9 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [docs/pages.md](docs/pages.md).
 - `Document.slug`, a unique slug that forms the document's address, and
   `Document.objects.in_force()`, which returns the documents that have a current version with
-  that version already fetched. Migration `0007_document_slug` adds the column with no data step,
-  so a database that already holds documents needs their slugs set before it can be migrated.
-  See [docs/models.md](docs/models.md).
+  that version already fetched. See [docs/models.md](docs/models.md).
 - The slug is validated as lowercase letters, digits and single hyphens, and is fixed once a
   version of the document is published: changing it through `save()`, `update()` or
   `bulk_update()` raises `PublishedVersionError`. The admin suggests the slug from the name and
@@ -199,6 +196,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The package ships one migration, `0001_initial`, which creates the whole schema. The nine
+  migrations written before the first release are gone. A database migrated from a development
+  checkout holds the same tables, so it needs no schema change: delete the `mvp_compliance` rows
+  for `0002` to `0009` from `django_migrations`, or start from an empty database.
 - The document page's layout. The list of documents is now a card in a column of its own, titled
   "Documents", and the document's name sits over the wording, not across the whole page. On
   wide screens the card stays in view while the document scrolls. The page loads a new stylesheet,
@@ -212,10 +213,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   site root, so a project that includes `mvp.urls` does it with `path("", include("mvp.urls"))`.
 - The slug `agreed` is no longer available to a document, because it is the address of the list of
   agreed documents. The admin and `full_clean()` refuse it, through `Document.RESERVED_SLUGS` and
-  the validator `mvp_compliance.models.unreserved_slug`. Migration `0009_document_reserved_slug`
-  records the validator and changes no row. A document already published under `agreed` keeps its
-  slug, since a published slug is fixed, but its page is no longer reachable: the address now
-  answers with the list. See [docs/models.md](docs/models.md).
+  the validator `mvp_compliance.models.unreserved_slug`. See [docs/models.md](docs/models.md).
 
 - A version is numbered when it is published instead of when its draft is created, and the number
   is the year of publication and its place among the document's versions published that year,
