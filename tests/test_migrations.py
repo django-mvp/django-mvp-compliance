@@ -13,9 +13,13 @@ import pkgutil
 
 import pytest
 from django.core.management import call_command
+from django.db import connection
+from django.db.migrations.loader import MigrationLoader
+from django.utils import timezone
 from django.db.migrations.operations.special import RunPython, RunSQL
 
 import mvp_compliance.migrations as migrations_package
+from tests.factories import UserFactory, VersionFactory
 
 
 class TestMigrationOperations:
@@ -37,3 +41,30 @@ class TestMigrationOperations:
     def test_the_models_need_no_new_migration(self):
         call_command("makemigrations", "--check", "--dry-run", verbosity=0)
 
+
+@pytest.mark.django_db
+class TestHistoricalAcceptance:
+    def test_a_migration_can_bulk_create_acceptances(self):
+        # The historical manager carries the current queryset (use_in_migrations),
+        # and its bulk_create() must not apply a guard written for the real model.
+        loader = MigrationLoader(connection)
+        (leaf,) = loader.graph.leaf_nodes(app="mvp_compliance")
+        Acceptance = loader.project_state(leaf).apps.get_model(
+            "mvp_compliance", "Acceptance"
+        )
+        user = UserFactory()
+        version = VersionFactory()
+        version.publish()
+
+        Acceptance.objects.bulk_create(
+            [
+                Acceptance(
+                    user_id=user.pk,
+                    subject=str(user.pk),
+                    version_id=version.pk,
+                    accepted_at=timezone.now(),
+                )
+            ]
+        )
+
+        assert Acceptance.objects.filter(version_id=version.pk).count() == 1
