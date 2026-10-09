@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.1.0] - 2026-10-09
+
 ### Added
 
 - A page in django-mvp's account area, at `<prefix>/agreed/` (`mvp_compliance:agreed`), where a
