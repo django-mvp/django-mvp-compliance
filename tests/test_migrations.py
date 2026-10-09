@@ -15,8 +15,8 @@ import pytest
 from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
-from django.utils import timezone
 from django.db.migrations.operations.special import RunPython, RunSQL
+from django.utils import timezone
 
 import mvp_compliance.migrations as migrations_package
 from tests.factories import UserFactory, VersionFactory
