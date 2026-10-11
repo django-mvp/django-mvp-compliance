@@ -162,3 +162,45 @@ sign-in is a separate decision the project already makes with Django's own tools
 **Why defensible**: it adds no screen. The page a person is sent to belongs to issue #86. What
 this feature shows is one field on the admin's document form and one column in its list, both in
 places the admin already has for them.
+
+## D12 — The page that asks lets a person go once the enforced documents are accepted
+
+*Made in review of this specification.*
+
+**Ambiguous**: the first draft left to FS-009 whether its page also offers documents that are not
+enforced, and assumed the page would let a user through once the enforced ones were accepted.
+FS-009 says otherwise: it sends a person on only when nothing is outstanding (its FR-008), shows
+the page again after a partial agreement (FR-012), and passes straight through only a person with
+nothing outstanding (FR-018). Its own decisions D1, D2 and D4 name this feature as the place where
+that would be narrowed. Left alone, a user stopped over the terms who accepted them and left a
+cookie policy unticked would be shown the page again and never returned.
+
+**Chosen**: this feature amends those three requirements (FR-028 to FR-030). A person is sent on
+once every enforced document outstanding for them is accepted. Unenforced documents are still
+offered on the page and are never required. FS-009's `spec.md` is edited in the pull request that
+builds this feature, not on this specification's branch.
+
+**Why defensible**: the check and the page must give the same answer to "may this person carry
+on", or the two together form a loop. Enforcement does not exist until this feature, so FS-009
+could not have said it. The amendment changes nothing on a site where every document is enforced,
+which is every site until a compliance editor switches one off (FR-032).
+
+## D13 — Opening the page with no address to return to shows the optional documents
+
+*Made in review of this specification.*
+
+**Ambiguous**: once a person with only unenforced documents outstanding is sent straight on, there
+has to be some way for them to reach the page and accept one.
+
+**Chosen**: the return address decides. With one, they are sent straight on (FR-030). With none,
+the page is shown (FR-031), and after they submit it they go to the default destination whatever
+they agreed to. A person with nothing outstanding at all is sent on either way, as before.
+
+**Why defensible**: an address to return to means the person was on their way somewhere and
+should not be held up over something optional. No address means they opened the page on purpose.
+It needs no extra parameter and no second page. The site-wide check cannot land anybody in the
+no-address case by accident, because it only sends people with an enforced document outstanding,
+and they are shown the page in every case.
+
+**Revisit if**: FS-009's prototype gives optional documents a place of their own, such as the list
+of what a person agreed to in the account area.

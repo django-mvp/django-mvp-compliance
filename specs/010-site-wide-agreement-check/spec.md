@@ -40,10 +40,30 @@ Four things shape who is stopped and where:
 - A user found to have nothing stopping them is not checked against the database again on every
   request. A change that could stop them reaches them within a delay the project sets.
 
+Enforcement also changes when the page that asks lets a person go. FS-009 (issue #86) specified
+that page before enforcement existed, so it sends a person on only when nothing at all is
+outstanding. With that rule, a user stopped over the terms who agrees to them and leaves a cookie
+policy for later would be shown the page again and never returned to where they were going. This
+feature therefore amends three of FS-009's requirements:
+
+- FR-008 of FS-009: a person is sent on once every enforced document outstanding for them is
+  accepted, not once nothing is outstanding.
+- FR-012 of FS-009: after agreeing to some documents and not others, a person is shown the page
+  again only while an enforced document remains.
+- FR-018 of FS-009: a person sent to the page with an address to return to is sent straight on
+  when no enforced document is outstanding for them, not only when nothing is.
+
+Documents that are outstanding and not enforced are still offered on the page, and nobody has to
+accept them to carry on. A person opens the page themselves, with no address to return to, to
+accept those in their own time. FS-009's `spec.md` is edited to read as current in the pull request
+that builds this feature. Everything else about the page stays as FS-009 has it.
+
 Some things stay out of this feature:
 
-- The page that asks, what it shows, recording the acceptance and returning the person are
-  issue #86. This feature only sends people there.
+- The page that asks, what it shows, how it records an acceptance and how it returns a person are
+  FS-009 (issue #86), apart from the three requirements amended above. How the page tells a
+  document a person must accept from one they may leave is settled on FS-009's prototype and is
+  not specified here.
 - Whether a document is one people agree to or a notice is already delivered (FS-007, issue #65).
   A notice is never outstanding, so it never stops anybody whatever its enforcement says.
 - What a person still has outstanding is already answered (FS-003) and that answer does not
@@ -151,7 +171,62 @@ document is still among what they have outstanding.
 
 ---
 
-### User Story 3 - Keeping a project's own addresses reachable (Priority: P2)
+### User Story 3 - Agreeing to what is required and leaving the rest for later (Priority: P1)
+
+A user is stopped over new terms of use. The page that asks shows them the terms, and also a
+cookie policy that is outstanding for them and not enforced. They agree to the terms, leave the
+cookie policy alone, and are returned to the address they wanted. A week later they open the page
+themselves and accept the cookie policy. A user who only ever had the cookie policy outstanding is
+never stopped, and if a project's own code sends them to the page with an address to return to,
+they are sent straight on without seeing it.
+
+**Why this priority**: Without it the check and the page disagree. The check lets a user through
+once the enforced documents are accepted, while the page would keep a user until nothing at all
+was outstanding, so a user who left an optional document alone could never get back to what they
+were doing.
+
+**Independent Test**: In the demo with the check on, publish one enforced document and one that is
+not, and sign in as a user who has accepted neither. Request an address, follow the redirect, agree
+to the enforced document only and confirm the user lands on the address they asked for with one
+acceptance recorded. Open the page directly and confirm the other document is offered. As a second
+user with only the unenforced document outstanding, go to the page with a return address and
+confirm the response is a redirect to that address.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user on the page that asks with an enforced document and one that is not enforced
+   both outstanding, **When** they agree to the enforced one only, **Then** that acceptance is
+   recorded and they are sent on to the address they were to return to.
+2. **Given** the same user and page, **When** they agree to both, **Then** both acceptances are
+   recorded and they are sent on.
+3. **Given** a user with two enforced documents outstanding, **When** they agree to one of them,
+   **Then** it is recorded and they are shown the page again with what remains.
+4. **Given** the same user and page as in scenario 1, **When** they agree to the unenforced
+   document only, **Then** it is recorded and they are shown the page again, because an enforced
+   document remains.
+5. **Given** a user stopped by the check, **When** the page that asks is shown to them, **Then**
+   it offers every document outstanding for them, enforced or not.
+6. **Given** a signed-in user whose only outstanding documents are not enforced, **When** they
+   are sent to the page with an address to return to, **Then** they are sent on to it at once and
+   are not shown the page.
+7. **Given** that same user, **When** they request the page with no address to return to,
+   **Then** the page is shown and offers those documents.
+8. **Given** that same user on the page, **When** they submit it having agreed to some, all or
+   none of the documents, **Then** whatever they agreed to is recorded and they are sent on to
+   the default destination.
+9. **Given** a signed-in user with nothing outstanding at all, **When** they request the page
+   with or without an address to return to, **Then** they are sent on at once, as FS-009 has it.
+10. **Given** a user whose acceptance of an enforced document could not be stored, **When** the
+    submission is processed, **Then** they are not sent on, whatever else they agreed to.
+11. **Given** a project that has not added the middleware, and a document whose enforcement has
+    been switched off, **When** a user is sent to the page by the project's own code, **Then**
+    the page treats that document as one they may leave, exactly as it does with the check on.
+12. **Given** a project where every document is enforced, **When** the page is used, **Then** it
+    sends people on exactly when FS-009 says it does.
+
+---
+
+### User Story 4 - Keeping a project's own addresses reachable (Priority: P2)
 
 A developer's site has addresses that must work for a user who has not agreed yet: a health check
 that a signed-in monitoring account calls, a payment provider's callback, a help page. They list
@@ -179,7 +254,7 @@ address not on the list still redirects.
 
 ---
 
-### User Story 4 - Letting particular accounts past (Priority: P2)
+### User Story 5 - Letting particular accounts past (Priority: P2)
 
 A developer has accounts that should never be stopped: the account a monitoring service signs in
 with, the accounts a browser test suite drives, the support team. They name the first two in the
@@ -214,7 +289,7 @@ anybody.
 
 ---
 
-### User Story 5 - Choosing how soon a change reaches people (Priority: P3)
+### User Story 6 - Choosing how soon a change reaches people (Priority: P3)
 
 A developer running a busy site accepts that a newly published version starts stopping people a
 short while after it is published and not on the same instant, in exchange for the check costing
@@ -257,6 +332,12 @@ nothing.
   themselves in the admin, like any other user, unless the project keeps the admin reachable or the
   editor is let past.
 - A superuser holds every permission, so a superuser is let past. The documentation says so.
+- A user with only unenforced documents outstanding is sent to the page with a return address
+  that cannot be followed, such as one on another site. They are still sent straight on, to the
+  default destination, because an address was given.
+- Enforcement is switched on for a document while a user who has not accepted it has the page
+  open. Their submission is judged against the documents as they stand when it is processed, so
+  they are shown the page again if that document is still outstanding.
 - The address a stopped user asked for is one that is kept reachable. Nothing is passed to the
   page that asks, because they are never sent there for it.
 - A document's kind is changed from a notice to a document people agree to while it is enforced.
@@ -309,36 +390,59 @@ nothing.
   afterwards, and its list of documents MUST show it for each document. *(US-2)*
 - **FR-015**: The package MUST answer, from code, which enforced documents a user has outstanding,
   as the same answer the check acts on, at a number of database queries that does not grow with
-  the number of documents. *(US-2)*
+  the number of documents. The page that asks MUST act on that same answer. *(US-2, US-3)*
 - **FR-016**: A project MUST be able to list, in its settings, addresses to keep reachable. A
-  listed address MUST cover itself and everything beneath it, and nothing else. *(US-3)*
+  listed address MUST cover itself and everything beneath it, and nothing else. *(US-4)*
 - **FR-017**: Addresses a project lists MUST add to the ones reachable by default and MUST NOT
-  replace them. *(US-3)*
+  replace them. *(US-4)*
 - **FR-018**: A project MUST be able to name accounts in its settings that are never redirected.
-  *(US-4)*
+  *(US-5)*
 - **FR-019**: The package MUST provide a permission whose holders, directly or through a group,
-  are never redirected. *(US-4)*
+  are never redirected. *(US-5)*
 - **FR-020**: Letting an account past MUST NOT record an acceptance or change what that account
-  has outstanding. *(US-4)*
+  has outstanding. *(US-5)*
 - **FR-021**: For a signed-in user already found to have nothing stopping them, the check MUST add
   no database query to a request until the configured delay has passed. That covers deciding
-  whether the account is let past. *(US-1, US-4, US-5)*
+  whether the account is let past. *(US-1, US-5, US-6)*
 - **FR-022**: A change that could stop a user (a version published, a document's enforcement or
   kind changed) MUST reach every signed-in user within a delay the project can set. The default
-  MUST be no longer than one minute, and a project MUST be able to set it to nothing. *(US-5)*
+  MUST be no longer than one minute, and a project MUST be able to set it to nothing. *(US-6)*
 - **FR-023**: Only the finding that nothing stops a user may be remembered between requests. A
   user who is being stopped MUST be checked afresh on each request, so a recorded acceptance lets
-  them through at once and a failed one never does. *(US-1, US-5)*
+  them through at once and a failed one never does. *(US-1, US-6)*
 - **FR-024**: Upgrading an existing installation MUST leave every existing document enforced and
   MUST NOT drop or change any version or acceptance. *(US-2)*
-- **FR-025**: Every user-facing string this feature adds MUST be translatable. *(US-2, US-4)*
+- **FR-025**: Every user-facing string this feature adds MUST be translatable. *(US-2, US-5)*
 - **FR-026**: The documentation MUST explain how to switch the check on and where the middleware
   goes, which addresses stay reachable by default and how to add more, how to let accounts past
-  and that a superuser always is, how enforcement is set per document, and what the delay means
-  for a newly published version. *(US-1, US-2, US-3, US-4, US-5)*
+  and that a superuser always is, how enforcement is set per document, how a person accepts a
+  document that is not enforced, and what the delay means for a newly published version. *(US-1,
+  US-2, US-3, US-4, US-5, US-6)*
 - **FR-027**: The glossary's entry for *Enforcement* MUST say that it is set on the document, that
   a new document is enforced, and that it only takes effect on a site that has switched the check
   on. *(US-2)*
+
+- **FR-028**: After a submission on the page that asks, the user MUST be sent on when the stored
+  acceptances show that no enforced document is outstanding for them, and MUST NOT be sent on
+  while one is. The decision MUST still be made from the stored records and never from the
+  content of the submission. This replaces the condition in FR-008 of FS-009. *(US-3)*
+- **FR-029**: The page that asks MUST still offer every document outstanding for the user,
+  enforced or not, and MUST record an acceptance of an unenforced one like any other. Accepting
+  an unenforced document MUST NOT be needed to be sent on. A user who agreed to some documents
+  and not others MUST be shown the page again only while an enforced document remains
+  outstanding. This replaces the condition in FR-012 of FS-009. *(US-3)*
+- **FR-030**: A signed-in user with no enforced document outstanding who requests the page with
+  an address to return to MUST be sent on at once and MUST NOT be shown it. This replaces the
+  condition in FR-018 of FS-009. *(US-3)*
+- **FR-031**: A signed-in user with no enforced document outstanding who requests the page with
+  no address to return to MUST be shown it when a document that is not enforced is outstanding
+  for them, and MUST be sent on at once when nothing is. After their submission they MUST be sent
+  on to the default destination. *(US-3)*
+- **FR-032**: The page MUST follow each document's enforcement whether or not the project has
+  added the middleware, and on a site where every document is enforced it MUST behave exactly as
+  FS-009 specifies. *(US-3)*
+- **FR-033**: The pull request that builds this feature MUST edit FS-009's `spec.md` so that its
+  FR-008, FR-012 and FR-018, and the scenarios that rest on them, read as current. *(US-3)*
 
 ### Key Entities
 
@@ -369,7 +473,11 @@ nothing.
   of versions and acceptances unchanged.
 - **SC-007**: An account named in the settings or holding the permission is never redirected, and
   no acceptance exists for it that it did not give itself.
-- **SC-008**: After upgrading, a project that has not added the middleware serves every request
+- **SC-008**: A user stopped over an enforced document who accepts it, and nothing else, reaches
+  the address they asked for without being shown the page a second time.
+- **SC-009**: A document that is outstanding and not enforced can be accepted on the page that
+  asks by a user who opens it themselves, and never keeps anybody on that page.
+- **SC-010**: After upgrading, a project that has not added the middleware serves every request
   exactly as it did before.
 
 ## Clarifications
@@ -402,21 +510,36 @@ nothing.
   admin with no deploy, and there is no setting to get wrong. It is checked the way Django checks
   any permission, so a superuser holds it.
 
+### Session 2026-10-12, in review
+
+- **Q**: FS-009's page sends a person on only when nothing is outstanding. What happens to a user
+  who accepts the enforced documents and leaves an unenforced one? → **A**: They are sent on
+  (FR-028, FR-029). The page and the check have to agree on who may carry on, and enforcement only
+  exists from this feature, so the amendment to FR-008, FR-012 and FR-018 of FS-009 is made here.
+- **Q**: If a user with only unenforced documents outstanding is sent straight on, how do they
+  ever accept one? → **A**: By opening the page with no address to return to, which shows it
+  (FR-031). An address to return to means somebody was on their way elsewhere and should not be
+  held up over something optional (FR-030). No address means they came to the page on purpose.
+  The site-wide check never produces that case, because it only sends people who have an enforced
+  document outstanding, and those are shown the page either way.
+
 ## Assumptions
 
 - FS-001 to FS-008 are delivered, and this spec is written against them as they stand on main: what
   a user has outstanding is worked out in one query, a document is either one people agree to or a
   notice, and each document has a page among the addresses the package serves.
-- Issue #86 delivers the page that asks, at an address among the ones the package serves, and a
-  documented way to send a person to it with the address they should return to. This feature uses
-  that way and adds no second one. It is built after #86.
-- What the page that asks shows, including whether it also offers documents that are outstanding
-  but not enforced, is for issue #86 to decide. This feature only needs the user to be let through
-  once every enforced document is accepted.
+- FS-009 (issue #86) delivers the page that asks, at an address among the ones the package
+  serves, and a documented way to send a person to it with the address they should return to. This
+  feature uses that way and adds no second one. It is built after FS-009.
+- This feature amends FR-008, FR-012 and FR-018 of FS-009, as set out under Scope and in FR-028 to
+  FR-031. FS-009's `spec.md` is not changed by this specification. It is edited to read as current
+  in the pull request that builds this feature (FR-033).
+- How the page that asks tells a document a person must accept from one they may leave is settled
+  on FS-009's prototype. Nothing here says how it looks or what it says.
 - The project uses Django's sessions and authentication middleware, as django-mvp already
   requires.
 - Whether a document is enforced is not personal data, and the names of accounts let past live in
   the project's own settings, so Article XIV does not apply.
-- No new screen is added. The only change a person sees in the package's own pages is one more
-  field on the admin's document form and one more column in its list of documents, so the feature
-  is built without a design prototype.
+- No new screen is added. This feature adds one field to the admin's document form and one column
+  to its list of documents, and changes when an existing page lets a person go. It is built
+  without a design prototype of its own.
