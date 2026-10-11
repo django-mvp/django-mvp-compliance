@@ -131,7 +131,7 @@ ASKED = {
     ],
     # One document that holds them up and one that does not, side by side:
     # the demo's settings name House rules as optional.
-    "two-kinds.user@example.com": [
+    "optional.user@example.com": [
         ("Privacy policy", "2025.1"),
         ("Terms of use", "2025.1"),
         (COMMUNITY, "2026.2"),
