@@ -12,3 +12,14 @@
   top: var(--mvp-compliance-header-clearance);
   max-height: calc(100vh - var(--mvp-compliance-header-clearance) - 1rem);
 }
+
+/* The wording of one document where the page asks about several, held to a
+   height that leaves the box beneath it in reach. Set here because the shell's
+   stylesheet emits no maximum-height utility of this size. */
+:where(:root) {
+  --mvp-compliance-wording-height: 24rem;
+}
+
+.mvp-compliance-wording {
+  max-height: var(--mvp-compliance-wording-height);
+}

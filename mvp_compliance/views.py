@@ -1,16 +1,25 @@
 """The pages that show a document's wording to a visitor."""
 
+import logging
+
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.db import DatabaseError, transaction
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import resolve_url
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.formats import date_format
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, ngettext
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
+from mvp_compliance.exceptions import RecordError
 from mvp_compliance.models import Acceptance, Document, Version
+
+logger = logging.getLogger(__name__)
 
 
 class VersionSubtitleMixin:
@@ -182,3 +191,138 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
             entry["shown"] = accepted[: self.shown_first] if fold else accepted
             entry["earlier"] = accepted[self.shown_first :] if fold else []
         return list(entries.values())
+
+
+class AgreementView(LoginRequiredMixin, MVPTemplateView):
+    """The page that asks a signed-in person to agree to what is outstanding.
+
+    Shows the version in force of every document outstanding for them, takes
+    one answer per document in a single submission, and sends them on to
+    ``?next=`` once the stored acceptances leave nothing outstanding. A person
+    with nothing outstanding is sent on without being shown the page.
+
+    A prototype: written to make the page real, with no tests.
+    """
+
+    template_name = "mvp_compliance/agreement.html"
+    page_title = gettext_lazy("Documents to agree to")
+    #: The name of the parameter that carries the address to return to.
+    redirect_field_name = "next"
+
+    def get_breadcrumbs(self):
+        return [{"text": self.page_title}]
+
+    def get_page_subtitle(self):
+        return ngettext(
+            "This document is new or has changed since you last agreed. "
+            "Read it, then tick the box beneath it.",
+            "These documents are new or have changed since you last agreed. "
+            "Read each one, then tick the box beneath it.",
+            len(self.get_entries()),
+        )
+
+    def get_destination(self) -> str:
+        """The address to send the person on to: ``next`` when it stays on this site."""
+        destination = self.request.POST.get(
+            self.redirect_field_name, self.request.GET.get(self.redirect_field_name, "")
+        )
+        safe = url_has_allowed_host_and_scheme(
+            destination,
+            allowed_hosts={self.request.get_host()},
+            require_https=self.request.is_secure(),
+        )
+        if not safe or destination.split("?")[0] == self.request.path:
+            return resolve_url(
+                getattr(settings, "MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL", "/")
+            )
+        return destination
+
+    def get_entries(self) -> list[dict]:
+        """One entry per outstanding document, in the order the document pages use.
+
+        Each carries the ``document``, the ``version`` in force, and
+        ``previous``: the person's latest acceptance of an earlier version of
+        it, or ``None``. Read once per request.
+        """
+        if not hasattr(self, "entries"):
+            user = self.request.user
+            documents = (
+                Document.objects.outstanding_for(user).in_force().order_by("name")
+            )
+            previous: dict[int, Acceptance] = {}
+            for acceptance in (
+                Acceptance.objects.for_person(user)
+                .filter(version__document__in=documents)
+                .select_related("version")
+                .order_by("accepted_at")
+            ):
+                previous[acceptance.version.document_id] = acceptance
+            self.entries = [
+                {
+                    "document": document,
+                    "version": document.current_versions[0],
+                    "previous": previous.get(document.pk),
+                }
+                for document in documents
+            ]
+        return self.entries
+
+    def get(self, request, *args, **kwargs):
+        if not self.get_entries():
+            return HttpResponseRedirect(self.get_destination())
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        ticked = set(request.POST.getlist("agree"))
+        shown = set(request.POST.getlist("shown"))
+        asked = self.get_entries()
+        agreed = [entry for entry in asked if str(entry["version"].pk) in ticked]
+        notices: dict = {
+            "ticked": ticked,
+            # Shown a version that has been replaced since: nothing is
+            # recorded for it, and the page says why it is back.
+            "replaced": [
+                entry["document"]
+                for entry in asked
+                if str(entry["version"].pk) not in shown
+            ]
+            if shown
+            else [],
+        }
+        if agreed:
+            try:
+                with transaction.atomic():
+                    for entry in agreed:
+                        Acceptance.objects.record(
+                            request.user, entry["version"], request=request
+                        )
+            except (DatabaseError, RecordError):
+                logger.exception("An acceptance could not be recorded.")
+                notices["failed"] = True
+                return self.render_to_response(self.get_context_data(**notices))
+        elif not notices["replaced"]:
+            notices["nothing_ticked"] = True
+        # Asked again of the stored records, never taken from the submission.
+        del self.entries
+        if not self.get_entries():
+            return HttpResponseRedirect(self.get_destination())
+        notices["recorded"] = [entry["document"] for entry in agreed]
+        return self.render_to_response(self.get_context_data(**notices))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ticked = kwargs.get("ticked", set())
+        entries = self.get_entries()
+        for entry in entries:
+            entry["field"] = {
+                "name": "agree",
+                "value": entry["version"].pk,
+                "id": f"agree-{entry['document'].slug}",
+            }
+            if str(entry["version"].pk) in ticked:
+                entry["field"]["checked"] = True
+        context["entries"] = entries
+        context["capped"] = len(entries) > 1
+        context["destination"] = self.get_destination()
+        context["redirect_field_name"] = self.redirect_field_name
+        return context

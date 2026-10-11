@@ -1,0 +1,35 @@
+{# @description One outstanding document on the page that asks: its name, the version in force, the wording stored at publication, and the box that agrees to it. #}
+{# @prop document:object | description:"The outstanding document." #}
+{# @prop version:object | description:"Its version in force, the one the box agrees to." #}
+{# @prop previous:object | description:"The reader's latest acceptance of an earlier version, when there is one." #}
+{# @prop field:object | description:"The attributes of the box: name, value, id, and checked when it was ticked." #}
+{# @prop capped:boolean | description:"Hold the wording in a region that scrolls, for a page with several documents." #}
+{% load i18n %}
+<c-vars document version previous field capped />
+<c-card title="{{ document.name }}">
+  <input type="hidden" name="shown" value="{{ version.pk }}" />
+  <p class="text-sm opacity-70">
+    {% blocktranslate with number=version.number date=version.published_at|date %}Version {{ number }}, in force since {{ date }}.{% endblocktranslate %}
+    {% if previous %}
+      {% blocktranslate with number=previous.version.number date=previous.accepted_at|date %}You agreed to version {{ number }} on {{ date }}.{% endblocktranslate %}
+    {% endif %}
+    <a class="link"
+       href="{% url 'mvp_compliance:document' document.slug %}"
+       target="_blank"
+       rel="noopener">{% translate "Open it on its own page" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+  </p>
+  {% if capped %}
+    {# Focusable, so a keyboard reaches the wording and can scroll it. #}
+    <div class="mvp-compliance-wording overflow-y-auto rounded-box border border-base-300 p-4"
+         role="region"
+         tabindex="0"
+         aria-label="{% blocktranslate with name=document.name %}Wording of {{ name }}{% endblocktranslate %}">
+      <div class="prose max-w-none">{{ version.html|safe }}</div>
+    </div>
+  {% else %}
+    <div class="prose max-w-none">{{ version.html|safe }}</div>
+  {% endif %}
+  <c-form.field type="checkbox" class="checkbox-primary" :attrs="field">
+    <span class="text-wrap text-base-content">{% blocktranslate with name=document.name number=version.number %}I agree to {{ name }}, version {{ number }}{% endblocktranslate %}</span>
+  </c-form.field>
+</c-card>

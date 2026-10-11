@@ -44,6 +44,24 @@
       </div>
 
       <div class="card bg-base-200 mt-6 p-6">
+        <h2 class="text-xl font-semibold">Being asked to agree</h2>
+        <p class="mt-2 opacity-75">
+          A signed-in person with something outstanding is shown it and asked to agree, then
+          sent on to where they were going. The link below sends you there with the list of
+          what you agreed to as the place to come back to. Which state you see depends on who
+          you sign in as.
+        </p>
+        <ul class="mt-2 list-disc pl-6">
+          <li><code>one-document.user@example.com</code>: one document, shown in full.</li>
+          <li><code>longstanding.user@example.com</code>: two documents, one with a long name.</li>
+          <li><code>regular.user@example.com</code>: five documents. Agree to some and the rest come back.</li>
+          <li><code>unrecorded.user@example.com</code>: two documents, and the record is never written.</li>
+          <li><code>veteran.user@example.com</code>: nothing outstanding, so you are sent straight on.</li>
+        </ul>
+        <a class="btn btn-primary mt-4 w-fit" href="{% url 'mvp_compliance:agree' %}?next={% url 'mvp_compliance:agreed' %}">Open the page that asks</a>
+      </div>
+
+      <div class="card bg-base-200 mt-6 p-6">
         <h2 class="text-xl font-semibold">Accounts</h2>
         <p class="mt-2 opacity-75">Password for every one of them is <code>password</code>.</p>
         <table class="table mt-4">
