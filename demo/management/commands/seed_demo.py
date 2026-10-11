@@ -129,6 +129,21 @@ ASKED = {
         (COMMUNITY, "2026.2"),
         (MEMBERSHIP, "2026.1"),
     ],
+    # One document that holds them up and one that does not, side by side:
+    # the demo's settings name House rules as optional.
+    "two-kinds.user@example.com": [
+        ("Privacy policy", "2025.1"),
+        ("Terms of use", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
+    # Only the optional document outstanding.
+    "optional-only.user@example.com": [
+        ("Privacy policy", "2026.1"),
+        ("Terms of use", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
     # Two outstanding, and the write always fails: demo/signals.py refuses to
     # store an acceptance for this account, so the failure can be looked at.
     "unrecorded.user@example.com": [

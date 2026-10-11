@@ -51,6 +51,10 @@ is a stand-in that the plan may keep, change or rebuild.
   ticked, and which documents were replaced by a newer version while the person was reading.
 - The boxes a person ticked, kept ticked when the page comes back after a failed write.
 - Whether the page shows one document or several, because the layout differs.
+- For each document, whether the person may continue without agreeing to it, and the documents
+  ordered with those that hold a person up first.
+- The person sent on once nothing that holds them up is outstanding, whether or not they ticked an
+  optional document. A page with only optional documents still shown when it is opened.
 - A redirect, with no page drawn, for a person with nothing outstanding.
 - A count of database queries that does not grow with the number of documents outstanding.
 - An address for the page that sits beside the document pages and cannot be taken by a slug.
@@ -65,6 +69,12 @@ is a stand-in that the plan may keep, change or rebuild.
   such switch and gets none. The view catches a database error and a refused record. Whether those
   are the right errors to catch, and how the failure reaches the project's error reporting, is
   undecided: the sketch writes it to the log.
+- **Required and optional documents.** Whether a document stops a person is a later feature and
+  nothing in the package stores it. The demo names the optional documents in a setting,
+  `MVP_COMPLIANCE_SKETCH_OPTIONAL_SLUGS`, which the view reads. No model field was added. The
+  setting, the ordering and the rule for when a person is sent on are all stand-ins for what that
+  feature will supply, and this feature's specification still treats every outstanding document
+  alike.
 - **The default destination.** A person with no usable destination is sent to the site's root. The
   view reads a setting, `MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL`, that is documented nowhere and
   whose name is a placeholder.
@@ -79,7 +89,7 @@ is a stand-in that the plan may keep, change or rebuild.
 - **Translations.** The new strings are marked for translation. No catalogue was updated.
 - **Documentation.** None written.
 - **A project that replaces the template.** Not tried.
-- **Demo accounts.** Two accounts were added so every state is reachable, and the landing page
+- **Demo accounts.** Four accounts were added so every state is reachable, and the landing page
   lists which account shows which state. An acceptance cannot be undone, so an account that agrees
   in the demo stays agreed until the demo database is rebuilt.
 
@@ -99,6 +109,12 @@ These are choices with no settled answer. Each is open to change in review.
 - One button at the foot of the page, labelled "Agree and continue". With several documents, a
   line beside it says some can be agreed to now and the rest later.
 - The page has no button for declining or leaving. A person leaves by the site's own navigation.
+- An optional document says so twice, in words: a line under its name, and "(optional)" at the
+  end of its box's label. Documents that hold a person up carry no mark.
+- Documents that hold a person up come first, optional ones after them.
+- With both kinds on the page, the line beside the button says the person can continue without
+  the ones marked optional. With only optional documents, the button reads "Continue" and the
+  subtitle says agreeing is optional.
 - Messages sit above the page title: an error when the record was not written, an error when
   nothing was ticked with a button to the first box, a confirmation for each document recorded
   when others remain, and a note when a document was replaced during the visit.

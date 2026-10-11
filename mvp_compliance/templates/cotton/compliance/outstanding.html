@@ -3,9 +3,10 @@
 {# @prop version:object | description:"Its version in force, the one the box agrees to." #}
 {# @prop previous:object | description:"The reader's latest acceptance of an earlier version, when there is one." #}
 {# @prop field:object | description:"The attributes of the box: name, value, id, and checked when it was ticked." #}
+{# @prop optional:boolean | description:"The reader may continue without agreeing to this document." #}
 {# @prop capped:boolean | description:"Hold the wording in a region that scrolls, for a page with several documents." #}
 {% load i18n %}
-<c-vars document version previous field capped />
+<c-vars document version previous field optional capped />
 <c-card title="{{ document.name }}">
   <input type="hidden" name="shown" value="{{ version.pk }}" />
   <p class="text-sm opacity-70">
@@ -18,6 +19,9 @@
        target="_blank"
        rel="noopener">{% translate "Open it on its own page" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
   </p>
+  {% if optional %}
+    <p class="text-sm">{% translate "Agreeing to this document is optional. You can continue without it and agree later." %}</p>
+  {% endif %}
   {% if capped %}
     {# Focusable, so a keyboard reaches the wording and can scroll it. #}
     <div class="mvp-compliance-wording overflow-y-auto rounded-box border border-base-300 p-4"
@@ -30,6 +34,6 @@
     <div class="prose max-w-none">{{ version.html|safe }}</div>
   {% endif %}
   <c-form.field type="checkbox" class="checkbox-primary" :attrs="field">
-    <span class="text-wrap text-base-content">{% blocktranslate with name=document.name number=version.number %}I agree to {{ name }}, version {{ number }}{% endblocktranslate %}</span>
+    <span class="text-wrap text-base-content">{% if optional %}{% blocktranslate with name=document.name number=version.number %}I agree to {{ name }}, version {{ number }} (optional){% endblocktranslate %}{% else %}{% blocktranslate with name=document.name number=version.number %}I agree to {{ name }}, version {{ number }}{% endblocktranslate %}{% endif %}</span>
   </c-form.field>
 </c-card>

@@ -213,6 +213,15 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         return [{"text": self.page_title}]
 
     def get_page_subtitle(self):
+        entries = self.get_entries()
+        if all(entry["optional"] for entry in entries):
+            return ngettext(
+                "This document is new or has changed since you last agreed. "
+                "Agreeing to it is optional, and you can continue without it.",
+                "These documents are new or have changed since you last agreed. "
+                "Agreeing to them is optional, and you can continue without them.",
+                len(entries),
+            )
         return ngettext(
             "This document is new or has changed since you last agreed. "
             "Read it, then tick the box beneath it.",
@@ -257,14 +266,21 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
                 .order_by("accepted_at")
             ):
                 previous[acceptance.version.document_id] = acceptance
-            self.entries = [
+            # Faked: enforcement per document does not exist yet. The demo names
+            # the documents a person may leave outstanding in a setting, so the
+            # page can be looked at with both kinds on it.
+            optional = getattr(settings, "MVP_COMPLIANCE_SKETCH_OPTIONAL_SLUGS", ())
+            entries = [
                 {
                     "document": document,
                     "version": document.current_versions[0],
                     "previous": previous.get(document.pk),
+                    "optional": document.slug in optional,
                 }
                 for document in documents
             ]
+            # The ones that hold a person up first, then the ones that do not.
+            self.entries = sorted(entries, key=lambda entry: entry["optional"])
         return self.entries
 
     def get(self, request, *args, **kwargs):
@@ -300,12 +316,12 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
                 logger.exception("An acceptance could not be recorded.")
                 notices["failed"] = True
                 return self.render_to_response(self.get_context_data(**notices))
-        elif not notices["replaced"]:
-            notices["nothing_ticked"] = True
         # Asked again of the stored records, never taken from the submission.
         del self.entries
-        if not self.get_entries():
+        if all(entry["optional"] for entry in self.get_entries()):
             return HttpResponseRedirect(self.get_destination())
+        if not agreed and not notices["replaced"]:
+            notices["nothing_ticked"] = True
         notices["recorded"] = [entry["document"] for entry in agreed]
         return self.render_to_response(self.get_context_data(**notices))
 
@@ -323,6 +339,8 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
                 entry["field"]["checked"] = True
         context["entries"] = entries
         context["capped"] = len(entries) > 1
+        context["required_count"] = sum(not entry["optional"] for entry in entries)
+        context["optional_count"] = sum(entry["optional"] for entry in entries)
         context["destination"] = self.get_destination()
         context["redirect_field_name"] = self.redirect_field_name
         return context

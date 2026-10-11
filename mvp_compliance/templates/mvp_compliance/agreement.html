@@ -41,11 +41,18 @@
                                   :version="entry.version"
                                   :previous="entry.previous"
                                   :field="entry.field"
+                                  :optional="entry.optional"
                                   :capped="capped" />
       {% endfor %}
       <div class="flex flex-wrap items-center gap-4">
-        <c-button type="submit" variant="primary" text="{% translate "Agree and continue" %}" />
-        {% if capped %}
+        {% if required_count %}
+          <c-button type="submit" variant="primary" text="{% translate "Agree and continue" %}" />
+        {% else %}
+          <c-button type="submit" variant="primary" text="{% translate "Continue" %}" />
+        {% endif %}
+        {% if optional_count and required_count %}
+          <p class="text-sm opacity-70">{% translate "You can continue without the documents marked optional." %}</p>
+        {% elif required_count > 1 %}
           <p class="text-sm opacity-70">{% translate "You can agree to some now and come back to the rest." %}</p>
         {% endif %}
       </div>
