@@ -3,7 +3,7 @@
   "feature": "009-asking-to-agree",
   "branch": "009-asking-to-agree",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PR_READY",
+  "state": "MERGED",
   "state_history": [
     {
       "state": "QUEUED",
@@ -39,6 +39,11 @@
       "state": "PR_READY",
       "at": "2026-10-12T10:05:23Z",
       "note": "review recorded, no finding open; walkthrough laid out"
+    },
+    {
+      "state": "MERGED",
+      "at": "2026-10-12T10:24:29Z",
+      "note": "PR #88 merged; approved by SamuelJennings"
     }
   ],
   "gates": {
@@ -73,8 +78,8 @@
       ]
     },
     "merge": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "SamuelJennings",
+      "at": "2026-10-12T10:24:18Z"
     },
     "design_review": {
       "approved_by": "design-reviewer",
@@ -108,8 +113,8 @@
       ]
     },
     "walkthrough": {
-      "approved_by": null,
-      "at": "2026-10-12T10:00:02Z",
+      "approved_by": "SamuelJennings",
+      "at": "2026-10-12T10:24:18Z",
       "self_resolved": []
     }
   },
@@ -473,7 +478,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 24.05,
+      "used": 29.96,
       "max": 120
     }
   },
