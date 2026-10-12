@@ -49,11 +49,11 @@ msgstr "Published by"
 msgid "Published versions"
 msgstr "Published versions"
 
-#: admin.py:176 models.py:367
+#: admin.py:176 models.py:403
 msgid "number"
 msgstr "number"
 
-#: admin.py:186 models.py:392
+#: admin.py:186 models.py:428
 msgid "Draft"
 msgstr "Draft"
 
@@ -103,35 +103,35 @@ msgstr "Use lowercase letters, digits and single hyphens only."
 msgid "This slug is reserved for another page. Choose a different one."
 msgstr "This slug is reserved for another page. Choose a different one."
 
-#: models.py:150
+#: models.py:176
 msgid "Agreed to"
 msgstr "Agreed to"
 
-#: models.py:151
+#: models.py:177
 msgid "Notice"
 msgstr "Notice"
 
-#: models.py:154
+#: models.py:180
 msgid "name"
 msgstr "name"
 
-#: models.py:157
+#: models.py:183
 msgid "The name this document is known by, such as “Privacy policy”."
 msgstr "The name this document is known by, such as “Privacy policy”."
 
-#: models.py:160
+#: models.py:186
 msgid "slug"
 msgstr "slug"
 
-#: models.py:165
+#: models.py:191
 msgid "The document's identifier in its address, such as “privacy-policy”."
 msgstr "The document's identifier in its address, such as “privacy-policy”."
 
-#: models.py:169
+#: models.py:195
 msgid "kind"
 msgstr "kind"
 
-#: models.py:174
+#: models.py:200
 msgid ""
 "Whether people agree to this document, such as a privacy policy, or only "
 "read it, such as an impressum. Nobody is ever asked to accept a notice."
@@ -139,33 +139,49 @@ msgstr ""
 "Whether people agree to this document, such as a privacy policy, or only "
 "read it, such as an impressum. Nobody is ever asked to accept a notice."
 
-#: models.py:185
+#: models.py:205
+msgid "enforced"
+msgstr "enforced"
+
+#: models.py:208
+msgid ""
+"Whether a person who has not accepted this document is stopped until they "
+"do, on a site that has switched the check on. Turn it off for a document "
+"that is published and offered but never required, such as a cookie policy. "
+"It never applies to a notice."
+msgstr ""
+"Whether a person who has not accepted this document is stopped until they "
+"do, on a site that has switched the check on. Turn it off for a document "
+"that is published and offered but never required, such as a cookie policy. "
+"It never applies to a notice."
+
+#: models.py:221
 msgid ""
 "A document's slug cannot be changed once a version of it has been published."
 msgstr ""
 "A document's slug cannot be changed once a version of it has been published."
 
-#: models.py:191 models.py:359
+#: models.py:227 models.py:395
 msgid "document"
 msgstr "document"
 
-#: models.py:192
+#: models.py:228
 msgid "documents"
 msgstr "documents"
 
-#: models.py:255 models.py:698
+#: models.py:291 models.py:734
 msgid "A published version's wording and publisher cannot be changed."
 msgstr "A published version's wording and publisher cannot be changed."
 
-#: models.py:262 models.py:704
+#: models.py:298 models.py:740
 msgid "A published version cannot be deleted."
 msgstr "A published version cannot be deleted."
 
-#: models.py:360
+#: models.py:396
 msgid "The document this version belongs to."
 msgstr "The document this version belongs to."
 
-#: models.py:373
+#: models.py:409
 msgid ""
 "The year this version was published and its place among the document's "
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
@@ -175,19 +191,19 @@ msgstr ""
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
 "for a draft."
 
-#: models.py:379
+#: models.py:415
 msgid "markdown"
 msgstr "markdown"
 
-#: models.py:380
+#: models.py:416
 msgid "The wording of this version, written in Markdown."
 msgstr "The wording of this version, written in Markdown."
 
-#: models.py:383
+#: models.py:419
 msgid "html"
 msgstr "html"
 
-#: models.py:386
+#: models.py:422
 msgid ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
@@ -195,19 +211,19 @@ msgstr ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
 
-#: models.py:393
+#: models.py:429
 msgid "Current"
 msgstr "Current"
 
-#: models.py:394
+#: models.py:430
 msgid "Superseded"
 msgstr "Superseded"
 
-#: models.py:397
+#: models.py:433
 msgid "status"
 msgstr "status"
 
-#: models.py:403
+#: models.py:439
 msgid ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
@@ -215,11 +231,11 @@ msgstr ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
 
-#: models.py:408
+#: models.py:444
 msgid "published at"
 msgstr "published at"
 
-#: models.py:413
+#: models.py:449
 msgid ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
@@ -227,11 +243,11 @@ msgstr ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
 
-#: models.py:422
+#: models.py:458
 msgid "publisher"
 msgstr "publisher"
 
-#: models.py:424
+#: models.py:460
 msgid ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
@@ -239,11 +255,11 @@ msgstr ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
 
-#: models.py:435
+#: models.py:471
 msgid "publisher subject"
 msgstr "publisher subject"
 
-#: models.py:442
+#: models.py:478
 msgid ""
 "The publisher's primary key as text, written once at publication. It lets "
 "the version say an account was since removed after the link to it is "
@@ -253,65 +269,65 @@ msgstr ""
 "the version say an account was since removed after the link to it is "
 "cleared. Empty when nobody was recorded."
 
-#: models.py:451 models.py:1017
+#: models.py:487 models.py:1053
 #: templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
 
-#: models.py:452
+#: models.py:488
 msgid "versions"
 msgstr "versions"
 
-#: models.py:460
+#: models.py:496
 msgid "Can publish a version"
 msgstr "Can publish a version"
 
-#: models.py:498
+#: models.py:534
 msgid "draft"
 msgstr "draft"
 
-#: models.py:522
+#: models.py:558
 msgid "Account removed"
 msgstr "Account removed"
 
-#: models.py:523
+#: models.py:559
 msgid "Unknown publisher"
 msgstr "Unknown publisher"
 
-#: models.py:585
+#: models.py:621
 msgid "This version has already been published."
 msgstr "This version has already been published."
 
-#: models.py:589
+#: models.py:625
 msgid "Publishing this would produce no output."
 msgstr "Publishing this would produce no output."
 
-#: models.py:605
+#: models.py:641
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
 
-#: models.py:613
+#: models.py:649
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: models.py:766 models.py:1119
+#: models.py:802 models.py:1155
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: models.py:771 models.py:1126
+#: models.py:807 models.py:1162
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: models.py:919 models.py:962
+#: models.py:955 models.py:998
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: models.py:993
+#: models.py:1029
 msgid "user"
 msgstr "user"
 
-#: models.py:995
+#: models.py:1031
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -321,11 +337,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: models.py:1005
+#: models.py:1041
 msgid "subject"
 msgstr "subject"
 
-#: models.py:1009
+#: models.py:1045
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -337,7 +353,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: models.py:1019
+#: models.py:1055
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -345,11 +361,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: models.py:1026
+#: models.py:1062
 msgid "accepted at"
 msgstr "accepted at"
 
-#: models.py:1030
+#: models.py:1066
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -357,11 +373,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: models.py:1035
+#: models.py:1071
 msgid "IP address"
 msgstr "IP address"
 
-#: models.py:1039
+#: models.py:1075
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -373,21 +389,21 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: models.py:1049
+#: models.py:1085
 msgid "acceptance"
 msgstr "acceptance"
 
-#: models.py:1050
+#: models.py:1086
 msgid "acceptances"
 msgstr "acceptances"
 
-#: models.py:1085
+#: models.py:1121
 msgid ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 msgstr ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 
-#: models.py:1110
+#: models.py:1146
 msgid ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
@@ -395,15 +411,15 @@ msgstr ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
 
-#: models.py:1144
+#: models.py:1180
 msgid "disclosure"
 msgstr "disclosure"
 
-#: models.py:1145
+#: models.py:1181
 msgid "everything held about a person"
 msgstr "everything held about a person"
 
-#: models.py:1147
+#: models.py:1183
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 

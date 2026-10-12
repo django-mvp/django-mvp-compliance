@@ -116,6 +116,21 @@ class DocumentQuerySet(models.QuerySet):
             .exclude(pk__in=accepted.values("version__document_id"))
         )
 
+    def enforced_outstanding_for(self, user) -> "DocumentQuerySet":
+        """Narrow to the outstanding documents that stop ``user`` until accepted.
+
+        These are the documents ``outstanding_for`` names whose ``enforced`` is
+        on: the ones a site that has switched the check on holds a person at
+        the page that asks, where the rest are only offered.
+
+        Args:
+            user: The account to ask about.
+
+        Returns:
+            The outstanding documents for ``user`` that are enforced.
+        """
+        return self.outstanding_for(user).filter(enforced=True)
+
 
 class DocumentManager(models.Manager["Document"]):
     """Forwards ``DocumentQuerySet``'s methods, the same shape as ``VersionManager``."""
@@ -137,6 +152,17 @@ class DocumentManager(models.Manager["Document"]):
             The result of ``DocumentQuerySet.outstanding_for``.
         """
         return self.get_queryset().outstanding_for(user)
+
+    def enforced_outstanding_for(self, user) -> DocumentQuerySet:
+        """Return the outstanding documents that stop ``user`` until accepted.
+
+        Args:
+            user: The account to ask about.
+
+        Returns:
+            The result of ``DocumentQuerySet.enforced_outstanding_for``.
+        """
+        return self.get_queryset().enforced_outstanding_for(user)
 
 
 class Document(models.Model):
@@ -173,6 +199,16 @@ class Document(models.Model):
         help_text=_(
             "Whether people agree to this document, such as a privacy policy, or only "
             "read it, such as an impressum. Nobody is ever asked to accept a notice."
+        ),
+    )
+    enforced = models.BooleanField(
+        _("enforced"),
+        default=True,
+        help_text=_(
+            "Whether a person who has not accepted this document is stopped until "
+            "they do, on a site that has switched the check on. Turn it off for a "
+            "document that is published and offered but never required, such as a "
+            "cookie policy. It never applies to a notice."
         ),
     )
 
