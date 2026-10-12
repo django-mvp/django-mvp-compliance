@@ -265,3 +265,34 @@ notice or a draft. The unique constraint does the work `get_or_create` does in `
 
 **Why defensible**: it deletes code and widens one list in an existing test, with no design in it,
 and the first dispatched story needs a green base to start from.
+
+## D19 — The list is not locked while a submission is processed
+
+**Ambiguous**: FR-005 says an acceptance is recorded only while its version is still the current
+version of a document outstanding for the person. A version can be replaced in the instant between
+the page reading what is outstanding and the write.
+
+**Chosen**: no lock. In that instant an acceptance of the version just replaced can be stored. The
+person is still shown the page again with the version now in force, because whether they are sent
+on is read from the stored records after the write.
+
+**Why defensible**: the record is true, as D7 already holds, and nobody is let through on it.
+Closing the window needs a row lock that SQLite does not have.
+
+**Revisit if**: a project needs it never to happen. That is a database-level guarantee and a
+change to FS-003.
+
+## D20 — The line under the title is kept as the maintainer worded it
+
+**Ambiguous**: the line reads "You will not be able to use the app without agreeing to all required
+documents." The design review pointed out that this page stops nobody (FR-024), so the sentence
+only becomes true once the site-wide check (#87) sends people here.
+
+**Chosen**: the sentence is kept, with "required" for "mandatory". It was dictated at the review
+of the prototype, and the build may not undo what was ruled there.
+
+**Why defensible**: the page ships for the site-wide check to send people to, and the sentence
+describes the site once it does. It is one translatable string, asserted by no test, and a project
+can replace it. The point is raised with the maintainer when the pull request is put up for review.
+
+**Revisit if**: this feature is released before the site-wide check.

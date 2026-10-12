@@ -24,13 +24,14 @@ rule here (sketch.md, *What was ruled by eye*). The rule stands everywhere else.
 
 ### Recording several acceptances at a cost that does not grow
 
-`Acceptance.objects.record()` (`models.py:872`) costs a notice check, a read and a write for each
-call, so a loop over it grows with the documents agreed to and breaks FR-023. The queryset already
+`Acceptance.objects.record()` (`models.py:872`) costs two notice checks, a read and a write for
+each call, inside a savepoint, so a loop over it grows with the documents agreed to and breaks FR-023. The queryset already
 has what a batch needs: `AcceptanceQuerySet.bulk_create()` (`models.py:773`) refuses a batch
 naming a notice's version in one query, and the model has a unique constraint over
 `subject` and `version` (`one_acceptance_per_person_per_version`). `bulk_create(...,
 ignore_conflicts=True)` therefore writes every new acceptance and passes over one that already
-exists, in one statement, on SQLite and PostgreSQL alike. That gives a batch the same guarantees
+exists, in one statement. The suite runs on SQLite. PostgreSQL does the same with `ON CONFLICT DO
+NOTHING`. Oracle cannot ignore conflicts and raises, which the documentation says. That gives a batch the same guarantees
 FS-003 gives one acceptance: one record per person and version, an existing record untouched, no
 acceptance of a notice or of a draft. A manager method beside `record()` holds it, so FR-004's
 "through the recording FS-003 provides" stays true.
@@ -40,9 +41,8 @@ for one.
 
 ### One submission stored together or not at all
 
-One `bulk_create` is one statement, so FR-010 holds without help. The view still wraps the write
-in `transaction.atomic()`: it costs a savepoint and keeps the guarantee if the write ever becomes
-more than one statement.
+One `bulk_create` is one statement up to the backend's batch size, about two hundred rows on
+SQLite. Past that it is several, and the view's `transaction.atomic()` is what keeps FR-010.
 
 ### Knowing the record was written
 
@@ -57,10 +57,19 @@ queries for its documents whatever their number.
 version that became a notice's between the page asking what is outstanding and the write. Both
 leave nothing recorded. Anything else is a defect and is left to raise.
 
+The list is not locked for the length of a request. A version replaced, or a document made a
+notice, between the read and the write is not passed over by the write itself: an acceptance of the
+version just replaced can be stored. It is a true record of what the person agreed to, it settles
+nothing, and the second read keeps them on the page with the version now in force. Closing the
+window would need a row lock SQLite does not have, and no requirement here asks for it
+(decisions.md D19).
+
 ### Reporting the failure to the project
 
-Django routes `logger.exception()` on any logger through the project's `LOGGING`, which is where
-a project attaches its error reporting. The package logs on `mvp_compliance.views` at error level
+Django routes `logger.exception()` through the project's `LOGGING`. Under Django's default
+configuration the `mail_admins` handler sits on the `django` logger only, so a record on
+`mvp_compliance.views` reaches standard error and nothing else. A project that mails or forwards
+its errors attaches a handler to that logger, and the documentation says so. The package logs on `mvp_compliance.views` at error level
 with the traceback, and shows the person a fixed sentence (FR-011). No signal and no setting.
 
 ### The destination

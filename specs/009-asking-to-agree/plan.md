@@ -94,6 +94,8 @@ The view's method `record_agreed(versions)` is the one place that calls it.
 `AgreementView(LoginRequiredMixin, MVPTemplateView)` in `mvp_compliance/views.py`.
 
 - `redirect_field_name = "next"`.
+- `dispatch` is wrapped with `method_decorator(csrf_protect)`, as Django's own sign-in view is, so
+  a cross-site submission is refused whatever middleware the project runs.
 - `get_entries()`: `Document.objects.outstanding_for(request.user).in_force().order_by("name")`,
   one entry per document, required entries first. Read once per request and read again after a
   write.
@@ -114,8 +116,10 @@ The view's method `record_agreed(versions)` is the one place that calls it.
 - `record_agreed(versions)`: `Acceptance.objects.record_many(request.user, versions,
   request=request)`.
 - `get_destination()`: the `next` value from the form, else from the query string. Kept only when
-  `url_has_allowed_host_and_scheme` passes for the request's host and its path is not this page's
-  own. Otherwise `resolve_url(settings.MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL)`, default `/`
+  `url_has_allowed_host_and_scheme` passes for the request's host, with `require_https` following
+  the request, and it is not this page's own address. The value is joined onto the request's path,
+  its path taken and unquoted, and compared with the request's path with trailing slashes ignored,
+  so `.`, a bare query string, a missing slash and a percent-encoded letter all count as the page. Otherwise `resolve_url(settings.MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL)`, default `/`
   (US-4).
 - `get_context_data()`: builds each entry's `field` attributes: `name="agree"`, the version id,
   an id from the slug, `aria-describedby` pointing at the row's name, `data-required` on a required
@@ -157,8 +161,9 @@ The script's behaviour has no automated test: the repository has no JavaScript r
   attach error reporting to.
 - US-4: `docs/pages.md`: sending a person to the page, the `next` parameter, a person with nothing
   outstanding, `MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL`. README settings.
-- US-5: `docs/pages.md`: replacing the template, and the methods a project's own view can
-  override. `docs/models.md` and CHANGELOG: the slug `agree` is no longer available. `CONTEXT.md`:
+- US-5: `docs/pages.md`: replacing the template, and `record_agreed()` as the method a project's
+  own view can override. `is_optional()` is left to its docstring until the site-wide check
+  decides what it answers. `docs/models.md` and CHANGELOG: the slug `agree` is no longer available. `CONTEXT.md`:
   an entry for *Outstanding*.
 
 The `en` catalog is regenerated in each task that adds a string.
@@ -180,7 +185,7 @@ Sequential, in one worktree. Every story edits the view US-1 builds.
 
 | Addition | Why it is needed | Simpler alternative rejected because |
 |---|---|---|
-| `record_many()` beside `record()` | FR-023: a submission's cost must not grow with the documents agreed to | A loop over `record()` costs three queries a document |
+| `record_many()` beside `record()` | FR-023: a submission's cost must not grow with the documents agreed to | A loop over `record()` costs several queries a document |
 | `is_optional()` and `record_agreed()` as methods of the view | The approved page marks rows required or optional and has a failed-write state. The demo has to reach both, and the site-wide check (#87) needs the first | A setting read by the package would ship a fake of #87's decision. Inlining both would leave the approved optional rows unreachable and untested |
 
 ## Outside this plan

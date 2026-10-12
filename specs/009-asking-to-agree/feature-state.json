@@ -3,7 +3,7 @@
   "feature": "009-asking-to-agree",
   "branch": "009-asking-to-agree",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "PLAN",
+  "state": "DESIGN_REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -14,6 +14,11 @@
       "state": "PLAN",
       "at": "2026-10-12T08:41:17Z",
       "note": "sketch approved at 4b30294; claim held; branch level with origin/main b455695; research, plan and tasks written"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-10-12T08:41:53Z",
+      "note": "plan committed; design reviewer dispatched"
     }
   ],
   "gates": {
@@ -41,12 +46,32 @@
       ]
     },
     "plan": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "open",
+      "at": "2026-10-12T08:51:26Z",
+      "self_resolved": [
+        "plan gate open for this feature; passed without a stop"
+      ]
     },
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design-reviewer",
+      "at": "2026-10-12T08:51:26Z",
+      "self_resolved": [
+        "verdict approve: 0 critical, 0 high, 1 medium, 9 low",
+        "SPEC-001 medium: the line under the title is untrue until the site-wide check exists; kept as the maintainer worded it and raised at the merge gate (decisions.md D20)",
+        "SEC-001 low: the same-host check on next moved into US-1 (T004, T005)",
+        "SEC-002 low: the page's-own-address rule compares a normalised path; T011 covers five forms",
+        "SEC-003 low: dispatch wrapped with csrf_protect (T005)",
+        "SPEC-002 low: the unlocked window recorded (research.md, decisions.md D19)",
+        "SPEC-003 low: documentation says where a failed write is reported under default LOGGING (T008)",
+        "SPEC-004 low: the required-first ordering assertion dropped from T009",
+        "ARCH-001 low: docs say record_many sends no save signals and needs ignore-conflicts support (T003)",
+        "ARCH-002 low: require_https follows the request; own check kept over NextURLMixin",
+        "ARCH-003 low: only record_agreed documented as an override point (T014)"
+      ]
     }
   },
   "stories": [
@@ -190,7 +215,7 @@
       "max": 1
     },
     "design_review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "tokens": {
