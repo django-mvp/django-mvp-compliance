@@ -180,10 +180,20 @@ MIDDLEWARE = [
 ]
 ```
 
-Nothing is checked until it is listed. See
+Nothing is checked until it is listed. A project keeps its own pages reachable for a
+person who has not agreed yet by listing them:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help/", "/contact/"]  # empty by default
+```
+
+An entry covers itself and every address beneath it, a path segment at a time: `/help/`
+covers `/help/faq/` and not `/helpful/`. An entry of `/` covers every address, which
+switches the check off for everybody. See
 [docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md)
 for what stays reachable, what a form submission and a request for part of a page
-receive, the delay, and the two system checks that report a middleware that cannot work.
+receive, the delay, and the system checks that report a middleware that cannot work.
 
 ## Models
 
@@ -438,8 +448,8 @@ opened for writing, and the model would refuse it if anything tried.
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
 - [docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md) — switching the check on for the whole site: where the
-  middleware goes, what stays reachable, form submissions and requests for part of a
-  page, the delay, and the system checks.
+  middleware goes, what stays reachable and how to add to it, form submissions and requests
+  for part of a page, the delay, and the system checks.
 - [docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md) — serving a document as a page of your site: mounting the
   addresses, linking to a document, what a visitor sees, the page that asks a
   person to agree, and the page where a signed-in person sees what they agreed to.

@@ -369,8 +369,23 @@
         },
         {
           "id": "T015",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestExemptUrls",
+              "tests/test_checks.py::TestListSettingChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py tests/test_checks.py -q",
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:124",
+              "mvp_compliance/checks.py:64"
+            ]
+          }
         }
       ]
     },

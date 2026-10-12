@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - System checks `mvp_compliance.E001`, when the middleware is listed and the page that asks has no
   address, and `mvp_compliance.E002`, when nothing that identifies the signed-in user comes before
   it.
+- `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS`, a list of paths that stay reachable for a person the
+  agreement check is stopping. An entry covers itself and every address beneath it, a path segment
+  at a time, so `/help/` covers `/help/faq/` and not `/helpful/`. The addresses that are always
+  reachable need no entry, and an entry of `/` covers every address. System check
+  `mvp_compliance.E003` reports the setting when it is a string. See
+  [docs/enforcement.md](docs/enforcement.md#keeping-your-own-addresses-reachable).
 - `Document.enforced`, which says whether a person who has not accepted a document can be stopped
   until they do. A document created without a choice is enforced, and so is every document that
   existed before the migration. It is changed with an ordinary save or update at any time and

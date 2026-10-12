@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 13:11+0200\n"
+"POT-Creation-Date: 2026-10-12 13:28+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -79,23 +79,33 @@ msgstr "Everything held about a person"
 msgid "Compliance"
 msgstr "Compliance"
 
-#: checks.py:37
+#: checks.py:42
 msgid "The page that asks a person to agree has no address."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:38
+#: checks.py:43
 #, python-format
 msgid "Add %(line)s to the project's URLconf."
 msgstr "Add %(line)s to the project's URLconf."
 
-#: checks.py:49
+#: checks.py:54
 msgid "Nothing that identifies the signed-in user comes before the check."
 msgstr "Nothing that identifies the signed-in user comes before the check."
 
-#: checks.py:50
+#: checks.py:55
 #, python-format
 msgid "List %(check)s after %(authentication)s in MIDDLEWARE."
 msgstr "List %(check)s after %(authentication)s in MIDDLEWARE."
+
+#: checks.py:68
+#, python-format
+msgid "%(setting)s is a string, and has to be a list."
+msgstr "%(setting)s is a string, and has to be a list."
+
+#: checks.py:70
+#, python-format
+msgid "Write it as a list, even for one entry: %(example)s."
+msgstr "Write it as a list, even for one entry: %(example)s."
 
 #: forms.py:36
 msgid "Person"

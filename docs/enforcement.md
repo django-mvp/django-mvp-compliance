@@ -86,6 +86,10 @@ asks with its styles, with no configuration. These addresses are kept reachable:
   such as a CDN, covers nothing here, because a request to this site cannot be for a file on
   another.
 
+- the addresses the project lists in `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS`, which are added to
+  these and never replace them. See [Keeping your own addresses
+  reachable](#keeping-your-own-addresses-reachable).
+
 "Beneath" is read a path segment at a time: `/static/` covers `/static/site.css` and does not
 cover `/staticfiles/site.css`.
 
@@ -93,8 +97,40 @@ Nothing else is kept reachable. The admin is stopped like any other address, and
 that resolves to nothing.
 
 `AgreementMiddleware.is_reachable(request)` is what answers it. It compares `request.path` with
-the page that asks and with the two settings, and resolves `request.path_info`, as Django's own
-URL resolution does, for the package's pages and the sign-out names.
+the page that asks and with the two settings, compares `request.path_info` with the project's
+entries, and resolves `request.path_info`, as Django's own URL resolution does, for the package's
+pages and the sign-out names.
+
+## Keeping your own addresses reachable
+
+A project has pages of its own that a person who has not agreed yet still needs: a help page, a
+contact form, a status page. List them:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help/", "/contact/"]  # empty by default
+```
+
+The setting is a list of paths, written as the project's URLconf writes them. `request.path_info`
+is what an entry is compared with, so a project served under a prefix leaves the prefix out.
+
+- An entry covers itself and every address beneath it, a path segment at a time. `/help/` covers
+  `/help/`, `/help` and `/help/faq/`, and does not cover `/helpful/`.
+- An entry written without its trailing slash covers the same addresses as the one with it:
+  `/help` and `/help/` are the same entry.
+- An empty entry covers nothing.
+- An entry of `/` covers every address, so listing it switches the check off for everybody. It
+  stops nobody and is rarely what a project means. Remove the middleware from `MIDDLEWARE` to
+  switch the check off on purpose.
+- The setting is a list. A string, which would be read a character at a time and cover far more
+  than was meant, is reported by [`mvp_compliance.E003`](#the-system-checks).
+
+The addresses [listed above](#what-stays-reachable) stay reachable whatever the setting says, and
+need no entry.
+
+**Your own sign-out address.** The check recognises a sign-out address registered as
+`account_logout`, `logout` or `admin:logout`. A project whose sign-out view is registered under
+another name has to list its address here, or a person who has not agreed cannot sign out.
 
 ## A form submission, and a request for part of a page
 
@@ -159,17 +195,20 @@ reads `request.user` and the session, which a view that reads `request.user` rea
 ## The system checks
 
 When `mvp_compliance.middleware.AgreementMiddleware` is listed in `MIDDLEWARE`, Django's system
-checks report two misconfigurations, each an error that names what to change. `manage.py check`
+checks report three misconfigurations, each an error that names what to change. `manage.py check`
 runs them, and so do `runserver` and `migrate`:
 
 | Id | Reported when | What to do |
 |---|---|---|
 | `mvp_compliance.E001` | The page that asks has no address, because the package's addresses are not mounted. | Add `path("legal/", include("mvp_compliance.urls"))` to the project's URLconf. |
 | `mvp_compliance.E002` | No entry before the middleware is `AuthenticationMiddleware` or a subclass of it. | List the middleware after the one that identifies the signed-in user. |
+| `mvp_compliance.E003` | `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS` is a string. | Write it as a list, even for one entry. |
 
 A subclass of `AuthenticationMiddleware` counts, so a project with its own does not need to
 change anything. Left unfixed, the first means no request is stopped, because the middleware
 does not redirect anybody to an address that does not exist, and the second means it finds
-nobody signed in. Either way the check holds nobody, which is why both are errors.
+nobody signed in. Either way the check holds nobody, which is why both are errors. The third
+is reported once for each setting that is a string, because a string is read a character at a
+time and would keep reachable far more than was meant.
 
 Nothing is reported while the middleware is not listed, whatever else is wrong.

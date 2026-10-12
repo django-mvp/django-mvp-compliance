@@ -93,3 +93,10 @@ Did: tests/test_middleware.py::TestExemptUrls, with the setting at ["/help/"]: a
 Verified: uv run pytest tests/test_middleware.py::TestExemptUrls tests/test_checks.py::TestListSettingChecks -q -> 5 failed, 7 passed. The failures are the redirect where 200 was expected (listed address, address beneath it, entry without slash, entry of `/`) and no E003; the seven passes are guards that must keep holding. pre-commit run --all-files passes.
 Next: T015, middleware.py, checks.py, docs, README, CHANGELOG.
 Watch: the existing `reported()` helper in test_checks.py filters to E001 and E002, so E003 is asserted from run_checks() directly in its own class and the helper is untouched.
+
+## 2026-10-12T11:29:29Z · Implementer US4+US5+US6 · T015
+
+Did: mvp_compliance/middleware.py: is_reachable() reads MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS with getattr at the point of use, compares each entry with request.path_info a path segment at a time, skips an empty entry, and lets "/" cover every address (its stripped root is empty). mvp_compliance/checks.py: E003 for each list setting that is a string; the tuple holds this one setting for now. docs/enforcement.md: a section "Keeping your own addresses reachable" (what an entry covers, trailing slash, empty entry, that "/" switches the check off for everybody, the sign-out address a project has to list when it is not registered under one of the three names), the reachable list, the is_reachable() paragraph, and the system checks table. README: the setting and the documentation index line. CHANGELOG Added. The en catalog has the two new messages, msgstr written equal to msgid as the other entries are.
+Verified: uv run pytest tests/test_middleware.py tests/test_checks.py -q -> 58 passed, where TestExemptUrls and TestListSettingChecks were 5 failed before. forge verify --repo . --base origin/main --steps docs -> passed. makemessages run twice, second run leaves no diff. pre-commit run --all-files passes.
+Next: T016, tests for letting accounts past.
+Watch: the setting is read per request inside the loop, so a project that changes it under override_settings is honoured at once; the middleware stores nothing of it.

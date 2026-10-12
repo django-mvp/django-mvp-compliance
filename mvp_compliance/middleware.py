@@ -91,9 +91,13 @@ class AgreementMiddleware:
         Returns:
             Whether the address is the page that asks, one of this package's own
             pages, a sign-out address (``account_logout``, ``logout`` or
-            ``admin:logout``), or a path beneath ``STATIC_URL`` or ``MEDIA_URL``.
-            Those two cover nothing when they are unset, are the site root, or
-            name another host, and "beneath" is read a path segment at a time.
+            ``admin:logout``), a path beneath ``STATIC_URL`` or ``MEDIA_URL``, or
+            a path beneath an entry of
+            ``MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS``. ``STATIC_URL`` and
+            ``MEDIA_URL`` cover nothing when they are unset, are the site root,
+            or name another host. An entry is compared with ``request.path_info``,
+            ``"/"`` covers every address and an empty entry covers nothing.
+            "Beneath" is read a path segment at a time.
         """
         if request.path == reverse("mvp_compliance:agree"):
             return True
@@ -116,5 +120,11 @@ class AgreementMiddleware:
                 continue
             root = url.rstrip("/")
             if request.path == root or request.path.startswith(f"{root}/"):
+                return True
+        for entry in getattr(settings, "MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS", []):
+            root = entry.rstrip("/")
+            if entry and (
+                request.path_info == root or request.path_info.startswith(f"{root}/")
+            ):
                 return True
         return False

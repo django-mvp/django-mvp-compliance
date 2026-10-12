@@ -9,6 +9,10 @@ from django.utils.translation import gettext as _
 
 AGREEMENT_MIDDLEWARE = "mvp_compliance.middleware.AgreementMiddleware"
 
+#: The settings that are lists of strings, which a bare string would be read
+#: from a character at a time.
+LIST_SETTINGS = ("MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS",)
+
 
 def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
     """Report a listed agreement check that would redirect nobody, or everybody.
@@ -23,7 +27,8 @@ def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
     Returns:
         ``mvp_compliance.E001`` when the page that asks has no address, and
         ``mvp_compliance.E002`` when nothing that identifies the signed-in user
-        comes before the middleware.
+        comes before the middleware, and ``mvp_compliance.E003`` for each
+        setting that is a list and has been given as a string.
     """
     middleware = list(settings.MIDDLEWARE)
     if AGREEMENT_MIDDLEWARE not in middleware:
@@ -56,6 +61,17 @@ def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
                 id="mvp_compliance.E002",
             )
         )
+    for name in LIST_SETTINGS:
+        if isinstance(getattr(settings, name, []), str):
+            errors.append(
+                Error(
+                    _("%(setting)s is a string, and has to be a list.")
+                    % {"setting": name},
+                    hint=_("Write it as a list, even for one entry: %(example)s.")
+                    % {"example": f'{name} = ["..."]'},
+                    id="mvp_compliance.E003",
+                )
+            )
     return errors
 
 
