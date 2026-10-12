@@ -287,8 +287,20 @@
       "tasks": [
         {
           "id": "T011",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementDestination"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreementDestination -q",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "tests/test_views.py:2086"
+            ]
+          }
         },
         {
           "id": "T012",

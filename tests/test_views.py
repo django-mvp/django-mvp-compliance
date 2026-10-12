@@ -2060,6 +2060,249 @@ class TestSeveralOutstanding:
 
 
 @pytest.mark.django_db
+class TestAgreementDestination:
+    """US-4: where a person is sent on to, and the person with nothing outstanding
+    (FR-015 to FR-018, FR-026, SC-006)."""
+
+    default = "/welcome/"
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @pytest.fixture
+    def project_default(self, settings):
+        """The project's own default destination, set to a path."""
+        settings.MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = self.default
+
+    @staticmethod
+    def submission(listed, agreed=None, destination="/dashboard/"):
+        """A submission listing ``listed`` and agreeing to ``agreed`` (default: all)."""
+        agreed = listed if agreed is None else agreed
+        return {
+            "agree": [version.pk for version in agreed],
+            "listed": [version.pk for version in listed],
+            "next": destination,
+        }
+
+    @staticmethod
+    def carried(response):
+        """The destination the page's form carries for the next submission."""
+        (field,) = [
+            field for field in controls(response).inputs if field.get("name") == "next"
+        ]
+        return field["value"]
+
+    def test_agreeing_to_everything_goes_on_to_a_destination_on_the_site(
+        self, signed_in
+    ):
+        version = published(DocumentFactory())
+
+        response = signed_in.post(
+            agreement_address(),
+            self.submission([version], destination="/checkout/?step=2"),
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == "/checkout/?step=2"
+
+    def test_a_person_with_nothing_outstanding_is_sent_on_and_shown_nothing(
+        self, signed_in, user
+    ):
+        Acceptance.objects.record(user, published(DocumentFactory()))
+
+        response = signed_in.get(agreement_address("/checkout/?step=2"))
+
+        assert response.status_code == 302
+        assert response["Location"] == "/checkout/?step=2"
+        assert response.content == b""
+        assert not response.templates
+
+    def test_a_person_with_nothing_outstanding_and_no_destination_gets_the_default(
+        self, signed_in, project_default
+    ):
+        response = signed_in.get(agreement_address())
+
+        assert response.status_code == 302
+        assert response["Location"] == self.default
+
+    def test_a_person_with_nothing_outstanding_and_a_foreign_destination_gets_the_default(
+        self, signed_in, project_default
+    ):
+        response = signed_in.get(agreement_address("https://elsewhere.example/"))
+
+        assert response.status_code == 302
+        assert response["Location"] == self.default
+
+    def test_a_page_with_only_optional_documents_is_still_shown(
+        self, signed_in, monkeypatch
+    ):
+        monkeypatch.setattr(AgreementView, "is_optional", lambda view, document: True)
+        published(DocumentFactory())
+
+        response = signed_in.get(agreement_address("/checkout/"))
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "destination",
+        [
+            "https://elsewhere.example/checkout/",
+            "//elsewhere.example/checkout/",
+            "javascript:alert(1)",
+        ],
+    )
+    def test_a_destination_on_another_site_is_replaced_by_the_default(
+        self, signed_in, project_default, destination
+    ):
+        version = published(DocumentFactory())
+
+        shown = signed_in.get(agreement_address(destination))
+        sent = signed_in.post(
+            agreement_address(), self.submission([version], destination=destination)
+        )
+
+        assert shown.context["destination"] == self.default
+        assert self.carried(shown) == self.default
+        assert sent["Location"] == self.default
+
+    def test_no_destination_gives_the_default(self, signed_in, project_default):
+        version = published(DocumentFactory())
+
+        shown = signed_in.get(agreement_address())
+        sent = signed_in.post(
+            agreement_address(), self.submission([version], destination="")
+        )
+
+        assert shown.context["destination"] == self.default
+        assert sent["Location"] == self.default
+
+    def test_with_no_setting_the_default_is_the_site_root(self, signed_in):
+        version = published(DocumentFactory())
+
+        sent = signed_in.post(
+            agreement_address(), self.submission([version], destination="")
+        )
+
+        assert sent["Location"] == "/"
+
+    @pytest.mark.parametrize(
+        "default, address",
+        [
+            ("/welcome/", "/welcome/"),
+            ("mvp_compliance:agreed", "/legal/agreed/"),
+        ],
+    )
+    def test_the_default_is_the_path_or_url_name_the_project_set(
+        self, signed_in, settings, default, address
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = default
+        version = published(DocumentFactory())
+
+        sent = signed_in.post(
+            agreement_address(), self.submission([version], destination="")
+        )
+
+        assert sent["Location"] == address
+
+    @pytest.mark.parametrize(
+        "destination",
+        [
+            "/legal/agree/",
+            "/legal/agree/?x=1",
+            "/legal/agree",
+            "/legal/%61gree/",
+            ".",
+            "?x=1",
+        ],
+        ids=[
+            "the address",
+            "with a query string",
+            "without the trailing slash",
+            "with a percent-encoded letter",
+            "as a dot",
+            "as a bare query string",
+        ],
+    )
+    def test_the_pages_own_address_is_replaced_by_the_default(
+        self, signed_in, project_default, destination
+    ):
+        version = published(DocumentFactory())
+
+        shown = signed_in.get(agreement_address(destination))
+        sent = signed_in.post(
+            agreement_address(), self.submission([version], destination=destination)
+        )
+
+        assert shown.context["destination"] == self.default
+        assert sent["Location"] == self.default
+
+    def test_an_address_that_only_starts_like_the_page_is_followed(self, signed_in):
+        version = published(DocumentFactory())
+
+        sent = signed_in.post(
+            agreement_address(),
+            self.submission([version], destination="/legal/agree/more/"),
+        )
+
+        assert sent["Location"] == "/legal/agree/more/"
+
+    def test_the_destination_first_given_is_in_the_form_after_a_failed_write(
+        self, signed_in
+    ):
+        version = published(DocumentFactory())
+        opened = signed_in.get(agreement_address("/checkout/?step=2"))
+
+        with patch.object(AgreementView, "record_agreed", side_effect=DatabaseError):
+            failed = signed_in.post(
+                agreement_address(),
+                self.submission([version], destination=self.carried(opened)),
+            )
+        sent = signed_in.post(
+            agreement_address(),
+            self.submission([version], destination=self.carried(failed)),
+        )
+
+        assert failed.status_code == 200
+        assert self.carried(opened) == self.carried(failed) == "/checkout/?step=2"
+        assert sent["Location"] == "/checkout/?step=2"
+
+    def test_the_destination_first_given_is_in_the_form_after_a_partial_agreement(
+        self, signed_in
+    ):
+        first, second = (published(DocumentFactory(name=n)) for n in ("A", "B"))
+        opened = signed_in.get(agreement_address("/checkout/?step=2"))
+
+        partial = signed_in.post(
+            agreement_address(),
+            self.submission([first, second], [first], destination=self.carried(opened)),
+        )
+        sent = signed_in.post(
+            agreement_address(),
+            self.submission([second], destination=self.carried(partial)),
+        )
+
+        assert partial.status_code == 200
+        assert self.carried(partial) == "/checkout/?step=2"
+        assert sent["Location"] == "/checkout/?step=2"
+
+    def test_a_default_given_by_the_first_visit_is_what_a_later_submission_follows(
+        self, signed_in, project_default
+    ):
+        version = published(DocumentFactory())
+        opened = signed_in.get(agreement_address())
+
+        sent = signed_in.post(
+            agreement_address(),
+            self.submission([version], destination=self.carried(opened)),
+        )
+
+        assert self.carried(opened) == self.default
+        assert sent["Location"] == self.default
+
+
+@pytest.mark.django_db
 class TestAgreementStrings:
     """FR-025: the page as rendered, title and trail included, claims nothing."""
 

@@ -69,3 +69,10 @@ Did: post() reads the submitted `listed` values and sets `changed` when an entry
 Verified: `uv run pytest tests/test_views.py::TestSeveralOutstanding tests/test_views.py::TestAgreement tests/test_views.py::TestAgreementNotRecorded tests/test_views.py::TestAgreementStrings -q` gives 44 passed. `uv run pre-commit run --all-files` passes. `django-admin makemessages -l en --no-obsolete` leaves the tree clean: no string was added. The demo view was imported under demo.settings and answers true for house-rules and false for another slug.
 Next: full verify, once, then the report.
 Watch: entries were already sorted required first from T005, and nothing in T010 touches that. A version replaced in the instant of the write is not seen by `changed` (D19, D21); it still leaves the person on the page.
+
+## 2026-10-12T09:21:13Z · Implementer US4 · T011
+
+Did: wrote TestAgreementDestination in tests/test_views.py, 22 cases covering scenarios 1 to 7 of the story: a same-site destination, nothing outstanding on GET (302, empty body, no template), a foreign destination and no destination giving the configured default and not "/", the setting as a path and as a URL name, the page's own address in six forms, and the destination carried in the form after a failed write and after a partial agreement.
+Verified: `uv run pytest tests/test_views.py::TestAgreementDestination -q` gives 16 failed, 6 passed. The 16 fail for the right reasons: the page is drawn (200) where a redirect is expected, and the destination is "/" or the page's own address where the project default is expected. The 6 that pass on the existing view (same-site destination, optional-only page still shown, site-root default, an address that only starts like the page, destination kept after a failed write, destination kept after a partial agreement) are probed by mutation after T012. `uv run pre-commit run --all-files` passes.
+Next: T012, get_destination() per plan.md and the redirect in get() when nothing is outstanding; docs/pages.md, README settings, CHANGELOG.
+Watch: the tests take the project default from a path, "/welcome/", so "/" cannot satisfy them by accident.
