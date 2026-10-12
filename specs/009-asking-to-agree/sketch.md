@@ -101,8 +101,8 @@ Ruled in review of the prototype. The build may not undo these.
   The toggle's label is "I agree". The link reads "View document in full". The document's name
   reaches assistive technology through the row, not through a longer label.
 - The two kinds are called "required" and "optional" everywhere on the page.
-- "Required" and "Optional" are badges: the primary variant for required, the plain badge with no
-  colour for optional. The version stays as plain text beside the badge.
+- "Required" and "Optional" are badges: the primary variant for required, the neutral variant for
+  optional. The version stays as plain text beside the badge.
 - The toggle and its label sit at the end of every row, so the toggles form one column down the
   list. A long document name wraps in its own column and never moves the toggle, at any width.
 - When a required document is on the page, the line under the title reads "You will not be able

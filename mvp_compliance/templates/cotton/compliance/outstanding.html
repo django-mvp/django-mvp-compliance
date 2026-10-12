@@ -12,7 +12,7 @@
     <div id="document-{{ document.slug }}" class="font-semibold">{{ document.name }}</div>
     <div class="flex flex-wrap items-center gap-2 text-sm">
       {% if optional %}
-        <c-badge size="sm" text="{% translate "Optional" %}" />
+        <c-badge size="sm" variant="neutral" text="{% translate "Optional" %}" />
       {% else %}
         <c-badge size="sm" variant="primary" text="{% translate "Required" %}" />
       {% endif %}
