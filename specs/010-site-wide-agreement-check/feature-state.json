@@ -303,8 +303,24 @@
         },
         {
           "id": "T012",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementEnforcement",
+              "tests/test_views.py"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreementEnforcement -q",
+              "uv run pytest tests/test_views.py -q -n auto --dist loadscope",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/views.py:228",
+              "mvp_compliance/views.py:322",
+              "demo/views.py:13"
+            ]
+          }
         },
         {
           "id": "T013",

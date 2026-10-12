@@ -203,8 +203,8 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
     in force and a toggle, and takes all the answers in one submission. A
     submission records the versions agreed to, asks again what is outstanding
     and sends the person on to ``next`` only when the stored acceptances leave
-    nothing required. Opening the page records nothing, and the page stops
-    nobody from going elsewhere.
+    nothing required. A document is required when it is enforced. Opening the
+    page records nothing, and the page stops nobody from going elsewhere.
     """
 
     template_name = "mvp_compliance/agreement.html"
@@ -228,8 +228,11 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
     def is_optional(self, document: Document) -> bool:
         """Say whether the person may go on without agreeing to ``document``.
 
-        Every outstanding document is required until the site-wide check
-        decides which are not. A project's own view overrides this.
+        A document is optional when it is not enforced. A project's own view
+        may override this to make a document that is not enforced required.
+        It must not make an enforced one optional on a site that has switched
+        the check on: the check asks ``Document.objects.enforced_outstanding_for()``
+        and never the view, so the two would send the person round in a loop.
 
         Args:
             document: An outstanding document.
@@ -237,7 +240,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         Returns:
             Whether agreeing to ``document`` is optional.
         """
-        return False
+        return not document.enforced
 
     def get_entries(self) -> list[dict]:
         """Read what is outstanding for the signed-in person, required first.
@@ -317,9 +320,19 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         )
 
     def get(self, request, *args, **kwargs):
-        """Send a person with nothing outstanding on, otherwise draw the page."""
+        """Send a person on when nothing is required, otherwise draw the page.
+
+        Nothing outstanding sends the person on. So does nothing required when
+        the request carries ``next``, whatever its value: they were on their way
+        somewhere and are not held up over a document they may leave. Without
+        ``next``, a person with only optional documents outstanding is shown
+        the page and can accept them.
+        """
         self.entries = self.get_entries()
-        if not self.entries:
+        required = any(not entry["optional"] for entry in self.entries)
+        if not required and (
+            not self.entries or self.redirect_field_name in request.GET
+        ):
             return HttpResponseRedirect(self.get_destination())
         return super().get(request, *args, **kwargs)
 

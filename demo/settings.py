@@ -98,11 +98,6 @@ EASY_ICONS = {
 # personal data about somebody who did not ask for it to be kept.
 MVP_COMPLIANCE_RECORD_IP_ADDRESS = True
 
-# The documents the demo's agreement page marks optional, so the page can be
-# looked at with required and optional documents together. The package itself
-# has no such setting: the demo's own view reads this list.
-DEMO_OPTIONAL_DOCUMENT_SLUGS = ["house-rules"]
-
 # django-mvp's shell draws its navigation through flex-menu renderers, and
 # rendering any page raises until the host project registers them.
 FLEX_MENUS = {
