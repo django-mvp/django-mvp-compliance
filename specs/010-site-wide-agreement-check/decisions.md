@@ -318,3 +318,22 @@ host, so the same rule that excludes `https://cdn.example.com/static/` excludes 
 
 **Revisit if**: a project runs several servers whose clocks disagree by more than the delay. Their
 people would be asked on each request instead of once a minute; nobody is let past by it.
+
+## D21 — US-1: where the middleware's tests get their addresses, and one paragraph of pages.md
+
+**Decision**: `tests/test_middleware.py` is its own URLconf (`pytest.mark.urls(__name__)`, as
+`tests/test_admin.py` does), and the one case that needs the page that asks routed outside the
+package's namespace has a small module of its own, `tests/urls_own_agree_page.py`, beside
+`urls_mvp_only.py`. `tests/urls.py` and `tests/settings.py` are unchanged. The middleware is kept
+to `__init__`, `__call__` and `is_reachable()`. One paragraph of `docs/pages.md`, which said
+nothing in the package sends anyone to the page that asks, now says a person is sent to it from
+any address only when the project lists the middleware.
+
+**Why**: the routes the check is asked about (a plain view that records being called, a static
+and a media path, a project's own sign-out) are only the check's tests' business, and adding them
+to the shared URLconf would give every other test module addresses it does not use. The plan
+names exactly `__init__`, `__call__` and `is_reachable()` for the class, and each further public
+name has to be quoted in a docs page. The `docs/pages.md` sentence became false with this story
+and the docs the story touches have to be true when it lands.
+
+**Revisit if**: the shared URLconf gains routes of its own that these tests could use instead.
