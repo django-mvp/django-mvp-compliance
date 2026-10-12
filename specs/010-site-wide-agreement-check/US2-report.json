@@ -1,0 +1,108 @@
+{
+  "story": "US2",
+  "skills_loaded": [
+    {
+      "name": "craft-tdd",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-increments",
+      "receipt": "craft-increments/2026-09-28/3f7d8b12",
+      "loaded_via": "path-read"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T002",
+      "status": "done",
+      "evidence": {
+        "tests_added": [
+          "tests/test_models.py::TestEnforcement",
+          "tests/test_migrations.py::TestEnforcedColumn"
+        ],
+        "criteria": ["SC-006"],
+        "commands": [
+          "uv run pytest tests/test_models.py::TestEnforcement -q (before T003: 11 failed, no enforced field and no enforced_outstanding_for)",
+          "uv run pytest tests/test_migrations.py::TestEnforcedColumn -q (before T003: 1 failed, at the assertion that the document is enforced)",
+          "uv run pytest tests/test_models.py::TestEnforcement tests/test_models.py::TestModelFields tests/test_migrations.py -q (after T003: 37 passed)"
+        ],
+        "exit_code": 0
+      },
+      "commits": ["330ba57"]
+    },
+    {
+      "id": "T003",
+      "status": "blocked",
+      "evidence": {
+        "tests_added": [],
+        "criteria": ["SC-006"],
+        "commands": [
+          "uv run pytest tests/test_models.py::TestEnforcement tests/test_models.py::TestModelFields tests/test_migrations.py -q (37 passed)",
+          "uv run django-admin makemigrations --check --dry-run --settings=tests.settings (No changes detected, exit 0)",
+          "cd mvp_compliance && uv run django-admin makemessages -l en --no-obsolete (run again: only the creation date moves)",
+          "uv run pytest tests/test_models.py tests/test_migrations.py -q -n auto --dist loadscope (1 failed, 238 passed: tests/test_models.py::TestDocument::test_document_holds_no_wording)"
+        ],
+        "exit_code": 1
+      },
+      "commits": ["bb3651d"]
+    },
+    {
+      "id": "T004",
+      "status": "done",
+      "evidence": {
+        "tests_added": ["tests/test_admin.py::TestDocumentEnforcement"],
+        "criteria": ["SC-006"],
+        "commands": [
+          "uv run pytest tests/test_admin.py::TestDocumentEnforcement -q (before T005: 1 failed, 3 passed; the changelist test fails at the missing field-enforced cell)",
+          "uv run pytest tests/test_admin.py::TestDocumentEnforcement -q (after T005: 4 passed)"
+        ],
+        "exit_code": 0
+      },
+      "commits": ["efde7b7"]
+    },
+    {
+      "id": "T005",
+      "status": "blocked",
+      "evidence": {
+        "tests_added": [],
+        "criteria": [],
+        "commands": [
+          "uv run pytest tests/test_admin.py::TestDocumentEnforcement -q (4 passed)",
+          "uv run pre-commit run --files <the six files of T005> (all hooks passed)",
+          "uv run pytest -q -n auto --dist loadscope --maxfail=1000 (1 failed, 597 passed: tests/test_models.py::TestDocument::test_document_holds_no_wording)",
+          "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main (exit 1: conformance, docs, typecheck and build passed; lint failed on the brief file's missing final newline; test failed on the one test above)"
+        ],
+        "exit_code": 1
+      },
+      "commits": ["36d4f5b"]
+    }
+  ],
+  "deviations": [
+    {
+      "what": "docs/authoring.md is edited although no task names it: the Enforced column in the documents list and the Enforced field on the document's form.",
+      "why": "The page describes the columns and the fields of the form, and was incomplete for the branch without it.",
+      "decision_ref": "D19"
+    }
+  ],
+  "concerns": [
+    "tests/test_models.py::TestDocument::test_document_holds_no_wording lists the concrete fields of Document as {id, name, slug, kind} and fails for any new field. It is not a test this story wrote, so it was not changed. The edit it needs is to add \"enforced\" to that set. This is the only test failing in the full suite (1 failed, 597 passed), and it is what leaves T003 and T005 blocked.",
+    "specs/010-site-wide-agreement-check/US2-brief.json is committed without a final newline, so the end-of-file-fixer hook in uv run pre-commit run --all-files, and so the lint step of forge verify, fails on it and rewrites it. The base commit's lint passed before that file was added. The file was not touched; the rewrite verify made was reverted with git checkout.",
+    "T003 and T005 are not recorded done in feature-state.json: both are reported blocked and forge ledger-task has no way to record a blocked task, so their rows still read todo, attempts 0, although their code is committed (bb3651d, 36d4f5b). T002 and T004 are recorded done.",
+    "Three entries in mvp_compliance/locale/en/LC_MESSAGES/django.po are marked fuzzy with the wrong translation (\"View document in full\", \"I agree\", \"Documents to agree to\") and ten have an empty msgstr; they come from FS-009 and were left alone as outside this story's files. makemessages marked the new \"enforced\" entry fuzzy as well; that one is corrected.",
+    "Before T005, three of the four tests in TestDocumentEnforcement already passed, because the model field of T003 puts the field on the admin form without an admin change; only the list test is red before T005.",
+    "The creation date line of the catalog is kept at the value in the base commit rather than the one makemessages writes, so the diff carries only the new entries and moved file references."
+  ],
+  "blocked": [
+    {
+      "task": "T003",
+      "reason": "The task's own clauses are met (T002 passes, makemigrations --check is clean, the docs check passes), but adding Document.enforced makes the pre-existing tests/test_models.py::TestDocument::test_document_holds_no_wording fail, since it asserts the exact set of concrete fields. It is not this story's test, so it was not edited.",
+      "attempts_used": 1
+    },
+    {
+      "task": "T005",
+      "reason": "Everything in the row is committed and TestDocumentEnforcement passes, but its clause \"full suite green\" is not met: the one failure is tests/test_models.py::TestDocument::test_document_holds_no_wording, the same test as T003. forge verify also fails its lint step on US2-brief.json, which has no final newline.",
+      "attempts_used": 1
+    }
+  ]
+}

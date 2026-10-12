@@ -283,3 +283,22 @@ them.
 
 **Why defensible**: every change is an edit to the plan or a task, made before any code exists.
 None alters what the specification asks for.
+
+## D19 — US-2: how the demo seed marks House rules, one test left failing, and a page outside the tasks
+
+**Decision**: `seed_demo` marks House rules as not enforced with an `update()` at the end of
+`handle()`, beside the one that makes Delivery information a notice, rather than passing the choice
+when the document is created. `tests/test_models.py::TestDocument::test_document_holds_no_wording`
+asserts that the concrete fields of `Document` are exactly `id`, `name`, `slug` and `kind`; it fails
+now that there is a fifth field, and it was left as it was.
+
+**Why**: a demo seeded before the field existed already holds House rules, and creating it with the
+choice would skip it ("already seeded"). The `update()` reaches both. The test is not one this story
+wrote, and the rules for a story forbid changing one; the edit it needs is to add `enforced` to the
+set it compares with, which is for whoever triages the story.
+
+`docs/authoring.md` is edited too, though no task names it: its page on the documents list and a
+document's form would otherwise leave out the new column and field.
+
+**Revisit if**: the test is changed to say what it is for, that a document holds no wording, in a
+way that does not list every field.
