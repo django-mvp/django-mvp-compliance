@@ -142,7 +142,8 @@ A notice is never listed, and neither is a document with only drafts.
 document's name, the number of the version in force, a link that opens that exact version's page
 (`?version=`) in a new tab, and a toggle. The page itself carries none of the wording: the link is
 how it is read in full. A person who accepted an earlier version is asked about the version in
-force. Every row is marked required.
+force. A row is marked required when its document is [enforced](models.md#enforcement) and
+optional when it is not, and the required rows come first.
 
 **What a submission records.** One acceptance for each row whose toggle was on, written in one
 go with [`Acceptance.objects.record_many()`](models.md#recording-several-at-once), and holding
@@ -153,16 +154,37 @@ over and records nothing. Opening the page records nothing, and neither does a s
 no toggle on. Submitting the same agreement again records nothing new.
 
 **Where the person goes.** After the write the page asks again what is outstanding, from the
-stored acceptances and never from the submission. When nothing required is left, the person is
-sent on to the destination described under
+stored acceptances and never from the submission. When no enforced document is left, the person
+is sent on to the destination described under
 [Sending a person to the page](#sending-a-person-to-the-page). When something required is left,
 as after a submission with no toggle on, the page is drawn again with a message saying so.
 See [ADR 0021](adr/0021-a-person-is-let-through-on-the-stored-acceptances-never-on-the-submission.md)
 for why the page asks twice.
 
 **Agreeing to some of them.** A person may agree to part of the list. What was agreed to is
-recorded and the page is drawn again with the rest, still in alphabetical order. Agreeing to
-the last of them sends the person to the address they were first heading for.
+recorded and the page is drawn again with the rest, required rows first. Agreeing to the last
+enforced one sends the person to the address they were first heading for, whether or not they
+agreed to the documents that are not enforced.
+
+**Documents that are not enforced.** A document whose `enforced` is off, such as a cookie
+policy, is listed on the page like any other, and agreeing to it records an acceptance like any
+other. It is never needed to be sent on. A person who agrees to it and leaves an enforced
+document alone is shown the page again, because the enforced one is still outstanding. A person
+who leaves it alone and agrees to everything that is enforced is sent on, and it stays
+outstanding for them.
+
+A person with only documents that are not enforced outstanding is treated as follows:
+
+| They open the page | The page |
+|---|---|
+| with a `next` parameter, whatever its value | Redirects at once, to `next` when it is an address the page follows and to the default destination when it is not. Nothing is drawn. |
+| with no `next` parameter | Is shown, offering those documents. Whatever they agree to, including nothing, they are then sent to the default destination. |
+
+An address to return to means the person was on their way somewhere, and is not held up over a
+document they may leave. No address means they opened the page on purpose. A person with nothing
+outstanding at all is sent on in both cases. The same rule holds whether or not the project has
+listed the [middleware](enforcement.md), which only ever sends a person to the page while an
+enforced document is outstanding for them.
 
 **When the list changed while it was open.** A version published after the page was drawn
 replaces the one the person was shown. Nothing is recorded for it, since they never saw its
@@ -207,21 +229,29 @@ address, `next` included, to come back to. A submission needs Django's CSRF toke
 applies the protection itself, so a project without `CsrfViewMiddleware` refuses a forged
 submission all the same.
 
-**What it does not do.** It stops nobody. A person is free to leave the page, and leaving
-records nothing. Nothing in the package links to the page or sends anyone there: when a person
-is sent to it, and which documents hold them up, is a decision for the project.
+**What it does not do.** The page itself stops nobody. A person is free to leave it, and leaving
+records nothing. Nothing in the package links to it. A person is sent to it from any address on
+the site only when the project lists the middleware described in
+[Enforcement](enforcement.md); without it, when a person is sent to it, and which documents hold
+them up, is a decision for the project.
 
 ## Sending a person to the page
 
 Nothing sends a person to the page until a project does. Send them to
-`{% url 'mvp_compliance:agree' %}` with the address to come back to in `next`, from a link:
+`{% url 'mvp_compliance:agree' %}` from a link:
 
 ```html
-<a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
+<a href="{% url 'mvp_compliance:agree' %}">Review our documents</a>
 ```
 
-or from a view of your own, which sends a person on only when something is outstanding for
-them, so that a person who has agreed is not sent round again:
+A link with no `next` opens the page for a person who chose to open it, and shows them every
+document outstanding for them, enforced or not. Add the address to come back to in `next` when
+the person is on their way somewhere and has to agree first. They are then sent on at once when
+nothing enforced is outstanding for them, as described under
+[Asking a person to agree](#asking-a-person-to-agree).
+
+From a view of your own, send a person on only when something enforced is outstanding for them,
+so that a person who has agreed is not sent round again:
 
 ```python
 from urllib.parse import urlencode
@@ -235,7 +265,7 @@ from mvp_compliance.models import Document
 
 @login_required
 def checkout(request):
-    if Document.objects.outstanding_for(request.user).exists():
+    if Document.objects.enforced_outstanding_for(request.user).exists():
         query = urlencode({"next": request.get_full_path()})
         return redirect(f"{reverse('mvp_compliance:agree')}?{query}")
     ...
@@ -273,9 +303,10 @@ The value goes through Django's `resolve_url()`, so a name is reversed on every 
 is yours and is not checked against the site: it is followed as written.
 
 **A person with nothing outstanding.** Opening the page answers with a redirect to the
-destination, or the default, and draws nothing. Nothing is recorded and the person is shown no
-page. A person who agreed somewhere else between the project's own check and the page is sent
-on in the same way.
+destination, or the default, and draws nothing, with or without a `next`. Nothing is recorded
+and the person is shown no page. A person who agreed somewhere else between the project's own
+check and the page is sent on in the same way. A person with only documents that are not
+enforced outstanding is sent on in the same way when the request carries a `next`.
 
 ## What a person has agreed to
 
@@ -455,6 +486,30 @@ every `data-required` toggle is on. It finds the form by the id `agreement`, the
 `data-required` and the button by `type="submit"`. Load it with
 `{% static 'mvp_compliance/agreement.js' %}` and keep those three, or leave it out: the server
 refuses a submission that leaves something required whatever the page does.
+
+### Deciding which documents are required
+
+`AgreementView.is_optional(document)` answers for each outstanding document whether the person may
+go on without it, and the package's view reads the document's `enforced` field: a document is
+optional when it is not enforced. A project's own view may override it to make a document that
+is not enforced required on the page, by calling `super()` and adding to the answer:
+
+```python
+# views.py
+from mvp_compliance.views import AgreementView
+
+
+class ProjectAgreementView(AgreementView):
+    def is_optional(self, document):
+        return super().is_optional(document) and document.slug != "cookie-policy"
+```
+
+An override must not make an enforced document optional on a site that has listed the
+[middleware](enforcement.md). The middleware asks
+`Document.objects.enforced_outstanding_for(user)` and never the view, so a person who left an
+enforced document alone would be sent back to the page by the middleware and sent on by the
+page, round and round. To let a document go, switch its `enforced` off. Routing the view is
+described under [Changing how an agreement is stored](#changing-how-an-agreement-is-stored).
 
 ### Changing how an agreement is stored
 

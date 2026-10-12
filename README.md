@@ -23,8 +23,10 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > version, and when. `mvp_compliance.records.produce(subject)` assembles
 > everything the package holds about one person into a single answer, and
 > the admin's **Everything held about a person** page is what calls it,
-> behind a permission of its own that nobody holds by default. No
-> account-area page exists yet.
+> behind a permission of its own that nobody holds by default. Documents
+> are served as pages, a person sees what they agreed to in the account
+> area, and a site can ask a signed-in person to agree and stop them until
+> they do.
 
 ## Why
 
@@ -50,8 +52,10 @@ version a person saw.
 - Notices, documents such as an impressum that are published to be read and never
   accepted: a notice has a page like any other document, is never outstanding, and
   refuses an acceptance.
-- Enforcement, so a user who has not accepted the current version is asked to
-  before continuing.
+- Enforcement, so a signed-in user who has not accepted the current version of an
+  enforced document is sent to the page that asks, from any address on the site,
+  by one middleware. Each document is enforced or not, and a project that does
+  not add the middleware sends nobody anywhere.
 - Translations, so a reader sees a document in their own language.
 - Cookie consent, gathered and recorded alongside everything else.
 - A page in the account area where a signed-in person sees each document they
@@ -160,6 +164,61 @@ INSTALLED_APPS = [
 ```bash
 python manage.py migrate
 ```
+
+To stop a signed-in person who has not accepted an enforced document from using the
+site, mount the package's addresses and list the middleware after
+`AuthenticationMiddleware`:
+
+```python
+# urls.py
+urlpatterns = [
+    path("legal/", include("mvp_compliance.urls")),
+]
+
+# settings.py
+MIDDLEWARE = [
+    # ... SessionMiddleware, then AuthenticationMiddleware ...
+    "mvp_compliance.middleware.AgreementMiddleware",
+]
+```
+
+Nothing is checked until it is listed. A project keeps its own pages reachable for a
+person who has not agreed yet by listing them:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help/", "/contact/"]  # empty by default
+```
+
+An entry covers itself and every address beneath it, a path segment at a time: `/help/`
+covers `/help/faq/` and not `/helpful/`. An entry of `/` covers every address, which
+switches the check off for everybody.
+
+Accounts that should never be stopped are named by the value they sign in with, or
+given the `mvp_compliance.skip_agreement` permission, which can be granted to a group
+with no deploy:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["monitoring"]  # empty by default
+```
+
+Name only accounts whose sign-in value the holder cannot change, and remove a name
+when its account is removed.
+
+A person found to have nothing outstanding is not asked about again for sixty seconds,
+so that an ordinary request costs nothing extra. A project can shorten or lengthen that,
+or set it to `0` to check every request:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 60  # seconds, the default
+```
+
+See
+[docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md)
+for what stays reachable, what a form submission and a request for part of a page
+receive, the delay, and the system checks that report a middleware that cannot work.
 
 ## Models
 
@@ -354,6 +413,13 @@ nothing themselves. Without `publish_version` the publish address is
 refused by both the page that confirms and the action that publishes it,
 and no link to it is offered.
 
+`mvp_compliance.skip_agreement` is a permission of a different kind: it is for
+accounts that should never be stopped by the [agreement check](#installation),
+such as a support team. An account that holds it, directly or through a group, is
+let past on a site that has switched the check on, and a superuser always is.
+Being let past records no acceptance. See
+[docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md#letting-accounts-past).
+
 ## Publishing
 
 Publishing is the one act in this package there is no way back from, so it
@@ -413,6 +479,9 @@ opened for writing, and the model would refuse it if anything tried.
 
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
+- [docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md) — switching the check on for the whole site: where the
+  middleware goes, what stays reachable and how to add to it, form submissions and requests
+  for part of a page, the delay, and the system checks.
 - [docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md) — serving a document as a page of your site: mounting the
   addresses, linking to a document, what a visitor sees, the page that asks a
   person to agree, and the page where a signed-in person sees what they agreed to.

@@ -46,6 +46,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "mvp_compliance.middleware.AgreementMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -97,10 +98,10 @@ EASY_ICONS = {
 # personal data about somebody who did not ask for it to be kept.
 MVP_COMPLIANCE_RECORD_IP_ADDRESS = True
 
-# The documents the demo's agreement page marks optional, so the page can be
-# looked at with required and optional documents together. The package itself
-# has no such setting: the demo's own view reads this list.
-DEMO_OPTIONAL_DOCUMENT_SLUGS = ["house-rules"]
+# The account a monitoring service signs in with is never stopped. It is named
+# by the value it signs in with, and the demo's accounts sign in with the part
+# of the address before the @.
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["monitoring.user"]
 
 # django-mvp's shell draws its navigation through flex-menu renderers, and
 # rendering any page raises until the host project registers them.

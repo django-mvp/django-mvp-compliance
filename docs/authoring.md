@@ -164,12 +164,24 @@ What that means for acceptances already recorded:
 Changing the kind needs the same permission as changing anything else about the document. See
 [models.md](models.md#the-kind) for changing it from code.
 
+### Whether a document is enforced
+
+The **Enforced** field on the same form says whether a person who has not accepted the document
+can be stopped until they do. It is on when you add a document, so leave it alone for a privacy
+policy or terms of use, and turn it off for a document that is published and offered but never
+required, such as a cookie policy.
+
+Turning it off does not take the document out of what a person is asked to agree to, and a notice
+is never stopped over whatever the field says. You can change it at any time, whether or not the
+document has published versions, and it touches nothing else: no version is edited and no recorded
+acceptance is changed or removed. See [models.md](models.md#enforcement) for changing it from code.
+
 ## The documents list
 
 Documents in the admin changelist are more than a list of names. Beside each name, its **Kind**,
-so a notice is easy to tell from a document people agree to. Then the version in
-force, linked to its own page, or a plain **No version in force** for a document that has never
-published anything — the ordinary state for a new document, never treated as a gap. How long that
+so a notice is easy to tell from a document people agree to, and whether it is **Enforced**. Then
+the version in force, linked to its own page, or a plain **No version in force** for a document
+that has never published anything — the ordinary state for a new document, never treated as a gap. How long that
 version has been in force. And how many versions the document has published — current and
 superseded together, since both were once live, and a draft never counted, because a draft has no
 legal standing to be one of them.

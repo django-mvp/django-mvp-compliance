@@ -14,6 +14,7 @@ import pkgutil
 import pytest
 from django.core.management import call_command
 from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.operations.special import RunPython, RunSQL
 from django.utils import timezone
@@ -68,3 +69,60 @@ class TestHistoricalAcceptance:
         )
 
         assert Acceptance.objects.filter(version_id=version.pk).count() == 1
+
+
+@pytest.mark.django_db(transaction=True)
+class TestEnforcedColumn:
+    """FR-024: a document that existed before the column is enforced, and nothing else moves.
+
+    SQLite's schema editor will not run inside a transaction, so the class runs
+    outside one and puts the database back at the latest migration afterwards.
+    """
+
+    first = [("mvp_compliance", "0001_initial")]
+
+    @pytest.fixture
+    def executor(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.first)
+        yield executor
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
+    def test_a_document_that_existed_before_the_column_is_enforced_and_its_record_is_unchanged(
+        self, executor
+    ):
+        before = executor.loader.project_state(self.first).apps
+        document = before.get_model("mvp_compliance", "Document").objects.create(
+            name="Terms", slug="terms"
+        )
+        version = before.get_model("mvp_compliance", "Version").objects.create(
+            document=document,
+            number="2026.1",
+            markdown="Wording",
+            html="<p>Wording</p>",
+            status="current",
+            published_at=timezone.now(),
+        )
+        person = UserFactory()
+        before.get_model("mvp_compliance", "Acceptance").objects.create(
+            user_id=person.pk,
+            subject=str(person.pk),
+            version=version,
+            accepted_at=timezone.now(),
+        )
+        held = {
+            name: list(before.get_model("mvp_compliance", name).objects.values())
+            for name in ("Version", "Acceptance")
+        }
+
+        executor = MigrationExecutor(connection)
+        targets = executor.loader.graph.leaf_nodes()
+        executor.migrate(targets)
+
+        after = executor.loader.project_state(targets).apps
+        assert after.get_model("mvp_compliance", "Document").objects.get().enforced
+        for name, rows in held.items():
+            assert (
+                list(after.get_model("mvp_compliance", name).objects.values()) == rows
+            )

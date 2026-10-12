@@ -22,22 +22,25 @@ send a person to this page from their own code and have them returned to where t
 The package adds one page. It lists every document that is outstanding for a signed-in user. Each
 entry names the document and its current version, links to that version's own page, where the
 wording is read in full, and asks the user to agree. The page does not carry the wording itself.
-One submission records an acceptance of each version they agreed to. Once nothing is outstanding
-for them, they are sent on to the address they were heading for.
+One submission records an acceptance of each version they agreed to. Once no enforced document is
+outstanding for them, they are sent on to the address they were heading for. A document that is
+outstanding and not enforced is offered on the page and never keeps anybody there (FS-010).
 
 The page decides whether to let a person through by reading the stored acceptances, and never from
 what the person submitted. When a submission could not be recorded, the person stays on the page
 and is told that nothing was recorded.
 
 A developer sends a person to the page by its address, with the address to return them to. A person
-who arrives with nothing outstanding is sent straight on and is shown nothing.
+who arrives that way with no enforced document outstanding is sent straight on and is shown
+nothing. A person who opens the page with no address to return to is shown whatever is outstanding
+for them, which is how a document that is not enforced gets accepted.
 
 Some things stay out of this feature:
 
-- Deciding when a person is sent to the page is R5 (#87): the check across a whole site, the
-  addresses that stay reachable, the accounts that are let past, and whether an outstanding
-  document stops a person at all. This feature stops nobody. It is a page a person is sent to, or
-  opens, and can leave like any other page.
+- Deciding when a person is sent to the page is FS-010 (#87): the check across a whole site, the
+  addresses that stay reachable, the accounts that are let past, and which documents are enforced.
+  This feature stops nobody. It is a page a person is sent to, or opens, and can leave like any
+  other page.
 - What counts as outstanding is FS-003 and FS-007, and is unchanged: a document people agree to,
   with a version in force, whose current version the user has not accepted. A notice is never
   outstanding and never appears on the page.
@@ -74,8 +77,9 @@ that user and that the response leads to the destination.
    they were shown is recorded for them, and they are sent to the address they were heading for.
 3. **Given** a user who has opened the page and submitted nothing, **When** the records are read,
    **Then** no acceptance exists: opening the page records nothing.
-4. **Given** a user on the page, **When** they submit without agreeing, **Then** nothing is
-   recorded, and they are shown the page again and told what is still needed.
+4. **Given** a user on the page with an enforced document outstanding, **When** they submit
+   without agreeing, **Then** nothing is recorded, and they are shown the page again and told what
+   is still needed.
 5. **Given** a visitor who is not signed in, **When** they request the page, **Then** they are sent
    to sign in, and after signing in they are back on the page with the same destination.
 6. **Given** a user who accepted an earlier version of a document that now has a newer version in
@@ -120,7 +124,7 @@ the person is sent on.
    those acceptances fails, **Then** none of that submission's acceptances is kept, and all of
    those documents are still outstanding for them.
 5. **Given** a submission that was processed without an error being raised, **When** the stored
-   acceptances still leave something on the page outstanding, **Then** the user is shown the page
+   acceptances still leave an enforced document outstanding, **Then** the user is shown the page
    again and is not sent on.
 6. **Given** a failure, **When** the user is shown the page again, **Then** the response does not
    expose the cause to them, and the failure is reported to the project the way its other errors
@@ -151,8 +155,9 @@ acceptances and the page again with the third.
    separately.
 2. **Given** that page, **When** the user agrees to all three and submits once, **Then** three
    acceptances are recorded, one per version, and they are sent to their destination.
-3. **Given** that page, **When** the user agrees to two and submits, **Then** those two
-   acceptances are recorded, and they are shown the page again with only the third document.
+3. **Given** that page, with all three documents enforced, **When** the user agrees to two and
+   submits, **Then** those two acceptances are recorded, and they are shown the page again with
+   only the third document.
 4. **Given** a user shown the page again with what remains, **When** they agree to it and submit,
    **Then** they are sent to the destination they were first heading for.
 5. **Given** a user with several outstanding documents, **When** they open the page on separate
@@ -176,8 +181,8 @@ come back to. A person with something outstanding is asked and then lands back o
 person with nothing outstanding is sent straight back and never sees the page, so the developer
 does not have to check first.
 
-**Why this priority**: Until the check across a whole site exists (R5), this is the only way a
-person reaches the page, and R5 itself is built on it.
+**Why this priority**: On a site that has not switched on the check across the whole site
+(FS-010), this is the only way a person reaches the page, and that check is itself built on it.
 
 **Independent Test**: From a view in a test project, redirect to the page with a destination. As a
 user with something outstanding, follow it, agree, and check the final address is the destination.
@@ -189,8 +194,8 @@ followed.
 
 1. **Given** a developer who sends a user to the page with a destination on the same site,
    **When** the user agrees to everything outstanding, **Then** they are sent to that destination.
-2. **Given** a user with nothing outstanding, **When** they are sent to the page with a
-   destination, **Then** they are sent on to it at once and are shown nothing.
+2. **Given** a user with no enforced document outstanding, **When** they are sent to the page
+   with a destination, **Then** they are sent on to it at once and are shown nothing.
 3. **Given** a destination that points to another site, **When** the user would be sent on,
    **Then** it is not followed, and they are sent to the project's default destination.
 4. **Given** no destination, **When** the user would be sent on, **Then** they are sent to the
@@ -247,16 +252,19 @@ that agreeing still records an acceptance and returns the person.
 - A submission arrives from another site, made without the person's knowledge. It is refused, and
   no acceptance is recorded.
 - A document is published for the first time while a person is on the page. It is not part of what
-  they were shown, so their submission records nothing for it. If they would otherwise be sent on,
-  they are shown the page again with it.
+  they were shown, so their submission records nothing for it. If it is enforced and they would
+  otherwise be sent on, they are shown the page again with it.
 - A document on the page is made a notice before the person submits. It is passed over, and no
   acceptance of it is recorded.
 - A project has turned on keeping the address a person connected from (FS-003). An acceptance
   recorded through the page carries it. With the setting off, it carries nothing extra.
 - A person with nothing outstanding opens the page with no destination, perhaps from a bookmark.
   They are sent to the default destination.
+- A person whose only outstanding documents are not enforced opens the page with no destination.
+  The page is shown, and after they submit it they are sent to the default destination whatever
+  they agreed to.
 - A staff user or superuser opens the page. They are asked like anybody else. Letting accounts
-  past is R5.
+  past belongs to the site-wide check (FS-010), which does not change what this page shows.
 - A person has ten documents outstanding. All ten are on the page, and the number of database
   queries is what it would be for one.
 - A person leaves the page without agreeing. Nothing is recorded, and the documents stay
@@ -286,9 +294,9 @@ that agreeing still records an acceptance and returns the person.
   records an acceptance, and a submission in which they agreed to nothing records none. *(US-1)*
 - **FR-007**: A visitor who is not signed in MUST be sent to sign in and MUST be returned to the
   page afterwards with the destination they came with. *(US-1)*
-- **FR-008**: After a submission, the user MUST be sent on only when the stored acceptances show
-  that nothing is outstanding for them. The decision MUST be made from the stored records and
-  never from the content of the submission. *(US-2)*
+- **FR-008**: After a submission, the user MUST be sent on when the stored acceptances show that
+  no enforced document is outstanding for them, and MUST NOT be sent on while one is. The decision
+  MUST be made from the stored records and never from the content of the submission. *(US-2)*
 - **FR-009**: When an acceptance cannot be stored, the user MUST NOT be sent on. They MUST be
   shown the page again and told that their agreement was not recorded. *(US-2)*
 - **FR-010**: The acceptances of one submission MUST be stored together or not at all. *(US-2,
@@ -296,8 +304,9 @@ that agreeing still records an acceptance and returns the person.
 - **FR-011**: A failure to store MUST be reported to the host project the way its other errors
   are, and MUST NOT expose its cause to the user. *(US-2)*
 - **FR-012**: When a user agrees to some of the documents shown and not others, the ones they
-  agreed to MUST be recorded, and they MUST be shown the page again with those that remain.
-  *(US-3)*
+  agreed to MUST be recorded, and they MUST be shown the page again with those that remain only
+  while an enforced document is among them. Accepting a document that is not enforced MUST NOT be
+  needed to be sent on. *(US-3)*
 - **FR-013**: A document that is no longer outstanding for the user when their submission is
   processed MUST be passed over without failing the submission. *(US-3)*
 - **FR-014**: Documents on the page MUST appear in the order the document pages list them in.
@@ -309,8 +318,10 @@ that agreeing still records an acceptance and returns the person.
   *(US-4)*
 - **FR-017**: The host project MUST be able to set the default destination, and the package MUST
   supply one that works when the project sets nothing. *(US-4)*
-- **FR-018**: A signed-in user with nothing outstanding who requests the page MUST be sent on at
-  once and MUST NOT be shown it. *(US-4)*
+- **FR-018**: A signed-in user with no enforced document outstanding who requests the page with
+  an address to return to MUST be sent on at once and MUST NOT be shown it. With no address to
+  return to, they MUST be shown the page when a document that is not enforced is outstanding for
+  them, and MUST be sent on at once when nothing is. *(US-4)*
 - **FR-019**: A submission MUST be refused unless it was made from the page by the signed-in user
   themselves. *(US-1)*
 - **FR-020**: The page MUST render inside the host project's django-mvp shell without the project
@@ -339,15 +350,16 @@ that agreeing still records an acceptance and returns the person.
   version's own page, and an acceptance recorded here points at the version that link led to.
 - **Document** (FS-001, FS-007): unchanged, apart from one more slug that cannot be taken. Whether
   a document is outstanding for a user is answered as FS-003 answers it.
-- **Destination**: the address a user is returned to once nothing is outstanding. It travels with
-  the request and is not stored.
+- **Destination**: the address a user is returned to once no enforced document is outstanding. It
+  travels with the request and is not stored.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: Every user sent on from the page holds an acceptance of the current version of every
-  document that was outstanding for them when they arrived. No user is sent on without one.
+  enforced document that was outstanding for them when they arrived. No user is sent on without
+  one.
 - **SC-002**: When storing an acceptance fails, the user is shown the page again every time, and
   no acceptance from that submission exists.
 - **SC-003**: Every acceptance recorded through the page points at a version that the page the
@@ -356,8 +368,8 @@ that agreeing still records an acceptance and returns the person.
   is redirected once.
 - **SC-005**: A user who agrees to everything arrives at the address they were heading for when
   they were sent to the page, including after a failed attempt.
-- **SC-006**: A user with nothing outstanding who is sent to the page reaches their destination
-  without the page being shown.
+- **SC-006**: A user with no enforced document outstanding who is sent to the page reaches their
+  destination without the page being shown.
 - **SC-007**: No user is ever sent from the page to an address on another site.
 - **SC-008**: A project that mounts the package's pages gets the page, inside its own shell, with
   no template written and no setting changed.
@@ -399,15 +411,17 @@ that agreeing still records an acceptance and returns the person.
 - FS-001 to FS-008 are delivered, and this spec is written against them as they stand on main:
   acceptances are recorded from code, what is outstanding for a person is answered in one query,
   each published version has a page, and a document is either one people agree to or a notice.
-- The page asks about every document that is outstanding for the person. R5 decides which
-  outstanding documents stop a person and may narrow what a person has to clear before they are
-  sent on. Until then all outstanding documents are treated alike.
-- R5 sends people to this page the same way a developer does, by its address with a destination,
-  and relies on a person with nothing outstanding being sent straight on.
+- The page asks about every document that is outstanding for the person. Which of them a person
+  has to accept before they are sent on is each document's enforcement (FS-010). On a site where
+  every document is enforced, which is every site until somebody switches one off, all outstanding
+  documents are treated alike.
+- The site-wide check (FS-010) sends people to this page the same way a developer does, by its
+  address with a destination, and relies on a person with no enforced document outstanding being
+  sent straight on.
 - The host project is built on django-mvp and has a sign-in page, as the account area's list
   (FS-008) already assumes.
-- Nothing links to the page from the package's other pages. Until R5 is delivered, a person
-  reaches it because the project's own code sent them there.
+- Nothing links to the page from the package's other pages. A person reaches it because the
+  site-wide check or the project's own code sent them there, or by its address.
 - An acceptance recorded here holds what FS-003 says an acceptance holds, including the optional
   connecting address when the project has turned that on. No new personal data is stored, so
   Article XIV asks for nothing further.

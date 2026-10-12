@@ -27,6 +27,7 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "kind",
+        "enforced",
         "current_version",
         "in_force_since",
         "published_by",

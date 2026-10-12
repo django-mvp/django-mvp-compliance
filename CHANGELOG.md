@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `mvp_compliance.middleware.AgreementMiddleware`, which switches the agreement check on for the
+  whole site. Listed in `MIDDLEWARE` after `AuthenticationMiddleware`, it sends a signed-in person
+  who has not accepted the current version of an enforced document to the page that asks, from any
+  address, with the address they wanted as `next`. A visitor who is not signed in is never touched,
+  and nothing happens until the middleware is listed. The page that asks, the package's own pages,
+  the sign-out addresses `account_logout`, `logout` and `admin:logout`, and files beneath
+  `STATIC_URL` and `MEDIA_URL` stay reachable with no configuration. A submission is redirected
+  with no `next`, and an htmx request is answered with an `HX-Redirect` header so the page loads
+  whole. A person found to have nothing outstanding is not asked about again for sixty seconds.
+  See [docs/enforcement.md](docs/enforcement.md).
+- System checks `mvp_compliance.E001`, when the middleware is listed and the page that asks has no
+  address, and `mvp_compliance.E002`, when nothing that identifies the signed-in user comes before
+  it.
+- `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS`, a list of paths that stay reachable for a person the
+  agreement check is stopping. An entry covers itself and every address beneath it, a path segment
+  at a time, so `/help/` covers `/help/faq/` and not `/helpful/`. The addresses that are always
+  reachable need no entry, and an entry of `/` covers every address. System check
+  `mvp_compliance.E003` reports the setting when it is a string. See
+  [docs/enforcement.md](docs/enforcement.md#keeping-your-own-addresses-reachable).
+- `MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL`, the number of seconds a person found to have nothing
+  enforced outstanding is not asked about again, `60` when unset. It is read on every request, so
+  shortening it takes effect at once, even for a finding made under a longer value. With `0` every
+  request is checked against the database and nothing is written to the session. System check
+  `mvp_compliance.E004` reports a value that is not a number. See
+  [docs/enforcement.md](docs/enforcement.md#the-delay).
+- `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS`, a list of the values accounts sign in with, compared
+  with `user.get_username()`. An account named in it is never stopped by the agreement check, and
+  a name that matches no account changes nothing. System check `mvp_compliance.E003` reports the
+  setting when it is a string, as it does `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS`.
+- The permission `mvp_compliance.skip_agreement`, on `Document`. An account that holds it,
+  directly or through a group, is never stopped by the agreement check, and a superuser always is
+  let past. It is asked only of a person who is outstanding and about to be stopped, and the answer
+  is not remembered, so taking it away takes effect on the next request. Letting an account past by
+  either way records no acceptance and changes nothing outstanding for it. It is added by
+  migration `0002`, which is still the only migration this release adds. See
+  [docs/enforcement.md](docs/enforcement.md#letting-accounts-past).
+- `Document.enforced`, which says whether a person who has not accepted a document can be stopped
+  until they do. A document created without a choice is enforced, and so is every document that
+  existed before the migration. It is changed with an ordinary save or update at any time and
+  touches no version and no acceptance. `Document.objects.enforced_outstanding_for(user)` narrows
+  `outstanding_for(user)` to the enforced documents, and `outstanding_for()` is unchanged. The
+  field is on a document's form and in the documents list in the admin. Migration `0002` adds the
+  column and writes nothing else. See [docs/models.md](docs/models.md#enforcement).
 - A page that asks a signed-in person to agree to what is outstanding for them, at
   `<prefix>/agree/` (`mvp_compliance:agree`). It lists each outstanding document with its version
   in force, a link to that version's page and a toggle, and a submission records an acceptance of
@@ -29,6 +72,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The page that asks follows each document's `enforced` field. A document that is not enforced is
+  still listed, and is marked optional where it was marked required. After a submission a person is
+  sent on once no enforced document is outstanding for them, whatever they left alone among the
+  rest, and is shown the page again while one is. A signed-in person with no enforced document
+  outstanding who opens the page with a `next` parameter, whatever its value, is redirected at
+  once and shown nothing, to `next` when it can be followed and otherwise to the default
+  destination. With no `next` they are shown the page and can accept those documents. The page
+  behaves as before on a site where every document is enforced, which is every site until a
+  document's `enforced` is switched off.
+- `AgreementView.is_optional()` returns `not document.enforced` where it returned `False`. A
+  project that overrides it may make a document that is not enforced required, and must not make
+  an enforced one optional on a site that has listed `AgreementMiddleware`: the middleware asks
+  `Document.objects.enforced_outstanding_for()` and never the view, so the two would send a
+  person round in a loop. See [docs/pages.md](docs/pages.md#deciding-which-documents-are-required).
 - The slug `agree` is no longer available to a document, because it is the address of the page
   that asks a person to agree. The admin and `full_clean()` refuse it, through
   `Document.RESERVED_SLUGS`. A document already published under `agree` stops being reachable at

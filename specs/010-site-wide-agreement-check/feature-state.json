@@ -1,0 +1,596 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "010-site-wide-agreement-check",
+  "branch": "010-site-wide-agreement-check",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-10-11T23:39:11Z",
+      "note": "specification approved on #89 at a744293; issue graph built (#87, #95 to #100)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-10-12T10:33:18Z",
+      "note": "claim held; branch level with origin/main 72fb4c0; research, plan and tasks written"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-10-12T10:34:09Z",
+      "note": "plan committed; design reviewer dispatched"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-10-12T10:46:56Z",
+      "note": "design review settled by plan edits; plan gate open"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-12T11:39:34Z",
+      "note": "all six stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-10-12T11:41:50Z",
+      "note": "converged: verify green, ADRs 0023 to 0025, 21 verdicts"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-10-12T12:00:44Z",
+      "note": "review approve; walkthrough laid out; description rewritten"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "delegated review",
+      "at": "2026-10-11T23:39:07Z",
+      "self_resolved": [
+        "approved at commit a7442932cafeb7af0f8ebb4479b90cdb304fb2c1 under the maintainer's opened spec gate",
+        "the maintainer asked in session on 2026-10-12 for the build to continue, after merging FS-009"
+      ]
+    },
+    "plan": {
+      "approved_by": "open",
+      "at": "2026-10-12T10:46:17Z",
+      "self_resolved": [
+        "plan gate open for this feature; passed without a stop"
+      ]
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design-reviewer",
+      "at": "2026-10-12T10:46:17Z",
+      "self_resolved": [
+        "verdict request_changes: 0 critical, 1 high, 2 medium, 10 low; every finding answered by an edit to the plan or a task, each checked against the finding's own evidence",
+        "SPEC-001 high: one FS-009 test records the rule FR-030 replaces; its removal is named in T001 and T011 stands in its place",
+        "SPEC-002 medium: an unset MEDIA_URL comes back as the site root and covers nothing (plan.md What stays reachable, T006)",
+        "SPEC-003 medium: the demo lists no reachable address; an entry of / covers every address and the docs say so (T015)",
+        "SPEC-004 low: research and D14 say the check loads the session itself; cost tests measured on a page that reads the user (T006)",
+        "SPEC-005 low: request.path against request.path_info stated for each rule",
+        "SPEC-006 low: the demo's button and the documented example link lose their next (T012, T013)",
+        "SPEC-007 low: change-detector assertions replaced (T004, T006, T018)",
+        "SPEC-008 low: the three sign-out names parametrised, and the misplaced-middleware request tested (T006)",
+        "SEC-001 low: a third system check refuses a string for either list setting (T014 to T017)",
+        "SEC-002 low: docs say to name only accounts whose sign-in value cannot change (T017)",
+        "ARCH-001 low: the finding is stored as the time it was made, a POSIX timestamp",
+        "ARCH-002 low: is_optional() docstring, docs and changelog say an override must not make an enforced document optional (T012, T013)",
+        "ARCH-003 low: the migration test runs outside a transaction and restores the schema in teardown (T002)",
+        "note kept: settings stay named EXEMPT_USERS and EXEMPT_URLS (decisions.md D18)"
+      ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-10-12T11:59:15Z",
+      "self_resolved": [
+        "verdict approve: 0 critical, 0 high, 1 medium, 3 low; 20 mutations run by the reviewer, 18 killed",
+        "COR-001 medium: remedied in T021; the new test fails with the old comparison restored",
+        "SPEC-001 low: remedied in T022; each new test fails under the mutation the finding names",
+        "COR-002 low: remedied in T023 with system check E004",
+        "COR-003 low: declined; the middleware offers no hooks for subclasses and the docs offer none (decisions.md D22)",
+        "notes: three loose sentences in docs/models.md and docs/enforcement.md corrected"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": null,
+      "at": "2026-10-12T11:59:48Z",
+      "self_resolved": []
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 95,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck",
+              "tests/test_middleware.py::TestAgreementCheckOff",
+              "tests/test_middleware.py::TestAgreementCheckCost"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:116"
+            ]
+          }
+        },
+        {
+          "id": "T007",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck",
+              "tests/test_middleware.py::TestAgreementCheckOff",
+              "tests/test_middleware.py::TestAgreementCheckCost"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py -q"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:30"
+            ]
+          }
+        },
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_checks.py::TestAgreementChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_checks.py -q"
+            ],
+            "code": [
+              "tests/test_checks.py:25"
+            ]
+          }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_checks.py::TestAgreementChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_checks.py -q",
+              "uv run django-admin makemessages -l en --no-obsolete"
+            ],
+            "code": [
+              "mvp_compliance/checks.py:13"
+            ]
+          }
+        },
+        {
+          "id": "T010",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck",
+              "tests/test_checks.py::TestAgreementChecks"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main --steps docs",
+              "DJANGO_SETTINGS_MODULE=demo.settings uv run django-admin check"
+            ],
+            "code": [
+              "docs/enforcement.md:1",
+              "demo/settings.py:49"
+            ]
+          }
+        },
+        {
+          "id": "T021",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck::test_an_unset_media_url_covers_nothing_under_a_prefix"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py -q (red with the comparison restored to url == get_script_prefix(): 1 failed; green with the fix)"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:124"
+            ]
+          }
+        },
+        {
+          "id": "T022",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck::test_a_head_request_carries_the_address_wanted",
+              "tests/test_middleware.py::TestExemptUrls::test_an_entry_leaves_out_the_prefix_the_site_is_served_under"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py -q (each red under its mutation: GET-only return address, entries compared with request.path)"
+            ],
+            "code": [
+              "tests/test_middleware.py:151"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 96,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementDestination"
+            ],
+            "commands": [
+              "uv run pytest -q -n auto (581 passed)"
+            ],
+            "code": [
+              "specs/009-asking-to-agree/spec.md:300"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestEnforcement",
+              "tests/test_migrations.py::TestEnforcedColumn"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestEnforcement -q (11 failed, as intended before T003)",
+              "uv run pytest tests/test_migrations.py::TestEnforcedColumn -q (1 failed, as intended before T003)"
+            ],
+            "code": [
+              "tests/test_models.py:2428",
+              "tests/test_migrations.py:75"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestEnforcement",
+              "tests/test_migrations.py::TestEnforcedColumn"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main (all steps green)"
+            ],
+            "code": [
+              "mvp_compliance/models.py:94"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentEnforcement"
+            ],
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentEnforcement -q (1 failed, 3 passed, as intended before T005)"
+            ],
+            "code": [
+              "tests/test_admin.py:967"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentEnforcement"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main (all steps green)"
+            ],
+            "code": [
+              "mvp_compliance/admin.py:27"
+            ]
+          }
+        },
+        {
+          "id": "T020",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestDocument"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDocument -q"
+            ],
+            "code": [
+              "tests/test_models.py:85"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P1",
+      "issue": 97,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T011",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementEnforcement"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreementEnforcement -q"
+            ],
+            "code": [
+              "tests/test_views.py:2419"
+            ]
+          }
+        },
+        {
+          "id": "T012",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementEnforcement",
+              "tests/test_views.py"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreementEnforcement -q",
+              "uv run pytest tests/test_views.py -q -n auto --dist loadscope",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/views.py:228",
+              "mvp_compliance/views.py:322",
+              "demo/views.py:13"
+            ]
+          }
+        },
+        {
+          "id": "T013",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "docs/pages.md:135",
+              "docs/pages.md:511",
+              "docs/enforcement.md:51",
+              "CHANGELOG.md:50"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P2",
+      "issue": 98,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T014",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestExemptUrls",
+              "tests/test_checks.py::TestListSettingChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py::TestExemptUrls tests/test_checks.py::TestListSettingChecks -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:458",
+              "tests/test_checks.py:50"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestExemptUrls",
+              "tests/test_checks.py::TestListSettingChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py tests/test_checks.py -q",
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:124",
+              "mvp_compliance/checks.py:64"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US5",
+      "priority": "P2",
+      "issue": 99,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T016",
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestLetPast",
+              "tests/test_middleware.py::TestLetPastCost",
+              "tests/test_checks.py::TestListSettingChecks",
+              "tests/test_models.py::TestSkipAgreementPermission"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py::TestLetPast tests/test_middleware.py::TestLetPastCost tests/test_checks.py::TestListSettingChecks tests/test_models.py::TestSkipAgreementPermission -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:536",
+              "tests/test_models.py:2540"
+            ]
+          }
+        },
+        {
+          "id": "T017",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestLetPast",
+              "tests/test_middleware.py::TestLetPastCost",
+              "tests/test_checks.py::TestListSettingChecks",
+              "tests/test_models.py::TestSkipAgreementPermission",
+              "tests/test_migrations.py::TestEnforcedColumn"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py tests/test_checks.py tests/test_models.py tests/test_migrations.py tests/test_admin.py -q -n auto --dist loadscope",
+              "uv run python manage.py makemigrations --check --dry-run",
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:64",
+              "mvp_compliance/models.py:226",
+              "mvp_compliance/checks.py:68"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US6",
+      "priority": "P3",
+      "issue": 100,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T018",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestCheckInterval"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py::TestCheckInterval -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:665"
+            ]
+          }
+        },
+        {
+          "id": "T019",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestCheckInterval",
+              "tests/test_middleware.py::TestAgreementCheckCost"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py tests/test_checks.py -q -n auto --dist loadscope",
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:58"
+            ]
+          }
+        },
+        {
+          "id": "T023",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_checks.py::TestListSettingChecks::test_an_interval_that_is_not_a_number_is_an_error"
+            ],
+            "commands": [
+              "uv run pytest tests/test_checks.py -q (3 failed before the check existed, green after)"
+            ],
+            "code": [
+              "mvp_compliance/checks.py:79"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 36.15,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 89,
+    "draft": false
+  }
+}

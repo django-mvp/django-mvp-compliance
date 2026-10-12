@@ -1,0 +1,97 @@
+{
+  "story": "US3",
+  "skills_loaded": [
+    {
+      "name": "craft-tdd",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-increments",
+      "receipt": "craft-increments/2026-09-28/3f7d8b12",
+      "loaded_via": "path-read"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T011",
+      "status": "done",
+      "evidence": {
+        "tests_added": [
+          "tests/test_views.py::TestAgreementEnforcement::test_agreeing_to_the_enforced_document_only_records_it_and_goes_on",
+          "tests/test_views.py::TestAgreementEnforcement::test_agreeing_to_both_records_both_and_goes_on",
+          "tests/test_views.py::TestAgreementEnforcement::test_agreeing_to_one_of_two_enforced_documents_shows_the_other",
+          "tests/test_views.py::TestAgreementEnforcement::test_agreeing_to_the_unenforced_document_only_records_it_and_asks_again",
+          "tests/test_views.py::TestAgreementEnforcement::test_the_page_lists_both_and_only_the_unenforced_one_is_optional",
+          "tests/test_views.py::TestAgreementEnforcement::test_the_required_entries_are_the_enforced_outstanding_documents",
+          "tests/test_views.py::TestAgreementEnforcement::test_only_unenforced_outstanding_and_an_address_sends_on_at_once",
+          "tests/test_views.py::TestAgreementEnforcement::test_only_unenforced_outstanding_and_no_address_shows_the_page",
+          "tests/test_views.py::TestAgreementEnforcement::test_agreeing_to_the_only_unenforced_document_records_it_and_goes_on",
+          "tests/test_views.py::TestAgreementEnforcement::test_agreeing_to_nothing_goes_on_to_the_default_destination",
+          "tests/test_views.py::TestAgreementEnforcement::test_nothing_outstanding_sends_on_with_or_without_an_address",
+          "tests/test_views.py::TestAgreementEnforcement::test_a_failed_write_sends_nobody_on_and_records_neither_document",
+          "tests/test_views.py::TestAgreementEnforcement::test_enforcement_switched_off_after_the_page_was_drawn_is_honoured",
+          "tests/test_views.py::TestAgreementEnforcement::test_enforcement_switched_on_after_the_page_was_drawn_is_honoured",
+          "tests/test_views.py::TestAgreementEnforcement::test_a_stopped_person_agrees_to_the_enforced_document_and_arrives"
+        ],
+        "criteria": [
+          "SC-008",
+          "SC-009"
+        ],
+        "commands": [
+          "uv run pytest tests/test_views.py::TestAgreementEnforcement -q (before T012: 10 failed, 9 passed; the failures were the unenforced document being treated as required)",
+          "uv run pre-commit run --files tests/test_views.py"
+        ],
+        "exit_code": 1
+      },
+      "commits": [
+        "95e8e61"
+      ]
+    },
+    {
+      "id": "T012",
+      "status": "done",
+      "evidence": {
+        "tests_added": [],
+        "criteria": [
+          "SC-008",
+          "SC-009"
+        ],
+        "commands": [
+          "uv run pytest tests/test_views.py::TestAgreementEnforcement -q (19 passed)",
+          "uv run pytest tests/test_views.py -q -n auto --dist loadscope (201 passed, no existing test edited)",
+          "uv run pre-commit run --all-files"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "8a08cda"
+      ]
+    },
+    {
+      "id": "T013",
+      "status": "done",
+      "evidence": {
+        "tests_added": [],
+        "criteria": [],
+        "commands": [
+          "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main --steps docs (docs: passed)",
+          "uv run pre-commit run --all-files"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "234c9a2"
+      ]
+    }
+  ],
+  "deviations": [],
+  "concerns": [
+    "demo/management/commands/seed_demo.py line 133 still says \"the demo's settings name House rules as optional\". The settings no longer name anything; the seed marks House rules not enforced at line 391. The file is outside this story's tasks, so the comment is left for Forge to triage.",
+    "T011's tests were committed red by design (10 failed, 9 passed before T012). The nine that passed are guards that held before the change and must keep holding: agreeing to both, to one of two enforced documents, to the unenforced document only, to the only unenforced document, nothing outstanding with and without an address, a failed write, and enforcement switched on after the page was drawn.",
+    "demo/templates/demo/landing.html: besides the button losing ?next=, the paragraph above it said the link sent the person there with the list of agreed documents as the place to come back to. It now says the link carries no address. It is the same file T012 names.",
+    "The end-to-end test uses reverse('account-center') as the address first asked for, because django-mvp's account area is the one address in tests/urls.py that is not kept reachable. It depends on django-mvp mounting that name.",
+    "docs/models.md and the README status block were not changed: neither says the page treats every document alike. README still says 'No account-area page exists yet' (noted in US1)."
+  ],
+  "blocked": []
+}

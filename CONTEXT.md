@@ -110,8 +110,10 @@ Django feature, not the person), legal team (an editor may be neither legal nor 
 
 **Enforcement**:
 Stopping a signed-in user who has not accepted the current version of a document from continuing,
-and sending them somewhere they can read it and accept. Configurable per document, and off is a
-legitimate answer: a cookie policy is usually published without being enforced.
+and sending them somewhere they can read it and accept. Set on each document, which is enforced
+when it is created unless its editor chooses otherwise, and off is a legitimate answer: a cookie
+policy is usually published without being enforced. It takes effect only on a site that has
+switched the check on.
 _Avoid_: gating, blocking, guarding, interception.
 
 **Host project**:

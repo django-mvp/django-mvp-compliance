@@ -57,6 +57,34 @@ force, and an acceptance recorded before it became a notice counts again. No per
 changing the document is needed. See [Writing and publishing a
 document](authoring.md#documents-people-agree-to-and-notices) for how an editor does it.
 
+### Enforcement
+
+`enforced` says whether a document is one a person can be stopped over until they accept it. A
+document created without a choice is enforced, so a site that wants a cookie policy published but
+never required switches it off.
+
+```python
+cookies = Document.objects.create(
+    name="Cookie policy", slug="cookie-policy", enforced=False
+)
+```
+
+Like the kind, it is not frozen by publication. Set it and save, or update it in bulk, in either
+direction and at any time:
+
+```python
+cookies.enforced = True
+cookies.save()
+
+Document.objects.filter(slug="cookie-policy").update(enforced=False)
+```
+
+No version and no acceptance is written, edited or removed by either, so a document with published
+versions and recorded acceptances keeps every one of them. The field is read by
+[`enforced_outstanding_for()`](#enforced-and-outstanding) and by the page that asks, which marks a
+document required or optional from it. `outstanding_for()` ignores it. A notice
+is never outstanding, so it is never stopped over whatever its `enforced` says.
+
 A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
 valid and `Privacy_Policy`, `-privacy` and `privacy-` are not. `full_clean()`, which the
 admin calls, refuses the others. The rule is `mvp_compliance.models.lowercase_slug`, a
@@ -72,6 +100,23 @@ person agreed to and of the page that asks, and no document is served at either.
 page, never with that document. A document that was published under `agree` before the slug was
 reserved keeps its versions and its acceptances, and its own page is no longer reachable. Its slug
 is fixed once a version is published, as the next section says, so the package cannot give it another.
+
+### The permission to continue without accepting
+
+`Document` carries one permission, `skip_agreement`, with the name "Can continue without accepting
+enforced documents". Its content type is `Document`, so it is asked for as
+`mvp_compliance.skip_agreement` and granted in the admin like any other, to a user or to a group:
+
+```python
+user.has_perm("mvp_compliance.skip_agreement")
+```
+
+On a site that has switched the [check](enforcement.md) on, an account that holds it, directly or
+through a group, is never stopped. A superuser holds every permission, so a superuser is never
+stopped either. Holding it records nothing and changes nothing about what is
+[outstanding](#enforced-and-outstanding) for the account. See [Letting accounts
+past](enforcement.md#letting-accounts-past). The permission is declared by the migration that adds
+`enforced`, `0002`, and Django creates it when `migrate` next runs.
 
 ### When the slug is fixed
 
@@ -434,10 +479,27 @@ notice.versions.create(markdown="# Impressum\n\n...").publish()
 notice.is_outstanding_for(user)  # False
 ```
 
-This answer ignores whether a site chooses to enforce a document, and does not
-ignore the kind. Whether a site stops people until they have accepted something is
-decided elsewhere, and this method does not carry it. Whether a document can be
-accepted at all is not a decision, and this method does.
+These answers ignore whether a document is enforced: a document that is not enforced is still
+outstanding for everyone who has not accepted it. They do not ignore the kind, because whether a
+document can be accepted at all is not a decision a site makes.
+
+### Enforced and outstanding
+
+`Document.objects.enforced_outstanding_for(user)` narrows `outstanding_for(user)` to the documents
+whose [`enforced`](#enforcement) is on: the ones a person can be stopped over. It is one query
+however many documents exist, and a document with no version in force, a notice, and a document
+whose version in force `user` has accepted are left out of it as they are left out of
+`outstanding_for`.
+
+```python
+cookies = Document.objects.create(
+    name="Cookie policy", slug="cookie-policy", enforced=False
+)
+cookies.versions.create(markdown="# Cookies\n\n...").publish()
+
+cookies in Document.objects.outstanding_for(user)           # True
+cookies in Document.objects.enforced_outstanding_for(user)  # False
+```
 
 ### Account removal
 

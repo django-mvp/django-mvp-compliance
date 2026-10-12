@@ -1,0 +1,116 @@
+{
+  "story": "US4+US5+US6",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 98,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-09-28/3f7d8b12"
+    }
+  ],
+  "tasks": [
+    "T014",
+    "T015",
+    "T016",
+    "T017",
+    "T018",
+    "T019"
+  ],
+  "context": {
+    "why": "Three small stories that each add one setting to AgreementMiddleware and one section to docs/enforcement.md, built in order: US-4 MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS (T014, T015), US-5 MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS and the permission mvp_compliance.skip_agreement (T016, T017), US-6 MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL (T018, T019). Issues #98, #99 and #100. The middleware, checks E001 and E002 and docs/enforcement.md exist from US-1.",
+    "environment": "uv. Run everything with `uv run ...` from the worktree root; the virtualenv is synced. Narrow scope per task, e.g. `uv run pytest tests/test_models.py::TestEnforcement -q`. Lint gate: `uv run pre-commit run --all-files` (never a bare ruff check). Catalog: `cd mvp_compliance && uv run django-admin makemessages -l en --no-obsolete`. Full verify, once, at the end: `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. The branch is 010-site-wide-agreement-check; commit on it directly, one commit per task with the task id in the subject. The commit identity is already bound: do not change git config.",
+    "spec_sections": [
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 User Story 4 - Keeping a project's own addresses reachable",
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 User Story 5 - Letting particular accounts past",
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 User Story 6 - Choosing how soon a change reaches people",
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 Requirements \u2014 FR-016 to FR-023",
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 Edge Cases"
+    ],
+    "plan_sections": [
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 The check (US-1)",
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 What stays reachable (US-1, US-4)",
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 Letting accounts past (US-5)",
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 The delay (US-6)",
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 The system checks (US-1)",
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 The demo"
+    ],
+    "prior_decisions": [
+      "specs/010-site-wide-agreement-check/decisions.md D5",
+      "specs/010-site-wide-agreement-check/decisions.md D6",
+      "specs/010-site-wide-agreement-check/decisions.md D7",
+      "specs/010-site-wide-agreement-check/decisions.md D15",
+      "specs/010-site-wide-agreement-check/decisions.md D18"
+    ],
+    "glossary_terms": [
+      "Enforcement",
+      "Outstanding",
+      "Host project"
+    ],
+    "acceptance": [
+      "Every clause of your tasks' rows in specs/010-site-wide-agreement-check/tasks.md is met, each test written first and seen to fail for the right reason",
+      "Full verify green: lint, typecheck, test, build, conformance, docs",
+      "makemessages leaves the catalog clean",
+      "makemigrations --check is clean",
+      "docs/ pages named in your tasks are true for the branch as it stands"
+    ],
+    "conventions": [
+      "Design review: check mvp_compliance.E003 is raised when either list setting is a str; one test case per setting, asserted by id",
+      "Design review: an entry of the exempt-URLs setting is compared a path segment at a time against request.path_info; '/' covers every address and an empty entry covers nothing. The demo lists NO address",
+      "Design review: the permission is asked only of a user the outstanding query has just said would be stopped, and the answer is never stored in the session (decisions.md D15)",
+      "Design review: the interval comparison is now minus the stored timestamp against the CURRENT setting; with 0 nothing is stored. No separate 'honour nothing' rule",
+      "Design review: never assert the session key's name alone; compare the session's contents before and after as a whole",
+      "The permission goes in Document.Meta.permissions. Delete migration 0002 and regenerate it with makemigrations so the branch still adds exactly one migration holding the field and the permission; keep its name stable if you can. tests/test_migrations.py::TestEnforcedColumn must still pass unmodified",
+      "Seed accounts follow the demo's existing pattern: <role>.user@example.com, password 'password'. Read seed_demo before adding to it",
+      "docs/enforcement.md says: name only accounts whose sign-in value the holder cannot change, and remove a name when its account is removed",
+      "Repo standards that reviews have missed before: no leading-underscore names anywhere (functions, methods, attributes, modules, constants); line length 88; no compatibility aliases; no test of text content or wording; no test of layout or appearance",
+      "A mechanism an experienced Django developer would recognise beats a clever one: no dataclass, registry or settings object where a plain getattr(settings, NAME, default) at the point of use does",
+      "Settings are read with getattr at the point of use, as views.py reads MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL",
+      "Every user-facing string is wrapped for translation and none says 'compliant', 'compliance' or names a regulation",
+      "Every model field carries verbose_name and help_text",
+      "Docstrings follow docs/contributing/standards/code-documentation.md; tests follow docs/contributing/standards/testing.md",
+      "Text for GitHub and docs is written for an outside contributor: plain words, no mention of agents, stages or tooling"
+    ],
+    "verified_base": {
+      "commit": "e7201d6fc9930406fc4bdd2e90f8a8abf75929a1",
+      "at": "2026-10-12T11:26:05Z",
+      "steps": [
+        "lint",
+        "typecheck",
+        "test",
+        "build",
+        "conformance",
+        "docs"
+      ]
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 75
+  },
+  "rituals": [
+    "Read /home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/implement-story.md in full and follow it",
+    "Load every required skill by reading its path; copy each RECEIPT line verbatim",
+    "Read this brief fully",
+    "Read only your tasks' rows in specs/010-site-wide-agreement-check/tasks.md",
+    "Read the plan.md sections named here",
+    "git log --oneline -10; confirm HEAD is the verified_base commit"
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story",
+    "Never touch files outside this story's tasks",
+    "Never edit mvp_compliance/templates/mvp_compliance/agreement.html, mvp_compliance/templates/cotton/compliance/outstanding.html or mvp_compliance/static/mvp_compliance/agreement.js",
+    "Never write feature-state.json by hand; record each finished task with forge ledger-task --stage S4 --path <worktree>",
+    "Never push, merge, or run gh; you have no tokens",
+    "Never touch .github/ or cut a release",
+    "Never weaken an assertion, add skip or xfail, or special-case code to pass a test",
+    "Never add a dependency",
+    "Never start with a required skill unloaded, and never write a receipt you did not read from a file"
+  ]
+}
