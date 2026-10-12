@@ -43,3 +43,23 @@ class TestAgreementChecks:
     @pytest.mark.urls("tests.urls_mvp_only")
     def test_nothing_is_reported_while_the_middleware_is_not_listed(self):
         assert reported(SESSIONS) == set()
+
+
+class TestListSettingChecks:
+    @pytest.mark.parametrize("setting", ["MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS"])
+    def test_a_list_setting_given_as_a_string_is_an_error(self, setting):
+        with override_settings(
+            MIDDLEWARE=[SESSIONS, AUTHENTICATION, AGREEMENT], **{setting: "/help/"}
+        ):
+            ids = {message.id for message in run_checks()}
+
+        assert "mvp_compliance.E003" in ids
+
+    @pytest.mark.parametrize("setting", ["MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS"])
+    def test_a_list_setting_given_as_a_list_is_told_nothing(self, setting):
+        with override_settings(
+            MIDDLEWARE=[SESSIONS, AUTHENTICATION, AGREEMENT], **{setting: ["/help/"]}
+        ):
+            ids = {message.id for message in run_checks()}
+
+        assert "mvp_compliance.E003" not in ids

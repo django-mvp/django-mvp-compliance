@@ -39,6 +39,9 @@ urlpatterns = [
     path("legal/", include("mvp_compliance.urls")),
     path("", include("mvp.urls")),
     path("elsewhere/", recording_view, name="elsewhere"),
+    path("help/", recording_view),
+    path("help/<path:name>", recording_view),
+    path("helpful/", recording_view),
     path("private/", login_required(recording_view), name="private"),
     path("signout/", recording_view, name="logout"),
     path("static/<path:name>", recording_view),
@@ -450,3 +453,82 @@ class TestAgreementCheckCost:
         assert sent_to_the_page_that_asks(first)
         assert sent_to_the_page_that_asks(second)
         assert dict(client.session) == before
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("check_on", "media_url_is_unset")
+class TestExemptUrls:
+    @pytest.fixture(autouse=True)
+    def help_is_listed(self, settings):
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help/"]
+
+    @pytest.mark.parametrize("address", ["/help/", "/help/faq/"])
+    def test_a_stopped_user_is_served_a_listed_address_and_those_beneath_it(
+        self, client, stopped, address
+    ):
+        response = client.get(address)
+
+        assert response.status_code == 200
+        assert called == [address]
+
+    def test_an_address_that_is_not_listed_still_redirects(self, client, stopped):
+        response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
+
+    def test_an_address_that_only_starts_like_an_entry_still_redirects(
+        self, client, stopped
+    ):
+        response = client.get("/helpful/")
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
+
+    @pytest.mark.parametrize(
+        "address",
+        [
+            pytest.param(lambda document: agreement_address(), id="page that asks"),
+            pytest.param(
+                lambda document: reverse(
+                    "mvp_compliance:document", args=[document.slug]
+                ),
+                id="document",
+            ),
+            pytest.param(lambda document: reverse("account_logout"), id="sign out"),
+        ],
+    )
+    def test_the_addresses_that_stay_reachable_are_still_served(
+        self, client, stopped, version, address
+    ):
+        response = client.get(address(version.document))
+
+        assert not sent_to_the_page_that_asks(response)
+
+    def test_an_entry_written_without_its_trailing_slash_covers_the_same_addresses(
+        self, client, stopped, settings
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help"]
+
+        covered = [client.get("/help/"), client.get("/help/faq/")]
+        stopped_at = client.get("/helpful/")
+
+        assert [response.status_code for response in covered] == [200, 200]
+        assert sent_to_the_page_that_asks(stopped_at)
+
+    def test_an_empty_entry_covers_nothing(self, client, stopped, settings):
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = [""]
+
+        response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
+
+    def test_an_entry_of_the_site_root_covers_every_address(
+        self, client, stopped, settings
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/"]
+
+        served = [client.get("/elsewhere/"), client.get("/nowhere/")]
+
+        assert not any(sent_to_the_page_that_asks(response) for response in served)

@@ -86,3 +86,10 @@ Did: docs/pages.md: the rows' required or optional mark follows `enforced`; the 
 Verified: forge verify --repo . --base origin/main --steps docs -> passed. uv run pre-commit run --all-files passes.
 Next: the full verify, once, then the report.
 Watch: docs/models.md says nothing about the page treating documents alike, so it was left alone; README's status block is untouched, as in US1.
+
+## 2026-10-12T11:27:46Z · Implementer US4+US5+US6 · T014
+
+Did: tests/test_middleware.py::TestExemptUrls, with the setting at ["/help/"]: a listed address and one beneath it are served, an address not listed and `/helpful/` redirect, the page that asks, a document's page and `account_logout` are still served, an entry without its trailing slash covers the same addresses, an empty entry covers nothing, and an entry of `/` covers every address including one that resolves to nothing. Three plain routes for `/help/` were added to the module's URLconf. tests/test_checks.py::TestListSettingChecks: the setting as a string returns `mvp_compliance.E003`, as a list returns none, one parametrised case per setting.
+Verified: uv run pytest tests/test_middleware.py::TestExemptUrls tests/test_checks.py::TestListSettingChecks -q -> 5 failed, 7 passed. The failures are the redirect where 200 was expected (listed address, address beneath it, entry without slash, entry of `/`) and no E003; the seven passes are guards that must keep holding. pre-commit run --all-files passes.
+Next: T015, middleware.py, checks.py, docs, README, CHANGELOG.
+Watch: the existing `reported()` helper in test_checks.py filters to E001 and E002, so E003 is asserted from run_checks() directly in its own class and the helper is untouched.

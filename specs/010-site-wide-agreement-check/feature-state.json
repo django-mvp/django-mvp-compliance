@@ -351,8 +351,21 @@
       "tasks": [
         {
           "id": "T014",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestExemptUrls",
+              "tests/test_checks.py::TestListSettingChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py::TestExemptUrls tests/test_checks.py::TestListSettingChecks -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:458",
+              "tests/test_checks.py:50"
+            ]
+          }
         },
         {
           "id": "T015",
