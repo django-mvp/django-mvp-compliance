@@ -104,3 +104,10 @@ Did: converged. Two decision records (0021, 0022), a verdict on each of 24 decis
 Verified: forge verify --base origin/main, six steps green. tamper-check against main flags the two test edits recorded in tasks.md T001 and decisions.md D24.
 Next: code review.
 Watch: none.
+
+## 2026-10-12T10:05:23Z · Orchestrator · ready
+
+Did: review fixes T015 to T017; review write-up and walkthrough checklist posted; pull request description rewritten; ledger at ready for review.
+Verified: forge verify --base origin/main, six steps green; 582 tests.
+Next: the merge gate.
+Watch: nothing is pushed to the branch after it is marked ready, except a fix that is asked for.

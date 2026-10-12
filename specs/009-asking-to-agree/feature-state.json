@@ -3,7 +3,7 @@
   "feature": "009-asking-to-agree",
   "branch": "009-asking-to-agree",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "QUEUED",
@@ -34,6 +34,11 @@
       "state": "REVIEW",
       "at": "2026-10-12T09:38:15Z",
       "note": "converged: verify green, ADRs 0021 and 0022, 24 verdicts"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-10-12T10:05:23Z",
+      "note": "review recorded, no finding open; walkthrough laid out"
     }
   ],
   "gates": {
@@ -101,6 +106,11 @@
         "COR-002 low: connecting_address() shared by record() and record_many() (T017)",
         "SPEC-001 low: five lines shortened (T017)"
       ]
+    },
+    "walkthrough": {
+      "approved_by": null,
+      "at": "2026-10-12T10:00:02Z",
+      "self_resolved": []
     }
   },
   "stories": [
@@ -469,6 +479,6 @@
   },
   "pr": {
     "number": 88,
-    "draft": true
+    "draft": false
   }
 }
