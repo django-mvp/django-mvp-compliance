@@ -114,8 +114,19 @@
       "tasks": [
         {
           "id": "T001",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementDestination"
+            ],
+            "commands": [
+              "uv run pytest -q -n auto (581 passed)"
+            ],
+            "code": [
+              "specs/009-asking-to-agree/spec.md:300"
+            ]
+          }
         },
         {
           "id": "T002",

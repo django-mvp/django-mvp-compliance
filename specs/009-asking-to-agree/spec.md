@@ -350,8 +350,8 @@ that agreeing still records an acceptance and returns the person.
   version's own page, and an acceptance recorded here points at the version that link led to.
 - **Document** (FS-001, FS-007): unchanged, apart from one more slug that cannot be taken. Whether
   a document is outstanding for a user is answered as FS-003 answers it.
-- **Destination**: the address a user is returned to once no enforced document is outstanding. It travels with
-  the request and is not stored.
+- **Destination**: the address a user is returned to once no enforced document is outstanding. It
+  travels with the request and is not stored.
 
 ## Success Criteria *(mandatory)*
 
