@@ -3,7 +3,7 @@
   "feature": "010-site-wide-agreement-check",
   "branch": "010-site-wide-agreement-check",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "CONVERGE",
   "state_history": [
     {
       "state": "QUEUED",
@@ -24,6 +24,11 @@
       "state": "IMPLEMENT",
       "at": "2026-10-12T10:46:56Z",
       "note": "design review settled by plan edits; plan gate open"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-12T11:39:34Z",
+      "note": "all six stories accepted"
     }
   ],
   "gates": {
@@ -346,7 +351,7 @@
       "priority": "P2",
       "issue": 98,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -394,7 +399,7 @@
       "priority": "P2",
       "issue": 99,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -449,7 +454,7 @@
       "priority": "P3",
       "issue": 100,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -492,7 +497,7 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 2
     },
     "review_cycles": {
@@ -504,7 +509,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 22.56,
+      "used": 29.34,
       "max": 120
     }
   },

@@ -30,6 +30,8 @@ to every request, and Django's own `LoginRequiredMiddleware` set the pattern. A 
 beside it would be two switches for one thing. Being off by default means an upgrade changes
 nothing (FR-002).
 
+**ADR:** docs/adr/0024-the-site-wide-check-is-a-middleware-and-is-off-until-a-project-lists-it.md
+
 ## D2 — A new document is enforced
 
 **Ambiguous**: the issue says publishing without enforcing is ordinary, and the glossary says off
@@ -47,6 +49,8 @@ visible within minutes and fixed with one tick in the admin.
 they add the middleware. A warning on the publish confirmation page would be the next step, and is
 a change to FS-002's page, not part of this feature.
 
+**ADR:** docs/adr/0023-enforcement-is-set-on-the-document-and-a-new-document-is-enforced.md
+
 ## D3 — Enforcement does not change what is outstanding
 
 **Ambiguous**: whether a document that is not enforced still counts as outstanding.
@@ -58,6 +62,8 @@ also available from code.
 that the code which stops a request does the filtering. The account area and any later view of who
 has agreed to what want the unfiltered answer. The issue says the same thing in its own words: an
 outstanding acceptance "is left for them to give in their own time".
+
+**ADR:** docs/adr/0023-enforcement-is-set-on-the-document-and-a-new-document-is-enforced.md
 
 ## D4 — What stays reachable by default
 
@@ -74,6 +80,8 @@ staff are users too, and a project that wants otherwise adds one line or grants 
 How the sign-out address is found is for planning. django-mvp registers it under a known name, and
 a project with its own sign-out lists the address.
 
+**ADR:** none — a list of defaults, described in docs/enforcement.md and expected to grow
+
 ## D5 — A project adds addresses, not views
 
 **Ambiguous**: "a project should be able to add its own" could mean a list of addresses, a
@@ -87,6 +95,8 @@ mechanism is enough (Article II).
 
 **Revisit if**: projects ask to exempt a single view of their own without knowing its address. A
 decorator in the manner of Django's `login_not_required` is the obvious addition.
+
+**ADR:** docs/adr/0024-the-site-wide-check-is-a-middleware-and-is-off-until-a-project-lists-it.md
 
 ## D6 — Let past by name in the settings, or by a permission the package provides
 
@@ -106,6 +116,8 @@ can repair a misconfigured document is never locked out of the admin.
 Being let past records nothing (FR-020). An acceptance is evidence that a person agreed, and
 nobody agreed.
 
+**ADR:** none — two settings-level conveniences on one class; the cost rule that matters is in ADR 0025
+
 ## D7 — A short delay instead of a query on every request
 
 **Ambiguous**: "none of this should make every page slower" does not say what may be traded for
@@ -123,6 +135,8 @@ just agreed is let through at once, and somebody whose acceptance failed never i
 Deciding whether an account is let past falls under the same rule, because checking a permission
 costs queries of its own. Where the finding is kept is for planning.
 
+**ADR:** docs/adr/0025-the-check-remembers-only-that-a-user-is-clear-and-keeps-it-in-the-session.md
+
 ## D8 — Submissions and requests for part of a page are stopped too
 
 **Ambiguous**: the issue says "whatever they were trying to open" and does not mention a form
@@ -136,6 +150,8 @@ agreeing. A submission's address is not passed on because visiting it would not 
 submission and may not answer at all. django-mvp offers views that answer htmx requests for parts
 of a page, so without FR-007 the page that asks would appear inside the page the user was on.
 
+**ADR:** none — how one class answers two kinds of request, documented in docs/enforcement.md
+
 ## D9 — A misconfigured check is reported, not left to loop
 
 **Ambiguous**: the issue does not say what happens when the middleware is added but the page that
@@ -146,6 +162,8 @@ asks is not mounted, or the middleware is placed where the signed-in user is not
 **Why defensible**: the alternatives are a redirect to nowhere for every user, or a check that
 quietly stops nobody. Both are the kind of failure a developer finds in production.
 
+**ADR:** docs/adr/0024-the-site-wide-check-is-a-middleware-and-is-off-until-a-project-lists-it.md
+
 ## D10 — Visitors who are not signed in are never checked
 
 **Ambiguous**: whether the check also demands a sign-in.
@@ -155,6 +173,8 @@ quietly stops nobody. Both are the kind of failure a developer finds in producti
 **Why defensible**: an acceptance names a user (glossary), so there is nobody to ask. Requiring a
 sign-in is a separate decision the project already makes with Django's own tools.
 
+**ADR:** docs/adr/0024-the-site-wide-check-is-a-middleware-and-is-off-until-a-project-lists-it.md
+
 ## D11 — No design prototype
 
 **Chosen**: the feature is built without one.
@@ -162,6 +182,8 @@ sign-in is a separate decision the project already makes with Django's own tools
 **Why defensible**: it adds no screen. The page a person is sent to belongs to issue #86. What
 this feature shows is one field on the admin's document form and one column in its list, both in
 places the admin already has for them.
+
+**ADR:** none — a note on how this feature was built, nothing downstream inherits it
 
 ## D12 — The page that asks lets a person go once the enforced documents are accepted
 
@@ -185,6 +207,8 @@ on", or the two together form a loop. Enforcement does not exist until this feat
 could not have said it. The amendment changes nothing on a site where every document is enforced,
 which is every site until a compliance editor switches one off (FR-032).
 
+**ADR:** none — an amendment to one page's rule, recorded in both specifications and in docs/pages.md
+
 ## D13 — Opening the page with no address to return to shows the optional documents
 
 *Made in review of this specification.*
@@ -205,6 +229,8 @@ and they are shown the page in every case.
 **Revisit if**: FS-009's prototype gives optional documents a place of their own, such as the list
 of what a person agreed to in the account area.
 
+**ADR:** none — local to one view's get(), documented in docs/pages.md
+
 ## D14 — The finding is kept in the session
 
 *Made in planning.*
@@ -219,6 +245,8 @@ out both flush the session, so the finding never passes between accounts. The ca
 default backend is per-process, which would make the delay depend on which worker answers.
 
 **Revisit if**: a project runs without sessions.
+
+**ADR:** docs/adr/0025-the-check-remembers-only-that-a-user-is-clear-and-keeps-it-in-the-session.md
 
 ## D15 — An account let past by the permission is asked about on every request
 
@@ -238,6 +266,8 @@ settings costs nothing at all, and the documentation recommends that for automat
 
 **Revisit if**: a site lets a large group past by the permission and never has them accept.
 
+**ADR:** docs/adr/0025-the-check-remembers-only-that-a-user-is-clear-and-keeps-it-in-the-session.md
+
 ## D16 — Only an htmx request is recognised as a request for part of a page
 
 *Made in planning.*
@@ -255,6 +285,8 @@ none is passed (FR-004). The documentation says what a project using another lib
 
 **Revisit if**: django-mvp adopts another way of loading parts of a page.
 
+**ADR:** none — follows what django-mvp offers today and is expected to change with it
+
 ## D17 — The stories are built in dependency order
 
 *Made in planning.*
@@ -264,6 +296,8 @@ none is passed (FR-004). The documentation says what a project using another lib
 **Why defensible**: the check asks a question only the field can answer, so the field comes first.
 US-4, US-5 and US-6 each add one setting to the same class and the same documentation page, and
 building them apart would have three pieces of work editing the same two files.
+
+**ADR:** none — the order this feature was built in, nothing downstream inherits it
 
 ## D18 — What the design review changed, and what it did not
 
@@ -284,24 +318,25 @@ them.
 **Why defensible**: every change is an edit to the plan or a task, made before any code exists.
 None alters what the specification asks for.
 
-## D19 — US-2: how the demo seed marks House rules, one test left failing, and a page outside the tasks
+**ADR:** none — a record of plan edits; each lasting one is in an ADR or the documentation
+
+## D19 — US-2: how the demo seed marks House rules, one existing test, and a page outside the tasks
 
 **Decision**: `seed_demo` marks House rules as not enforced with an `update()` at the end of
 `handle()`, beside the one that makes Delivery information a notice, rather than passing the choice
 when the document is created. `tests/test_models.py::TestDocument::test_document_holds_no_wording`
-asserts that the concrete fields of `Document` are exactly `id`, `name`, `slug` and `kind`; it fails
-now that there is a fifth field, and it was left as it was.
+lists the concrete fields of `Document`, and gained `enforced` (T020).
 
 **Why**: a demo seeded before the field existed already holds House rules, and creating it with the
-choice would skip it ("already seeded"). The `update()` reaches both. The test is not one this story
-wrote, and the rules for a story forbid changing one; the edit it needs is to add `enforced` to the
-set it compares with, which is for whoever triages the story.
+choice would skip it ("already seeded"). The `update()` reaches both. The test exists to show that
+no field of a document holds wording, and a boolean holds none.
 
 `docs/authoring.md` is edited too, though no task names it: its page on the documents list and a
 document's form would otherwise leave out the new column and field.
 
-**Revisit if**: the test is changed to say what it is for, that a document holds no wording, in a
-way that does not list every field.
+**Revisit if**: the test is changed to say what it is for in a way that does not list every field.
+
+**ADR:** none — demo seed data and one test's list of fields
 
 ## D20 — US-1: what the check treats as absent, and how "beneath" is read
 
@@ -318,6 +353,8 @@ host, so the same rule that excludes `https://cdn.example.com/static/` excludes 
 
 **Revisit if**: a project runs several servers whose clocks disagree by more than the delay. Their
 people would be asked on each request instead of once a minute; nobody is let past by it.
+
+**ADR:** none — edge handling inside one method, covered by tests
 
 ## D21 — US-1: where the middleware's tests get their addresses, and one paragraph of pages.md
 
@@ -337,3 +374,5 @@ name has to be quoted in a docs page. The `docs/pages.md` sentence became false 
 and the docs the story touches have to be true when it lands.
 
 **Revisit if**: the shared URLconf gains routes of its own that these tests could use instead.
+
+**ADR:** none — where one test module keeps its routes

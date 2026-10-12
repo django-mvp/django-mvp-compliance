@@ -23,8 +23,10 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > version, and when. `mvp_compliance.records.produce(subject)` assembles
 > everything the package holds about one person into a single answer, and
 > the admin's **Everything held about a person** page is what calls it,
-> behind a permission of its own that nobody holds by default. No
-> account-area page exists yet.
+> behind a permission of its own that nobody holds by default. Documents
+> are served as pages, a person sees what they agreed to in the account
+> area, and a site can ask a signed-in person to agree and stop them until
+> they do.
 
 ## Why
 
