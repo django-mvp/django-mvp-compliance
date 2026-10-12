@@ -70,6 +70,14 @@ or withdrawn, and a user who accepts a newer version gains a second acceptance r
 replacing the first.
 _Avoid_: agreement, consent (that is the wider term below), sign-off, approval.
 
+**Outstanding**:
+A document people agree to, with a version in force, whose current version a given user has not
+accepted. It is a fact about one document and one user, read from the acceptances whenever it is
+asked and never stored. A notice is never outstanding. The page that asks calls an outstanding
+document "required" when the person cannot go on without accepting it and "optional" when they
+can; which is which is decided by *Enforcement*, not by being outstanding.
+_Avoid_: pending, unaccepted, unsigned, due.
+
 **Consent**:
 The umbrella for everything this package records about what a person allowed — acceptances and
 cookie choices together. Use it when both are meant, and the narrower word when only one is.

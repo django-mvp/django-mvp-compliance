@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A page that asks a signed-in person to agree to what is outstanding for them, at
+  `<prefix>/agree/` (`mvp_compliance:agree`). It lists each outstanding document with its version
+  in force, a link to that version's page and a toggle, and a submission records an acceptance of
+  each version agreed to, then sends the person to `next` when it is on the same site, otherwise
+  to `/`. Opening the page records nothing, a visitor who is not signed in is sent to sign in and
+  back, and the page stops nobody. See [docs/pages.md](docs/pages.md).
+- `MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL`, the address a person is sent on to from the page that
+  asks when no usable `next` was given. It is a path or the name of a URL, and `/` when unset. A
+  `next` that is the page's own address is replaced by it too. A signed-in person with nothing
+  outstanding who opens the page is now redirected to their destination at once, and the page is
+  not drawn. See [docs/pages.md](docs/pages.md#sending-a-person-to-the-page).
+- A project replaces the page that asks by placing a template at `mvp_compliance/agreement.html`,
+  and changes how an agreement is stored by overriding `AgreementView.record_agreed()`. See
+  [docs/pages.md](docs/pages.md#replacing-the-page-that-asks).
+- `Acceptance.objects.record_many(user, versions, request=None)`, which records a batch of
+  acceptances in one write. It sends no save signals, where `record()` does, and needs a database
+  that can ignore conflicts, which rules out Oracle. See [docs/models.md](docs/models.md).
+
+### Changed
+
+- The slug `agree` is no longer available to a document, because it is the address of the page
+  that asks a person to agree. The admin and `full_clean()` refuse it, through
+  `Document.RESERVED_SLUGS`. A document already published under `agree` stops being reachable at
+  its page: the address shows the page that asks. See [docs/models.md](docs/models.md).
+
 ## [v0.1.0] - 2026-10-09
 
 ### Added

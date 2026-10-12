@@ -1,0 +1,52 @@
+{% extends "page_view.html" %}
+{% load i18n static %}
+{% block extra_js %}
+  {{ block.super }}
+  <script defer src="{% static 'mvp_compliance/agreement.js' %}"></script>
+{% endblock extra_js %}
+{% block page.header %}
+  {% if failed or missing or changed %}
+    <div id="agreement-notices" class="flex flex-col gap-2 max-w-3xl mx-auto w-full pt-4">
+      {% if failed %}
+        <c-alert variant="error">
+          <span>{% translate "Your agreement was not recorded. Submit the page again." %}</span>
+        </c-alert>
+      {% endif %}
+      {% if missing %}
+        <c-alert variant="error">
+          <span>{% translate "All documents marked as required need your agreement." %}</span>
+        </c-alert>
+      {% endif %}
+      {% if changed %}
+        <c-alert variant="info">
+          <span>{% translate "A document changed while you were reading. Check the list and submit again." %}</span>
+        </c-alert>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock page.header %}
+{% block page.content-wrapper %}
+  <c-page.content gap=4 class="py-4 max-w-3xl mx-auto w-full">
+    <c-page.title :title="page.title" :subtitle="page.subtitle" />
+    <c-form method="post" id="agreement" class="flex flex-col gap-4">
+      <input type="hidden" name="{{ redirect_field_name }}" value="{{ destination }}" />
+      <c-card tight>
+        <ul class="list">
+          {% for entry in entries %}
+            <c-compliance.outstanding :document="entry.document"
+                                      :version="entry.version"
+                                      :field="entry.field"
+                                      :optional="entry.optional" />
+          {% endfor %}
+        </ul>
+      </c-card>
+      <div>
+        {% if required_count %}
+          <c-button type="submit" variant="primary" text="{% translate "Agree and continue" %}" />
+        {% else %}
+          <c-button type="submit" variant="primary" text="{% translate "Continue" %}" />
+        {% endif %}
+      </div>
+    </c-form>
+  </c-page.content>
+{% endblock page.content-wrapper %}

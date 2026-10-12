@@ -1,0 +1,28 @@
+{# @description One outstanding document as a row of the list on the page that asks: its name, whether it is required, its version in force with a link to it, and the toggle that agrees to it. #}
+{# @prop document:object | description:"The outstanding document." #}
+{# @prop version:object | description:"Its version in force, the one the toggle agrees to and the link opens." #}
+{# @prop field:object | description:"The attributes of the toggle: name, value, id, and checked when it was on." #}
+{# @prop optional:boolean | description:"The reader may continue without agreeing to this document." #}
+{% load i18n %}
+<c-vars document version field optional />
+<li class="list-row items-center">
+  {# The growing column has to be the row's first child: the list sizes its columns by position, and that is what holds every toggle at the end of its row. #}
+  <div class="list-col-grow min-w-0 flex flex-col gap-1">
+    <input type="hidden" name="listed" value="{{ version.pk }}" />
+    <div id="document-{{ document.slug }}" class="font-semibold">{{ document.name }}</div>
+    <div class="flex flex-wrap items-center gap-2 text-sm">
+      {% if optional %}
+        <c-badge size="sm" variant="neutral" text="{% translate "Optional" %}" />
+      {% else %}
+        <c-badge size="sm" variant="primary" text="{% translate "Required" %}" />
+      {% endif %}
+      <span class="opacity-70">{% blocktranslate with number=version.number %}Version {{ number }}{% endblocktranslate %}</span>
+    </div>
+    <a class="link text-sm w-fit"
+       href="{% url 'mvp_compliance:document' document.slug %}?version={{ version.number }}"
+       target="_blank"
+       rel="noopener"
+       aria-describedby="document-{{ document.slug }}">{% translate "View document in full" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+  </div>
+  <c-form.field type="toggle" class="toggle-primary" label="{% translate "I agree" %}" :attrs="field" />
+</li>

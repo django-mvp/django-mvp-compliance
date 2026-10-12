@@ -1,0 +1,16 @@
+{% extends "page_view.html" %}
+{% block page.content %}
+  <form id="project-agreement-page" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ destination }}">
+    {% for entry in entries %}
+      <input type="hidden" name="listed" value="{{ entry.version.pk }}">
+      <input type="checkbox"
+             name="{{ entry.field.name }}"
+             value="{{ entry.field.value }}"
+             id="{{ entry.field.id }}"
+             checked>
+    {% endfor %}
+    <button type="submit">{{ required_count }}</button>
+  </form>
+{% endblock page.content %}

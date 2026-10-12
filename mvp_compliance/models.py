@@ -177,8 +177,9 @@ class Document(models.Model):
     )
 
     #: Slugs that name a page of the package, not a document. ``agreed`` is the
-    #: list of what a person agreed to and sits ahead of the slug route.
-    RESERVED_SLUGS = frozenset({"agreed"})
+    #: list of what a person agreed to and ``agree`` the page that asks; both sit
+    #: ahead of the slug route.
+    RESERVED_SLUGS = frozenset({"agreed", "agree"})
 
     SLUG_FIXED_MESSAGE = _(
         "A document's slug cannot be changed once a version of it has been published."
@@ -869,6 +870,27 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         """
         return self.for_subject(Acceptance.subject_of(user))
 
+    @staticmethod
+    def connecting_address(request) -> "str | None":
+        """Return the address to keep on an acceptance made from ``request``.
+
+        Args:
+            request: The current request, or ``None`` when there is none.
+
+        Returns:
+            ``REMOTE_ADDR`` when ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on and a
+            request was given, otherwise ``None``.
+        """
+        if request is None or not getattr(
+            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
+        ):
+            return None
+        # Never a forwarded header: the client sets it, so the person the
+        # evidence is about could fill it in
+        # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
+        address: str | None = request.META.get("REMOTE_ADDR")
+        return address
+
     def record(self, user, version, request=None) -> "Acceptance":
         """Record ``user``'s acceptance of ``version``.
 
@@ -900,14 +922,7 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         # Before get_or_create(), which would return an acceptance recorded before
         # the document became a notice as though it had just been made.
         Acceptance.refuse_if_notice([version.pk])
-        ip_address = None
-        if request is not None and getattr(
-            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
-        ):
-            # Never a forwarded header: the client sets it, so the person the
-            # evidence is about could fill it in
-            # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
-            ip_address = request.META.get("REMOTE_ADDR")
+        ip_address = self.connecting_address(request)
         subject = Acceptance.subject_of(user)
         return self.get_or_create(
             subject=subject,
@@ -918,6 +933,52 @@ class AcceptanceManager(models.Manager["Acceptance"]):
                 "ip_address": ip_address,
             },
         )[0]
+
+    def record_many(self, user, versions, request=None) -> None:
+        """Record ``user``'s acceptance of every version in ``versions``, in one write.
+
+        The same guarantees as ``record()`` for each version, at a cost that
+        does not grow with the number of versions: a version already accepted
+        is passed over and its record left as it is, and one refused version
+        means nothing in the batch is written. Unlike ``record()`` it sends no
+        ``save`` signals, and it needs a database that can ignore conflicts,
+        which rules out Oracle.
+
+        Args:
+            user: The account accepting.
+            versions: The published versions accepted.
+            request: The current request. Read only when
+                ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on, and only for
+                ``REMOTE_ADDR``.
+
+        Raises:
+            RecordError: A version has never been published or belongs to a
+                notice, or ``user`` has not been saved.
+        """
+        versions = list(versions)
+        if not all(version.is_published for version in versions):
+            raise RecordError(
+                _(
+                    "Cannot record an acceptance of a version that has never been "
+                    "published."
+                )
+            )
+        ip_address = self.connecting_address(request)
+        subject = Acceptance.subject_of(user)
+        accepted_at = timezone.now()
+        self.get_queryset().bulk_create(
+            [
+                Acceptance(
+                    user=user,
+                    subject=subject,
+                    version=version,
+                    accepted_at=accepted_at,
+                    ip_address=ip_address,
+                )
+                for version in versions
+            ],
+            ignore_conflicts=True,
+        )
 
 
 class Acceptance(models.Model):

@@ -10,6 +10,7 @@ from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
 from django.db.models import ProtectedError
 from django.test import RequestFactory, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -240,9 +241,17 @@ class TestReservedSlug:
 
         assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
 
-    @pytest.mark.parametrize("slug", ["agreed-terms", "agree", "not-agreed"])
+    @pytest.mark.parametrize("slug", ["agreed-terms", "agree-to-terms", "not-agreed"])
     def test_a_slug_that_only_contains_the_reserved_one_is_valid(self, slug):
         Document(name="Terms", slug=slug).full_clean()
+
+    def test_the_slug_of_the_page_that_asks_is_refused_with_the_reserved_code(self):
+        document = Document(name="Agree", slug="agree")
+
+        with pytest.raises(ValidationError) as error:
+            document.full_clean()
+
+        assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
 
 
 @pytest.mark.django_db
@@ -1371,6 +1380,110 @@ class TestRecording:
             ).count()
             == 1
         )
+
+
+@pytest.mark.django_db
+class TestRecordMany:
+    @staticmethod
+    def published_versions(count):
+        """Publish ``count`` versions, each of a document of its own."""
+        versions = []
+        for _ in range(count):
+            version = VersionFactory()
+            version.publish()
+            versions.append(version)
+        return versions
+
+    def test_writes_one_acceptance_per_version_for_the_user(self, user):
+        versions = self.published_versions(3)
+        before = timezone.now()
+
+        Acceptance.objects.record_many(user, versions)
+
+        after = timezone.now()
+        written = Acceptance.objects.for_person(user)
+        assert {acceptance.version_id for acceptance in written} == {
+            version.pk for version in versions
+        }
+        for acceptance in written:
+            assert acceptance.user == user
+            assert acceptance.subject == Acceptance.subject_of(user)
+            assert before <= acceptance.accepted_at <= after
+
+    def test_a_version_already_accepted_is_passed_over_and_its_record_unchanged(
+        self, user
+    ):
+        accepted, other = self.published_versions(2)
+        original = Acceptance.objects.record(user, accepted)
+
+        Acceptance.objects.record_many(user, [accepted, other])
+
+        assert Acceptance.objects.for_person(user).count() == 2
+        stored = Acceptance.objects.get(subject=original.subject, version=accepted)
+        assert stored.pk == original.pk
+        assert stored.accepted_at == original.accepted_at
+
+    def test_a_draft_is_refused_and_nothing_in_the_batch_is_written(self, user, draft):
+        (published_version,) = self.published_versions(1)
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record_many(user, [published_version, draft])
+
+        assert not Acceptance.objects.exists()
+
+    def test_a_notices_version_is_refused_and_nothing_in_the_batch_is_written(
+        self, user
+    ):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        notice_version = VersionFactory(document=notice)
+        notice_version.publish()
+        (published_version,) = self.published_versions(1)
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record_many(user, [published_version, notice_version])
+
+        assert not Acceptance.objects.exists()
+
+    def test_the_address_is_held_when_the_setting_is_on(self, user):
+        (version,) = self.published_versions(1)
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            Acceptance.objects.record_many(user, [version], request=request)
+
+        assert Acceptance.objects.get().ip_address == "203.0.113.5"
+
+    def test_no_address_is_held_when_the_setting_is_off(self, user):
+        (version,) = self.published_versions(1)
+        request = RequestFactory().post("/", REMOTE_ADDR="203.0.113.5")
+
+        Acceptance.objects.record_many(user, [version], request=request)
+
+        assert Acceptance.objects.get().ip_address is None
+
+    def test_a_user_that_was_never_saved_is_refused(self, published_version):
+        unsaved = get_user_model()(username="not-saved")
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record_many(unsaved, [published_version])
+
+        assert not Acceptance.objects.exists()
+
+    def test_an_empty_batch_writes_nothing(self, user):
+        Acceptance.objects.record_many(user, [])
+
+        assert not Acceptance.objects.exists()
+
+    def test_the_cost_does_not_grow_with_the_number_of_versions(self, user):
+        (one,) = self.published_versions(1)
+        five = self.published_versions(5)
+
+        with CaptureQueriesContext(connection) as for_one:
+            Acceptance.objects.record_many(user, [one])
+        with CaptureQueriesContext(connection) as for_five:
+            Acceptance.objects.record_many(user, five)
+
+        assert len(for_one) == len(for_five)
 
 
 @pytest.mark.django_db

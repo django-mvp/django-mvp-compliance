@@ -4,8 +4,10 @@ Each document that has a version in force is readable as a page of your site, in
 django-mvp shell, at an address that does not change when a new version is published.
 Anyone can read it, signed in or not.
 
-The package serves one more page, in django-mvp's account area: a signed-in person's own
-list of the documents they agreed to. It is described under
+The package serves two more pages. One asks a signed-in person to agree to what is
+outstanding for them, and is described under
+[Asking a person to agree](#asking-a-person-to-agree). The other is in django-mvp's account
+area: a signed-in person's own list of the documents they agreed to, described under
 [What a person has agreed to](#what-a-person-has-agreed-to).
 
 ## Mounting the addresses
@@ -54,11 +56,15 @@ The package checks for the account area on each request, by looking for django-m
 
 | URL name | Arguments | Address | View |
 |---|---|---|---|
+| `mvp_compliance:agree` | none | `<prefix>/agree/` | `mvp_compliance.views.AgreementView` |
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
-The list's address is checked first, so no document is served at the slug `agreed`. The
-admin and `full_clean()` refuse that slug; see [Documents](models.md#document).
+The addresses of the list and of the page that asks are checked ahead of the slug route, so no
+document is served at the slugs `agreed` and `agree`. The admin and `full_clean()` refuse both
+slugs; see [Documents](models.md#document). A document published under `agree` before the slug
+was reserved is not reachable at its page any more, and the address shows the page that asks.
+Creating a document under either slug through the ORM is not stopped, as for any slug rule.
 
 There is one page per document: its address always shows the version in force. The same
 address with `?version=<number>` shows that published version, current or superseded,
@@ -125,6 +131,151 @@ as it is stored. Nothing renders Markdown while the page is served. That HTML is
 configured renderer produced and sanitised at publication, so a project that points
 `MVP_COMPLIANCE_RENDERER` at a renderer with a looser allow list serves that looseness on
 its own pages.
+
+## Asking a person to agree
+
+`<prefix>/agree/` asks a signed-in person to agree to every document that is outstanding for
+them: each document people agree to that has a version in force the person has not accepted.
+A notice is never listed, and neither is a document with only drafts.
+
+**What it lists.** One row for each outstanding document, in alphabetical order. A row holds the
+document's name, the number of the version in force, a link that opens that exact version's page
+(`?version=`) in a new tab, and a toggle. The page itself carries none of the wording: the link is
+how it is read in full. A person who accepted an earlier version is asked about the version in
+force. Every row is marked required.
+
+**What a submission records.** One acceptance for each row whose toggle was on, written in one
+go with [`Acceptance.objects.record_many()`](models.md#recording-several-at-once), and holding
+the connecting address when `MVP_COMPLIANCE_RECORD_IP_ADDRESS` is on. Only the version in force
+of a document outstanding for that person is recorded. Any other value in the submission, such
+as a replaced version, a draft, a notice's version or text that names no version, is passed
+over and records nothing. Opening the page records nothing, and neither does a submission with
+no toggle on. Submitting the same agreement again records nothing new.
+
+**Where the person goes.** After the write the page asks again what is outstanding, from the
+stored acceptances and never from the submission. When nothing required is left, the person is
+sent on to the destination described under
+[Sending a person to the page](#sending-a-person-to-the-page). When something required is left,
+as after a submission with no toggle on, the page is drawn again with a message saying so.
+See [ADR 0021](adr/0021-a-person-is-let-through-on-the-stored-acceptances-never-on-the-submission.md)
+for why the page asks twice.
+
+**Agreeing to some of them.** A person may agree to part of the list. What was agreed to is
+recorded and the page is drawn again with the rest, still in alphabetical order. Agreeing to
+the last of them sends the person to the address they were first heading for.
+
+**When the list changed while it was open.** A version published after the page was drawn
+replaces the one the person was shown. Nothing is recorded for it, since they never saw its
+wording. The versions still in force that were agreed to are recorded, and the page is drawn
+again with the version now in force and a message saying a document changed, in place of the
+one saying something required is left. A document accepted elsewhere, or made a notice,
+since the page was drawn is passed over, and the rest are recorded as usual.
+
+A change that lands in the instant between the page reading what is outstanding and writing the
+acceptances is not caught this way. An acceptance of the version just replaced can be stored, or
+the submission can be drawn as one that could not be recorded. The person is asked again in both
+cases, because whether they are sent on is read after the write.
+
+**When an acceptance cannot be stored.** The acceptances of one submission are written inside
+one database transaction, so they are stored together or not at all. When the write fails with
+a `DatabaseError`, or the package refuses a version with a `RecordError`, none of that
+submission's acceptances is kept and every document is still outstanding for the person. They
+are not sent on: the page is drawn again with a message saying their agreement was not
+recorded, and the toggles that were on are still on, so submitting again is one click. The
+message does not say why, and nothing about the cause reaches the page. Submitting again once
+the write works records the acceptances and sends the person on to the address they were first
+heading for.
+
+**How the failure is reported.** The failure is logged at error level, with its traceback, on
+the `mvp_compliance.views` logger, the module's `logger`. Under Django's default `LOGGING` that goes to standard
+error and nowhere else. A project that mails or forwards its errors attaches its handler to
+that logger, as it would for any of its own:
+
+```python
+# settings.py
+LOGGING = {
+    "version": 1,
+    "handlers": {"mail_admins": {"class": "django.utils.log.AdminEmailHandler"}},
+    "loggers": {
+        "mvp_compliance.views": {"handlers": ["mail_admins"], "level": "ERROR"},
+    },
+}
+```
+
+**Who may use it.** A visitor who is not signed in is sent to `LOGIN_URL` with the page's full
+address, `next` included, to come back to. A submission needs Django's CSRF token. The page
+applies the protection itself, so a project without `CsrfViewMiddleware` refuses a forged
+submission all the same.
+
+**What it does not do.** It stops nobody. A person is free to leave the page, and leaving
+records nothing. Nothing in the package links to the page or sends anyone there: when a person
+is sent to it, and which documents hold them up, is a decision for the project.
+
+## Sending a person to the page
+
+Nothing sends a person to the page until a project does. Send them to
+`{% url 'mvp_compliance:agree' %}` with the address to come back to in `next`, from a link:
+
+```html
+<a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
+```
+
+or from a view of your own, which sends a person on only when something is outstanding for
+them, so that a person who has agreed is not sent round again:
+
+```python
+from urllib.parse import urlencode
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.urls import reverse
+
+from mvp_compliance.models import Document
+
+
+@login_required
+def checkout(request):
+    if Document.objects.outstanding_for(request.user).exists():
+        query = urlencode({"next": request.get_full_path()})
+        return redirect(f"{reverse('mvp_compliance:agree')}?{query}")
+    ...
+```
+
+**How the destination is given.** In the `next` parameter of the query string, or in the
+submitted form's `next` field when there is one. The page draws that address into its form on
+every response, so it is still there when the page is shown again after a failed write or after
+the person agreed to part of the list, and the person finally lands on the address they were
+first given.
+
+**Which addresses are followed.** Only an address on the same site. These are replaced by the
+default destination below, and nothing is followed from them:
+
+- an address on another host, a protocol-relative one, or one with a scheme other than `http`
+  or `https`;
+- an address with `http` when the request came over HTTPS;
+- the page's own address, so that a person is never sent round the page again. That is the
+  page with a query string, without its trailing slash, with a letter percent-encoded, and `.`
+  or a bare `?x=1`, which a browser resolves to the page;
+- no address at all.
+
+**The default destination.** `MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL` names where a person
+goes when no usable destination was given. It is a path or the name of a URL, and `/` when the
+project sets none:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "/"  # the default
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "/welcome/"  # a path
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "dashboard"  # the name of a URL
+```
+
+The value goes through Django's `resolve_url()`, so a name is reversed on every use. The setting
+is yours and is not checked against the site: it is followed as written.
+
+**A person with nothing outstanding.** Opening the page answers with a redirect to the
+destination, or the default, and draws nothing. Nothing is recorded and the person is shown no
+page. A person who agreed somewhere else between the project's own check and the page is sent
+on in the same way.
 
 ## What a person has agreed to
 
@@ -238,6 +389,7 @@ change, and you do not fork it.
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
+| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
 | `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
@@ -255,3 +407,84 @@ A project's own `mvp_compliance/document_detail.html`, for example:
 and render nothing else from Markdown. Put your template's directory in
 `TEMPLATES["DIRS"]`, or in an app listed before `mvp_compliance` in `INSTALLED_APPS`.
 Strings you add are yours to translate.
+
+### Replacing the page that asks
+
+Place a template at `mvp_compliance/agreement.html` and the page uses it in place of the
+package's, which extends `page_view.html` and fills `page.header`, `page.content-wrapper` and
+`extra_js`. The page still records and sends the person on as before: that is done by the view,
+and the template only has to send it what it reads. The form must send:
+
+- `agree`, once for each toggle that is on, with the version's id: `entry.field.value`;
+- `listed`, once for each entry the page showed, on or off, with `entry.version.pk`. It decides
+  which message is drawn when something required is left, so a submission without it is always
+  drawn as `changed`;
+- `redirect_field_name`, as a field of that name carrying `destination`;
+- the CSRF token.
+
+```html
+{% extends "page_view.html" %}
+{% block page.content %}
+  {% if failed or missing or changed %}<p role="alert">...</p>{% endif %}
+  <form method="post" id="agreement">
+    {% csrf_token %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ destination }}">
+    {% for entry in entries %}
+      <input type="hidden" name="listed" value="{{ entry.version.pk }}">
+      <label>
+        <input type="checkbox" name="{{ entry.field.name }}"
+               value="{{ entry.field.value }}"
+               {% if entry.field.checked %}checked{% endif %}>
+        {{ entry.document.name }}{% if not entry.optional %} *{% endif %}
+      </label>
+    {% endfor %}
+    <button type="submit">{% if required_count %}Agree and continue{% else %}Continue{% endif %}</button>
+  </form>
+{% endblock page.content %}
+```
+
+`entry.field` holds the toggle's attributes: `name`, `value`, `id`, `aria-describedby`,
+`data-required` on a required entry and `checked` when the toggle was on in a submission that
+failed. Hyphenated keys cannot be read in a template, so to draw all of them pass the whole
+`entry.field` to a component's `attrs`, as the package's own row does:
+`<c-compliance.outstanding :document="entry.document" :version="entry.version" :field="entry.field" :optional="entry.optional" />`
+draws one row, hidden `listed` field included, for use inside a `<ul class="list">`.
+
+The package's script, `mvp_compliance/agreement.js`, keeps the submit button disabled until
+every `data-required` toggle is on. It finds the form by the id `agreement`, the toggles by
+`data-required` and the button by `type="submit"`. Load it with
+`{% static 'mvp_compliance/agreement.js' %}` and keep those three, or leave it out: the server
+refuses a submission that leaves something required whatever the page does.
+
+### Changing how an agreement is stored
+
+`AgreementView.record_agreed(versions)` is the one place the page writes, and the one method a
+project's own view overrides to change how an agreement is stored. It is called once for a
+submission that agreed to something, inside a database transaction, with the versions in force
+of the documents that were outstanding for the person. Call `super()` to keep the package's
+acceptances and add your own bookkeeping beside them:
+
+```python
+# views.py
+from mvp_compliance.views import AgreementView
+
+
+class ProjectAgreementView(AgreementView):
+    def record_agreed(self, versions):
+        super().record_agreed(versions)
+        AuditEntry.objects.create(user=self.request.user, versions=len(versions))
+```
+
+Mount it ahead of the package's include, at the address the package would have answered, so every
+link to `mvp_compliance:agree` reaches it:
+
+```python
+urlpatterns = [
+    path("legal/agree/", ProjectAgreementView.as_view()),
+    path("legal/", include("mvp_compliance.urls")),
+]
+```
+
+When `record_agreed()` raises `DatabaseError` or `RecordError`, the transaction rolls back and
+the page is drawn again with `failed`, as for any failed write, described under
+[Asking a person to agree](#asking-a-person-to-agree). Any other exception is not caught.
