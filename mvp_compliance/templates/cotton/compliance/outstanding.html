@@ -6,16 +6,17 @@
 {% load i18n %}
 <c-vars document version field optional />
 <li class="list-row items-center">
-  <input type="hidden" name="listed" value="{{ version.pk }}" />
-  <div class="list-col-grow flex flex-col gap-1">
+  {# The growing column has to be the row's first child: the list sizes its columns by position, and that is what holds every toggle at the end of its row. #}
+  <div class="list-col-grow min-w-0 flex flex-col gap-1">
+    <input type="hidden" name="listed" value="{{ version.pk }}" />
     <div id="document-{{ document.slug }}" class="font-semibold">{{ document.name }}</div>
-    <div class="text-sm opacity-70">
+    <div class="flex flex-wrap items-center gap-2 text-sm">
       {% if optional %}
-        {% translate "Optional" %}
+        <c-badge size="sm" text="{% translate "Optional" %}" />
       {% else %}
-        {% translate "Required" %}
+        <c-badge size="sm" variant="primary" text="{% translate "Required" %}" />
       {% endif %}
-      · {% blocktranslate with number=version.number %}Version {{ number }}{% endblocktranslate %}
+      <span class="opacity-70">{% blocktranslate with number=version.number %}Version {{ number }}{% endblocktranslate %}</span>
     </div>
     <a class="link text-sm w-fit"
        href="{% url 'mvp_compliance:document' document.slug %}?version={{ version.number }}"
