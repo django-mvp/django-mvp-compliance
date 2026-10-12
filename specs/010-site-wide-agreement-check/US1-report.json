@@ -1,0 +1,157 @@
+{
+  "story": "US1",
+  "skills_loaded": [
+    {
+      "name": "craft-tdd",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-increments",
+      "receipt": "craft-increments/2026-09-28/3f7d8b12",
+      "loaded_via": "path-read"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T006",
+      "status": "done",
+      "evidence": {
+        "tests_added": [
+          "tests/test_middleware.py::TestAgreementCheck",
+          "tests/test_middleware.py::TestAgreementCheckOff",
+          "tests/test_middleware.py::TestAgreementCheckCost"
+        ],
+        "criteria": [
+          "SC-001",
+          "SC-002",
+          "SC-003",
+          "SC-004",
+          "SC-010"
+        ],
+        "commands": [
+          "uv run pytest tests/test_middleware.py -q  # at T006's commit: exit 1, 36 failed and 1 passed, ModuleNotFoundError for mvp_compliance.middleware",
+          "uv run pytest tests/test_middleware.py -q  # after T007: exit 0, 40 passed",
+          "uv run pre-commit run --all-files  # exit 0"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "19cddbe0dff71eaa3b664887b91ed2b0ef921904"
+      ]
+    },
+    {
+      "id": "T007",
+      "status": "done",
+      "evidence": {
+        "tests_added": [
+          "tests/test_middleware.py::TestAgreementCheck::test_an_address_that_only_starts_like_the_static_url_is_stopped",
+          "tests/test_middleware.py::TestAgreementCheck::test_a_scheme_relative_static_url_is_not_matched_against_a_path",
+          "tests/test_middleware.py::TestAgreementCheckCost::test_a_finding_dated_in_the_future_is_treated_as_absent"
+        ],
+        "criteria": [
+          "SC-001",
+          "SC-002",
+          "SC-003",
+          "SC-004",
+          "SC-010"
+        ],
+        "commands": [
+          "uv run pytest tests/test_middleware.py -q  # exit 0, 40 passed",
+          "uv run pytest tests/test_middleware.py tests/test_checks.py -q  # after folding the helpers into __call__ and is_reachable(): exit 0, 46 passed",
+          "uv run pre-commit run --all-files  # exit 0"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "3ec4db727c2d0f9a02c9f534dbb66549ce2a132d",
+        "07145120bef5beb08a7a97eb6dceae58a7b88889"
+      ]
+    },
+    {
+      "id": "T008",
+      "status": "done",
+      "evidence": {
+        "tests_added": [
+          "tests/test_checks.py::TestAgreementChecks"
+        ],
+        "criteria": [],
+        "commands": [
+          "uv run pytest tests/test_checks.py -q  # at T008's commit: exit 1, 3 failed and 3 passed; the three failures expect E001 or E002 and get none",
+          "uv run pytest tests/test_checks.py -q  # after T009: exit 0, 6 passed",
+          "uv run pre-commit run --all-files  # exit 0"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "d5a4c8f176f87d24f70ab3964ddca2e27afdc86a"
+      ]
+    },
+    {
+      "id": "T009",
+      "status": "done",
+      "evidence": {
+        "tests_added": [],
+        "criteria": [],
+        "commands": [
+          "uv run pytest tests/test_checks.py -q  # exit 0, 6 passed",
+          "uv run pytest tests -q -k 'catalog or checks or app'  # exit 0, 30 passed",
+          "uv run django-admin makemessages -l en --no-obsolete  # run again: catalog unchanged, exit 0",
+          "uv run python manage.py makemigrations --check --dry-run  # exit 0, No changes detected",
+          "uv run pre-commit run --all-files  # exit 0"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "1d3813d5c1d0849e405576ebede00d88e4814a06"
+      ]
+    },
+    {
+      "id": "T010",
+      "status": "done",
+      "evidence": {
+        "tests_added": [],
+        "criteria": [],
+        "commands": [
+          "forge verify --repo . --base origin/main --steps docs  # exit 0, passed",
+          "DJANGO_SETTINGS_MODULE=demo.settings uv run django-admin check  # exit 0, no issues",
+          "uv run pre-commit run --all-files  # exit 0"
+        ],
+        "exit_code": 0
+      },
+      "commits": [
+        "64c2b40a419e85fc75cf2dbdf84165846b274c08",
+        "02711a0411cd4af39199c736e748053b1014866f"
+      ]
+    }
+  ],
+  "deviations": [
+    {
+      "what": "tests/urls.py is unchanged, although the T007 row says it gains what T006 needs. The middleware's tests are their own URLconf, and tests/urls_own_agree_page.py is a new module for the one case that routes the page that asks outside the package's namespace.",
+      "why": "The addresses the check is asked about are used by these tests only, and the module-as-URLconf pattern already exists in tests/test_admin.py.",
+      "decision_ref": "decisions.md#d21--us-1-where-the-middlewares-tests-get-their-addresses-and-one-paragraph-of-pagesmd"
+    },
+    {
+      "what": "docs/pages.md is edited, though no task names it: the paragraph that said nothing in the package sends anyone to the page that asks now says a person is sent there from any address when the middleware is listed.",
+      "why": "The sentence became false with this story, and the documentation a story touches has to be true when it lands.",
+      "decision_ref": "decisions.md#d21--us-1-where-the-middlewares-tests-get-their-addresses-and-one-paragraph-of-pagesmd"
+    },
+    {
+      "what": "A remembered finding counts only when it is zero or more and under sixty seconds old, so a value dated in the future is treated as absent, as one that is not a number is. STATIC_URL and MEDIA_URL are compared a path segment at a time, and a scheme-relative value covers nothing.",
+      "why": "plan.md leaves both readings open; both are covered by tests added in T007.",
+      "decision_ref": "decisions.md#d20--us-1-what-the-check-treats-as-absent-and-how-beneath-is-read"
+    }
+  ],
+  "concerns": [
+    "Full verify (forge verify --repo . --base origin/main) ran once at the end on the T010 code commit: exit 0, lint, typecheck, test, build, conformance and docs all passed. makemessages -l en --no-obsolete leaves the catalog unchanged and makemigrations --check reports no changes.",
+    "TestAgreementCheckOff passes with and without the middleware module present, by design: it asserts that a stopped user is served when the middleware is not listed. I did not probe it by listing the middleware in tests/settings.py.",
+    "Mutation probes run by hand against the finished middleware (removing each of: the resolve and sign-out clause, the page-path equality, the static and media clause, the off-site and site-root guards, the anonymous and missing-user guards, the unmounted guard, remembering, writing, writing for a stopped user, storing a datetime, the number check, the path-segment rule, percent-encoding, and the three HX-Redirect rules). Two survived the first pass and are now killed by tests added in T007. The probe scripts were not committed.",
+    "AgreementMiddleware reads request.session directly. An authenticated request on a project with no SessionMiddleware raises AttributeError (decisions.md D14 'Revisit if'). It is not covered by a check or a test.",
+    "is_reachable() calls reverse('mvp_compliance:agree') without a guard, because __call__ has already ruled out the unmounted case. A caller that uses it directly on a project that does not mount the package's addresses gets NoReverseMatch.",
+    "README's status block still says 'No account-area page exists yet', which was out of date before this story. Left alone as outside T010.",
+    "With the middleware on in the demo, a demo user with an enforced document outstanding is sent to the page that asks from the landing page, which is not kept reachable until US-4's exempt-URLs setting and US-3's changes to the demo land.",
+    "A project whose sign-out address is registered under none of account_logout, logout and admin:logout has it stopped, and this branch offers no setting to keep it reachable; that is US-4's.",
+    "In passing I ran 'git checkout -- .' once to undo a throwaway mutation of the middleware and it also discarded one uncommitted test of my own; I wrote the test again before committing. Nothing outside my own work was affected."
+  ],
+  "blocked": []
+}
