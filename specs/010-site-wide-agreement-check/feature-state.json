@@ -109,7 +109,7 @@
       "priority": "P1",
       "issue": 96,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -314,7 +314,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 0,
+      "used": 12.03,
       "max": 120
     }
   },
