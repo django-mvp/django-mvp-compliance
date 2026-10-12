@@ -324,3 +324,17 @@ unreachable. The submission already treats an all-optional list as nothing requi
 
 **Revisit if**: the site-wide check decides that optional documents are not to be offered on a
 visit that arrives from somewhere else.
+
+## D23 — One US-1 test was given an outstanding document
+
+**Ambiguous**: a US-1 test asserted that a notice and a draft are not listed by opening the page
+for a person with nothing outstanding and reading an empty list. US-4 answers that request with a
+redirect (FR-018), so there is no list to read.
+
+**Chosen**: the test gives the person one outstanding document and asserts the list holds exactly
+that one. The implementer of US-4 reported the conflict and left the test alone; the edit was made
+in triage.
+
+**Why defensible**: the test still fails if a notice or a draft is listed, which is what it is
+for. It was written before the redirect existed and relied on a state the specification says is
+never drawn.

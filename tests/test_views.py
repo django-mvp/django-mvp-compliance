@@ -1534,10 +1534,14 @@ class TestAgreement:
         notice = DocumentFactory(kind=Document.Kind.NOTICE)
         published(notice)
         VersionFactory(document=DocumentFactory())
+        # One outstanding document, so the page is drawn and not passed over.
+        outstanding = DocumentFactory()
+        published(outstanding)
 
         response = signed_in.get(agreement_address())
 
-        assert response.context["entries"] == []
+        listed = [entry["document"] for entry in response.context["entries"]]
+        assert listed == [outstanding]
 
     def test_the_same_agreement_submitted_twice_leaves_one_acceptance(self, signed_in):
         version = published(DocumentFactory())
