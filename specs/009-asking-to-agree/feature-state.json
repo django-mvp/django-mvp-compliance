@@ -3,7 +3,7 @@
   "feature": "009-asking-to-agree",
   "branch": "009-asking-to-agree",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "CONVERGE",
   "state_history": [
     {
       "state": "QUEUED",
@@ -24,6 +24,11 @@
       "state": "IMPLEMENT",
       "at": "2026-10-12T08:51:34Z",
       "note": "design review approve; plan gate open"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-12T09:37:43Z",
+      "note": "all five stories accepted"
     }
   ],
   "gates": {
@@ -375,7 +380,7 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 0,
+      "used": 2,
       "max": 2
     },
     "review_cycles": {

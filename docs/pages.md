@@ -157,6 +157,8 @@ stored acceptances and never from the submission. When nothing required is left,
 sent on to the destination described under
 [Sending a person to the page](#sending-a-person-to-the-page). When something required is left,
 as after a submission with no toggle on, the page is drawn again with a message saying so.
+See [ADR 0021](adr/0021-a-person-is-let-through-on-the-stored-acceptances-never-on-the-submission.md)
+for why the page asks twice.
 
 **Agreeing to some of them.** A person may agree to part of the list. What was agreed to is
 recorded and the page is drawn again with the rest, still in alphabetical order. Agreeing to

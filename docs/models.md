@@ -571,6 +571,8 @@ Two differences from `record()` to know about:
   accepted is passed over. SQLite, PostgreSQL, MySQL and MariaDB can. Oracle cannot, and
   `record_many()` raises `NotSupportedError` there.
 
+See [ADR 0022](adr/0022-a-submissions-acceptances-are-written-in-one-batch.md).
+
 It returns nothing. Read the person's acceptances back with `Acceptance.objects.for_person(user)`
 when you need them.
 

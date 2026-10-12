@@ -97,3 +97,10 @@ Did: "agree" added to Document.RESERVED_SLUGS (one member, comment updated). doc
 Verified: `uv run pytest tests/test_models.py::TestReservedSlug tests/test_admin.py::TestDocumentSlugInTheAdmin -q` gives 1 failed, 10 passed: both new slug tests pass; the failure is the existing test_a_slug_that_only_contains_the_reserved_one_is_valid[agree], which asserts `agree` is a valid slug. `uv run python manage.py makemigrations --check --dry-run` prints "No changes detected", exit 0. `uv run pre-commit run --all-files` passes. makemessages leaves only line references moved in the en catalog, committed. The two template examples and the view override in docs/pages.md were run against the branch in a throwaway test (removed): the page rendered from the documented template posts agree, listed, next and the token, records and redirects, the Cotton row posts the same, and the overriding view's record_agreed() runs once.
 Next: Forge triage of the one existing test. T014 is not recorded done.
 Watch: tests/test_models.py::TestReservedSlug::test_a_slug_that_only_contains_the_reserved_one_is_valid lists "agree" among the valid slugs. It was not authored in this story and reserving the slug makes it fail, so it was left as it is. The fix is to drop "agree" from its parameters; the new case beside it is the one that covers "agree".
+
+## 2026-10-12T09:37:43Z · Orchestrator · converge
+
+Did: converged. Two decision records (0021, 0022), a verdict on each of 24 decisions, links from docs. Triage of two earlier tests recorded (D23, D24). No migration. Dev database reseeded.
+Verified: forge verify --base origin/main, six steps green. tamper-check against main flags the two test edits recorded in tasks.md T001 and decisions.md D24.
+Next: code review.
+Watch: none.

@@ -23,6 +23,8 @@ document, before that feature has said which documents are enforced.
 **Revisit if**: R5 needs the page to behave differently for an enforced document than for one left
 to the person's own time.
 
+**ADR:** none — a scope ruling between this feature and the site-wide check; nothing else inherits it
+
 ## D2 — The page asks about everything outstanding, not only what is enforced
 
 **Ambiguous**: #87 will let a compliance editor decide, per document, whether an outstanding
@@ -40,6 +42,8 @@ their own time still needs somewhere to be accepted, and this is the only such p
 the enforced documents, with the rest offered and not required. That would change FR-008 and
 FR-012 and should be made there as an amendment to this spec.
 
+**ADR:** none — holds only until the site-wide check decides which documents are enforced
+
 ## D3 — Each document is agreed to separately, in one submission
 
 **Ambiguous**: "they deal with all of them in one sitting" could mean one answer for everything, or
@@ -54,6 +58,8 @@ still meets "one sitting instead of being sent round once per document".
 **Revisit if**: the prototype shows that separate answers make the page harder to complete than a
 person will tolerate.
 
+**ADR:** none — a choice about one form; the specification carries it as FR-003
+
 ## D4 — Agreeing to part of what is shown is recorded
 
 **Ambiguous**: the request does not say what happens when a person agrees to some documents and
@@ -66,6 +72,8 @@ say less than what happened, and the person would have to give the same answer a
 
 **Revisit if**: R5 makes all enforced documents a single condition of using the site, where a
 partial answer has no use.
+
+**ADR:** none — local to this page; the specification carries it as FR-012
 
 ## D5 — One submission's acceptances are stored together or not at all
 
@@ -80,6 +88,8 @@ that says which documents were recorded, and a second attempt that has to work o
 Submitting again costs nothing, because FS-003 keeps one acceptance per person and version.
 
 **Revisit if**: never, short of a change to what FS-003 guarantees about repeats.
+
+**ADR:** docs/adr/0021-a-person-is-let-through-on-the-stored-acceptances-never-on-the-submission.md
 
 ## D6 — Whether a person is let through is read from the stored records
 
@@ -96,6 +106,8 @@ of an error, can be wrong while the records are right. A decision taken from the
 
 **Revisit if**: never. It is the point of the feature.
 
+**ADR:** docs/adr/0021-a-person-is-let-through-on-the-stored-acceptances-never-on-the-submission.md
+
 ## D7 — A version replaced while a person was reading it is not recorded
 
 **Ambiguous**: a new version can be published between a person opening the page and submitting.
@@ -110,6 +122,8 @@ to answers that were worth asking for.
 
 **Revisit if**: a project needs evidence that a person agreed to a version in its last minutes in
 force.
+
+**ADR:** none — an edge of one page, superseded in part by D19 and D21
 
 ## D8 — The destination is restricted to the same site, with a default the project sets
 
@@ -126,6 +140,8 @@ anywhere. The name of the setting and the default's value are left to the plan.
 
 **Revisit if**: a project needs to return people to another of its own domains.
 
+**ADR:** none — Django's own host check applied to one parameter; documented in docs/pages.md
+
 ## D9 — A person with nothing outstanding is sent straight on
 
 **Ambiguous**: "a person with nothing outstanding never sees any of this" could be met by the page
@@ -139,6 +155,8 @@ empty page is the thing the request says nobody should see.
 
 **Revisit if**: never, unless R5 needs a different answer for accounts it lets past.
 
+**ADR:** none — one redirect on one view; documented in docs/pages.md
+
 ## D10 — Not agreeing leaves no record
 
 **Ambiguous**: the roadmap says "what they do next is recorded", which could include a refusal.
@@ -150,6 +168,8 @@ record of a refusal. The request itself speaks only of recording the acceptance.
 would be new personal data about a person who did nothing, which Article XIV would need declared.
 
 **Revisit if**: R10 needs to tell "was asked and did not agree" from "was never asked".
+
+**ADR:** none — records nothing new; the glossary already says an acceptance is the only record
 
 ## D11 — Nothing else in the package links to the page
 
@@ -163,6 +183,8 @@ FS-008's spec on its own once the page exists. Adding it here would change a del
 inside a specification about another.
 
 **Revisit if**: the prototype shows the page is too hard to find before R5 is delivered.
+
+**ADR:** none — a link that was left out; nothing was built
 
 ## D12 — The page is served with the package's other pages, and its address is reserved
 
@@ -179,6 +201,8 @@ else, and it does not belong in a menu.
 **Revisit if**: the package gains enough fixed addresses that a prefix no slug can match becomes
 cheaper than a growing set of reserved slugs, which FS-008's D3 already anticipates.
 
+**ADR:** none — follows FS-008's decision on the list's address, which carries the reasoning
+
 ## D13 — The page is prototyped before it is planned
 
 **Ambiguous**: whether this feature needs its screen looked at before the implementation is
@@ -192,6 +216,8 @@ no appearance, and the last assumption in `spec.md` says so.
 no test can assert. FS-008 went the same way, and its prototype changed the specification.
 
 **Revisit if**: never for this feature.
+
+**ADR:** none — about how this feature was delivered, not about the package
 
 ## D14 — The page lists the documents and links to their wording
 
@@ -213,6 +239,8 @@ scrolling region proved no more.
 **Revisit if**: a project needs evidence that the wording was opened before the agreement was
 given. That would be new tracking and new personal data, and would need its own decision.
 
+**ADR:** none — a ruling on one screen; the specification carries it as FR-002
+
 ## D15 — "Required" and "optional" are the two words for the two kinds
 
 **Ambiguous**: the review used both "required" and "mandatory" for a document a person cannot
@@ -225,6 +253,8 @@ dictated already says "required". Which documents are required is the site-wide 
 (#87). The prototype fakes it.
 
 **Revisit if**: the maintainer meant "mandatory" to be the term.
+
+**ADR:** none — wording on one page; the glossary entry for Outstanding carries the relation to enforcement
 
 ## D16 — The view asks a method whether a document is optional, and the method says no
 
@@ -244,6 +274,8 @@ site-wide check supplies its answer.
 
 **Revisit if**: the site-wide check lands. Its answer replaces the method's body.
 
+**ADR:** none — a stand-in the site-wide check replaces; an ADR would outlive what it describes
+
 ## D17 — A submission is written in one batch, through a new manager method
 
 **Ambiguous**: FR-004 says acceptances are recorded "through the recording FS-003 provides", and
@@ -259,12 +291,16 @@ notice or a draft. The unique constraint does the work `get_or_create` does in `
 
 **Revisit if**: an acceptance ever needs something `bulk_create` skips, such as a `save()` hook.
 
+**ADR:** docs/adr/0022-a-submissions-acceptances-are-written-in-one-batch.md
+
 ## D18 — The foundational task was done without dispatching it
 
 **Chosen**: the removal of the prototype's untested Python (T001) was done directly.
 
 **Why defensible**: it deletes code and widens one list in an existing test, with no design in it,
 and the first dispatched story needs a green base to start from.
+
+**ADR:** none — about how one task was carried out
 
 ## D19 — The list is not locked while a submission is processed
 
@@ -282,6 +318,8 @@ Closing the window needs a row lock that SQLite does not have.
 **Revisit if**: a project needs it never to happen. That is a database-level guarantee and a
 change to FS-003.
 
+**ADR:** none — an accepted edge of one request; ADR 0021 says why nobody is let through on it
+
 ## D20 — The line under the title is kept as the maintainer worded it
 
 **Ambiguous**: the line reads "You will not be able to use the app without agreeing to all required
@@ -296,6 +334,8 @@ describes the site once it does. It is one translatable string, asserted by no t
 can replace it. The point is raised with the maintainer when the pull request is put up for review.
 
 **Revisit if**: this feature is released before the site-wide check.
+
+**ADR:** none — one translatable sentence, raised with the maintainer at review
 
 ## D21 — A changed list is judged on the entries read before the write
 
@@ -312,6 +352,8 @@ seen by this check; the second read still keeps the person on the page, with `mi
 **Revisit if**: the page lists documents in more than one place, or a submission can carry more
 than one list.
 
+**ADR:** none — an implementation detail of one notice on one page
+
 ## D22 — A page of only optional documents is still drawn on a `GET`
 
 **Decision**: `get()` redirects when the person has no entries at all, which is what "nothing
@@ -324,6 +366,8 @@ unreachable. The submission already treats an all-optional list as nothing requi
 
 **Revisit if**: the site-wide check decides that optional documents are not to be offered on a
 visit that arrives from somewhere else.
+
+**ADR:** none — only arises for a project whose own view marks documents optional
 
 ## D23 — One US-1 test was given an outstanding document
 
@@ -339,6 +383,8 @@ in triage.
 for. It was written before the redirect existed and relied on a state the specification says is
 never drawn.
 
+**ADR:** none — a correction to one test
+
 ## D24 — One FS-008 slug test lost the case this feature reverses
 
 **Ambiguous**: an FS-008 test lists slugs that merely resemble the reserved one and must stay
@@ -349,3 +395,5 @@ left the test alone; the edit was made in triage.
 
 **Why defensible**: the test's subject is that a slug containing a reserved one is not itself
 refused, and it still says so for both reserved slugs. Refusing `agree` is asserted by a new test.
+
+**ADR:** none — a correction to one test
