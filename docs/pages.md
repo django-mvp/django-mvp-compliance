@@ -4,8 +4,10 @@ Each document that has a version in force is readable as a page of your site, in
 django-mvp shell, at an address that does not change when a new version is published.
 Anyone can read it, signed in or not.
 
-The package serves one more page, in django-mvp's account area: a signed-in person's own
-list of the documents they agreed to. It is described under
+The package serves two more pages. One asks a signed-in person to agree to what is
+outstanding for them, and is described under
+[Asking a person to agree](#asking-a-person-to-agree). The other is in django-mvp's account
+area: a signed-in person's own list of the documents they agreed to, described under
 [What a person has agreed to](#what-a-person-has-agreed-to).
 
 ## Mounting the addresses
@@ -54,11 +56,14 @@ The package checks for the account area on each request, by looking for django-m
 
 | URL name | Arguments | Address | View |
 |---|---|---|---|
+| `mvp_compliance:agree` | none | `<prefix>/agree/` | `mvp_compliance.views.AgreementView` |
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
 The list's address is checked first, so no document is served at the slug `agreed`. The
-admin and `full_clean()` refuse that slug; see [Documents](models.md#document).
+admin and `full_clean()` refuse that slug; see [Documents](models.md#document). The
+page that asks is checked ahead of the slug route too, so the slug `agree` never reaches a
+document: give a document another slug.
 
 There is one page per document: its address always shows the version in force. The same
 address with `?version=<number>` shows that published version, current or superseded,
@@ -125,6 +130,47 @@ as it is stored. Nothing renders Markdown while the page is served. That HTML is
 configured renderer produced and sanitised at publication, so a project that points
 `MVP_COMPLIANCE_RENDERER` at a renderer with a looser allow list serves that looseness on
 its own pages.
+
+## Asking a person to agree
+
+`<prefix>/agree/` asks a signed-in person to agree to every document that is outstanding for
+them: each document people agree to that has a version in force the person has not accepted.
+A notice is never listed, and neither is a document with only drafts.
+
+**What it lists.** One row for each outstanding document, in alphabetical order. A row holds the
+document's name, the number of the version in force, a link that opens that exact version's page
+(`?version=`) in a new tab, and a toggle. The page itself carries none of the wording: the link is
+how it is read in full. A person who accepted an earlier version is asked about the version in
+force. Every row is marked required.
+
+**What a submission records.** One acceptance for each row whose toggle was on, written in one
+go with [`Acceptance.objects.record_many()`](models.md#recording-several-at-once), and holding
+the connecting address when `MVP_COMPLIANCE_RECORD_IP_ADDRESS` is on. Only the version in force
+of a document outstanding for that person is recorded. Any other value in the submission, such
+as a replaced version, a draft, a notice's version or text that names no version, is passed
+over and records nothing. Opening the page records nothing, and neither does a submission with
+no toggle on. Submitting the same agreement again records nothing new.
+
+**Where the person goes.** After the write the page asks again what is outstanding, from the
+stored acceptances and never from the submission. When nothing required is left, the person is
+sent to the address in `next`, taken from the submitted form and otherwise from the query
+string. The address is kept only when it is on the same site. An address on another host, with a
+scheme other than `http` or `https`, with `http` when the request came over HTTPS, or
+protocol-relative to another host, is replaced by `/`. When something required is left, as
+after a submission with no toggle on, the page is drawn again with a message saying so.
+
+```html
+<a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
+```
+
+**Who may use it.** A visitor who is not signed in is sent to `LOGIN_URL` with the page's full
+address, `next` included, to come back to. A submission needs Django's CSRF token. The page
+applies the protection itself, so a project without `CsrfViewMiddleware` refuses a forged
+submission all the same.
+
+**What it does not do.** It stops nobody. A person is free to leave the page, and leaving
+records nothing. Nothing in the package links to the page or sends anyone there: when a person
+is sent to it, and which documents hold them up, is a decision for the project.
 
 ## What a person has agreed to
 
@@ -238,6 +284,7 @@ change, and you do not fork it.
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
+| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, `destination`, `redirect_field_name`, and `missing` after a submission that leaves something required |
 | `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.

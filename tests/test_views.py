@@ -1655,3 +1655,20 @@ class TestAgreement:
             assert "data-required" in toggle
             assert toggle["aria-describedby"] in page.ids
         assert static("mvp_compliance/agreement.js") in response.content.decode()
+
+
+@pytest.mark.django_db
+class TestAgreementStrings:
+    """FR-025: the page as rendered, title and trail included, claims nothing."""
+
+    def test_the_rendered_page_claims_no_compliance_and_names_no_regulation(
+        self, client, user
+    ):
+        published(DocumentFactory(name="Privacy policy"))
+        client.force_login(user)
+
+        content = client.get(agreement_address()).content.decode()
+
+        lowered = re.sub(r"<[^>]+>", " ", content).lower()
+        for word in FORBIDDEN_WORDS:
+            assert word not in lowered, word

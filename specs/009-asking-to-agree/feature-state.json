@@ -169,8 +169,20 @@
         },
         {
           "id": "T006",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementStrings"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreementStrings tests/test_views.py::TestPageStrings -q"
+            ],
+            "code": [
+              "tests/test_views.py:1661",
+              "docs/pages.md:134"
+            ]
+          }
         }
       ]
     },

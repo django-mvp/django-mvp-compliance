@@ -34,3 +34,10 @@ Did: AgreementView in views.py: get_entries(), is_optional() answering False, ge
 Verified: uv run pytest tests/test_views.py tests/test_app.py -q, 134 passed (TestAgreement 21 of them). Probe: with the csrf_protect decorator removed, test_the_refusal_holds_in_a_project_running_no_csrf_middleware fails with 302 for 403; restored. uv run pre-commit run --all-files green. makemessages -l en --no-obsolete run; only the view's three strings and line references changed.
 Next: T006, the strings test, the demo link and the documentation.
 Watch: I loosened one of my own T004 assertions: the shell draws a logout form as well, so the test looks for the agreement form among the page's forms. No failure handling, no changed notice and no redirect for a person with nothing outstanding yet; those are US-2 to US-4.
+
+## 2026-10-12T09:00:28Z · Implementer US1 · T006
+
+Did: TestAgreementStrings in tests/test_views.py (the rendered page, title and trail included, holds none of the forbidden words); the demo landing page links the page again; docs/pages.md gains "Asking a person to agree" (what it lists, what a submission records, where the person goes, who may use it, that it stops nobody) with the route in the address table and the template in the overriding table; README feature bullet and documentation entry; CHANGELOG Added for the page and record_many().
+Verified: uv run pytest tests/test_views.py::TestAgreementStrings tests/test_views.py::TestPageStrings -q, 15 passed. Probe: with "Compliance" put in the page title the new test fails; restored. makemessages -l en --no-obsolete leaves the catalog unchanged. uv run pre-commit run --all-files green.
+Next: full verify, then the report.
+Watch: the demo landing card still describes the unrecorded.user and optional accounts, which need the demo's own view from US-2 and US-3; today those accounts behave like any other.

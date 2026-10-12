@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A page that asks a signed-in person to agree to what is outstanding for them, at
+  `<prefix>/agree/` (`mvp_compliance:agree`). It lists each outstanding document with its version
+  in force, a link to that version's page and a toggle, and a submission records an acceptance of
+  each version agreed to, then sends the person to `next` when it is on the same site, otherwise
+  to `/`. Opening the page records nothing, a visitor who is not signed in is sent to sign in and
+  back, and the page stops nobody. See [docs/pages.md](docs/pages.md).
+- `Acceptance.objects.record_many(user, versions, request=None)`, which records a batch of
+  acceptances in one write. It sends no save signals, where `record()` does, and needs a database
+  that can ignore conflicts, which rules out Oracle. See [docs/models.md](docs/models.md).
+
 ## [v0.1.0] - 2026-10-09
 
 ### Added
