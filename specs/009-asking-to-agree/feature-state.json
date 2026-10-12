@@ -3,7 +3,7 @@
   "feature": "009-asking-to-agree",
   "branch": "009-asking-to-agree",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -19,6 +19,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-10-12T08:41:53Z",
       "note": "plan committed; design reviewer dispatched"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-10-12T08:51:34Z",
+      "note": "design review approve; plan gate open"
     }
   ],
   "gates": {
