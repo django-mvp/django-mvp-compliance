@@ -505,8 +505,9 @@ is in [docs/brainstorm.md](https://github.com/django-mvp/django-mvp-compliance/b
 ## Contributing
 
 Changes follow [CONSTITUTION.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/CONSTITUTION.md), the
-[testing standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/testing.md) and the
-[code documentation standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/code-documentation.md).
+[testing standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/testing.md), the
+[code documentation standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/code-documentation.md) and the
+[Django standards](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/contributing/standards/django.md).
 
 ## Changelog
 
