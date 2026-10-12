@@ -42,6 +42,7 @@ urlpatterns = [
     path("private/", login_required(recording_view), name="private"),
     path("signout/", recording_view, name="logout"),
     path("static/<path:name>", recording_view),
+    path("staticfiles/<path:name>", recording_view),
     path("assets/<path:name>", recording_view),
     path("uploads/<path:name>", recording_view),
 ]
@@ -238,6 +239,23 @@ class TestAgreementCheck:
         assert sent_to_the_page_that_asks(response)
         assert called == []
 
+    def test_an_address_that_only_starts_like_the_static_url_is_stopped(
+        self, client, stopped
+    ):
+        response = client.get("/staticfiles/css/site.css")
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
+
+    def test_a_scheme_relative_static_url_is_not_matched_against_a_path(
+        self, client, stopped, settings
+    ):
+        settings.STATIC_URL = "//cdn.example.com/static/"
+
+        response = client.get("/elsewhere/", PATH_INFO="//cdn.example.com/static/a.css")
+
+        assert sent_to_the_page_that_asks(response)
+
     @pytest.mark.parametrize("method", ["post", "put", "delete"])
     def test_a_submission_is_stopped_before_its_view_with_no_return_address(
         self, client, stopped, method
@@ -402,6 +420,18 @@ class TestAgreementCheckCost:
         key = remember_finding(client)
         session = client.session
         session[key] = kept
+        session.save()
+        VersionFactory(document=DocumentFactory()).publish()
+
+        response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+
+    def test_a_finding_dated_in_the_future_is_treated_as_absent(self, client, db):
+        client.force_login(UserFactory())
+        key = remember_finding(client)
+        session = client.session
+        session[key] = timezone.now().timestamp() + 3600
         session.save()
         VersionFactory(document=DocumentFactory()).publish()
 

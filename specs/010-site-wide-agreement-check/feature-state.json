@@ -97,8 +97,21 @@
         },
         {
           "id": "T007",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck",
+              "tests/test_middleware.py::TestAgreementCheckOff",
+              "tests/test_middleware.py::TestAgreementCheckCost"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py -q"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:30"
+            ]
+          }
         },
         {
           "id": "T008",

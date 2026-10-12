@@ -302,3 +302,19 @@ document's form would otherwise leave out the new column and field.
 
 **Revisit if**: the test is changed to say what it is for, that a document holds no wording, in a
 way that does not list every field.
+
+## D20 — US-1: what the check treats as absent, and how "beneath" is read
+
+**Decision**: a remembered finding counts only when the time since it was made is zero or more and
+under sixty seconds, so a value dated in the future is treated as absent along with one that is not
+a number. `STATIC_URL` and `MEDIA_URL` are compared a path segment at a time: `/static/` covers
+`/static` and `/static/a.css`, and does not cover `/staticfiles/a.css`. A scheme-relative value such
+as `//cdn.example.com/static/` is taken as an address on another host and covers nothing.
+
+**Why**: a finding the clock says was made later than now cannot have been written by this check
+and would otherwise be believed for as long as it stayed in the future. A plain prefix test would
+let a path that only starts like the static prefix through. `urlsplit()` reads `//host/path` as a
+host, so the same rule that excludes `https://cdn.example.com/static/` excludes it.
+
+**Revisit if**: a project runs several servers whose clocks disagree by more than the delay. Their
+people would be asked on each request instead of once a minute; nobody is let past by it.
