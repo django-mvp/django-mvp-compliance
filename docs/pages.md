@@ -174,7 +174,7 @@ the write works records the acceptances and sends the person on to the address t
 heading for.
 
 **How the failure is reported.** The failure is logged at error level, with its traceback, on
-the `mvp_compliance.views` logger. Under Django's default `LOGGING` that goes to standard
+the `mvp_compliance.views` logger, the module's `logger`. Under Django's default `LOGGING` that goes to standard
 error and nowhere else. A project that mails or forwards its errors attaches its handler to
 that logger, as it would for any of its own:
 
