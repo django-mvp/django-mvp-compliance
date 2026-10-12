@@ -2408,3 +2408,125 @@ class TestAcceptancesOfAgreedDocuments:
             names = [acceptance.version.document.name for acceptance in result]
 
         assert len(names) == 3
+
+
+def change_enforced(document, enforced, route):
+    """Change ``document``'s enforcement through ``save()`` or through ``update()``.
+
+    Returns:
+        The value as stored afterwards, read back from the database.
+    """
+    if route == "save":
+        document.enforced = enforced
+        document.save()
+    else:
+        Document.objects.filter(pk=document.pk).update(enforced=enforced)
+    return Document.objects.values_list("enforced", flat=True).get(pk=document.pk)
+
+
+@pytest.mark.django_db
+class TestEnforcement:
+    """US-2 scenarios 2, 4, 6, 8-10, FR-010 to FR-013, FR-015, SC-006."""
+
+    def test_a_document_created_with_no_choice_made_is_enforced(self):
+        document = Document.objects.create(name="Terms", slug="terms")
+
+        document.refresh_from_db()
+
+        assert document.enforced
+
+    def test_returns_an_enforced_document_whose_version_in_force_is_unaccepted(
+        self, user
+    ):
+        document = DocumentFactory()
+        VersionFactory(document=document).publish()
+
+        assert set(Document.objects.enforced_outstanding_for(user)) == {document}
+
+    def test_leaves_out_a_document_that_is_not_enforced(self, user):
+        document = DocumentFactory(enforced=False)
+        VersionFactory(document=document).publish()
+
+        assert document not in Document.objects.enforced_outstanding_for(user)
+
+    def test_leaves_out_a_notice_marked_enforced(self, user):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE, enforced=True)
+        VersionFactory(document=notice).publish()
+
+        assert notice not in Document.objects.enforced_outstanding_for(user)
+
+    def test_leaves_out_an_enforced_document_with_only_a_draft(self, user):
+        document = DocumentFactory()
+        VersionFactory(document=document)
+
+        assert document not in Document.objects.enforced_outstanding_for(user)
+
+    def test_leaves_out_an_enforced_document_whose_current_version_was_accepted(
+        self, user
+    ):
+        document = DocumentFactory()
+        version = VersionFactory(document=document)
+        version.publish()
+        Acceptance.objects.record(user, version)
+
+        assert document not in Document.objects.enforced_outstanding_for(user)
+
+    def test_returns_an_enforced_document_whose_accepted_version_was_superseded(
+        self, user
+    ):
+        document = DocumentFactory()
+        first = VersionFactory(document=document)
+        first.publish()
+        Acceptance.objects.record(user, first)
+        VersionFactory(document=document).publish()
+
+        assert set(Document.objects.enforced_outstanding_for(user)) == {document}
+
+    def test_what_a_person_has_outstanding_still_counts_a_document_that_is_not_enforced(
+        self, user
+    ):
+        document = DocumentFactory(enforced=False)
+        VersionFactory(document=document).publish()
+
+        assert document.is_outstanding_for(user)
+        assert document in Document.objects.outstanding_for(user)
+
+    @pytest.mark.parametrize("route", ["save", "update"])
+    def test_switching_enforcement_off_and_on_leaves_versions_and_acceptances_as_they_were(
+        self, user, route
+    ):
+        document = DocumentFactory()
+        for wording in ("First wording", "Second wording"):
+            version = VersionFactory(document=document, markdown=wording)
+            version.publish()
+            Acceptance.objects.record(user, version)
+        before = held_about(document)
+
+        stored_while_off = change_enforced(document, False, route)
+        while_off = held_about(document)
+        stored_once_on = change_enforced(document, True, route)
+
+        assert stored_while_off is False
+        assert stored_once_on is True
+        assert while_off == before
+        assert held_about(document) == before
+        assert len(before[0]) == 2
+        assert len(before[1]) == 2
+
+    def test_the_answer_costs_the_same_with_one_document_as_with_ten(
+        self, user, django_assert_num_queries
+    ):
+        VersionFactory().publish()
+
+        with django_assert_num_queries(1) as at_one_document:
+            list(Document.objects.enforced_outstanding_for(user))
+
+        for _ in range(9):
+            VersionFactory().publish()
+
+        with django_assert_num_queries(1) as at_ten_documents:
+            list(Document.objects.enforced_outstanding_for(user))
+
+        assert len(at_one_document.captured_queries) == len(
+            at_ten_documents.captured_queries
+        )
