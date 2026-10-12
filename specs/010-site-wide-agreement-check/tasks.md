@@ -74,3 +74,11 @@ other test runs a project that has not switched the check on.
 | Id | Task | Done when |
 |---|---|---|
 | T020 | US-2. `tests/test_models.py::TestDocument::test_document_holds_no_wording` lists the fields a document has, to show none holds wording. It gains `enforced`, the one existing test the new field touches | Full suite green |
+
+## Review fixes
+
+| Id | Task | Done when |
+|---|---|---|
+| T021 | US-1. On a site served under a path prefix, an unset `MEDIA_URL` that Django read before the first request is `/`, which no longer equalled the prefix and so covered every address. `is_reachable()` skips a value that is the site root however it was cached. `TestAgreementCheck` requests an address under a prefix and is redirected | The test fails with the comparison as it was |
+| T022 | US-1 and US-4. `TestAgreementCheck` — a `HEAD` request carries the address wanted (FR-004). `TestExemptUrls` — under a prefix, an entry written without the prefix is served (FR-016) | The first fails when only `GET` carries the address; the second fails when entries are compared with `request.path` |
+| T023 | US-6. `mvp_compliance.E004` reports `MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL` when it is not a number, such as a string read from the environment, which would otherwise raise on every signed-in request. `docs/enforcement.md`, `docs/models.md` and `CHANGELOG.md` corrected where the review found a sentence loose | The test fails with the new branch removed |

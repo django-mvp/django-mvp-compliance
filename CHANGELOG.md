@@ -31,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL`, the number of seconds a person found to have nothing
   enforced outstanding is not asked about again, `60` when unset. It is read on every request, so
   shortening it takes effect at once, even for a finding made under a longer value. With `0` every
-  request is checked against the database and nothing is written to the session. See
+  request is checked against the database and nothing is written to the session. System check
+  `mvp_compliance.E004` reports a value that is not a number. See
   [docs/enforcement.md](docs/enforcement.md#the-delay).
 - `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS`, a list of the values accounts sign in with, compared
   with `user.get_username()`. An account named in it is never stopped by the agreement check, and

@@ -115,8 +115,9 @@ contact form, a status page. List them:
 MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help/", "/contact/"]  # empty by default
 ```
 
-The setting is a list of paths, written as the project's URLconf writes them. `request.path_info`
-is what an entry is compared with, so a project served under a prefix leaves the prefix out.
+The setting is a list of paths, each starting with a slash. `request.path_info` is what an entry
+is compared with, so a project served under a prefix leaves the prefix out. An entry written
+without its leading slash covers nothing.
 
 - An entry covers itself and every address beneath it, a path segment at a time. `/help/` covers
   `/help/`, `/help` and `/help/faq/`, and does not cover `/helpful/`.
@@ -273,6 +274,7 @@ runs them, and so do `runserver` and `migrate`:
 | `mvp_compliance.E001` | The page that asks has no address, because the package's addresses are not mounted. | Add `path("legal/", include("mvp_compliance.urls"))` to the project's URLconf. |
 | `mvp_compliance.E002` | No entry before the middleware is `AuthenticationMiddleware` or a subclass of it. | List the middleware after the one that identifies the signed-in user. |
 | `mvp_compliance.E003` | `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS` or `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS` is a string. | Write it as a list, even for one entry. |
+| `mvp_compliance.E004` | `MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL` is not a number, such as a string read from the environment. | Give it as a number of seconds. |
 
 A subclass of `AuthenticationMiddleware` counts, so a project with its own does not need to
 change anything. Left unfixed, the first means no request is stopped, because the middleware

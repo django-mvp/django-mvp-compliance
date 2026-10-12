@@ -376,3 +376,21 @@ and the docs the story touches have to be true when it lands.
 **Revisit if**: the shared URLconf gains routes of its own that these tests could use instead.
 
 **ADR:** none — where one test module keeps its routes
+
+## D22 — What the code review changed, and one finding left as it is
+
+*Made after the code review, which approved with one medium and three low findings.*
+
+**Changed**: a site served under a path prefix no longer has every address made reachable by an
+unset `MEDIA_URL` (T021). Two behaviours the documentation states gained the tests that fail
+without them (T022). An interval that is not a number is reported by a system check instead of
+raising on every signed-in request (T023). The fixes were made directly, without handing them to
+another builder: each is a line or two with its test beside it.
+
+**Left**: a project that lists its own subclass of `AgreementMiddleware` gets none of the system
+checks, because they look for the class by its dotted path. The class is built with no hooks for
+subclasses and the documentation offers none, so there is nobody to check on behalf of.
+
+**Revisit if**: the documentation ever tells a project to subclass the middleware.
+
+**ADR:** none — a record of review fixes, each covered by a test

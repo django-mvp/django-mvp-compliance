@@ -13,9 +13,10 @@ The check only ever concerns a signed-in user. A visitor who is not signed in pa
 and requiring a sign-in stays the project's own decision.
 
 A project keeps addresses reachable with a list in its settings. There is no decorator for single
-views. Three system checks report a configuration that cannot work: the page that asks has no
-address, nothing that identifies the signed-in user comes before the middleware, or a list setting
-was given as a string. At run time a check that cannot work lets every request through.
+views. System checks report a configuration that cannot work: the page that asks has no address,
+nothing that identifies the signed-in user comes before the middleware, a list setting was given
+as a string, or the interval is not a number. At run time a check whose page has no address, or
+that cannot tell who is signed in, lets every request through.
 
 ## Why
 

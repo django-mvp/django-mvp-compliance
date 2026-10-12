@@ -19,7 +19,7 @@ from django.db import connection
 from django.http import HttpResponse
 from django.test import Client, modify_settings
 from django.test.utils import CaptureQueriesContext
-from django.urls import get_script_prefix, include, path, reverse
+from django.urls import get_script_prefix, include, path, reverse, set_script_prefix
 from django.utils import timezone
 
 from mvp_compliance.models import Acceptance, Document
@@ -70,6 +70,15 @@ def check_on():
 def media_url_is_unset(settings):
     # Django returns an unset MEDIA_URL as the site root.
     assert get_script_prefix() == settings.MEDIA_URL
+
+
+@pytest.fixture
+def under_a_prefix(settings):
+    """Serve the site beneath ``/app``, with ``MEDIA_URL`` read before any request."""
+    assert settings.MEDIA_URL == "/"
+    set_script_prefix("/app/")
+    yield {"SCRIPT_NAME": "/app"}
+    set_script_prefix("/")
 
 
 @pytest.fixture
@@ -138,10 +147,24 @@ class TestAgreementCheck:
         assert return_address(response["Location"]) == ["/elsewhere/?tab=2&sort=name"]
         assert called == []
 
+    def test_a_head_request_carries_the_address_wanted(self, client, stopped):
+        response = client.head("/elsewhere/?tab=2")
+
+        assert sent_to_the_page_that_asks(response)
+        assert return_address(response["Location"]) == ["/elsewhere/?tab=2"]
+
     def test_an_unset_media_url_covers_nothing(self, client, stopped):
         response = client.get("/elsewhere/")
 
         assert sent_to_the_page_that_asks(response)
+
+    def test_an_unset_media_url_covers_nothing_under_a_prefix(
+        self, client, stopped, under_a_prefix
+    ):
+        response = client.get("/elsewhere/", **under_a_prefix)
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
 
     def test_the_address_wanted_is_served_once_the_acceptance_is_recorded(
         self, client, stopped, version
@@ -478,6 +501,14 @@ class TestExemptUrls:
 
         assert sent_to_the_page_that_asks(response)
         assert called == []
+
+    def test_an_entry_leaves_out_the_prefix_the_site_is_served_under(
+        self, client, stopped, under_a_prefix
+    ):
+        response = client.get("/help/", **under_a_prefix)
+
+        assert response.status_code == 200
+        assert called == ["/app/help/"]
 
     def test_an_address_that_only_starts_like_an_entry_still_redirects(
         self, client, stopped

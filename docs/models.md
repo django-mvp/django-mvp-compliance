@@ -80,8 +80,9 @@ Document.objects.filter(slug="cookie-policy").update(enforced=False)
 ```
 
 No version and no acceptance is written, edited or removed by either, so a document with published
-versions and recorded acceptances keeps every one of them. Nothing in the package acts on the field
-beyond [`enforced_outstanding_for()`](#enforced-and-outstanding), and `outstanding_for()` ignores it. A notice
+versions and recorded acceptances keeps every one of them. The field is read by
+[`enforced_outstanding_for()`](#enforced-and-outstanding) and by the page that asks, which marks a
+document required or optional from it. `outstanding_for()` ignores it. A notice
 is never outstanding, so it is never stopped over whatever its `enforced` says.
 
 A slug is lowercase letters and digits joined by single hyphens, so `privacy-policy` is
@@ -114,8 +115,8 @@ On a site that has switched the [check](enforcement.md) on, an account that hold
 through a group, is never stopped. A superuser holds every permission, so a superuser is never
 stopped either. Holding it records nothing and changes nothing about what is
 [outstanding](#enforced-and-outstanding) for the account. See [Letting accounts
-past](enforcement.md#letting-accounts-past). The permission is created by the migration that adds
-`enforced`, `0002`, which adds one migration for this release and nothing else.
+past](enforcement.md#letting-accounts-past). The permission is declared by the migration that adds
+`enforced`, `0002`, and Django creates it when `migrate` next runs.
 
 ### When the slug is fixed
 

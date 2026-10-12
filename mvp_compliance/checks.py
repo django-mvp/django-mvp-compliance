@@ -30,8 +30,10 @@ def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
     Returns:
         ``mvp_compliance.E001`` when the page that asks has no address, and
         ``mvp_compliance.E002`` when nothing that identifies the signed-in user
-        comes before the middleware, and ``mvp_compliance.E003`` for each
-        setting that is a list and has been given as a string.
+        comes before the middleware, ``mvp_compliance.E003`` for each
+        setting that is a list and has been given as a string, and
+        ``mvp_compliance.E004`` when the interval between checks is not a
+        number.
     """
     middleware = list(settings.MIDDLEWARE)
     if AGREEMENT_MIDDLEWARE not in middleware:
@@ -75,6 +77,17 @@ def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
                     id="mvp_compliance.E003",
                 )
             )
+    interval = getattr(settings, "MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL", 60)
+    if isinstance(interval, bool) or not isinstance(interval, int | float):
+        errors.append(
+            Error(
+                _("%(setting)s is not a number.")
+                % {"setting": "MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL"},
+                hint=_("Give it as a number of seconds, such as %(example)s.")
+                % {"example": "60"},
+                id="mvp_compliance.E004",
+            )
+        )
     return errors
 
 

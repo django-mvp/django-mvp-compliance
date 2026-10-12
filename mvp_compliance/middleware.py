@@ -121,7 +121,8 @@ class AgreementMiddleware:
             ):
                 return True
         for url in (settings.STATIC_URL, settings.MEDIA_URL):
-            if not url or url == get_script_prefix():
+            # The site root, whichever prefix was in force when Django read it.
+            if not url or url.rstrip("/") in ("", get_script_prefix().rstrip("/")):
                 continue
             parts = urlsplit(url)
             if parts.scheme or parts.netloc:

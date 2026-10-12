@@ -75,3 +75,23 @@ class TestListSettingChecks:
             ids = {message.id for message in run_checks()}
 
         assert "mvp_compliance.E003" not in ids
+
+    @pytest.mark.parametrize("interval", ["60", None, True])
+    def test_an_interval_that_is_not_a_number_is_an_error(self, interval):
+        with override_settings(
+            MIDDLEWARE=[SESSIONS, AUTHENTICATION, AGREEMENT],
+            MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL=interval,
+        ):
+            ids = {message.id for message in run_checks()}
+
+        assert "mvp_compliance.E004" in ids
+
+    @pytest.mark.parametrize("interval", [0, 5, 2.5])
+    def test_an_interval_that_is_a_number_is_not_reported(self, interval):
+        with override_settings(
+            MIDDLEWARE=[SESSIONS, AUTHENTICATION, AGREEMENT],
+            MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL=interval,
+        ):
+            ids = {message.id for message in run_checks()}
+
+        assert "mvp_compliance.E004" not in ids
