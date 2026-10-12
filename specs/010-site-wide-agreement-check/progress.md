@@ -79,3 +79,10 @@ Did: mvp_compliance/views.py: is_optional() returns `not document.enforced`, its
 Verified: uv run pytest tests/test_views.py::TestAgreementEnforcement -q -> 19 passed (10 failed before). uv run pytest tests/test_views.py -q -n auto --dist loadscope -> 201 passed, no existing test edited. Probes against the whole file, each killed: testing `next` for a truthy value instead of its presence (1 failed), dropping the `not required` clause (5 failed), dropping the empty-entries branch (2 failed). pre-commit run --all-files passes.
 Next: T013, docs/pages.md, docs/enforcement.md and CHANGELOG.md.
 Watch: demo/management/commands/seed_demo.py line 133 still says "the demo's settings name House rules as optional"; it is outside this story's tasks and is in concerns. The seed already marks House rules not enforced (line 391), so the accounts behave as their descriptions say.
+
+## 2026-10-12T11:23:56Z · Implementer US3 · T013
+
+Did: docs/pages.md: the rows' required or optional mark follows `enforced`; the page sends a person on when no enforced document is left; a paragraph and a table for documents that are not enforced, covering how a person accepts one and what a visit with and without `next` does; a new subsection "Deciding which documents are required" for `is_optional()` reading the field, with an override example and the limit on overriding it; the example link under "Sending a person to the page" loses its `?next=` and the text says when to add one; the view example asks `enforced_outstanding_for()`; the "nothing outstanding" paragraph says what a `next` does. docs/enforcement.md: two sentences with a link. CHANGELOG.md Changed: two entries, one for the page and one for `is_optional()` with the limit.
+Verified: forge verify --repo . --base origin/main --steps docs -> passed. uv run pre-commit run --all-files passes.
+Next: the full verify, once, then the report.
+Watch: docs/models.md says nothing about the page treating documents alike, so it was left alone; README's status block is untouched, as in US1.

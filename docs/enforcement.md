@@ -50,6 +50,11 @@ For each request from a signed-in person, in this order:
 
 A person with two enforced documents outstanding is sent once, to the one page, which lists both.
 
+The page also lists the documents that are not enforced and are outstanding for them, and sends
+them on once the enforced ones are agreed to, so the page and the check let a person go at the
+same moment. See [Asking a person to agree](pages.md#asking-a-person-to-agree) for what the page
+does with a person who has only such documents outstanding.
+
 A `GET` or `HEAD` carries the address they asked for, query string included, as `next`, so the
 page sends them back to it once they have agreed. The address is percent-encoded, and the page
 only follows an address on the same site ([Sending a person to the

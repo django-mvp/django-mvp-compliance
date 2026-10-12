@@ -49,6 +49,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The page that asks follows each document's `enforced` field. A document that is not enforced is
+  still listed, and is marked optional where it was marked required. After a submission a person is
+  sent on once no enforced document is outstanding for them, whatever they left alone among the
+  rest, and is shown the page again while one is. A signed-in person with no enforced document
+  outstanding who opens the page with a `next` parameter, whatever its value, is redirected at
+  once and shown nothing, to `next` when it can be followed and otherwise to the default
+  destination. With no `next` they are shown the page and can accept those documents. The page
+  behaves as before on a site where every document is enforced, which is every site until a
+  document's `enforced` is switched off.
+- `AgreementView.is_optional()` returns `not document.enforced` where it returned `False`. A
+  project that overrides it may make a document that is not enforced required, and must not make
+  an enforced one optional on a site that has listed `AgreementMiddleware`: the middleware asks
+  `Document.objects.enforced_outstanding_for()` and never the view, so the two would send a
+  person round in a loop. See [docs/pages.md](docs/pages.md#deciding-which-documents-are-required).
 - The slug `agree` is no longer available to a document, because it is the address of the page
   that asks a person to agree. The admin and `full_clean()` refuse it, through
   `Document.RESERVED_SLUGS`. A document already published under `agree` stops being reachable at

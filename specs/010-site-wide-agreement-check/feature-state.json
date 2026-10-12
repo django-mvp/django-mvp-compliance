@@ -324,8 +324,20 @@
         },
         {
           "id": "T013",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "docs/pages.md:135",
+              "docs/pages.md:511",
+              "docs/enforcement.md:51",
+              "CHANGELOG.md:50"
+            ]
+          }
         }
       ]
     },
