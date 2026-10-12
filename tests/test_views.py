@@ -2,12 +2,16 @@
 
 import re
 from datetime import timedelta
+from html.parser import HTMLParser
 from pathlib import Path
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
 from django.core.management import call_command
 from django.db import connection
+from django.templatetags.static import static
+from django.test import Client, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -1373,3 +1377,266 @@ class TestWithoutTheAccountArea:
         response = client.get(agreed_address())
 
         assert response.status_code == 404
+
+
+def agreement_address(destination=None):
+    """The page that asks, carrying ``destination`` as the address to go on to."""
+    address = reverse("mvp_compliance:agree")
+    if destination is None:
+        return address
+    return f"{address}?{urlencode({'next': destination})}"
+
+
+class FormControls(HTMLParser):
+    """Collects the attributes of every ``<input>`` and ``<form>`` in a page."""
+
+    def __init__(self):
+        super().__init__()
+        self.inputs = []
+        self.forms = []
+        self.ids = set()
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if "id" in attributes:
+            self.ids.add(attributes["id"])
+        if tag == "input":
+            self.inputs.append(attributes)
+        elif tag == "form":
+            self.forms.append(attributes)
+
+
+def controls(response):
+    """The page's inputs, forms and ids, parsed from the rendered response."""
+    parser = FormControls()
+    parser.feed(response.content.decode())
+    return parser
+
+
+@pytest.mark.django_db
+class TestAgreement:
+    """US-1: a signed-in person agrees to what is outstanding and carries on (FR-001 to
+    FR-007, FR-015, FR-016, FR-019, SC-003, SC-007)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def submission(*versions, destination="/dashboard/"):
+        """A submission that lists and agrees to ``versions``."""
+        ids = [version.pk for version in versions]
+        return {"agree": ids, "listed": ids, "next": destination}
+
+    def test_one_outstanding_document_is_listed_with_its_version_in_force(
+        self, signed_in
+    ):
+        document = DocumentFactory()
+        version = published(document)
+
+        response = signed_in.get(agreement_address())
+
+        assert response.status_code == 200
+        (entry,) = response.context["entries"]
+        assert entry["document"] == document
+        assert entry["version"] == version
+
+    def test_the_page_links_to_the_page_of_that_version(self, signed_in):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = signed_in.get(agreement_address())
+
+        content = response.content.decode()
+        assert version_address(document, second.number) in content
+        assert version_address(document, first.number) not in content
+
+    def test_the_page_holds_none_of_the_versions_stored_html(self, signed_in):
+        version = published(DocumentFactory(), "A clause with **emphasis** in it")
+
+        response = signed_in.get(agreement_address())
+
+        assert version.html
+        assert version.html not in response.content.decode()
+
+    def test_agreeing_records_one_acceptance_and_goes_on_to_the_destination(
+        self, signed_in, user
+    ):
+        version = published(DocumentFactory())
+
+        response = signed_in.post(
+            agreement_address(),
+            self.submission(version, destination="/dashboard/?tab=2"),
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == "/dashboard/?tab=2"
+        acceptance = Acceptance.objects.get()
+        assert acceptance.version == version
+        assert acceptance.subject == Acceptance.subject_of(user)
+
+    def test_opening_the_page_records_nothing(self, signed_in):
+        published(DocumentFactory())
+
+        signed_in.get(agreement_address("/dashboard/"))
+
+        assert not Acceptance.objects.exists()
+
+    def test_a_submission_agreeing_to_nothing_records_nothing_and_says_so(
+        self, signed_in
+    ):
+        version = published(DocumentFactory())
+
+        response = signed_in.post(
+            agreement_address(), {"listed": [version.pk], "next": "/dashboard/"}
+        )
+
+        assert response.status_code == 200
+        assert response.context["missing"]
+        assert not Acceptance.objects.exists()
+
+    def test_a_visitor_who_is_not_signed_in_is_sent_to_sign_in_and_back(self, client):
+        published(DocumentFactory())
+        address = agreement_address("/dashboard/")
+
+        response = client.get(address)
+
+        assert response.status_code == 302
+        sign_in = urlsplit(response["Location"])
+        assert sign_in.path == reverse("account_login")
+        assert parse_qs(sign_in.query)["next"] == [address]
+
+    def test_an_earlier_version_accepted_leaves_the_version_in_force_outstanding(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        earlier = Acceptance.objects.record(user, published(document, "First"))
+        second = published(document, "Second")
+
+        listed = signed_in.get(agreement_address()).context["entries"]
+        signed_in.post(agreement_address(), self.submission(second))
+
+        assert [entry["version"] for entry in listed] == [second]
+        assert Acceptance.objects.for_person(user).count() == 2
+        assert Acceptance.objects.get(pk=earlier.pk).version == earlier.version
+
+    def test_a_notice_and_a_document_with_only_a_draft_are_not_listed(self, signed_in):
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        published(notice)
+        VersionFactory(document=DocumentFactory())
+
+        response = signed_in.get(agreement_address())
+
+        assert response.context["entries"] == []
+
+    def test_the_same_agreement_submitted_twice_leaves_one_acceptance(self, signed_in):
+        version = published(DocumentFactory())
+        submission = self.submission(version)
+
+        first = signed_in.post(agreement_address(), submission)
+        second = signed_in.post(agreement_address(), submission)
+
+        assert first["Location"] == second["Location"] == "/dashboard/"
+        assert Acceptance.objects.filter(version=version).count() == 1
+
+    def test_a_submission_naming_a_version_that_was_not_listed_records_nothing(
+        self, signed_in, user
+    ):
+        listed = published(DocumentFactory())
+        document = DocumentFactory()
+        superseded = published(document, "First")
+        published(document, "Second")
+        superseded.refresh_from_db()
+        draft = VersionFactory(document=DocumentFactory())
+        accepted = published(DocumentFactory())
+        Acceptance.objects.record(user, accepted)
+        notice = DocumentFactory(kind=Document.Kind.NOTICE)
+        in_notice = published(notice)
+        ids = [superseded.pk, draft.pk, accepted.pk, in_notice.pk, "not-a-number"]
+
+        response = signed_in.post(
+            agreement_address(), {"agree": ids, "listed": [listed.pk]}
+        )
+
+        assert response.status_code == 200
+        assert list(Acceptance.objects.values_list("version", flat=True)) == [
+            accepted.pk
+        ]
+
+    def test_a_submission_without_the_token_is_refused_and_records_nothing(self, user):
+        version = published(DocumentFactory())
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+
+        response = client.post(agreement_address(), self.submission(version))
+
+        assert response.status_code == 403
+        assert not Acceptance.objects.exists()
+
+    def test_the_connecting_address_is_held_when_the_project_keeps_it(self, signed_in):
+        version = published(DocumentFactory())
+
+        with override_settings(MVP_COMPLIANCE_RECORD_IP_ADDRESS=True):
+            signed_in.post(
+                agreement_address(),
+                self.submission(version),
+                REMOTE_ADDR="203.0.113.5",
+            )
+
+        assert Acceptance.objects.get().ip_address == "203.0.113.5"
+
+    def test_no_address_is_held_by_default(self, signed_in):
+        version = published(DocumentFactory())
+
+        signed_in.post(
+            agreement_address(), self.submission(version), REMOTE_ADDR="203.0.113.5"
+        )
+
+        assert Acceptance.objects.get().ip_address is None
+
+    def test_a_document_name_containing_markup_is_escaped(self, signed_in):
+        published(DocumentFactory(name="<script>alert(1)</script>"))
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert "<script>alert(1)" not in content
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
+
+    @pytest.mark.parametrize(
+        "destination",
+        [
+            "https://elsewhere.example/dashboard/",
+            "http://elsewhere.example/dashboard/",
+            "//elsewhere.example/dashboard/",
+            "javascript:alert(1)",
+        ],
+    )
+    def test_a_destination_off_this_site_is_replaced_by_the_default(
+        self, signed_in, destination
+    ):
+        version = published(DocumentFactory())
+
+        shown = signed_in.get(agreement_address(destination))
+        sent = signed_in.post(
+            agreement_address(), self.submission(version, destination=destination)
+        )
+
+        assert shown.context["destination"] == "/"
+        assert sent["Location"] == "/"
+
+    def test_the_page_carries_the_hooks_the_script_depends_on(self, signed_in):
+        published(DocumentFactory())
+        published(DocumentFactory())
+
+        response = signed_in.get(agreement_address())
+
+        page = controls(response)
+        assert [form.get("id") for form in page.forms] == ["agreement"]
+        toggles = [field for field in page.inputs if field.get("name") == "agree"]
+        assert len(toggles) == 2
+        for toggle in toggles:
+            assert "data-required" in toggle
+            assert toggle["aria-describedby"] in page.ids
+        assert static("mvp_compliance/agreement.js") in response.content.decode()

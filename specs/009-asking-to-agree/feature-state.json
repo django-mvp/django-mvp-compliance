@@ -136,8 +136,19 @@
         },
         {
           "id": "T004",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreement"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestAgreement -q"
+            ],
+            "code": [
+              "tests/test_views.py:1417"
+            ]
+          }
         },
         {
           "id": "T005",
