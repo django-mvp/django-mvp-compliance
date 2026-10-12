@@ -154,8 +154,19 @@
         },
         {
           "id": "T004",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDocumentEnforcement"
+            ],
+            "commands": [
+              "uv run pytest tests/test_admin.py::TestDocumentEnforcement -q (1 failed, 3 passed, as intended before T005)"
+            ],
+            "code": [
+              "tests/test_admin.py:967"
+            ]
+          }
         },
         {
           "id": "T005",

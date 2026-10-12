@@ -20,7 +20,7 @@ from django.urls import NoReverseMatch, path, reverse
 from django.utils import formats, timezone
 
 import mvp_compliance
-from mvp_compliance.models import Document, Version
+from mvp_compliance.models import Acceptance, Document, Version
 from mvp_compliance.records import PersonalRecord
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
@@ -960,6 +960,114 @@ class TestDocumentSlugInTheAdmin:
         assert response.status_code == 200
         assert "slug" in response.context["adminform"].form.errors
         assert not Document.objects.filter(slug="agree").exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestDocumentEnforcement:
+    """US-2 scenarios 4-6, FR-014: enforcement is chosen on the form and shown in the list."""
+
+    @staticmethod
+    def held_about(document):
+        """Every version and acceptance of ``document`` as plain rows."""
+        versions = document.versions.order_by("pk").values_list(
+            "pk", "number", "status", "markdown", "html", "published_at"
+        )
+        acceptances = Acceptance.objects.filter(version__document=document)
+        return list(versions), list(
+            acceptances.order_by("pk").values_list(
+                "pk", "subject", "version_id", "accepted_at"
+            )
+        )
+
+    def test_a_document_added_with_the_field_left_as_rendered_is_enforced(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_add")
+
+        preselected = client.get(url).context["adminform"].form["enforced"].value()
+        data = {"name": "Terms", "slug": "terms", "kind": Document.Kind.AGREED}
+        if preselected:
+            data["enforced"] = "on"
+        response = client.post(url, data)
+
+        assert response.status_code == 302
+        assert Document.objects.get(slug="terms").enforced
+
+    def test_a_document_added_with_the_field_cleared_is_not_enforced(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_document_add"),
+            {
+                "name": "Cookie policy",
+                "slug": "cookie-policy",
+                "kind": Document.Kind.AGREED,
+            },
+        )
+
+        assert response.status_code == 302
+        assert not Document.objects.get(slug="cookie-policy").enforced
+
+    def test_the_change_form_switches_enforcement_off_and_on_and_nothing_recorded_moves(
+        self, client, editor, document
+    ) -> None:
+        for wording in ("First wording", "Second wording"):
+            version = VersionFactory(document=document, markdown=wording)
+            version.publish()
+            AcceptanceFactory(version=version)
+        before = self.held_about(document)
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[document.pk])
+        fields = {
+            "name": document.name,
+            "slug": document.slug,
+            "kind": Document.Kind.AGREED,
+        }
+
+        off = client.post(url, fields)
+        document.refresh_from_db()
+        enforced_while_off = document.enforced
+        held_while_off = self.held_about(document)
+        on = client.post(url, {**fields, "enforced": "on"})
+        document.refresh_from_db()
+
+        assert off.status_code == 302
+        assert on.status_code == 302
+        assert not enforced_while_off
+        assert document.enforced
+        assert held_while_off == before
+        assert self.held_about(document) == before
+        assert len(before[0]) == 2
+        assert len(before[1]) == 2
+
+    def test_the_changelist_has_an_enforced_cell_on_the_row_of_each_document(
+        self, client, editor
+    ) -> None:
+        DocumentFactory(name="Terms of use", enforced=True)
+        DocumentFactory(name="Cookie policy", enforced=False)
+        client.force_login(editor)
+
+        content = client.get(
+            reverse("admin:mvp_compliance_document_changelist")
+        ).content.decode()
+
+        rows = {
+            name: row
+            for row in content.split("<tr")
+            for name in ("Terms of use", "Cookie policy")
+            if name in row
+        }
+        cells = {
+            name: re.search(r'<td class="field-enforced">(.*?)</td>', row, re.DOTALL)
+            for name, row in rows.items()
+        }
+        assert set(cells) == {"Terms of use", "Cookie policy"}
+        assert all(cells.values())
+        assert cells["Terms of use"].group(1) != cells["Cookie policy"].group(1)
 
 
 @pytest.mark.django_db

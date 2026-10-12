@@ -16,3 +16,10 @@ Did: Document.enforced (BooleanField, default True, with verbose_name and help_t
 Verified: uv run pytest tests/test_models.py::TestEnforcement tests/test_models.py::TestModelFields tests/test_migrations.py -q -> 37 passed. Mutation probe: dropping .filter(enforced=True) made test_leaves_out_a_document_that_is_not_enforced fail. makemigrations --check --dry-run -> No changes detected. makemessages run a second time leaves the catalog unchanged apart from its creation date.
 Next: T004, the admin tests.
 Watch: BLOCKED ON ONE PRE-EXISTING TEST. tests/test_models.py::TestDocument::test_document_holds_no_wording asserts the concrete fields of Document are exactly {id, name, slug, kind}, so it fails for any new field. It is not mine to change; the one-line edit it needs is to add "enforced" to that set. Everything else in tests/test_models.py and tests/test_migrations.py passes.
+
+## 2026-10-12T10:53:50Z · Implementer US2 · T004
+
+Did: TestDocumentEnforcement in tests/test_admin.py: the add form saves a document as enforced when the field is left as rendered and as not enforced when it is cleared; the change form switches enforcement off and on for a document with two published versions and two acceptances and leaves them as they were; the list has a field-enforced cell on the row of each document, found by its name, and the two cells differ.
+Verified: uv run pytest tests/test_admin.py::TestDocumentEnforcement -q -> 1 failed, 3 passed. The changelist test fails at the missing cell (both rows found, no field-enforced cell), which is T005's. The three form tests pass already, because the model field of T003 brings the field onto the admin form with no admin change. My first run of them failed because the posts left out the required kind; fixed in the tests, no other change (2 attempts).
+Next: T005, enforced in DocumentAdmin.list_display, then the glossary, the seed and the changelog.
+Watch: tests/test_models.py::TestDocument::test_document_holds_no_wording still fails, as recorded under T003.
