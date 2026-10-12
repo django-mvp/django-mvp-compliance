@@ -3,7 +3,7 @@
   "feature": "009-asking-to-agree",
   "branch": "009-asking-to-agree",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "CONVERGE",
+  "state": "REVIEW",
   "state_history": [
     {
       "state": "QUEUED",
@@ -29,6 +29,11 @@
       "state": "CONVERGE",
       "at": "2026-10-12T09:37:43Z",
       "note": "all five stories accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-10-12T09:38:15Z",
+      "note": "converged: verify green, ADRs 0021 and 0022, 24 verdicts"
     }
   ],
   "gates": {
@@ -81,6 +86,20 @@
         "ARCH-001 low: docs say record_many sends no save signals and needs ignore-conflicts support (T003)",
         "ARCH-002 low: require_https follows the request; own check kept over NextURLMixin",
         "ARCH-003 low: only record_agreed documented as an override point (T014)"
+      ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-10-12T09:59:15Z",
+      "self_resolved": [
+        "verdict request_changes on one verified high finding; all seven findings remedied, none open",
+        "DOC-001 high: the example view requires sign-in (T015)",
+        "SEC-001 low: own-address check resolves again after decoding; two cases failed before the fix (T015)",
+        "COR-001 low: the unlocked instant documented in docs/pages.md and ADR 0021 (T016)",
+        "TEST-002 low: test added, fails under changed = bool(listed) and ... (T016)",
+        "TEST-001 low: test added, fails under subject = str(user.pk) (T017)",
+        "COR-002 low: connecting_address() shared by record() and record_many() (T017)",
+        "SPEC-001 low: five lines shortened (T017)"
       ]
     }
   },
@@ -188,6 +207,25 @@
               "docs/pages.md:134"
             ]
           }
+        },
+        {
+          "id": "T017",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestRecordMany::test_a_user_that_was_never_saved_is_refused",
+              "tests/test_models.py::TestRecordMany",
+              "tests/test_models.py::TestRecording"
+            ],
+            "commands": [
+              "mutation: subject = str(user.pk) in record_many; uv run pytest <the test> -q: 1 failed; code restored: 1 passed",
+              "forge verify --repo . --base origin/main: six steps green"
+            ],
+            "code": [
+              "mvp_compliance/models.py:872"
+            ]
+          }
         }
       ]
     },
@@ -279,6 +317,22 @@
               "demo/views.py:24"
             ]
           }
+        },
+        {
+          "id": "T016",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestSeveralOutstanding::test_a_submission_that_lists_nothing_is_drawn_as_changed"
+            ],
+            "commands": [
+              "mutation: changed = bool(listed) and any(...) in views.py; uv run pytest <the test> -q: 1 failed; code restored: 1 passed"
+            ],
+            "code": [
+              "mvp_compliance/views.py:339"
+            ]
+          }
         }
       ]
     },
@@ -321,6 +375,23 @@
             ],
             "code": [
               "mvp_compliance/views.py:300"
+            ]
+          }
+        },
+        {
+          "id": "T015",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementDestination::test_the_pages_own_address_is_replaced_by_the_default"
+            ],
+            "commands": [
+              "uv run pytest <the test> -q before the fix: 2 failed (percent-encoded dot, percent-encoded parent segments), 6 passed; after: 8 passed"
+            ],
+            "code": [
+              "mvp_compliance/views.py:301",
+              "docs/pages.md:236"
             ]
           }
         }
@@ -384,7 +455,7 @@
       "max": 2
     },
     "review_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 1
     },
     "design_review_cycles": {

@@ -25,7 +25,9 @@ A decision taken from the submission is right whenever the write worked. A decis
 absence of an exception is right whenever every failure raises. A decision taken from the stored
 records is right in both cases and in the ones nobody thought of: a write replaced by a project's
 own code, a database that accepted the statement and kept nothing, a version replaced in the
-instant between the read and the write. In each of those the person stays on the page.
+instant between the read and the write. In each of those the person stays on the page. The last
+of them can still leave an acceptance of the version just replaced, which is a true record and
+lets nobody through.
 
 The second read costs two queries on a path a person takes a handful of times in the life of an
 account.

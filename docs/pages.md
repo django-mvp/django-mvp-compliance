@@ -171,6 +171,11 @@ again with the version now in force and a message saying a document changed, in 
 one saying something required is left. A document accepted elsewhere, or made a notice,
 since the page was drawn is passed over, and the rest are recorded as usual.
 
+A change that lands in the instant between the page reading what is outstanding and writing the
+acceptances is not caught this way. An acceptance of the version just replaced can be stored, or
+the submission can be drawn as one that could not be recorded. The person is asked again in both
+cases, because whether they are sent on is read after the write.
+
 **When an acceptance cannot be stored.** The acceptances of one submission are written inside
 one database transaction, so they are stored together or not at all. When the write fails with
 a `DatabaseError`, or the package refuses a version with a `RecordError`, none of that
@@ -221,12 +226,14 @@ them, so that a person who has agreed is not sent round again:
 ```python
 from urllib.parse import urlencode
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.urls import reverse
 
 from mvp_compliance.models import Document
 
 
+@login_required
 def checkout(request):
     if Document.objects.outstanding_for(request.user).exists():
         query = urlencode({"next": request.get_full_path()})

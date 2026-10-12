@@ -1461,6 +1461,14 @@ class TestRecordMany:
 
         assert Acceptance.objects.get().ip_address is None
 
+    def test_a_user_that_was_never_saved_is_refused(self, published_version):
+        unsaved = get_user_model()(username="not-saved")
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record_many(unsaved, [published_version])
+
+        assert not Acceptance.objects.exists()
+
     def test_an_empty_batch_writes_nothing(self, user):
         Acceptance.objects.record_many(user, [])
 

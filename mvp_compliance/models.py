@@ -870,6 +870,27 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         """
         return self.for_subject(Acceptance.subject_of(user))
 
+    @staticmethod
+    def connecting_address(request) -> "str | None":
+        """Return the address to keep on an acceptance made from ``request``.
+
+        Args:
+            request: The current request, or ``None`` when there is none.
+
+        Returns:
+            ``REMOTE_ADDR`` when ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on and a
+            request was given, otherwise ``None``.
+        """
+        if request is None or not getattr(
+            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
+        ):
+            return None
+        # Never a forwarded header: the client sets it, so the person the
+        # evidence is about could fill it in
+        # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
+        address: str | None = request.META.get("REMOTE_ADDR")
+        return address
+
     def record(self, user, version, request=None) -> "Acceptance":
         """Record ``user``'s acceptance of ``version``.
 
@@ -901,14 +922,7 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         # Before get_or_create(), which would return an acceptance recorded before
         # the document became a notice as though it had just been made.
         Acceptance.refuse_if_notice([version.pk])
-        ip_address = None
-        if request is not None and getattr(
-            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
-        ):
-            # Never a forwarded header: the client sets it, so the person the
-            # evidence is about could fill it in
-            # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
-            ip_address = request.META.get("REMOTE_ADDR")
+        ip_address = self.connecting_address(request)
         subject = Acceptance.subject_of(user)
         return self.get_or_create(
             subject=subject,
@@ -945,16 +959,11 @@ class AcceptanceManager(models.Manager["Acceptance"]):
         if not all(version.is_published for version in versions):
             raise RecordError(
                 _(
-                    "Cannot record an acceptance of a version that has never been published."
+                    "Cannot record an acceptance of a version that has never been "
+                    "published."
                 )
             )
-        ip_address = None
-        if request is not None and getattr(
-            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
-        ):
-            # Never a forwarded header: the client sets it
-            # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
-            ip_address = request.META.get("REMOTE_ADDR")
+        ip_address = self.connecting_address(request)
         subject = Acceptance.subject_of(user)
         accepted_at = timezone.now()
         self.get_queryset().bulk_create(

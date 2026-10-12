@@ -1,4 +1,4 @@
-"""The pages that show a document's wording to a visitor."""
+"""The pages a visitor reads, and the page that asks a person to agree."""
 
 import logging
 from urllib.parse import unquote, urljoin, urlsplit
@@ -299,6 +299,8 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         """
         own: str = self.request.path
         path = unquote(urlsplit(urljoin(own, destination)).path)
+        # Resolved again once decoded: a browser reads ``%2e`` as a dot segment.
+        path = urlsplit(urljoin(own, path)).path
         return path.rstrip("/") == own.rstrip("/")
 
     def record_agreed(self, versions: list[Version]) -> None:
@@ -359,7 +361,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         )
 
     def get_context_data(self, **kwargs):
-        """Add the entries, each with the attributes of its toggle, and the destination."""
+        """Add the entries, each with its toggle's attributes, and the destination."""
         context = super().get_context_data(**kwargs)
         kept = set(self.request.POST.getlist("agree")) if context.get("failed") else ()
         for entry in self.entries:

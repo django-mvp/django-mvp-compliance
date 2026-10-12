@@ -1832,7 +1832,7 @@ class TestSeveralOutstanding:
 
     @pytest.fixture
     def optional(self, monkeypatch):
-        """Make a view's ``is_optional`` answer true for the documents put in the set."""
+        """Make ``is_optional`` answer true for the documents put in the set."""
         chosen = set()
         monkeypatch.setattr(
             AgreementView, "is_optional", lambda view, document: document.pk in chosen
@@ -1963,6 +1963,17 @@ class TestSeveralOutstanding:
         assert not response.context.get("missing")
         assert [entry["version"] for entry in response.context["entries"]] == [added]
         assert list(Acceptance.objects.values_list("version", flat=True)) == [drawn.pk]
+
+    def test_a_submission_that_lists_nothing_is_drawn_as_changed(self, signed_in):
+        first, second = (published(DocumentFactory(name=name)) for name in ("A", "B"))
+        submission = {"agree": [first.pk], "next": "/dashboard/"}
+
+        response = signed_in.post(agreement_address(), submission)
+
+        assert response.status_code == 200
+        assert response.context["changed"]
+        assert not response.context.get("missing")
+        assert [entry["version"] for entry in response.context["entries"]] == [second]
 
     def test_a_document_no_longer_outstanding_is_passed_over(self, signed_in, user):
         elsewhere, became_notice, kept, left = (
@@ -2144,7 +2155,7 @@ class TestAgreementDestination:
         assert response.status_code == 302
         assert response["Location"] == self.default
 
-    def test_a_person_with_nothing_outstanding_and_a_foreign_destination_gets_the_default(
+    def test_nothing_outstanding_and_a_foreign_destination_gives_the_default(
         self, signed_in, project_default
     ):
         response = signed_in.get(agreement_address("https://elsewhere.example/"))
@@ -2232,6 +2243,8 @@ class TestAgreementDestination:
             "/legal/%61gree/",
             ".",
             "?x=1",
+            "/legal/agree/%2e",
+            "/legal/x/%2e%2e/agree/",
         ],
         ids=[
             "the address",
@@ -2240,6 +2253,8 @@ class TestAgreementDestination:
             "with a percent-encoded letter",
             "as a dot",
             "as a bare query string",
+            "with a percent-encoded dot",
+            "through percent-encoded parent segments",
         ],
     )
     def test_the_pages_own_address_is_replaced_by_the_default(

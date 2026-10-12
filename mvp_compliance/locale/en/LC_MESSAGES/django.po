@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 11:32+0200\n"
+"POT-Creation-Date: 2026-10-12 11:58+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -253,7 +253,7 @@ msgstr ""
 "the version say an account was since removed after the link to it is "
 "cleared. Empty when nobody was recorded."
 
-#: models.py:451 models.py:1008
+#: models.py:451 models.py:1017
 #: templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
@@ -294,24 +294,24 @@ msgstr "This version is no longer a draft."
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: models.py:766 models.py:1110
+#: models.py:766 models.py:1119
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: models.py:771 models.py:1117
+#: models.py:771 models.py:1126
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: models.py:898 models.py:948
+#: models.py:919 models.py:962
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: models.py:984
+#: models.py:993
 msgid "user"
 msgstr "user"
 
-#: models.py:986
+#: models.py:995
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -321,11 +321,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: models.py:996
+#: models.py:1005
 msgid "subject"
 msgstr "subject"
 
-#: models.py:1000
+#: models.py:1009
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -337,7 +337,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: models.py:1010
+#: models.py:1019
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -345,11 +345,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: models.py:1017
+#: models.py:1026
 msgid "accepted at"
 msgstr "accepted at"
 
-#: models.py:1021
+#: models.py:1030
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -357,11 +357,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: models.py:1026
+#: models.py:1035
 msgid "IP address"
 msgstr "IP address"
 
-#: models.py:1030
+#: models.py:1039
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -373,21 +373,21 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: models.py:1040
+#: models.py:1049
 msgid "acceptance"
 msgstr "acceptance"
 
-#: models.py:1041
+#: models.py:1050
 msgid "acceptances"
 msgstr "acceptances"
 
-#: models.py:1076
+#: models.py:1085
 msgid ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 msgstr ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 
-#: models.py:1101
+#: models.py:1110
 msgid ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
@@ -395,15 +395,15 @@ msgstr ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
 
-#: models.py:1135
+#: models.py:1144
 msgid "disclosure"
 msgstr "disclosure"
 
-#: models.py:1136
+#: models.py:1145
 msgid "everything held about a person"
 msgstr "everything held about a person"
 
-#: models.py:1138
+#: models.py:1147
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 

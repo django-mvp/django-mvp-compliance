@@ -434,7 +434,7 @@ class Command(BaseCommand):
         )
 
     def make_asked(self):
-        """Leave each account in ``ASKED`` with the documents it should be asked about."""
+        """Leave each account in ``ASKED`` with the documents it is asked about."""
         for email, accepted in ASKED.items():
             person = self.make_account(email, False, False, [])
             for name, number in accepted:
