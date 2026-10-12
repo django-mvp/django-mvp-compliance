@@ -5,6 +5,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
@@ -2530,3 +2532,29 @@ class TestEnforcement:
         assert len(at_one_document.captured_queries) == len(
             at_ten_documents.captured_queries
         )
+
+
+@pytest.mark.django_db
+class TestSkipAgreementPermission:
+    """US-5 scenario 2, FR-019."""
+
+    def test_the_permission_exists_after_migrating_with_document_as_its_content_type(
+        self,
+    ):
+        permission = Permission.objects.get(
+            content_type__app_label="mvp_compliance", codename="skip_agreement"
+        )
+
+        assert permission.content_type == ContentType.objects.get_for_model(Document)
+
+    def test_a_user_holding_it_is_asked_for_it_by_the_name_the_middleware_uses(
+        self, user
+    ):
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type=ContentType.objects.get_for_model(Document),
+                codename="skip_agreement",
+            )
+        )
+
+        assert user.has_perm("mvp_compliance.skip_agreement")

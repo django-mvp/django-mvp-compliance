@@ -13,6 +13,8 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.http import HttpResponse
 from django.test import Client, modify_settings
@@ -532,3 +534,129 @@ class TestExemptUrls:
         served = [client.get("/elsewhere/"), client.get("/nowhere/")]
 
         assert not any(sent_to_the_page_that_asks(response) for response in served)
+
+
+@pytest.fixture
+def skip_agreement():
+    return Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(Document),
+        codename="skip_agreement",
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("check_on", "media_url_is_unset")
+class TestLetPast:
+    @pytest.fixture(params=["named", "permission", "group", "superuser"])
+    def let_past(self, request, client, version, settings):
+        """A signed-in user with ``version`` outstanding, let past in one way."""
+        user = UserFactory(is_superuser=request.param == "superuser")
+        if request.param == "named":
+            settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = [user.get_username()]
+        elif request.param == "permission":
+            user.user_permissions.add(request.getfixturevalue("skip_agreement"))
+        elif request.param == "group":
+            group = Group.objects.create(name="Support")
+            group.permissions.add(request.getfixturevalue("skip_agreement"))
+            user.groups.add(group)
+        client.force_login(user)
+        return user
+
+    def test_an_account_that_is_let_past_is_served(self, client, let_past):
+        assert Document.objects.enforced_outstanding_for(let_past).exists()
+
+        response = client.get("/elsewhere/")
+
+        assert response.status_code == 200
+        assert called == ["/elsewhere/"]
+
+    def test_being_let_past_records_nothing_and_changes_nothing_outstanding(
+        self, client, let_past
+    ):
+        outstanding = set(
+            Document.objects.enforced_outstanding_for(let_past).values_list("pk")
+        )
+        session = dict(client.session)
+
+        served = [client.get("/elsewhere/"), client.get("/elsewhere/")]
+
+        assert [response.status_code for response in served] == [200, 200]
+        assert not Acceptance.objects.exists()
+        assert (
+            set(Document.objects.enforced_outstanding_for(let_past).values_list("pk"))
+            == outstanding
+        )
+        assert dict(client.session) == session
+
+    def test_an_account_that_is_neither_named_nor_holds_the_permission_is_redirected(
+        self, client, stopped, settings
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["somebody.else"]
+
+        response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
+
+    def test_an_account_whose_permission_is_removed_is_redirected_on_its_next_request(
+        self, client, stopped, skip_agreement
+    ):
+        stopped.user_permissions.add(skip_agreement)
+        assert client.get("/elsewhere/").status_code == 200
+
+        stopped.user_permissions.remove(skip_agreement)
+        response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+
+    def test_a_name_that_matches_no_account_changes_nothing(
+        self, client, stopped, settings
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["deleted.account"]
+
+        response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+        assert called == []
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("check_on", "media_url_is_unset")
+class TestLetPastCost:
+    def test_a_named_account_costs_the_queries_it_costs_without_the_check(
+        self, client, version, settings
+    ):
+        user = UserFactory()
+        settings.MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = [user.get_username()]
+        address = reverse("mvp_compliance:document", args=[version.document.slug])
+        client.force_login(user)
+        plain = Client()
+        plain.force_login(user)
+
+        def requests_made(visitor):
+            visitor.get(address)
+            with CaptureQueriesContext(connection) as queries:
+                assert visitor.get(address).status_code == 200
+            return len(queries)
+
+        with modify_settings(MIDDLEWARE={"remove": MIDDLEWARE}):
+            without = requests_made(plain)
+        with_the_check = requests_made(client)
+
+        assert with_the_check == without
+
+    def test_a_user_with_nothing_enforced_outstanding_costs_no_permission_query(
+        self, client, db
+    ):
+        client.force_login(UserFactory())
+
+        def permission_queries():
+            with CaptureQueriesContext(connection) as queries:
+                assert client.get("/elsewhere/").status_code == 200
+            return [q["sql"] for q in queries if "permission" in q["sql"]]
+
+        on_the_request_that_checks = permission_queries()
+        on_the_request_after = permission_queries()
+
+        assert on_the_request_that_checks == []
+        assert on_the_request_after == []

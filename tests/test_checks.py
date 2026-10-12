@@ -46,7 +46,13 @@ class TestAgreementChecks:
 
 
 class TestListSettingChecks:
-    @pytest.mark.parametrize("setting", ["MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS"])
+    @pytest.mark.parametrize(
+        "setting",
+        [
+            "MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS",
+            "MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS",
+        ],
+    )
     def test_a_list_setting_given_as_a_string_is_an_error(self, setting):
         with override_settings(
             MIDDLEWARE=[SESSIONS, AUTHENTICATION, AGREEMENT], **{setting: "/help/"}
@@ -55,7 +61,13 @@ class TestListSettingChecks:
 
         assert "mvp_compliance.E003" in ids
 
-    @pytest.mark.parametrize("setting", ["MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS"])
+    @pytest.mark.parametrize(
+        "setting",
+        [
+            "MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS",
+            "MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS",
+        ],
+    )
     def test_a_list_setting_given_as_a_list_is_told_nothing(self, setting):
         with override_settings(
             MIDDLEWARE=[SESSIONS, AUTHENTICATION, AGREEMENT], **{setting: ["/help/"]}

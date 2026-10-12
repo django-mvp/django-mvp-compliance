@@ -399,8 +399,23 @@
       "tasks": [
         {
           "id": "T016",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestLetPast",
+              "tests/test_middleware.py::TestLetPastCost",
+              "tests/test_checks.py::TestListSettingChecks",
+              "tests/test_models.py::TestSkipAgreementPermission"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py::TestLetPast tests/test_middleware.py::TestLetPastCost tests/test_checks.py::TestListSettingChecks tests/test_models.py::TestSkipAgreementPermission -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:536",
+              "tests/test_models.py:2540"
+            ]
+          }
         },
         {
           "id": "T017",
