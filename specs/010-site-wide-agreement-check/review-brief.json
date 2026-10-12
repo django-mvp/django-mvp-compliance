@@ -1,0 +1,59 @@
+{
+  "role": "reviewer",
+  "stage": "S6",
+  "repo": "django-mvp/django-mvp-compliance",
+  "repo_dir": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+  "branch": "010-site-wide-agreement-check",
+  "feature": "010-site-wide-agreement-check",
+  "lenses": [
+    "correctness",
+    "spec-compliance",
+    "security"
+  ],
+  "required_skills": [
+    {
+      "name": "craft-review",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-review/SKILL.md",
+      "receipt": "craft-review/2026-09-28/e60c2a95"
+    },
+    {
+      "name": "craft-simplify",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-simplify/SKILL.md",
+      "receipt": "craft-simplify/2026-08-04/69038ce1"
+    },
+    {
+      "name": "craft-security",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-security/SKILL.md",
+      "receipt": "craft-security/2026-08-04/ea3d6742"
+    }
+  ],
+  "protocol": "/home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/review.md",
+  "diff": "git diff origin/main...HEAD  (head e83db67). Code under review: mvp_compliance/ (middleware.py, checks.py, apps.py, models.py, admin.py, views.py, migrations/0002_document_enforced.py), tests/, docs/, README.md, CHANGELOG.md, CONTEXT.md, demo/, and the edit to specs/009-asking-to-agree/spec.md. The specs/010-site-wide-agreement-check/ directory is the record of the work and is input, not subject.",
+  "inputs": [
+    "specs/010-site-wide-agreement-check/spec.md",
+    "specs/010-site-wide-agreement-check/plan.md",
+    "specs/010-site-wide-agreement-check/tasks.md",
+    "specs/010-site-wide-agreement-check/decisions.md",
+    "specs/010-site-wide-agreement-check/research.md",
+    "specs/009-asking-to-agree/spec.md",
+    "CONSTITUTION.md",
+    "CONTEXT.md",
+    "docs/contributing/standards/testing.md",
+    "docs/contributing/standards/code-documentation.md",
+    "docs/enforcement.md",
+    "docs/pages.md",
+    "docs/models.md",
+    "docs/authoring.md",
+    "docs/adr/0023-enforcement-is-set-on-the-document-and-a-new-document-is-enforced.md",
+    "docs/adr/0024-the-site-wide-check-is-a-middleware-and-is-off-until-a-project-lists-it.md",
+    "docs/adr/0025-the-check-remembers-only-that-a-user-is-clear-and-keeps-it-in-the-session.md"
+  ],
+  "resolved_packages": {
+    "django": "/home/sam/projects/django-mvp/django-mvp-compliance-010/.venv/lib/python3.13/site-packages/django",
+    "mvp": "/home/sam/projects/django-mvp/django-mvp-compliance-010/.venv/lib/python3.13/site-packages/mvp"
+  },
+  "output_schema": "/home/sam/.openclaw/workspaces/forge/engineering-org/kit/schemas/review-findings.schema.json",
+  "output_path": "/home/sam/projects/django-mvp/django-mvp-compliance-010/specs/010-site-wide-agreement-check/review-findings.json",
+  "context": "The feature adds a middleware that redirects a signed-in user with an enforced document outstanding to the page that asks (FS-009's AgreementView). Three templates/scripts from FS-009 were approved on screen and are unchanged here. Two pre-existing tests were changed on purpose and are not tampering: tests/test_views.py::TestAgreementDestination::test_a_page_with_only_optional_documents_is_still_shown was removed (tasks.md T001: it recorded the rule FR-030 replaces), and tests/test_models.py::TestDocument::test_document_holds_no_wording gained 'enforced' in its field list (T020). The design review's findings and what was done about each are in feature-state.json gates.design_review and decisions.md D18; do not re-raise one that was settled unless the code fails to do what the settlement says. Known and accepted: only htmx requests are recognised as partial requests (D16); a permission holder with something outstanding is checked on every request (D15); the middleware needs Django's sessions (spec Assumptions). Repo standards that reviews have missed before: no leading-underscore names; line length 88; no compatibility aliases; no test of text content or wording; no test of layout or appearance; settings read with getattr at the point of use; every user-facing string translatable; nothing may say 'compliant' or 'compliance' to a user or name a regulation; docs written for an outside contributor.",
+  "orchestrator_question": "Try to break these, each with a concrete request. (1) Bypass: any request by a stopped user that reaches a view outside the reachable set. Cover path tricks against is_reachable (double slashes, percent-encoding, a trailing-slash-less page address, APPEND_SLASH redirects, a path that resolves into the mvp_compliance namespace only via the catch-all slug route such as /legal/anything/, HEAD/OPTIONS, a forged HX-Request or HX-Boosted header), a stale or forged session value under mvp_compliance_clear_since (can a user write their own session? what about signed-cookie sessions), and the window after an enforced version is published. (2) Loop: any configuration or state in which a stopped user is redirected to the page and the page redirects them back (the page mounted at root, the demo's own route for the page, AgreementView.get() with next and only optional documents, a project that overrides is_optional). (3) The next parameter the middleware builds: is it always same-site and correctly encoded, and can it be made to carry the user off-site after agreeing? (4) Query cost: for a clear, remembered user, does the middleware add any query; for a named account; for a permission holder with nothing outstanding. Read the tests that claim each and say whether they would fail if the cost regressed. (5) The migration: applies from empty and from 0001 with rows; reverses; is exactly one new file. (6) Documentation pass per the protocol on docs/enforcement.md, docs/pages.md, docs/models.md, README.md, CHANGELOG.md: every example run against the branch, every setting name, default, permission codename and check id checked against the code. (7) Sweep every new or changed test for shapes that cannot fail, and give the count swept. (8) Spec coverage with counts: FR N of 33, SC N of 10."
+}
