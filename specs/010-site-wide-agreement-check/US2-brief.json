@@ -1,0 +1,103 @@
+{
+  "story": "US2",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 96,
+  "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-09-28/3f7d8b12"
+    }
+  ],
+  "tasks": [
+    "T002",
+    "T003",
+    "T004",
+    "T005"
+  ],
+  "context": {
+    "why": "The site-wide check needs to know which documents stop a person. This story adds Document.enforced (True unless chosen otherwise), the queryset method enforced_outstanding_for(), migration 0002, the admin column, the glossary entry and the seed change. No middleware and no view change: those are later stories.",
+    "environment": "uv. Run everything with `uv run ...` from the worktree root; the virtualenv is synced. Narrow scope per task, e.g. `uv run pytest tests/test_models.py::TestEnforcement -q`. Lint gate: `uv run pre-commit run --all-files` (never a bare ruff check). Catalog: `cd mvp_compliance && uv run django-admin makemessages -l en --no-obsolete`. Full verify, once, at the end: `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. The branch is 010-site-wide-agreement-check; commit on it directly, one commit per task with the task id in the subject. The commit identity is already bound: do not change git config.",
+    "spec_sections": [
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 User Story 2 - Deciding which documents stop a person",
+      "specs/010-site-wide-agreement-check/spec.md \u00a7 Requirements \u2014 FR-010 to FR-015, FR-024, FR-027"
+    ],
+    "plan_sections": [
+      "specs/010-site-wide-agreement-check/plan.md \u00a7 Design \u2192 Enforcement on the document (US-2)"
+    ],
+    "prior_decisions": [
+      "specs/010-site-wide-agreement-check/decisions.md D2",
+      "specs/010-site-wide-agreement-check/decisions.md D3"
+    ],
+    "glossary_terms": [
+      "Document",
+      "Notice",
+      "Version",
+      "Current",
+      "Acceptance",
+      "Outstanding",
+      "Enforcement"
+    ],
+    "acceptance": [
+      "Every clause of your tasks' rows in specs/010-site-wide-agreement-check/tasks.md is met, each test written first and seen to fail for the right reason",
+      "Full verify green: lint, typecheck, test, build, conformance, docs",
+      "makemessages leaves the catalog clean",
+      "makemigrations --check is clean",
+      "docs/ pages named in your tasks are true for the branch as it stands"
+    ],
+    "conventions": [
+      "Design review: TestEnforcedColumn is marked django_db(transaction=True), drives MigrationExecutor, and migrates to the latest again in a fixture's teardown; SQLite's schema editor refuses to run inside a transaction. Write the published version through the historical model with the fields its constraints need: a historical model has no publish()",
+      "Design review: the admin test asserts a field-enforced cell on each document's row and that an enforced and an unenforced document's cells differ; do not assert list_display itself or a query count",
+      "The migration is exactly one new file, 0002, with AddField(default=True). No RunPython",
+      "outstanding_for() is not changed",
+      "Repo standards that reviews have missed before: no leading-underscore names anywhere (functions, methods, attributes, modules, constants); line length 88; no compatibility aliases; no test of text content or wording; no test of layout or appearance",
+      "A mechanism an experienced Django developer would recognise beats a clever one: no dataclass, registry or settings object where a plain getattr(settings, NAME, default) at the point of use does",
+      "Settings are read with getattr at the point of use, as views.py reads MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL",
+      "Every user-facing string is wrapped for translation and none says 'compliant', 'compliance' or names a regulation",
+      "Every model field carries verbose_name and help_text",
+      "Docstrings follow docs/contributing/standards/code-documentation.md; tests follow docs/contributing/standards/testing.md",
+      "Text for GitHub and docs is written for an outside contributor: plain words, no mention of agents, stages or tooling"
+    ],
+    "verified_base": {
+      "commit": "54722a5e19af4e652b9bb71207f9cbf1cc2a1fc3",
+      "at": "2026-10-12T10:48:37Z",
+      "steps": [
+        "lint",
+        "typecheck",
+        "test",
+        "build",
+        "conformance",
+        "docs"
+      ]
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 75
+  },
+  "rituals": [
+    "Read /home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/implement-story.md in full and follow it",
+    "Load every required skill by reading its path; copy each RECEIPT line verbatim",
+    "Read this brief fully",
+    "Read only your tasks' rows in specs/010-site-wide-agreement-check/tasks.md",
+    "Read the plan.md sections named here",
+    "git log --oneline -10; confirm HEAD is the verified_base commit"
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story",
+    "Never touch files outside this story's tasks",
+    "Never edit mvp_compliance/templates/mvp_compliance/agreement.html, mvp_compliance/templates/cotton/compliance/outstanding.html or mvp_compliance/static/mvp_compliance/agreement.js",
+    "Never write feature-state.json by hand; record each finished task with forge ledger-task --stage S4 --path <worktree>",
+    "Never push, merge, or run gh; you have no tokens",
+    "Never touch .github/ or cut a release",
+    "Never weaken an assertion, add skip or xfail, or special-case code to pass a test",
+    "Never add a dependency",
+    "Never start with a required skill unloaded, and never write a receipt you did not read from a file"
+  ]
+}
