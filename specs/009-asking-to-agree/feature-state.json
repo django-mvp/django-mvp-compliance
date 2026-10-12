@@ -326,7 +326,7 @@
       "priority": "P3",
       "issue": 94,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -353,8 +353,22 @@
         },
         {
           "id": "T014",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_models.py::TestReservedSlug",
+              "tests/test_admin.py",
+              "tests/test_views.py::TestAgreementInAProject"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main (all six steps green after the triage of one FS-008 test, decisions.md D24)",
+              "uv run python manage.py makemigrations --check --dry-run (No changes detected)"
+            ],
+            "code": [
+              "mvp_compliance/models.py:181"
+            ]
+          }
         }
       ]
     }
@@ -373,7 +387,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 21.33,
+      "used": 24.05,
       "max": 120
     }
   },
