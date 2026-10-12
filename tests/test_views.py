@@ -1668,6 +1668,19 @@ class TestAgreement:
             assert toggle["aria-describedby"] in page.ids
         assert static("mvp_compliance/agreement.js") in response.content.decode()
 
+    def test_a_document_created_under_the_slug_agree_does_not_take_the_address(
+        self, signed_in
+    ):
+        document = DocumentFactory(slug="agree")
+        published(document)
+
+        response = signed_in.get(agreement_address())
+
+        assert response.status_code == 200
+        assert response.templates[0].name == "mvp_compliance/agreement.html"
+        (entry,) = response.context["entries"]
+        assert entry["document"] == document
+
 
 @pytest.mark.django_db
 class TestAgreementNotRecorded:
@@ -2304,6 +2317,80 @@ class TestAgreementDestination:
 
         assert self.carried(opened) == self.default
         assert sent["Location"] == self.default
+
+
+@pytest.mark.django_db
+class TestAgreementInAProject:
+    """US-5 scenarios 1 to 3, FR-020, FR-021: the page belongs to the project's shell,
+    its template can be replaced, and a project that mounts no package page is
+    unaffected."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @pytest.fixture
+    def project_templates(self, settings):
+        """Point the template loaders at a directory of project templates first."""
+        templates = [dict(engine) for engine in settings.TEMPLATES]
+        templates[0]["DIRS"] = [PROJECT_TEMPLATES]
+        settings.TEMPLATES = templates
+
+    @staticmethod
+    def submission(response):
+        """What a browser sends from the page: every field, every toggle on."""
+        data: dict[str, list[str]] = {}
+        for field in controls(response).inputs:
+            if "name" in field:
+                data.setdefault(field["name"], []).append(field.get("value", ""))
+        return data
+
+    def test_the_page_renders_in_the_shell_with_no_project_template(self, signed_in):
+        published(DocumentFactory())
+
+        response = signed_in.get(agreement_address())
+
+        names = [template.name for template in response.templates]
+        assert names[0] == "mvp_compliance/agreement.html"
+        assert "page_view.html" in names
+        assert "mvp/base.html" in names
+
+    def test_the_page_renders_the_project_template(self, signed_in, project_templates):
+        document = DocumentFactory()
+        published(document)
+
+        response = signed_in.get(agreement_address())
+
+        assert "project-agreement-page" in controls(response).ids
+        (entry,) = response.context["entries"]
+        assert entry["document"] == document
+
+    def test_a_submission_from_the_project_template_records_and_goes_on(
+        self, signed_in, project_templates, user
+    ):
+        version = published(DocumentFactory())
+        opened = signed_in.get(agreement_address("/dashboard/"))
+
+        response = signed_in.post(agreement_address(), self.submission(opened))
+
+        assert response.status_code == 302
+        assert response["Location"] == "/dashboard/"
+        acceptance = Acceptance.objects.get()
+        assert acceptance.version == version
+        assert acceptance.subject == Acceptance.subject_of(user)
+
+    @pytest.mark.urls("tests.urls_mvp_only")
+    def test_a_project_mounting_only_django_mvp_passes_the_system_checks(self):
+        call_command("check")
+
+    @pytest.mark.urls("tests.urls_mvp_only")
+    def test_a_project_mounting_only_django_mvp_still_records_from_code(self, user):
+        version = published(DocumentFactory())
+
+        Acceptance.objects.record(user, version)
+
+        assert Acceptance.objects.get().version == version
 
 
 @pytest.mark.django_db

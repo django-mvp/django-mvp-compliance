@@ -947,6 +947,20 @@ class TestDocumentSlugInTheAdmin:
         assert "slug" in response.context["adminform"].form.errors
         assert not Document.objects.filter(slug="agreed").exists()
 
+    def test_the_add_form_refuses_the_slug_of_the_page_that_asks(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.post(
+            reverse("admin:mvp_compliance_document_add"),
+            {"name": "Agree", "slug": "agree", "kind": "agreed"},
+        )
+
+        assert response.status_code == 200
+        assert "slug" in response.context["adminform"].form.errors
+        assert not Document.objects.filter(slug="agree").exists()
+
 
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
