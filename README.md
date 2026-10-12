@@ -50,8 +50,10 @@ version a person saw.
 - Notices, documents such as an impressum that are published to be read and never
   accepted: a notice has a page like any other document, is never outstanding, and
   refuses an acceptance.
-- Enforcement, so a user who has not accepted the current version is asked to
-  before continuing.
+- Enforcement, so a signed-in user who has not accepted the current version of an
+  enforced document is sent to the page that asks, from any address on the site,
+  by one middleware. Each document is enforced or not, and a project that does
+  not add the middleware sends nobody anywhere.
 - Translations, so a reader sees a document in their own language.
 - Cookie consent, gathered and recorded alongside everything else.
 - A page in the account area where a signed-in person sees each document they
@@ -160,6 +162,28 @@ INSTALLED_APPS = [
 ```bash
 python manage.py migrate
 ```
+
+To stop a signed-in person who has not accepted an enforced document from using the
+site, mount the package's addresses and list the middleware after
+`AuthenticationMiddleware`:
+
+```python
+# urls.py
+urlpatterns = [
+    path("legal/", include("mvp_compliance.urls")),
+]
+
+# settings.py
+MIDDLEWARE = [
+    # ... SessionMiddleware, then AuthenticationMiddleware ...
+    "mvp_compliance.middleware.AgreementMiddleware",
+]
+```
+
+Nothing is checked until it is listed. See
+[docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md)
+for what stays reachable, what a form submission and a request for part of a page
+receive, the delay, and the two system checks that report a middleware that cannot work.
 
 ## Models
 
@@ -413,6 +437,9 @@ opened for writing, and the model would refuse it if anything tried.
 
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.
+- [docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md) — switching the check on for the whole site: where the
+  middleware goes, what stays reachable, form submissions and requests for part of a
+  page, the delay, and the system checks.
 - [docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md) — serving a document as a page of your site: mounting the
   addresses, linking to a document, what a visitor sees, the page that asks a
   person to agree, and the page where a signed-in person sees what they agreed to.

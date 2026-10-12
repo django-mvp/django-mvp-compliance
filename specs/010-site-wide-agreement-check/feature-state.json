@@ -148,8 +148,22 @@
         },
         {
           "id": "T010",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck",
+              "tests/test_checks.py::TestAgreementChecks"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main --steps docs",
+              "DJANGO_SETTINGS_MODULE=demo.settings uv run django-admin check"
+            ],
+            "code": [
+              "docs/enforcement.md:1",
+              "demo/settings.py:49"
+            ]
+          }
         }
       ]
     },

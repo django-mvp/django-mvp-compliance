@@ -207,9 +207,11 @@ address, `next` included, to come back to. A submission needs Django's CSRF toke
 applies the protection itself, so a project without `CsrfViewMiddleware` refuses a forged
 submission all the same.
 
-**What it does not do.** It stops nobody. A person is free to leave the page, and leaving
-records nothing. Nothing in the package links to the page or sends anyone there: when a person
-is sent to it, and which documents hold them up, is a decision for the project.
+**What it does not do.** The page itself stops nobody. A person is free to leave it, and leaving
+records nothing. Nothing in the package links to it. A person is sent to it from any address on
+the site only when the project lists the middleware described in
+[Enforcement](enforcement.md); without it, when a person is sent to it, and which documents hold
+them up, is a decision for the project.
 
 ## Sending a person to the page
 

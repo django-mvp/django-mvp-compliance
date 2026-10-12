@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `mvp_compliance.middleware.AgreementMiddleware`, which switches the agreement check on for the
+  whole site. Listed in `MIDDLEWARE` after `AuthenticationMiddleware`, it sends a signed-in person
+  who has not accepted the current version of an enforced document to the page that asks, from any
+  address, with the address they wanted as `next`. A visitor who is not signed in is never touched,
+  and nothing happens until the middleware is listed. The page that asks, the package's own pages,
+  the sign-out addresses `account_logout`, `logout` and `admin:logout`, and files beneath
+  `STATIC_URL` and `MEDIA_URL` stay reachable with no configuration. A submission is redirected
+  with no `next`, and an htmx request is answered with an `HX-Redirect` header so the page loads
+  whole. A person found to have nothing outstanding is not asked about again for sixty seconds.
+  See [docs/enforcement.md](docs/enforcement.md).
+- System checks `mvp_compliance.E001`, when the middleware is listed and the page that asks has no
+  address, and `mvp_compliance.E002`, when nothing that identifies the signed-in user comes before
+  it.
 - `Document.enforced`, which says whether a person who has not accepted a document can be stopped
   until they do. A document created without a choice is enforced, and so is every document that
   existed before the migration. It is changed with an ordinary save or update at any time and
