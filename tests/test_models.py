@@ -241,7 +241,7 @@ class TestReservedSlug:
 
         assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
 
-    @pytest.mark.parametrize("slug", ["agreed-terms", "agree", "not-agreed"])
+    @pytest.mark.parametrize("slug", ["agreed-terms", "agree-to-terms", "not-agreed"])
     def test_a_slug_that_only_contains_the_reserved_one_is_valid(self, slug):
         Document(name="Terms", slug=slug).full_clean()
 

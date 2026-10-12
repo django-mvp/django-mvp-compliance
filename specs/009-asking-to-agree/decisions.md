@@ -338,3 +338,14 @@ in triage.
 **Why defensible**: the test still fails if a notice or a draft is listed, which is what it is
 for. It was written before the redirect existed and relied on a state the specification says is
 never drawn.
+
+## D24 — One FS-008 slug test lost the case this feature reverses
+
+**Ambiguous**: an FS-008 test lists slugs that merely resemble the reserved one and must stay
+valid. One of them was `agree`, which this feature reserves.
+
+**Chosen**: that case became `agree-to-terms`. The implementer of US-5 reported the conflict and
+left the test alone; the edit was made in triage.
+
+**Why defensible**: the test's subject is that a slug containing a reserved one is not itself
+refused, and it still says so for both reserved slugs. Refusing `agree` is asserted by a new test.
