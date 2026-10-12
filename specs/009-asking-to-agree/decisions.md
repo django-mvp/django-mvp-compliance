@@ -192,3 +192,36 @@ no appearance, and the last assumption in `spec.md` says so.
 no test can assert. FS-008 went the same way, and its prototype changed the specification.
 
 **Revisit if**: never for this feature.
+
+## D14 — The page lists the documents and links to their wording
+
+**Ambiguous**: the request says a person "should be shown that version in full". The first
+prototype put each document's wording on the page, in a scrolling region when several were
+outstanding.
+
+**Chosen**: the maintainer ruled, on the prototype, that the page does not show documents in full.
+Each outstanding document is one entry: its name, its version, a link to that version's own page
+and the request to agree. FR-002, FR-005, SC-003 and the scenarios that spoke of wording on the
+page were rewritten to say so.
+
+**Why defensible**: it is the maintainer's ruling on the screen he was asked to judge. Every
+published version already has a page that serves its stored wording, so nothing has to be
+rendered twice, and the link names the exact version the acceptance will point at. The record
+still says which version a person agreed to. It does not say they read it, and it never did: a
+scrolling region proved no more.
+
+**Revisit if**: a project needs evidence that the wording was opened before the agreement was
+given. That would be new tracking and new personal data, and would need its own decision.
+
+## D15 — "Required" and "optional" are the two words for the two kinds
+
+**Ambiguous**: the review used both "required" and "mandatory" for a document a person cannot
+continue without.
+
+**Chosen**: "required" and "optional", everywhere on the page.
+
+**Why defensible**: one word per meaning is what a translator needs, and the alert the review
+dictated already says "required". Which documents are required is the site-wide check's to decide
+(#87). The prototype fakes it.
+
+**Revisit if**: the maintainer meant "mandatory" to be the term.

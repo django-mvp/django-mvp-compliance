@@ -1,39 +1,27 @@
-{# @description One outstanding document on the page that asks: its name, the version in force, the wording stored at publication, and the box that agrees to it. #}
+{# @description One outstanding document as a row of the list on the page that asks: its name, whether it is required, its version in force with a link to it, and the toggle that agrees to it. #}
 {# @prop document:object | description:"The outstanding document." #}
-{# @prop version:object | description:"Its version in force, the one the box agrees to." #}
-{# @prop previous:object | description:"The reader's latest acceptance of an earlier version, when there is one." #}
-{# @prop field:object | description:"The attributes of the box: name, value, id, and checked when it was ticked." #}
+{# @prop version:object | description:"Its version in force, the one the toggle agrees to and the link opens." #}
+{# @prop field:object | description:"The attributes of the toggle: name, value, id, and checked when it was on." #}
 {# @prop optional:boolean | description:"The reader may continue without agreeing to this document." #}
-{# @prop capped:boolean | description:"Hold the wording in a region that scrolls, for a page with several documents." #}
 {% load i18n %}
-<c-vars document version previous field optional capped />
-<c-card title="{{ document.name }}">
-  <input type="hidden" name="shown" value="{{ version.pk }}" />
-  <p class="text-sm opacity-70">
-    {% blocktranslate with number=version.number date=version.published_at|date %}Version {{ number }}, in force since {{ date }}.{% endblocktranslate %}
-    {% if previous %}
-      {% blocktranslate with number=previous.version.number date=previous.accepted_at|date %}You agreed to version {{ number }} on {{ date }}.{% endblocktranslate %}
-    {% endif %}
-    <a class="link"
-       href="{% url 'mvp_compliance:document' document.slug %}"
-       target="_blank"
-       rel="noopener">{% translate "Open it on its own page" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
-  </p>
-  {% if optional %}
-    <p class="text-sm">{% translate "Agreeing to this document is optional. You can continue without it and agree later." %}</p>
-  {% endif %}
-  {% if capped %}
-    {# Focusable, so a keyboard reaches the wording and can scroll it. #}
-    <div class="mvp-compliance-wording overflow-y-auto rounded-box border border-base-300 p-4"
-         role="region"
-         tabindex="0"
-         aria-label="{% blocktranslate with name=document.name %}Wording of {{ name }}{% endblocktranslate %}">
-      <div class="prose max-w-none">{{ version.html|safe }}</div>
+<c-vars document version field optional />
+<li class="list-row items-center">
+  <input type="hidden" name="listed" value="{{ version.pk }}" />
+  <div class="list-col-grow flex flex-col gap-1">
+    <div id="document-{{ document.slug }}" class="font-semibold">{{ document.name }}</div>
+    <div class="text-sm opacity-70">
+      {% if optional %}
+        {% translate "Optional" %}
+      {% else %}
+        {% translate "Required" %}
+      {% endif %}
+      · {% blocktranslate with number=version.number %}Version {{ number }}{% endblocktranslate %}
     </div>
-  {% else %}
-    <div class="prose max-w-none">{{ version.html|safe }}</div>
-  {% endif %}
-  <c-form.field type="checkbox" class="checkbox-primary" :attrs="field">
-    <span class="text-wrap text-base-content">{% if optional %}{% blocktranslate with name=document.name number=version.number %}I agree to {{ name }}, version {{ number }} (optional){% endblocktranslate %}{% else %}{% blocktranslate with name=document.name number=version.number %}I agree to {{ name }}, version {{ number }}{% endblocktranslate %}{% endif %}</span>
-  </c-form.field>
-</c-card>
+    <a class="link text-sm w-fit"
+       href="{% url 'mvp_compliance:document' document.slug %}?version={{ version.number }}"
+       target="_blank"
+       rel="noopener"
+       aria-describedby="document-{{ document.slug }}">{% translate "View document in full" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+  </div>
+  <c-form.field type="toggle" class="toggle-primary" label="{% translate "I agree" %}" :attrs="field" />
+</li>

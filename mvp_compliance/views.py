@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy, ngettext
+from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
@@ -196,10 +196,11 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
 class AgreementView(LoginRequiredMixin, MVPTemplateView):
     """The page that asks a signed-in person to agree to what is outstanding.
 
-    Shows the version in force of every document outstanding for them, takes
-    one answer per document in a single submission, and sends them on to
-    ``?next=`` once the stored acceptances leave nothing outstanding. A person
-    with nothing outstanding is sent on without being shown the page.
+    Lists every document outstanding for them, each with a link to its version
+    in force, takes one answer per document in a single submission, and sends
+    them on to ``?next=`` once the stored acceptances leave nothing required
+    outstanding. A person with nothing outstanding is sent on without being
+    shown the page.
 
     A prototype: written to make the page real, with no tests.
     """
@@ -213,22 +214,12 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         return [{"text": self.page_title}]
 
     def get_page_subtitle(self):
-        entries = self.get_entries()
-        if all(entry["optional"] for entry in entries):
-            return ngettext(
-                "This document is new or has changed since you last agreed. "
-                "Agreeing to it is optional, and you can continue without it.",
-                "These documents are new or have changed since you last agreed. "
-                "Agreeing to them is optional, and you can continue without them.",
-                len(entries),
+        if any(not entry["optional"] for entry in self.get_entries()):
+            return _(
+                "You will not be able to use the app without agreeing to all "
+                "required documents."
             )
-        return ngettext(
-            "This document is new or has changed since you last agreed. "
-            "Read it, then tick the box beneath it.",
-            "These documents are new or have changed since you last agreed. "
-            "Read each one, then tick the box beneath it.",
-            len(self.get_entries()),
-        )
+        return _("Agreeing is optional.")
 
     def get_destination(self) -> str:
         """The address to send the person on to: ``next`` when it stays on this site."""
@@ -247,25 +238,18 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         return destination
 
     def get_entries(self) -> list[dict]:
-        """One entry per outstanding document, in the order the document pages use.
+        """One entry per outstanding document, required ones first.
 
-        Each carries the ``document``, the ``version`` in force, and
-        ``previous``: the person's latest acceptance of an earlier version of
-        it, or ``None``. Read once per request.
+        Each carries the ``document``, the ``version`` in force and whether
+        it is ``optional``. Within each kind the order is the one the document
+        pages use. Read once per request.
         """
         if not hasattr(self, "entries"):
-            user = self.request.user
             documents = (
-                Document.objects.outstanding_for(user).in_force().order_by("name")
+                Document.objects.outstanding_for(self.request.user)
+                .in_force()
+                .order_by("name")
             )
-            previous: dict[int, Acceptance] = {}
-            for acceptance in (
-                Acceptance.objects.for_person(user)
-                .filter(version__document__in=documents)
-                .select_related("version")
-                .order_by("accepted_at")
-            ):
-                previous[acceptance.version.document_id] = acceptance
             # Faked: enforcement per document does not exist yet. The demo names
             # the documents a person may leave outstanding in a setting, so the
             # page can be looked at with both kinds on it.
@@ -274,12 +258,10 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
                 {
                     "document": document,
                     "version": document.current_versions[0],
-                    "previous": previous.get(document.pk),
                     "optional": document.slug in optional,
                 }
                 for document in documents
             ]
-            # The ones that hold a person up first, then the ones that do not.
             self.entries = sorted(entries, key=lambda entry: entry["optional"])
         return self.entries
 
@@ -290,20 +272,15 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
 
     def post(self, request, *args, **kwargs):
         ticked = set(request.POST.getlist("agree"))
-        shown = set(request.POST.getlist("shown"))
+        listed = set(request.POST.getlist("listed"))
         asked = self.get_entries()
         agreed = [entry for entry in asked if str(entry["version"].pk) in ticked]
         notices: dict = {
             "ticked": ticked,
-            # Shown a version that has been replaced since: nothing is
+            # Listed a version that has been replaced since: nothing is
             # recorded for it, and the page says why it is back.
-            "replaced": [
-                entry["document"]
-                for entry in asked
-                if str(entry["version"].pk) not in shown
-            ]
-            if shown
-            else [],
+            "changed": bool(listed)
+            and any(str(entry["version"].pk) not in listed for entry in asked),
         }
         if agreed:
             try:
@@ -320,9 +297,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         del self.entries
         if all(entry["optional"] for entry in self.get_entries()):
             return HttpResponseRedirect(self.get_destination())
-        if not agreed and not notices["replaced"]:
-            notices["nothing_ticked"] = True
-        notices["recorded"] = [entry["document"] for entry in agreed]
+        notices["missing"] = not notices["changed"]
         return self.render_to_response(self.get_context_data(**notices))
 
     def get_context_data(self, **kwargs):
@@ -330,17 +305,21 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         ticked = kwargs.get("ticked", set())
         entries = self.get_entries()
         for entry in entries:
+            slug = entry["document"].slug
             entry["field"] = {
                 "name": "agree",
                 "value": entry["version"].pk,
-                "id": f"agree-{entry['document'].slug}",
+                "id": f"agree-{slug}",
+                # The label reads "I agree" for every document, so the name
+                # reaches assistive technology from the row.
+                "aria-describedby": f"document-{slug}",
             }
+            if not entry["optional"]:
+                entry["field"]["data-required"] = True
             if str(entry["version"].pk) in ticked:
                 entry["field"]["checked"] = True
         context["entries"] = entries
-        context["capped"] = len(entries) > 1
         context["required_count"] = sum(not entry["optional"] for entry in entries)
-        context["optional_count"] = sum(entry["optional"] for entry in entries)
         context["destination"] = self.get_destination()
         context["redirect_field_name"] = self.redirect_field_name
         return context

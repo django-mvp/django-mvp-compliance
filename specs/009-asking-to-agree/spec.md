@@ -19,10 +19,11 @@ send a person to this page from their own code and have them returned to where t
 
 ## Scope
 
-The package adds one page. It shows a signed-in user the current version of every document that is
-outstanding for them, in full, and asks them to agree to each. One submission records an acceptance
-of each version they agreed to. Once nothing is outstanding for them, they are sent on to the
-address they were heading for.
+The package adds one page. It lists every document that is outstanding for a signed-in user. Each
+entry names the document and its current version, links to that version's own page, where the
+wording is read in full, and asks the user to agree. The page does not carry the wording itself.
+One submission records an acceptance of each version they agreed to. Once nothing is outstanding
+for them, they are sent on to the address they were heading for.
 
 The page decides whether to let a person through by reading the stored acceptances, and never from
 what the person submitted. When a submission could not be recorded, the person stays on the page
@@ -53,21 +54,22 @@ Some things stay out of this feature:
 
 A person signed up to a site and accepted its terms. The site has since published a new version.
 While they are heading for their dashboard, the site sends them to the page that asks. They see the
-new version of the terms in full, inside the site they were already using. They say they agree and
-submit. The acceptance is recorded, and they arrive at the dashboard they were heading for.
+terms listed with their new version, inside the site they were already using, and open the link
+beside it to read that version in full. They say they agree and submit. The acceptance is recorded, and they arrive at the dashboard they were heading for.
 
 **Why this priority**: It is the feature. Everything else in the package records and reports, and
 this is the one place a person is asked.
 
 **Independent Test**: Publish a document people agree to. Signed in as a user who has not accepted
-its current version, open the page with a destination, check the stored wording of the current
-version is on the page, submit agreement, and check that one acceptance of that version exists for
+its current version, open the page with a destination, check the document is listed with a link
+that leads to the page of its current version, submit agreement, and check that one acceptance of that version exists for
 that user and that the response leads to the destination.
 
 **Acceptance Scenarios**:
 
 1. **Given** a signed-in user with one outstanding document, **When** they open the page, **Then**
-   it shows that document's current version in full, as the wording stored at publication.
+   it lists that document with its current version and a link that leads to the page of that
+   exact version.
 2. **Given** that page, **When** the user agrees and submits, **Then** an acceptance of the version
    they were shown is recorded for them, and they are sent to the address they were heading for.
 3. **Given** a user who has opened the page and submitted nothing, **When** the records are read,
@@ -129,8 +131,8 @@ the person is sent on.
 ### User Story 3 - Dealing with several outstanding documents in one sitting (Priority: P2)
 
 A site publishes new versions of its terms and its privacy policy in the same week. A person who
-signs in next is sent to the page once. Both documents are there, each readable in full, and each
-with its own request to agree. They agree to both and submit once. Two acceptances are recorded,
+signs in next is sent to the page once. Both documents are listed, each with a link to its current
+version and its own request to agree. They agree to both and submit once. Two acceptances are recorded,
 one for each version, and they carry on.
 
 **Why this priority**: Without it a person with three outstanding documents is sent round three
@@ -145,7 +147,7 @@ acceptances and the page again with the third.
 **Acceptance Scenarios**:
 
 1. **Given** a user with three outstanding documents, **When** they open the page, **Then** all
-   three are on it, each with its current version readable in full, and each asked about
+   three are listed, each with a link to the page of its current version, and each asked about
    separately.
 2. **Given** that page, **When** the user agrees to all three and submits once, **Then** three
    acceptances are recorded, one per version, and they are sent to their destination.
@@ -267,16 +269,19 @@ that agreeing still records an acceptance and returns the person.
 - **FR-001**: The package MUST provide a page that shows a signed-in user every document that is
   outstanding for them, as FS-003 and FS-007 define outstanding, and no other document. *(US-1,
   US-3)*
-- **FR-002**: For each document shown, the page MUST present its current version in full, serving
-  the HTML stored at publication. *(US-1)*
+- **FR-002**: For each document listed, the page MUST name its current version and link to the
+  page that serves that exact version, where the wording is read in full. The page itself MUST NOT
+  carry the wording. *(US-1)*
 - **FR-003**: The page MUST ask the user to agree to each document shown separately, and MUST take
   all of their answers in one submission. *(US-1, US-3)*
 - **FR-004**: A submission MUST record one acceptance for each version the user agreed to, through
   the recording FS-003 provides, so that everything FS-003 guarantees about an acceptance holds
   for one recorded here. *(US-1, US-3)*
-- **FR-005**: An acceptance MUST be recorded only for a version the user was shown on the page, and
-  only while that version is still the current version of a document outstanding for them. A
-  submission MUST NOT be able to record an acceptance of any other version. *(US-1, US-3)*
+- **FR-005**: An acceptance MUST be recorded only for a version the page listed and linked to for
+  that user, and only while that version is still the current version of a document outstanding
+  for them. The version a person is taken to have been shown is the one the link pointed at.
+  Whether they opened the link is not tracked. A submission MUST NOT be able to record an
+  acceptance of any other version. *(US-1, US-3)*
 - **FR-006**: Opening the page MUST record nothing. Only a submission in which the user agreed
   records an acceptance, and a submission in which they agreed to nothing records none. *(US-1)*
 - **FR-007**: A visitor who is not signed in MUST be sent to sign in and MUST be returned to the
@@ -330,8 +335,8 @@ that agreeing still records an acceptance and returns the person.
 
 - **Acceptance** (FS-003): unchanged. This feature is the first thing in the package that records
   one on a person's own action. It records through FS-003 and adds no field.
-- **Version** (FS-001, FS-006): unchanged, and read only. The page serves the current version's
-  stored HTML, and an acceptance recorded here points at the version that was shown.
+- **Version** (FS-001, FS-006): unchanged, and read only. The page links to the current
+  version's own page, and an acceptance recorded here points at the version that link led to.
 - **Document** (FS-001, FS-007): unchanged, apart from one more slug that cannot be taken. Whether
   a document is outstanding for a user is answered as FS-003 answers it.
 - **Destination**: the address a user is returned to once nothing is outstanding. It travels with
@@ -345,8 +350,8 @@ that agreeing still records an acceptance and returns the person.
   document that was outstanding for them when they arrived. No user is sent on without one.
 - **SC-002**: When storing an acceptance fails, the user is shown the page again every time, and
   no acceptance from that submission exists.
-- **SC-003**: Every acceptance recorded through the page points at a version whose wording was on
-  the page the user submitted from.
+- **SC-003**: Every acceptance recorded through the page points at a version that the page the
+  user submitted from listed and linked to.
 - **SC-004**: A user with several outstanding documents clears all of them with one submission and
   is redirected once.
 - **SC-005**: A user who agrees to everything arrives at the address they were heading for when
@@ -377,9 +382,13 @@ that agreeing still records an acceptance and returns the person.
   one true thing, that nothing was recorded, and submitting again is harmless because FS-003 keeps
   one record per person and version.
 - **Q**: A new version is published while a person is reading the old one. Which is recorded? →
-  **A**: Neither (FR-005). They never saw the new one, so an acceptance of it would be false. The
+  **A**: Neither (FR-005). The page never offered them the new one, so an acceptance of it would be false. The
   old one is no longer in force, so recording it would not settle anything and they would be asked
   again regardless. They are shown the page again with the version now in force.
+- **Q**: Does the page carry each document's wording, or link to it? → **A**: It links (FR-002).
+  Review of the prototype found the wording of several documents too much for one page. Each
+  version already has a page of its own, and the link leads to the exact version the acceptance
+  will name. Whether the link was opened is not tracked (FR-005).
 - **Q**: Where does a person go when no destination was given, or the one given cannot be used? →
   **A**: To a default the project can set, with one supplied by the package that works when
   nothing is set (FR-016, FR-017). A destination on another site is never followed, because the
@@ -405,5 +414,5 @@ that agreeing still records an acceptance and returns the person.
 - "Outstanding" is used here as CONTEXT.md already uses it under *Notice* and *Enforcement*. It
   has no entry of its own in the glossary, and one should be added when this feature is built.
 - How the page is laid out is settled on a prototype reviewed on screen before the implementation
-  is planned: how several documents are arranged, where the request to agree sits beside a long
-  document, and how a failure is announced. No requirement here fixes wording or appearance.
+  is planned: how several documents are arranged, where the request to agree sits beside each
+  one, and how a failure is announced. No requirement here fixes wording or appearance.
