@@ -43,11 +43,16 @@ returns. A test asserts the two sets are the same (FR-015).
 
 ## Where "nothing stops this user" is remembered
 
-In the session, as the time until which the finding holds.
+In the session, as the time the finding was made, a POSIX timestamp. A number, because the default
+session serializer is plain JSON and refuses a `datetime` (`django/core/signing.py:164`). The time
+it was made and not the time it expires, so a project that shortens the delay is not held to
+findings stored under the longer one.
 
-- The specification assumes Django's sessions (Assumptions), and
-  `AuthenticationMiddleware` has already loaded the session to find the user, so reading one more
-  key costs no query.
+- The specification assumes Django's sessions (Assumptions). The check reads `request.user`, which
+  loads the session and the user row the first time anything in the request asks for it
+  (`django/contrib/auth/middleware.py:41`, `django/contrib/auth/__init__.py:278`), exactly as any
+  page that shows the user does. Reading one more key after that costs no query. A view that never
+  touches the user or the session now has both read for it, and the documentation says so.
 - Writing the key marks the session modified, so it is saved once, on the request that ran the
   check. That is the one request per delay SC-004 allows a query on.
 - `django.contrib.auth.login()` flushes a session that belonged to a different user
@@ -64,8 +69,8 @@ asked about on every request, so an acceptance lets them through on the very nex
 
 A name in the settings is compared with `user.get_username()` and costs nothing.
 
-`user.has_perm()` reads the account's permissions from the database on first use in a request
-(`django/contrib/auth/backends.py:174`). The check therefore asks it last, and only of a user the
+`user.has_perm()` reads the account's permissions from the database on first use in a request and
+keeps them for that request only (`django/contrib/auth/backends.py:174-178`). The check therefore asks it last, and only of a user the
 outstanding query has just said would be stopped. A user with nothing enforced outstanding is never
 asked, which is what US-5 scenario 6 and FR-021 require. A permission holder who does have
 something outstanding costs the outstanding query and the permission read on each request until
@@ -94,7 +99,10 @@ anybody else.
   and the admin registers `admin:logout`. A project that signs people out anywhere else lists the
   address (spec, Edge Cases).
 - **Static and media files**: `STATIC_URL` and `MEDIA_URL` when they are paths on this site. A
-  value that names another host never reaches the application.
+  value that names another host never reaches the application. Django returns an unset `MEDIA_URL`
+  as the script prefix, `/` in most projects (`django/conf/__init__.py:220-232`), and this
+  repository's test and demo settings leave it unset, so a value equal to the site root has to
+  cover nothing or the check would stop nobody.
 - **The project's list**: each entry covers itself and what is beneath it, compared a path segment
   at a time, so `/help/` covers `/help/faq/` and not `/helpful/` (US-4 scenario 4).
 
@@ -102,16 +110,20 @@ anybody else.
 
 django-mvp 0.25.1 ships an optional `HtmxFormMixin` (`mvp/views/htmx.py`) and loads no htmx of
 its own. A project that uses it makes htmx requests, which carry the header `HX-Request: true`.
-htmx follows a 3xx itself and swaps whatever comes back into the page, so a plain redirect would
-put the page that asks inside the page the person was on. A 200 response with an `HX-Redirect`
-header makes htmx navigate the whole window instead. The header is two lines to set, so the
+By htmx's documentation, the browser follows a 3xx before htmx sees it and htmx swaps whatever comes
+back into the page, so a plain redirect would put the page that asks inside the page the person was
+on, and a 200 response with an `HX-Redirect` header makes htmx navigate the whole window instead.
+Neither can be cited from the resolved packages, which ship no htmx. The header is two lines to set, so the
 package does not take `django-htmx` as a dependency for it (Article VII).
 
 A request made by some other script cannot be told apart from an ordinary one. It gets the ordinary
 redirect, and the documentation says so.
 
-No return address is passed for an htmx request. The address asked for is a fragment, and
-returning a person to a fragment is not returning them to where they were (FR-004).
+No return address is passed for an htmx request for part of a page. The address asked for is a
+fragment, and returning a person to a fragment is not returning them to where they were (FR-004).
+A boosted link is the exception: django-mvp can boost its sidebar links (`mvp/config.py:66`), and
+such a request is a `GET` for a whole page that carries `HX-Boosted: true`, so its address is
+passed like any other.
 
 ## The return address
 
@@ -121,13 +133,17 @@ same host, so the middleware adds no check of its own.
 
 ## Reporting a misconfigured check
 
-Django's system check framework, registered from `MvpComplianceConfig.ready()`. Two errors, each
+Django's system check framework, registered from `MvpComplianceConfig.ready()`. Three errors, each
 raised only when the middleware is in `MIDDLEWARE`:
 
 - the page that asks does not reverse, with the `include()` line to add;
 - no `AuthenticationMiddleware`, or a subclass of it, comes before the check, with where to move
   it. Each earlier entry is imported and compared with `issubclass`, so a project's own subclass
-  passes.
+  passes;
+- either list setting is a string. `"mon" in "monitoring"` is true, and the first character of
+  `"/help/"` is `/`, so a string in place of a list lets past or keeps reachable far more than was
+  meant. Django refuses a string for its own list settings for the same reason
+  (`django/conf/__init__.py`, `tuple_settings`).
 
 At run time the middleware lets a request through when `request` has no `user` or the page does not
 reverse, so a misconfigured project stops nobody and loops nobody (US-1 scenario 12).
@@ -140,6 +156,12 @@ permission. A column added with a default gives every existing row that default,
 document is enforced after upgrading and nothing else is touched (FR-024). No `RunPython`: the test
 in `tests/test_migrations.py` that forbids one stays as it is.
 
+The test that migrates back to `0001` and forward again cannot run inside the transaction
+`django_db` wraps a test in, because SQLite's schema editor refuses to
+(`django/db/backends/sqlite3/schema.py:28-38`). It is marked `django_db(transaction=True)` and
+migrates to the latest again in a fixture's teardown, so a failure cannot leave the schema behind
+for the tests after it.
+
 ## Time in tests
 
 The repository has neither freezegun nor time-machine. The middleware reads the time through
@@ -150,5 +172,6 @@ The repository has neither freezegun nor time-machine. The middleware reads the 
 The demo's `DEMO_OPTIONAL_DOCUMENT_SLUGS` and `DemoAgreementView.is_optional()` were FS-009's
 stand-in for enforcement. They go, and the seed command sets `enforced=False` on the same document.
 `DemoAgreementView.record_agreed()` stays, since it is how the failed write is shown. The demo's
-settings gain the middleware, a named account and a listed address, and the seed command gains an
-account that holds the permission through a group.
+settings gain the middleware and a named account, and the seed command gains an account that holds
+the permission through a group. No address is listed: the demo's landing page is the site root, and
+an entry of `/` covers every address.

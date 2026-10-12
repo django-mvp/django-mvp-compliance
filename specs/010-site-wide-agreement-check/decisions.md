@@ -133,8 +133,8 @@ part of a page takes the user to the page that asks as a whole page.
 
 **Why defensible**: letting either through would leave a way to keep using the site without
 agreeing. A submission's address is not passed on because visiting it would not repeat the
-submission and may not answer at all. django-mvp's pages make requests for parts of themselves, so
-without FR-007 the page that asks would appear inside the page the user was on.
+submission and may not answer at all. django-mvp offers views that answer htmx requests for parts
+of a page, so without FR-007 the page that asks would appear inside the page the user was on.
 
 ## D9 — A misconfigured check is reported, not left to loop
 
@@ -211,10 +211,10 @@ of what a person agreed to in the account area.
 
 **Ambiguous**: decisions.md D7 leaves open where "nothing stops this user" is remembered.
 
-**Chosen**: in the user's session, as the time until which the finding holds.
+**Chosen**: in the user's session, as the time the finding was made.
 
-**Why defensible**: the specification assumes Django's sessions, and the session is already loaded
-to find the user, so reading the finding costs no query. Signing in as somebody else and signing
+**Why defensible**: the specification assumes Django's sessions, and telling a signed-in user from
+a visitor already loads the session, so reading the finding costs no further query. Signing in as somebody else and signing
 out both flush the session, so the finding never passes between accounts. The cache framework's
 default backend is per-process, which would make the delay depend on which worker answers.
 
@@ -246,7 +246,8 @@ settings costs nothing at all, and the documentation recommends that for automat
 general.
 
 **Chosen**: a request carrying `HX-Request: true` is answered with an `HX-Redirect` header and no
-return address. Any other request made by a script gets the ordinary redirect.
+return address. A boosted link, which is an htmx `GET` for a whole page, keeps its return address.
+Any other request made by a script gets the ordinary redirect.
 
 **Why defensible**: htmx is what django-mvp's own views offer for partial requests, and its header
 is the only dependable signal. The address of a fragment is not somewhere to return a person to, so
@@ -263,3 +264,22 @@ none is passed (FR-004). The documentation says what a project using another lib
 **Why defensible**: the check asks a question only the field can answer, so the field comes first.
 US-4, US-5 and US-6 each add one setting to the same class and the same documentation page, and
 building them apart would have three pieces of work editing the same two files.
+
+## D18 — What the design review changed, and what it did not
+
+*Made after the design review.*
+
+**Changed in the plan**: one FS-009 test is removed, because it records the rule FR-030 replaces
+(T001). An unset `MEDIA_URL` covers nothing, since Django returns it as the site root. The demo
+lists no reachable address, because its landing page is the site root. The finding is stored as the
+time it was made, a number. A boosted htmx link keeps its return address. A third system check
+refuses a string where either list setting wants a list. Tests that could only fail by renaming a
+key, or that restated `list_display`, are replaced by tests of what happens.
+
+**Kept**: the settings are named `..._EXEMPT_USERS` and `..._EXEMPT_URLS`, though the specification
+says "let past" and "kept reachable". *Exempt* is the word Django projects already use for a list
+of this kind in their settings, and the documentation uses the specification's words to explain
+them.
+
+**Why defensible**: every change is an edit to the plan or a task, made before any code exists.
+None alters what the specification asks for.
