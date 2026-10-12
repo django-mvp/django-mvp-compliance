@@ -386,6 +386,9 @@ class Command(BaseCommand):
         Document.objects.filter(name="Delivery information").update(
             kind=Document.Kind.NOTICE
         )
+        # People can agree to House rules without being held up by it. Updated
+        # rather than created so a demo seeded before the field existed gets it.
+        Document.objects.filter(name="House rules").update(enforced=False)
 
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
 

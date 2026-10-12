@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Document.enforced`, which says whether a person who has not accepted a document can be stopped
+  until they do. A document created without a choice is enforced, and so is every document that
+  existed before the migration. It is changed with an ordinary save or update at any time and
+  touches no version and no acceptance. `Document.objects.enforced_outstanding_for(user)` narrows
+  `outstanding_for(user)` to the enforced documents, and `outstanding_for()` is unchanged. The
+  field is on a document's form and in the documents list in the admin. Migration `0002` adds the
+  column and writes nothing else. See [docs/models.md](docs/models.md#enforcement).
 - A page that asks a signed-in person to agree to what is outstanding for them, at
   `<prefix>/agree/` (`mvp_compliance:agree`). It lists each outstanding document with its version
   in force, a link to that version's page and a toggle, and a submission records an acceptance of

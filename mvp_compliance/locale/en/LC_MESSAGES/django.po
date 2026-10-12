@@ -23,55 +23,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:85
+#: admin.py:86
 msgid "Current version"
 msgstr "Current version"
 
-#: admin.py:97
+#: admin.py:98
 msgid "No version in force"
 msgstr "No version in force"
 
-#: admin.py:102 templates/cotton/compliance/outstanding.html:19
+#: admin.py:103 templates/cotton/compliance/outstanding.html:19
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
 
-#: admin.py:105
+#: admin.py:106
 msgid "In force since"
 msgstr "In force since"
 
-#: admin.py:118 admin.py:188
+#: admin.py:119 admin.py:189
 #: templates/mvp_compliance/email/version_published_body.txt:3
 msgid "Published by"
 msgstr "Published by"
 
-#: admin.py:133
+#: admin.py:134
 msgid "Published versions"
 msgstr "Published versions"
 
-#: admin.py:176 models.py:403
+#: admin.py:177 models.py:403
 msgid "number"
 msgstr "number"
 
-#: admin.py:186 models.py:428
+#: admin.py:187 models.py:428
 msgid "Draft"
 msgstr "Draft"
 
-#: admin.py:342 templates/admin/mvp_compliance/version/change_form.html:8
+#: admin.py:343 templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: admin.py:379
+#: admin.py:380
 #, python-format
 msgid "Version %(number)s of %(document)s is now published."
 msgstr "Version %(number)s of %(document)s is now published."
 
-#: admin.py:390 templates/admin/mvp_compliance/version/change_form.html:14
+#: admin.py:391 templates/admin/mvp_compliance/version/change_form.html:14
 #: templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Publish"
 msgstr "Publish"
 
-#: admin.py:449 templates/admin/mvp_compliance/disclosure/produce.html:5
+#: admin.py:450 templates/admin/mvp_compliance/disclosure/produce.html:5
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
 
