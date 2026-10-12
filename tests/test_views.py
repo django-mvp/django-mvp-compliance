@@ -843,10 +843,14 @@ class TestNoMenuEntry:
 #: FR-020: no page says the site is compliant or names a regulation.
 FORBIDDEN_WORDS = ("compliant", "compliance", "gdpr")
 
+TEMPLATES = Path(mvp_compliance.__file__).parent / "templates"
+#: The package's page templates, and the components those pages are built from.
 PAGE_TEMPLATES = sorted(
-    (Path(mvp_compliance.__file__).parent / "templates" / "mvp_compliance").glob(
-        "*.html"
-    )
+    [
+        *(TEMPLATES / "mvp_compliance").glob("*.html"),
+        *(TEMPLATES / "cotton" / "compliance").glob("*.html"),
+    ],
+    key=lambda path: path.name,
 )
 TRANSLATE_TAG = re.compile(r'{%\s*(?:translate|trans)\s+"([^"]*)"')
 BLOCKTRANSLATE_TAG = re.compile(
@@ -876,7 +880,9 @@ class TestPageStrings:
         assert [path.name for path in PAGE_TEMPLATES] == [
             "_agreed_version_rows.html",
             "agreed_documents.html",
+            "agreement.html",
             "document_detail.html",
+            "outstanding.html",
         ]
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)

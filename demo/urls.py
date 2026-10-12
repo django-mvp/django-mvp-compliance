@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from demo import signals  # noqa: F401  (connects the demo's failing write)
 from demo.views import LandingView
 
 urlpatterns = [

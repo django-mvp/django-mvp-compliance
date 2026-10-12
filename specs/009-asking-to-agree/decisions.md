@@ -225,3 +225,43 @@ dictated already says "required". Which documents are required is the site-wide 
 (#87). The prototype fakes it.
 
 **Revisit if**: the maintainer meant "mandatory" to be the term.
+
+## D16 — The view asks a method whether a document is optional, and the method says no
+
+**Ambiguous**: the approved page marks each row required or optional and sends a person on once
+nothing required is left. Which documents are required is decided by the site-wide check (#87),
+which is not built, and this specification treats every outstanding document alike.
+
+**Chosen**: `AgreementView.is_optional(document)` returns `False`. The demo project's own view
+overrides it so the approved screens stay reachable, and the tests reach the optional rows the same
+way. Nothing in the package stores or configures which documents are optional.
+
+**Why defensible**: with the method answering no, the page behaves exactly as this specification
+says. The alternative of leaving it out would ship approved template branches that no code can
+reach and no test can render. A setting would ship a stand-in for a decision that belongs to
+another feature. The method has two callers today, the demo and the tests, and is the place the
+site-wide check supplies its answer.
+
+**Revisit if**: the site-wide check lands. Its answer replaces the method's body.
+
+## D17 — A submission is written in one batch, through a new manager method
+
+**Ambiguous**: FR-004 says acceptances are recorded "through the recording FS-003 provides", and
+FR-023 says a submission's cost must not grow with the documents agreed to. `record()` costs three
+queries a document.
+
+**Chosen**: `AcceptanceManager.record_many()` beside `record()`, writing the batch with the
+queryset's own `bulk_create` and `ignore_conflicts`.
+
+**Why defensible**: it is the same model layer and gives a batch the guarantees FS-003 gives one
+acceptance: one record per person and version, an existing record untouched, nothing recorded for a
+notice or a draft. The unique constraint does the work `get_or_create` does in `record()`.
+
+**Revisit if**: an acceptance ever needs something `bulk_create` skips, such as a `save()` hook.
+
+## D18 — The foundational task was done without dispatching it
+
+**Chosen**: the removal of the prototype's untested Python (T001) was done directly.
+
+**Why defensible**: it deletes code and widens one list in an existing test, with no design in it,
+and the first dispatched story needs a green base to start from.

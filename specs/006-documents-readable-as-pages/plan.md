@@ -83,9 +83,11 @@ slug = models.SlugField(
     _("slug"),
     max_length=100,
     unique=True,
-    validators=[lowercase_slug],   # module-level RegexValidator: ^[a-z0-9]+(?:-[a-z0-9]+)*$
-    help_text=...,                 # the document's identifier in its address; fixed once a
-                                   # version is published
+    validators=[
+        lowercase_slug
+    ],  # module-level RegexValidator: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+    help_text=...,  # the document's identifier in its address; fixed once a
+    # version is published
 )
 ```
 

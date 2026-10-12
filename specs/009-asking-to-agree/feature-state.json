@@ -1,0 +1,205 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "009-asking-to-agree",
+  "branch": "009-asking-to-agree",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PLAN",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-10-11T23:36:27Z",
+      "note": "specification approved on #88 at 8ba6a48; issue graph built (#86, #90 to #94)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-10-12T08:41:17Z",
+      "note": "sketch approved at 4b30294; claim held; branch level with origin/main b455695; research, plan and tasks written"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "delegated review",
+      "at": "2026-10-11T23:36:27Z",
+      "self_resolved": [
+        "approved at commit 8ba6a48cff921e15961930b3714888ab2fa9be31 under the maintainer's opened spec gate",
+        "changed at the prototype review: the page lists and links to each document and no longer shows the wording (decisions.md D14)"
+      ]
+    },
+    "sketch": {
+      "approved_by": "Sam",
+      "at": "2026-10-12T08:35:35Z",
+      "self_resolved": [
+        "approved at commit 4b302944ef92666b43cfecf66be2fef9be6be245",
+        "No document shown in full: each document is a list row with a link to its version",
+        "A toggle instead of a checkbox",
+        "Short fixed strings for translation",
+        "Missing-agreement alert without a button",
+        "His sentence under the title, saying required",
+        "Button disabled until all required toggled",
+        "Toggles aligned at the end of each row",
+        "Required and optional as badges, primary and neutral"
+      ]
+    },
+    "plan": {
+      "approved_by": null,
+      "at": null
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 90,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestPageStrings"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main (lint, typecheck, test, build, conformance, docs green; 292 passed)",
+              "django-admin makemessages -l en --no-obsolete (10 msgids added, none removed)"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T003",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T004",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T005",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T006",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P1",
+      "issue": 91,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T007",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T008",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US3",
+      "priority": "P2",
+      "issue": 92,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T009",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T010",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US4",
+      "priority": "P2",
+      "issue": 93,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T011",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T012",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US5",
+      "priority": "P3",
+      "issue": 94,
+      "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T013",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T014",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 0,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 88,
+    "draft": true
+  }
+}

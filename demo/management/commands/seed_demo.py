@@ -144,8 +144,8 @@ ASKED = {
         (COMMUNITY, "2026.2"),
         (MEMBERSHIP, "2026.1"),
     ],
-    # Two outstanding, and the write always fails: demo/signals.py refuses to
-    # store an acceptance for this account, so the failure can be looked at.
+    # Two outstanding, and the write always fails: the demo's own view refuses
+    # to store an acceptance for this account, so the failure can be looked at.
     "unrecorded.user@example.com": [
         ("House rules", "2025.1"),
         (COMMUNITY, "2026.2"),
@@ -439,8 +439,7 @@ class Command(BaseCommand):
             person = self.make_account(email, False, False, [])
             for name, number in accepted:
                 version = Version.objects.get(document__name=name, number=number)
-                # With the demo's refusal lifted, or one account could not be seeded.
-                with on(2026, 9, 20), mock.patch("demo.signals.UNRECORDED", ""):
+                with on(2026, 9, 20):
                     Acceptance.objects.record(person, version)
             self.stdout.write(f"  {email}: {len(accepted)} acceptances")
 

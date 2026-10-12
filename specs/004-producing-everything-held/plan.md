@@ -165,9 +165,8 @@ Three frozen dataclasses in `mvp_compliance/records.py`, none of them a model:
 `produce(subject: str) -> PersonalRecord` is the only way one is built:
 
 ```python
-acceptances = (
-    Acceptance.objects.for_subject(subject)
-    .select_related("version", "version__document")
+acceptances = Acceptance.objects.for_subject(subject).select_related(
+    "version", "version__document"
 )
 ```
 

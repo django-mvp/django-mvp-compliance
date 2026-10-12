@@ -87,8 +87,8 @@ On `Version`, after `published_at`:
 publisher = models.ForeignKey(
     settings.AUTH_USER_MODEL,
     verbose_name=_("publisher"),
-    help_text=...,          # who put this version in force; null for a draft, for a version
-                            # published from code with nobody named, and once the account is removed
+    help_text=...,  # who put this version in force; null for a draft, for a version
+    # published from code with nobody named, and once the account is removed
     null=True,
     blank=True,
     editable=False,
@@ -102,9 +102,9 @@ publisher_subject = models.CharField(
     default="",
     editable=False,
     db_index=True,
-    help_text=...,          # the publisher's primary key as text, written once at publication;
-                            # what lets the version say "an account since removed" after the
-                            # foreign key is cleared. Empty when nobody was recorded
+    help_text=...,  # the publisher's primary key as text, written once at publication;
+    # what lets the version say "an account since removed" after the
+    # foreign key is cleared. Empty when nobody was recorded
 )
 ```
 
@@ -131,7 +131,9 @@ publisher_subject = models.CharField(
 ```python
 self.publisher = publisher
 self.publisher_subject = "" if publisher is None else Acceptance.subject_of(publisher)
-self.save(update_fields=["status", "published_at", "html", "publisher", "publisher_subject"])
+self.save(
+    update_fields=["status", "published_at", "html", "publisher", "publisher_subject"]
+)
 ```
 
 `Acceptance.subject_of()` is reused rather than a second `str(user.pk)`, because the identifier a
@@ -225,7 +227,9 @@ A receiver that sends it is four lines, which is SC-006 and the documentation ex
 ```python
 @receiver(version_published)
 def tell_the_site_owners(sender, version, replaced, **kwargs):
-    subject, body = render_publication_email(version, replaced, site_url="https://example.com")
+    subject, body = render_publication_email(
+        version, replaced, site_url="https://example.com"
+    )
     send_mail(subject, body, None, ["owners@example.com"])
 ```
 

@@ -120,8 +120,3 @@ USE_I18N = True
 LANGUAGE_CODE = "en-us"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# Sketch only: enforcement per document does not exist yet. The page that asks
-# treats these documents as ones a person may continue without, so the two
-# kinds can be looked at side by side.
-MVP_COMPLIANCE_SKETCH_OPTIONAL_SLUGS = ["house-rules"]

@@ -1,25 +1,16 @@
 """The pages that show a document's wording to a visitor."""
 
-import logging
-
-from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import DatabaseError, transaction
-from django.http import Http404, HttpResponseRedirect
-from django.shortcuts import resolve_url
+from django.http import Http404
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.formats import date_format
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
-from mvp_compliance.exceptions import RecordError
 from mvp_compliance.models import Acceptance, Document, Version
-
-logger = logging.getLogger(__name__)
 
 
 class VersionSubtitleMixin:
@@ -191,135 +182,3 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
             entry["shown"] = accepted[: self.shown_first] if fold else accepted
             entry["earlier"] = accepted[self.shown_first :] if fold else []
         return list(entries.values())
-
-
-class AgreementView(LoginRequiredMixin, MVPTemplateView):
-    """The page that asks a signed-in person to agree to what is outstanding.
-
-    Lists every document outstanding for them, each with a link to its version
-    in force, takes one answer per document in a single submission, and sends
-    them on to ``?next=`` once the stored acceptances leave nothing required
-    outstanding. A person with nothing outstanding is sent on without being
-    shown the page.
-
-    A prototype: written to make the page real, with no tests.
-    """
-
-    template_name = "mvp_compliance/agreement.html"
-    page_title = gettext_lazy("Documents to agree to")
-    #: The name of the parameter that carries the address to return to.
-    redirect_field_name = "next"
-
-    def get_breadcrumbs(self):
-        return [{"text": self.page_title}]
-
-    def get_page_subtitle(self):
-        if any(not entry["optional"] for entry in self.get_entries()):
-            return _(
-                "You will not be able to use the app without agreeing to all "
-                "required documents."
-            )
-        return _("Agreeing is optional.")
-
-    def get_destination(self) -> str:
-        """The address to send the person on to: ``next`` when it stays on this site."""
-        destination = self.request.POST.get(
-            self.redirect_field_name, self.request.GET.get(self.redirect_field_name, "")
-        )
-        safe = url_has_allowed_host_and_scheme(
-            destination,
-            allowed_hosts={self.request.get_host()},
-            require_https=self.request.is_secure(),
-        )
-        if not safe or destination.split("?")[0] == self.request.path:
-            return resolve_url(
-                getattr(settings, "MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL", "/")
-            )
-        return destination
-
-    def get_entries(self) -> list[dict]:
-        """One entry per outstanding document, required ones first.
-
-        Each carries the ``document``, the ``version`` in force and whether
-        it is ``optional``. Within each kind the order is the one the document
-        pages use. Read once per request.
-        """
-        if not hasattr(self, "entries"):
-            documents = (
-                Document.objects.outstanding_for(self.request.user)
-                .in_force()
-                .order_by("name")
-            )
-            # Faked: enforcement per document does not exist yet. The demo names
-            # the documents a person may leave outstanding in a setting, so the
-            # page can be looked at with both kinds on it.
-            optional = getattr(settings, "MVP_COMPLIANCE_SKETCH_OPTIONAL_SLUGS", ())
-            entries = [
-                {
-                    "document": document,
-                    "version": document.current_versions[0],
-                    "optional": document.slug in optional,
-                }
-                for document in documents
-            ]
-            self.entries = sorted(entries, key=lambda entry: entry["optional"])
-        return self.entries
-
-    def get(self, request, *args, **kwargs):
-        if not self.get_entries():
-            return HttpResponseRedirect(self.get_destination())
-        return super().get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        ticked = set(request.POST.getlist("agree"))
-        listed = set(request.POST.getlist("listed"))
-        asked = self.get_entries()
-        agreed = [entry for entry in asked if str(entry["version"].pk) in ticked]
-        notices: dict = {
-            "ticked": ticked,
-            # Listed a version that has been replaced since: nothing is
-            # recorded for it, and the page says why it is back.
-            "changed": bool(listed)
-            and any(str(entry["version"].pk) not in listed for entry in asked),
-        }
-        if agreed:
-            try:
-                with transaction.atomic():
-                    for entry in agreed:
-                        Acceptance.objects.record(
-                            request.user, entry["version"], request=request
-                        )
-            except (DatabaseError, RecordError):
-                logger.exception("An acceptance could not be recorded.")
-                notices["failed"] = True
-                return self.render_to_response(self.get_context_data(**notices))
-        # Asked again of the stored records, never taken from the submission.
-        del self.entries
-        if all(entry["optional"] for entry in self.get_entries()):
-            return HttpResponseRedirect(self.get_destination())
-        notices["missing"] = not notices["changed"]
-        return self.render_to_response(self.get_context_data(**notices))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        ticked = kwargs.get("ticked", set())
-        entries = self.get_entries()
-        for entry in entries:
-            slug = entry["document"].slug
-            entry["field"] = {
-                "name": "agree",
-                "value": entry["version"].pk,
-                "id": f"agree-{slug}",
-                # The label reads "I agree" for every document, so the name
-                # reaches assistive technology from the row.
-                "aria-describedby": f"document-{slug}",
-            }
-            if not entry["optional"]:
-                entry["field"]["data-required"] = True
-            if str(entry["version"].pk) in ticked:
-                entry["field"]["checked"] = True
-        context["entries"] = entries
-        context["required_count"] = sum(not entry["optional"] for entry in entries)
-        context["destination"] = self.get_destination()
-        context["redirect_field_name"] = self.redirect_field_name
-        return context
