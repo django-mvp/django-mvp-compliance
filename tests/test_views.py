@@ -1575,6 +1575,21 @@ class TestAgreement:
         assert response.status_code == 403
         assert not Acceptance.objects.exists()
 
+    def test_the_refusal_holds_in_a_project_running_no_csrf_middleware(
+        self, user, settings
+    ):
+        settings.MIDDLEWARE = [
+            name for name in settings.MIDDLEWARE if "csrf" not in name.lower()
+        ]
+        version = published(DocumentFactory())
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+
+        response = client.post(agreement_address(), self.submission(version))
+
+        assert response.status_code == 403
+        assert not Acceptance.objects.exists()
+
     def test_the_connecting_address_is_held_when_the_project_keeps_it(self, signed_in):
         version = published(DocumentFactory())
 
@@ -1633,7 +1648,7 @@ class TestAgreement:
         response = signed_in.get(agreement_address())
 
         page = controls(response)
-        assert [form.get("id") for form in page.forms] == ["agreement"]
+        assert "agreement" in [form.get("id") for form in page.forms]
         toggles = [field for field in page.inputs if field.get("name") == "agree"]
         assert len(toggles) == 2
         for toggle in toggles:

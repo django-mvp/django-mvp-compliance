@@ -152,8 +152,20 @@
         },
         {
           "id": "T005",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreement"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py tests/test_app.py -q"
+            ],
+            "code": [
+              "mvp_compliance/views.py:192",
+              "mvp_compliance/urls.py:15"
+            ]
+          }
         },
         {
           "id": "T006",

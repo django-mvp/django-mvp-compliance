@@ -27,3 +27,10 @@ Did: added TestAgreement to tests/test_views.py with its helpers: the entry for 
 Verified: uv run pytest tests/test_views.py::TestAgreement -q, 20 failed, every one NoReverseMatch for 'agree' (the route does not exist yet). uv run pre-commit run --all-files green.
 Next: T005, AgreementView and the agree/ route.
 Watch: the tests have not yet run against a rendered page, so any mistake in how they read the markup shows at T005.
+
+## 2026-10-12T08:59:13Z · Implementer US1 · T005
+
+Did: AgreementView in views.py: get_entries(), is_optional() answering False, get(), post() reading the outstanding entries, matching submitted agree values as strings against their version ids, writing once through record_agreed() inside transaction.atomic(), reading the entries again and going on only when none is required, get_destination() keeping next only for the request's host and scheme and otherwise /, and get_context_data() supplying the entries with their field attributes, required_count, destination and redirect_field_name. dispatch is wrapped with csrf_protect. urls.py routes agree/ ahead of the slug route. en catalog regenerated.
+Verified: uv run pytest tests/test_views.py tests/test_app.py -q, 134 passed (TestAgreement 21 of them). Probe: with the csrf_protect decorator removed, test_the_refusal_holds_in_a_project_running_no_csrf_middleware fails with 302 for 403; restored. uv run pre-commit run --all-files green. makemessages -l en --no-obsolete run; only the view's three strings and line references changed.
+Next: T006, the strings test, the demo link and the documentation.
+Watch: I loosened one of my own T004 assertions: the shell draws a logout form as well, so the test looks for the agreement form among the page's forms. No failure handling, no changed notice and no redirect for a person with nothing outstanding yet; those are US-2 to US-4.
