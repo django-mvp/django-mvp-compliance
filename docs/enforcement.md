@@ -38,8 +38,9 @@ sessions. Which documents it holds a person to is each document's own choice: se
 
 For each request from a signed-in person, in this order:
 
-1. If they were found to have nothing enforced outstanding less than a minute ago, the request
-   is served. See [The delay](#the-delay).
+1. If they were found to have nothing enforced outstanding within the last
+   `MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL` seconds, sixty by default, the request is served. See
+   [The delay](#the-delay).
 2. If their sign-in value is in `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS`, the request is served.
    See [Letting accounts past](#letting-accounts-past).
 3. If no enforced document is outstanding for them, the request is served, and the finding is
@@ -210,22 +211,39 @@ redirect in its script.
 ## The delay
 
 Asking the database on every request would make every page slower, so a finding that nothing
-stops a person is remembered in their session for sixty seconds, and in that time nothing is
-asked. The finding is the time it was made, as a number of seconds, under the key
-`mvp_compliance_clear_since` (`CLEAR_SINCE_KEY` in `mvp_compliance.middleware`), and the sixty
-seconds is `CLEAR_FINDING_SECONDS` in the same module. A value in the session that is not a
-number, or that is dated later than now, is treated as absent.
+stops a person is remembered in their session for sixty seconds by default, and in that time
+nothing is asked. The finding is the time it was made, as a number of seconds, under the key
+`mvp_compliance_clear_since` (`CLEAR_SINCE_KEY` in `mvp_compliance.middleware`). A value in the
+session that is not a number, or that is dated later than now, is treated as absent.
+
+The number of seconds is a setting:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 60  # the default
+```
+
+- **Longer** means fewer questions to the database and a longer wait before a change reaches
+  people who are already signed in.
+- **Shorter** does the reverse. The setting is read on every request, and a finding is compared
+  with it as it stands now, so shortening it takes effect at once, including for findings made
+  under the old value.
+- **`0`** asks the database on every request, and nothing is written to the session. A new
+  version, or an enforcement switched on, stops a person on their very next request. See
+  [What it costs a project](#what-it-costs-a-project) for what that adds.
 
 What follows from that:
 
-- A person who is being stopped is asked about on every request, and the middleware writes
-  nothing to their session, so one who has just agreed is let through at once, and one whose
-  acceptance could not be recorded never is.
-- A new version of an enforced document, or an enforcement switched on, reaches a person who was
-  found clear within the minute. They are stopped on a later request, never in the middle of one
-  that was already being served.
+- A person who is being stopped is asked about on every request, whatever the setting says, and
+  the middleware writes nothing to their session, so one who has just agreed is let through at
+  once, and one whose acceptance could not be recorded never is.
+- A new version of an enforced document, or an enforcement switched on, or a notice that is made a
+  document people agree to, reaches a person who was found clear within the interval. They are
+  stopped on a later request, never in the middle of one that was already being served.
 - Signing in as somebody else and signing out both flush the session, so a finding never passes
   from one account to another.
+- Nothing is remembered about a person who is let past by name or by the permission either, so
+  taking a name out of the setting or the permission away takes effect on their next request.
 
 ## What it costs a project
 
@@ -235,8 +253,14 @@ the response `Vary: Cookie` whenever the session was read. A page that a cache s
 everybody is stored once per cookie from then on, so a project that caches pages by address
 alone should look at that before it switches the check on.
 
-For a person found clear within the minute, the check adds no database query of its own. It
+For a person found clear within the interval, the check adds no database query of its own. It
 reads `request.user` and the session, which a view that reads `request.user` reads anyway.
+
+With the interval at `0`, nothing is remembered, so every request from a signed-in person that is
+not let past by name runs one query that asks whether an enforced document is outstanding for
+them, and nothing is written to the session. Set it to `0` where a change has to reach people on
+their next request and the extra query on every request is acceptable. Anywhere else, leave it
+at its default or lengthen it.
 
 ## The system checks
 

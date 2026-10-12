@@ -470,8 +470,22 @@
         },
         {
           "id": "T019",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestCheckInterval",
+              "tests/test_middleware.py::TestAgreementCheckCost"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py tests/test_checks.py -q -n auto --dist loadscope",
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:58"
+            ]
+          }
         }
       ]
     }

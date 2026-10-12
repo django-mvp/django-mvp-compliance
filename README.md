@@ -202,7 +202,18 @@ MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["monitoring"]  # empty by default
 ```
 
 Name only accounts whose sign-in value the holder cannot change, and remove a name
-when its account is removed. See
+when its account is removed.
+
+A person found to have nothing outstanding is not asked about again for sixty seconds,
+so that an ordinary request costs nothing extra. A project can shorten or lengthen that,
+or set it to `0` to check every request:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 60  # seconds, the default
+```
+
+See
 [docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md)
 for what stays reachable, what a form submission and a request for part of a page
 receive, the delay, and the system checks that report a middleware that cannot work.

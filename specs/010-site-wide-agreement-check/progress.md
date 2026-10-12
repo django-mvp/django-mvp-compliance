@@ -121,3 +121,10 @@ Did: tests/test_middleware.py::TestCheckInterval, 11 cases with the parametrised
 Verified: uv run pytest tests/test_middleware.py::TestCheckInterval -q -> 9 failed, 2 passed. The failures are the sixty-second constant still in force (200 where a redirect was expected, nine times in three tests) and, for the interval of 0, the finding key present in the session after the request; the two passes are the stopped-user guards, which must keep holding after T019. pre-commit run --all-files passes.
 Next: T019, middleware.py reads the setting; docs, README, CHANGELOG.
 Watch: tests/test_middleware.py does not import CLEAR_FINDING_SECONDS anywhere, so no test of the default needs its way of reading it changed.
+
+## 2026-10-12T11:36:05Z · Implementer US4+US5+US6 · T019
+
+Did: mvp_compliance/middleware.py: the interval is read with getattr at the point of use, 60 when unset, and replaces CLEAR_FINDING_SECONDS, which is removed; the comparison is now minus the stored timestamp against the setting as it stands, so a finding made under 300 is judged against 5 once the setting is 5; with 0 or less nothing is written, and no separate rule honours or refuses a stored value. docs/enforcement.md: The delay (the setting, longer, shorter and 0, what follows from it), step 1 of the order, and what 0 costs. README: the setting. CHANGELOG Added.
+Verified: uv run pytest tests/test_middleware.py tests/test_checks.py -q -n auto --dist loadscope -> 84 passed; TestCheckInterval was 9 failed before. The existing sixty-second tests pass unmodified: none of them reads the module constant, so the exception for how one reads the default did not arise. forge verify --repo . --base origin/main --steps docs -> passed. makemessages leaves no diff. pre-commit run --all-files passes.
+Next: the full verify, once, then the report.
+Watch: a negative interval behaves as 0, because nothing is written for it and no stored value is less than a negative number old.

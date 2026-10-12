@@ -15,10 +15,6 @@ from mvp_compliance.models import Document
 #: POSIX timestamp. Signing in as somebody else flushes the session.
 CLEAR_SINCE_KEY = "mvp_compliance_clear_since"
 
-#: How many seconds a clear finding is remembered, so that the question is not
-#: put to the database on every request.
-CLEAR_FINDING_SECONDS = 60
-
 
 class AgreementMiddleware:
     """Send a signed-in person to the page that asks, from any address on the site.
@@ -50,7 +46,8 @@ class AgreementMiddleware:
             request that visiting an address would not repeat carries none.
             Only a finding that nothing stops the person is written to the
             session, and it is read back only when it is a number that is less
-            than ``CLEAR_FINDING_SECONDS`` old. An account named in
+            than ``MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL`` seconds old, ``60``
+            when the project sets none. With ``0`` nothing is written. An account named in
             ``MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS``, and one that holds the
             ``mvp_compliance.skip_agreement`` permission, are let through
             and nothing is written for them: the permission is asked of a
@@ -59,17 +56,19 @@ class AgreementMiddleware:
         user = getattr(request, "user", None)
         if user is None or not user.is_authenticated:
             return self.get_response(request)
+        interval = getattr(settings, "MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL", 60)
         found = request.session.get(CLEAR_SINCE_KEY)
         if (
             isinstance(found, int | float)
-            and 0 <= timezone.now().timestamp() - found < CLEAR_FINDING_SECONDS
+            and 0 <= timezone.now().timestamp() - found < interval
         ):
             return self.get_response(request)
         exempt = getattr(settings, "MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS", [])
         if user.get_username() in exempt:
             return self.get_response(request)
         if not Document.objects.enforced_outstanding_for(user).exists():
-            request.session[CLEAR_SINCE_KEY] = timezone.now().timestamp()
+            if interval > 0:
+                request.session[CLEAR_SINCE_KEY] = timezone.now().timestamp()
             return self.get_response(request)
         if user.has_perm("mvp_compliance.skip_agreement"):
             return self.get_response(request)
