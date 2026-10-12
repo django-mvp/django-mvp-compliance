@@ -131,8 +131,20 @@
         },
         {
           "id": "T009",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_checks.py::TestAgreementChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_checks.py -q",
+              "uv run django-admin makemessages -l en --no-obsolete"
+            ],
+            "code": [
+              "mvp_compliance/checks.py:13"
+            ]
+          }
         },
         {
           "id": "T010",

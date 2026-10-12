@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 11:58+0200\n"
+"POT-Creation-Date: 2026-10-12 13:11+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -75,9 +75,27 @@ msgstr "Publish"
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
 
-#: apps.py:12
+#: apps.py:13
 msgid "Compliance"
 msgstr "Compliance"
+
+#: checks.py:37
+msgid "The page that asks a person to agree has no address."
+msgstr "The page that asks a person to agree has no address."
+
+#: checks.py:38
+#, python-format
+msgid "Add %(line)s to the project's URLconf."
+msgstr "Add %(line)s to the project's URLconf."
+
+#: checks.py:49
+msgid "Nothing that identifies the signed-in user comes before the check."
+msgstr "Nothing that identifies the signed-in user comes before the check."
+
+#: checks.py:50
+#, python-format
+msgid "List %(check)s after %(authentication)s in MIDDLEWARE."
+msgstr "List %(check)s after %(authentication)s in MIDDLEWARE."
 
 #: forms.py:36
 msgid "Person"
