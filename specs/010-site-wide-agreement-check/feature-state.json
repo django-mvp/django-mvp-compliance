@@ -88,6 +88,11 @@
     "COR-003 low: declined; the middleware offers no hooks for subclasses and the docs offer none (decisions.md D22)",
     "notes: three loose sentences in docs/models.md and docs/enforcement.md corrected"
    ]
+  },
+  "walkthrough": {
+   "approved_by": null,
+   "at": "2026-10-12T11:59:48Z",
+   "self_resolved": []
   }
  },
  "stories": [
@@ -575,12 +580,12 @@
    "max": 1
   },
   "tokens": {
-   "used": 29.34,
+   "used": 36.15,
    "max": 120
   }
  },
  "pr": {
   "number": 89,
-  "draft": true
+  "draft": false
  }
 }
