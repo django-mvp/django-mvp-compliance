@@ -282,7 +282,7 @@
       "priority": "P2",
       "issue": 93,
       "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-009",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -304,8 +304,20 @@
         },
         {
           "id": "T012",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 3,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestAgreementDestination",
+              "tests/test_views.py::TestAgreement"
+            ],
+            "commands": [
+              "forge verify --repo . --base origin/main (all six steps green after the triage of one US-1 test, decisions.md D23)"
+            ],
+            "code": [
+              "mvp_compliance/views.py:300"
+            ]
+          }
         }
       ]
     },
@@ -344,7 +356,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 17.84,
+      "used": 21.33,
       "max": 120
     }
   },
