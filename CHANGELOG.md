@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each version agreed to, then sends the person to `next` when it is on the same site, otherwise
   to `/`. Opening the page records nothing, a visitor who is not signed in is sent to sign in and
   back, and the page stops nobody. See [docs/pages.md](docs/pages.md).
+- `MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL`, the address a person is sent on to from the page that
+  asks when no usable `next` was given. It is a path or the name of a URL, and `/` when unset. A
+  `next` that is the page's own address is replaced by it too. A signed-in person with nothing
+  outstanding who opens the page is now redirected to their destination at once, and the page is
+  not drawn. See [docs/pages.md](docs/pages.md#sending-a-person-to-the-page).
 - `Acceptance.objects.record_many(user, versions, request=None)`, which records a batch of
   acceptances in one write. It sends no save signals, where `record()` does, and needs a database
   that can ignore conflicts, which rules out Oracle. See [docs/models.md](docs/models.md).

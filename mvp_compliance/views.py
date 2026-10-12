@@ -1,10 +1,13 @@
 """The pages that show a document's wording to a visitor."""
 
 import logging
+from urllib.parse import unquote, urljoin, urlsplit
 
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import DatabaseError, transaction
 from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import resolve_url
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -265,7 +268,9 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
 
         Returns:
             The ``next`` value of the submission or the query string when it
-            stays on this site, otherwise ``/``.
+            stays on this site and is not this page, otherwise the address
+            named by ``MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL``, ``/`` when the
+            project sets none.
         """
         destination: str = self.request.POST.get(
             self.redirect_field_name, self.request.GET.get(self.redirect_field_name, "")
@@ -274,9 +279,27 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             destination,
             allowed_hosts={self.request.get_host()},
             require_https=self.request.is_secure(),
-        ):
+        ) and not self.is_own_address(destination):
             return destination
-        return "/"
+        return resolve_url(
+            getattr(settings, "MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL", "/")
+        )
+
+    def is_own_address(self, destination: str) -> bool:
+        """Say whether ``destination``, read from this page, is this page.
+
+        Args:
+            destination: An address on this site, as the person's browser
+                would follow it from the page.
+
+        Returns:
+            Whether it names this page's path, however it is written: with a
+            query string, without the trailing slash, percent-encoded, or as
+            ``.`` or a bare query string.
+        """
+        own: str = self.request.path
+        path = unquote(urlsplit(urljoin(own, destination)).path)
+        return path.rstrip("/") == own.rstrip("/")
 
     def record_agreed(self, versions: list[Version]) -> None:
         """Record the signed-in person's acceptance of ``versions``.
@@ -292,8 +315,10 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         )
 
     def get(self, request, *args, **kwargs):
-        """Read what is outstanding, then draw the page."""
+        """Send a person with nothing outstanding on, otherwise draw the page."""
         self.entries = self.get_entries()
+        if not self.entries:
+            return HttpResponseRedirect(self.get_destination())
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):

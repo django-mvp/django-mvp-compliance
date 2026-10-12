@@ -153,11 +153,9 @@ no toggle on. Submitting the same agreement again records nothing new.
 
 **Where the person goes.** After the write the page asks again what is outstanding, from the
 stored acceptances and never from the submission. When nothing required is left, the person is
-sent to the address in `next`, taken from the submitted form and otherwise from the query
-string. The address is kept only when it is on the same site. An address on another host, with a
-scheme other than `http` or `https`, with `http` when the request came over HTTPS, or
-protocol-relative to another host, is replaced by `/`. When something required is left, as
-after a submission with no toggle on, the page is drawn again with a message saying so.
+sent on to the destination described under
+[Sending a person to the page](#sending-a-person-to-the-page). When something required is left,
+as after a submission with no toggle on, the page is drawn again with a message saying so.
 
 **Agreeing to some of them.** A person may agree to part of the list. What was agreed to is
 recorded and the page is drawn again with the rest, still in alphabetical order. Agreeing to
@@ -169,10 +167,6 @@ wording. The versions still in force that were agreed to are recorded, and the p
 again with the version now in force and a message saying a document changed, in place of the
 one saying something required is left. A document accepted elsewhere, or made a notice,
 since the page was drawn is passed over, and the rest are recorded as usual.
-
-```html
-<a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
-```
 
 **When an acceptance cannot be stored.** The acceptances of one submission are written inside
 one database transaction, so they are stored together or not at all. When the write fails with
@@ -208,6 +202,70 @@ submission all the same.
 **What it does not do.** It stops nobody. A person is free to leave the page, and leaving
 records nothing. Nothing in the package links to the page or sends anyone there: when a person
 is sent to it, and which documents hold them up, is a decision for the project.
+
+## Sending a person to the page
+
+Nothing sends a person to the page until a project does. Send them to
+`{% url 'mvp_compliance:agree' %}` with the address to come back to in `next`, from a link:
+
+```html
+<a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
+```
+
+or from a view of your own, which sends a person on only when something is outstanding for
+them, so that a person who has agreed is not sent round again:
+
+```python
+from urllib.parse import urlencode
+
+from django.shortcuts import redirect
+from django.urls import reverse
+
+from mvp_compliance.models import Document
+
+
+def checkout(request):
+    if Document.objects.outstanding_for(request.user).exists():
+        query = urlencode({"next": request.get_full_path()})
+        return redirect(f"{reverse('mvp_compliance:agree')}?{query}")
+    ...
+```
+
+**How the destination is given.** In the `next` parameter of the query string, or in the
+submitted form's `next` field when there is one. The page draws that address into its form on
+every response, so it is still there when the page is shown again after a failed write or after
+the person agreed to part of the list, and the person finally lands on the address they were
+first given.
+
+**Which addresses are followed.** Only an address on the same site. These are replaced by the
+default destination below, and nothing is followed from them:
+
+- an address on another host, a protocol-relative one, or one with a scheme other than `http`
+  or `https`;
+- an address with `http` when the request came over HTTPS;
+- the page's own address, so that a person is never sent round the page again. That is the
+  page with a query string, without its trailing slash, with a letter percent-encoded, and `.`
+  or a bare `?x=1`, which a browser resolves to the page;
+- no address at all.
+
+**The default destination.** `MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL` names where a person
+goes when no usable destination was given. It is a path or the name of a URL, and `/` when the
+project sets none:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "/"  # the default
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "/welcome/"  # a path
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "dashboard"  # the name of a URL
+```
+
+The value goes through Django's `resolve_url()`, so a name is reversed on every use. The setting
+is yours and is not checked against the site: it is followed as written.
+
+**A person with nothing outstanding.** Opening the page answers with a redirect to the
+destination, or the default, and draws nothing. Nothing is recorded and the person is shown no
+page. A person who agreed somewhere else between the project's own check and the page is sent
+on in the same way.
 
 ## What a person has agreed to
 

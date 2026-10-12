@@ -281,6 +281,19 @@ rather than inventing a value. Turning the setting on or off only ever affects
 acceptances recorded afterwards — an existing record keeps whatever it held when it
 was written. See [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) for the full surface.
 
+The page that asks a person to agree, at `<prefix>/agree/`, sends them on to the
+`next` address a project gave it when that is on the same site, and otherwise to a
+default the project sets:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = "/"  # the default
+```
+
+The value is a path or the name of a URL. A person with nothing outstanding is sent on
+without being shown the page. See
+[docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md#sending-a-person-to-the-page).
+
 ## Writing a version
 
 `Document` and `Version` are registered in the Django admin, and writing a

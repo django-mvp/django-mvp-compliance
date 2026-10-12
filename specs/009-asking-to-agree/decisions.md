@@ -311,3 +311,16 @@ seen by this check; the second read still keeps the person on the page, with `mi
 
 **Revisit if**: the page lists documents in more than one place, or a submission can carry more
 than one list.
+
+## D22 — A page of only optional documents is still drawn on a `GET`
+
+**Decision**: `get()` redirects when the person has no entries at all, which is what "nothing
+outstanding" means (FR-018). It does not redirect when every entry is optional: `post()` does,
+because by then the person has had the chance to agree, and `get()` does not, because the optional
+documents are still outstanding and listed.
+
+**Why**: sending a person past documents they were never shown would make the optional ones
+unreachable. The submission already treats an all-optional list as nothing required (D19).
+
+**Revisit if**: the site-wide check decides that optional documents are not to be offered on a
+visit that arrives from somewhere else.
