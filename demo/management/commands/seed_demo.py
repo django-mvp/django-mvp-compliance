@@ -130,7 +130,7 @@ ASKED = {
         (MEMBERSHIP, "2026.1"),
     ],
     # One document that holds them up and one that does not, side by side:
-    # the demo's settings name House rules as optional.
+    # House rules is not enforced.
     "optional.user@example.com": [
         ("Privacy policy", "2025.1"),
         ("Terms of use", "2025.1"),
