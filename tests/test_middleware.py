@@ -660,3 +660,99 @@ class TestLetPastCost:
 
         assert on_the_request_that_checks == []
         assert on_the_request_after == []
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("check_on", "media_url_is_unset")
+class TestCheckInterval:
+    @pytest.fixture(
+        params=[
+            "a new version is published",
+            "enforcement is switched on",
+            "a notice becomes a document people agree to",
+        ]
+    )
+    def change(self, request, client):
+        """Sign in a user who is clear, and return what would stop them."""
+        user = UserFactory()
+        client.force_login(user)
+        if request.param == "a new version is published":
+            document = DocumentFactory()
+            first = VersionFactory(document=document)
+            first.publish()
+            Acceptance.objects.record(user, first)
+            return lambda: VersionFactory(document=document).publish()
+        if request.param == "enforcement is switched on":
+            document = DocumentFactory(enforced=False)
+            VersionFactory(document=document).publish()
+            return lambda: Document.objects.filter(pk=document.pk).update(enforced=True)
+        document = DocumentFactory(kind=Document.Kind.NOTICE)
+        VersionFactory(document=document).publish()
+        return lambda: Document.objects.filter(pk=document.pk).update(
+            kind=Document.Kind.AGREED
+        )
+
+    def test_a_change_reaches_a_user_found_clear_once_the_interval_has_passed(
+        self, client, settings, change
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 5
+        remember_finding(client)
+        change()
+
+        with after(4):
+            within = client.get("/elsewhere/")
+        with after(6):
+            later = client.get("/elsewhere/")
+
+        assert within.status_code == 200
+        assert sent_to_the_page_that_asks(later)
+
+    def test_with_an_interval_of_nothing_a_change_reaches_the_next_request_and_nothing_is_kept(
+        self, client, settings, change
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 0
+        session = dict(client.session)
+
+        found_clear = client.get("/elsewhere/")
+        kept = dict(client.session)
+        change()
+        response = client.get("/elsewhere/")
+
+        assert found_clear.status_code == 200
+        assert kept == session
+        assert sent_to_the_page_that_asks(response)
+
+    def test_a_finding_made_under_a_longer_interval_is_not_honoured_under_a_shorter_one(
+        self, client, settings, change
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 300
+        remember_finding(client)
+        change()
+        settings.MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 5
+
+        with after(6):
+            response = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(response)
+
+    def test_a_stopped_user_whose_acceptance_is_recorded_is_served_on_the_next_request(
+        self, client, stopped, version, settings
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 300
+        assert sent_to_the_page_that_asks(client.get("/elsewhere/"))
+
+        Acceptance.objects.record(stopped, version)
+        response = client.get("/elsewhere/")
+
+        assert response.status_code == 200
+
+    def test_a_stopped_user_whose_acceptance_is_not_recorded_is_still_redirected(
+        self, client, stopped, settings
+    ):
+        settings.MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 300
+
+        first = client.get("/elsewhere/")
+        second = client.get("/elsewhere/")
+
+        assert sent_to_the_page_that_asks(first)
+        assert sent_to_the_page_that_asks(second)

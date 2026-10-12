@@ -454,8 +454,19 @@
       "tasks": [
         {
           "id": "T018",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestCheckInterval"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py::TestCheckInterval -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:665"
+            ]
+          }
         },
         {
           "id": "T019",
