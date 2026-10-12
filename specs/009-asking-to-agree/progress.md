@@ -13,3 +13,10 @@ Did: added TestRecordMany to tests/test_models.py: one acceptance per version wi
 Verified: uv run pytest tests/test_models.py::TestRecordMany -q, 8 failed, every one with AttributeError: 'AcceptanceManager' object has no attribute 'record_many'. uv run pre-commit run --all-files green.
 Next: T003, record_many() on AcceptanceManager.
 Watch: the red state is deliberate and ends with T003.
+
+## 2026-10-12T08:55:23Z · Implementer US1 · T003
+
+Did: AcceptanceManager.record_many(user, versions, request=None) in models.py, beside record(): refuses a draft before touching the database, takes the subject from Acceptance.subject_of(user), builds one Acceptance per version with a shared time and the address the setting allows, and writes them with the queryset's bulk_create(ignore_conflicts=True), which refuses a notice's version for the whole batch. docs/models.md: a section on record_many(), that it sends no save signals and needs a database that can ignore conflicts (not Oracle); the other passages that named record() as the only route now name it too.
+Verified: uv run pytest tests/test_models.py::TestRecordMany tests/test_models.py::TestRecording tests/test_models.py::TestOptionalEvidence -q, 31 passed. uv run pre-commit run --all-files green. No new string: the refusal message is record()'s own.
+Next: T004, the view's tests.
+Watch: the address lookup is written twice, in record() and record_many(); record() was left as it was on purpose.

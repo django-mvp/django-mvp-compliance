@@ -919,6 +919,57 @@ class AcceptanceManager(models.Manager["Acceptance"]):
             },
         )[0]
 
+    def record_many(self, user, versions, request=None) -> None:
+        """Record ``user``'s acceptance of every version in ``versions``, in one write.
+
+        The same guarantees as ``record()`` for each version, at a cost that
+        does not grow with the number of versions: a version already accepted
+        is passed over and its record left as it is, and one refused version
+        means nothing in the batch is written. Unlike ``record()`` it sends no
+        ``save`` signals, and it needs a database that can ignore conflicts,
+        which rules out Oracle.
+
+        Args:
+            user: The account accepting.
+            versions: The published versions accepted.
+            request: The current request. Read only when
+                ``MVP_COMPLIANCE_RECORD_IP_ADDRESS`` is on, and only for
+                ``REMOTE_ADDR``.
+
+        Raises:
+            RecordError: A version has never been published or belongs to a
+                notice, or ``user`` has not been saved.
+        """
+        versions = list(versions)
+        if not all(version.is_published for version in versions):
+            raise RecordError(
+                _(
+                    "Cannot record an acceptance of a version that has never been published."
+                )
+            )
+        ip_address = None
+        if request is not None and getattr(
+            settings, "MVP_COMPLIANCE_RECORD_IP_ADDRESS", False
+        ):
+            # Never a forwarded header: the client sets it
+            # (docs/adr/0010-the-package-reads-remote-addr-and-no-forwarded-header.md).
+            ip_address = request.META.get("REMOTE_ADDR")
+        subject = Acceptance.subject_of(user)
+        accepted_at = timezone.now()
+        self.get_queryset().bulk_create(
+            [
+                Acceptance(
+                    user=user,
+                    subject=subject,
+                    version=version,
+                    accepted_at=accepted_at,
+                    ip_address=ip_address,
+                )
+                for version in versions
+            ],
+            ignore_conflicts=True,
+        )
+
 
 class Acceptance(models.Model):
     """The record that one person accepted one published version, at one moment.

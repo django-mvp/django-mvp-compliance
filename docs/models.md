@@ -314,9 +314,9 @@ acceptance.version     # the exact Version they accepted
 acceptance.accepted_at # the moment it happened
 ```
 
-`Acceptance.objects.record(user, version)` is the only route that writes one.
-Recording against a version that has never been published — `version.is_published`
-is `False` — is refused:
+`Acceptance.objects.record(user, version)` writes one. [`record_many()`](#recording-several-at-once)
+writes several in one go. Recording against a version that has never been published —
+`version.is_published` is `False` — is refused:
 
 ```python
 Acceptance.objects.record(user, draft_version)  # raises RecordError; writes nothing
@@ -338,7 +338,7 @@ holds for a document that became a notice after a person accepted it: `record()`
 rather than handing back the record that is already there, and that record is left exactly
 as it was. These routes refuse, each with `RecordError`:
 
-- `Acceptance.objects.record()`,
+- `Acceptance.objects.record()` and `Acceptance.objects.record_many()`,
 - `Acceptance.objects.create()` and saving a new `Acceptance(...)`, which is what
   `get_or_create()` does when it creates,
 - `Acceptance.objects.bulk_create()`, which refuses the whole batch when any version in it
@@ -542,6 +542,35 @@ acceptances go with the account.
 The reasoning, and the configurable alternative that was rejected, are in
 [ADR 0014](adr/0014-the-project-links-a-surviving-acceptance-to-a-person.md).
 
+### Recording several at once
+
+`Acceptance.objects.record_many(user, versions, request=None)` records one person's
+acceptance of every version in `versions`, in one write:
+
+```python
+Acceptance.objects.record_many(user, [privacy.current, terms.current], request=request)
+```
+
+It gives each version what `record()` gives one. A version the person already accepted
+is passed over and its record is left exactly as it was, and a draft or a notice's
+version raises `RecordError` with nothing in the batch written, the other versions
+included. The same subject and time are written for all of them, and the address
+follows `MVP_COMPLIANCE_RECORD_IP_ADDRESS` just as it does for `record()`. The cost is one
+query to look for a notice and one to write, whether the batch holds one version or fifty,
+where a loop over `record()` costs several for each.
+
+Two differences from `record()` to know about:
+
+- It sends no `pre_save` or `post_save` signals, because the rows are written with
+  `bulk_create()`. Code that listens for an `Acceptance` being saved will not hear of
+  these. `record()` is the route for a project that needs them.
+- It needs a database that can ignore conflicts on insert, which is how a version already
+  accepted is passed over. SQLite, PostgreSQL, MySQL and MariaDB can. Oracle cannot, and
+  `record_many()` raises `NotSupportedError` there.
+
+It returns nothing. Read the person's acceptances back with `Acceptance.objects.for_person(user)`
+when you need them.
+
 ### Optional evidence
 
 An acceptance holds three facts by default: who accepted, which version, and when.
@@ -553,11 +582,12 @@ so the package holds none of it unless a project says so:
 MVP_COMPLIANCE_RECORD_IP_ADDRESS = False  # the default
 ```
 
-Turned on, `record()` also holds the address the request came from, provided a request
-is passed to it:
+Turned on, `record()` and `record_many()` also hold the address the request came from,
+provided a request is passed to them:
 
 ```python
 Acceptance.objects.record(user, version, request=request)
+Acceptance.objects.record_many(user, versions, request=request)
 ```
 
 Only `request.META["REMOTE_ADDR"]` is ever read, and never a forwarded header such as
