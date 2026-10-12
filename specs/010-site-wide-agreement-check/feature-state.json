@@ -115,8 +115,19 @@
         },
         {
           "id": "T008",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_checks.py::TestAgreementChecks"
+            ],
+            "commands": [
+              "uv run pytest tests/test_checks.py -q"
+            ],
+            "code": [
+              "tests/test_checks.py:25"
+            ]
+          }
         },
         {
           "id": "T009",
