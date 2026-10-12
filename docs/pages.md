@@ -60,10 +60,11 @@ The package checks for the account area on each request, by looking for django-m
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
-The list's address is checked first, so no document is served at the slug `agreed`. The
-admin and `full_clean()` refuse that slug; see [Documents](models.md#document). The
-page that asks is checked ahead of the slug route too, so the slug `agree` never reaches a
-document: give a document another slug.
+The addresses of the list and of the page that asks are checked ahead of the slug route, so no
+document is served at the slugs `agreed` and `agree`. The admin and `full_clean()` refuse both
+slugs; see [Documents](models.md#document). A document published under `agree` before the slug
+was reserved is not reachable at its page any more, and the address shows the page that asks.
+Creating a document under either slug through the ORM is not stopped, as for any slug rule.
 
 There is one page per document: its address always shows the version in force. The same
 address with `?version=<number>` shows that published version, current or superseded,
@@ -379,7 +380,7 @@ change, and you do not fork it.
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
-| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, `destination`, `redirect_field_name`, `missing` after a submission that leaves something required, and `changed` after one made from a list in which a version was replaced or a document published |
+| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
 | `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
@@ -397,3 +398,84 @@ A project's own `mvp_compliance/document_detail.html`, for example:
 and render nothing else from Markdown. Put your template's directory in
 `TEMPLATES["DIRS"]`, or in an app listed before `mvp_compliance` in `INSTALLED_APPS`.
 Strings you add are yours to translate.
+
+### Replacing the page that asks
+
+Place a template at `mvp_compliance/agreement.html` and the page uses it in place of the
+package's, which extends `page_view.html` and fills `page.header`, `page.content-wrapper` and
+`extra_js`. The page still records and sends the person on as before: that is done by the view,
+and the template only has to send it what it reads. The form must send:
+
+- `agree`, once for each toggle that is on, with the version's id: `entry.field.value`;
+- `listed`, once for each entry the page showed, on or off, with `entry.version.pk`. It decides
+  which message is drawn when something required is left, so a submission without it is always
+  drawn as `changed`;
+- `redirect_field_name`, as a field of that name carrying `destination`;
+- the CSRF token.
+
+```html
+{% extends "page_view.html" %}
+{% block page.content %}
+  {% if failed or missing or changed %}<p role="alert">...</p>{% endif %}
+  <form method="post" id="agreement">
+    {% csrf_token %}
+    <input type="hidden" name="{{ redirect_field_name }}" value="{{ destination }}">
+    {% for entry in entries %}
+      <input type="hidden" name="listed" value="{{ entry.version.pk }}">
+      <label>
+        <input type="checkbox" name="{{ entry.field.name }}"
+               value="{{ entry.field.value }}"
+               {% if entry.field.checked %}checked{% endif %}>
+        {{ entry.document.name }}{% if not entry.optional %} *{% endif %}
+      </label>
+    {% endfor %}
+    <button type="submit">{% if required_count %}Agree and continue{% else %}Continue{% endif %}</button>
+  </form>
+{% endblock page.content %}
+```
+
+`entry.field` holds the toggle's attributes: `name`, `value`, `id`, `aria-describedby`,
+`data-required` on a required entry and `checked` when the toggle was on in a submission that
+failed. Hyphenated keys cannot be read in a template, so to draw all of them pass the whole
+`entry.field` to a component's `attrs`, as the package's own row does:
+`<c-compliance.outstanding :document="entry.document" :version="entry.version" :field="entry.field" :optional="entry.optional" />`
+draws one row, hidden `listed` field included, for use inside a `<ul class="list">`.
+
+The package's script, `mvp_compliance/agreement.js`, keeps the submit button disabled until
+every `data-required` toggle is on. It finds the form by the id `agreement`, the toggles by
+`data-required` and the button by `type="submit"`. Load it with
+`{% static 'mvp_compliance/agreement.js' %}` and keep those three, or leave it out: the server
+refuses a submission that leaves something required whatever the page does.
+
+### Changing how an agreement is stored
+
+`AgreementView.record_agreed(versions)` is the one place the page writes, and the one method a
+project's own view overrides to change how an agreement is stored. It is called once for a
+submission that agreed to something, inside a database transaction, with the versions in force
+of the documents that were outstanding for the person. Call `super()` to keep the package's
+acceptances and add your own bookkeeping beside them:
+
+```python
+# views.py
+from mvp_compliance.views import AgreementView
+
+
+class ProjectAgreementView(AgreementView):
+    def record_agreed(self, versions):
+        super().record_agreed(versions)
+        AuditEntry.objects.create(user=self.request.user, versions=len(versions))
+```
+
+Mount it ahead of the package's include, at the address the package would have answered, so every
+link to `mvp_compliance:agree` reaches it:
+
+```python
+urlpatterns = [
+    path("legal/agree/", ProjectAgreementView.as_view()),
+    path("legal/", include("mvp_compliance.urls")),
+]
+```
+
+When `record_agreed()` raises `DatabaseError` or `RecordError`, the transaction rolls back and
+the page is drawn again with `failed`, as for any failed write, described under
+[Asking a person to agree](#asking-a-person-to-agree). Any other exception is not caught.
