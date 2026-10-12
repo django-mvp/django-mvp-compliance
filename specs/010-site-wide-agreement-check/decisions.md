@@ -204,3 +204,62 @@ and they are shown the page in every case.
 
 **Revisit if**: FS-009's prototype gives optional documents a place of their own, such as the list
 of what a person agreed to in the account area.
+
+## D14 — The finding is kept in the session
+
+*Made in planning.*
+
+**Ambiguous**: decisions.md D7 leaves open where "nothing stops this user" is remembered.
+
+**Chosen**: in the user's session, as the time until which the finding holds.
+
+**Why defensible**: the specification assumes Django's sessions, and the session is already loaded
+to find the user, so reading the finding costs no query. Signing in as somebody else and signing
+out both flush the session, so the finding never passes between accounts. The cache framework's
+default backend is per-process, which would make the delay depend on which worker answers.
+
+**Revisit if**: a project runs without sessions.
+
+## D15 — An account let past by the permission is asked about on every request
+
+*Made in planning.*
+
+**Ambiguous**: FR-021 says deciding whether an account is let past is covered by the delay. US-5
+scenario 5 says an account whose permission is taken away is redirected on its next request.
+Remembering that an account was let past would break the second.
+
+**Chosen**: the permission is asked only of a user the outstanding query has just said would be
+stopped, and the answer is not remembered. A user with nothing enforced outstanding is found clear
+before the permission is ever read, so for them it costs nothing (US-5 scenario 6).
+
+**Why defensible**: both statements hold as written. The cost falls only on a permission holder
+who has an enforced document outstanding, which lasts until they accept it. An account named in the
+settings costs nothing at all, and the documentation recommends that for automated accounts.
+
+**Revisit if**: a site lets a large group past by the permission and never has them accept.
+
+## D16 — Only an htmx request is recognised as a request for part of a page
+
+*Made in planning.*
+
+**Ambiguous**: FR-007 speaks of "a request for part of a page". Nothing marks such a request in
+general.
+
+**Chosen**: a request carrying `HX-Request: true` is answered with an `HX-Redirect` header and no
+return address. Any other request made by a script gets the ordinary redirect.
+
+**Why defensible**: htmx is what django-mvp's own views offer for partial requests, and its header
+is the only dependable signal. The address of a fragment is not somewhere to return a person to, so
+none is passed (FR-004). The documentation says what a project using another library sees.
+
+**Revisit if**: django-mvp adopts another way of loading parts of a page.
+
+## D17 — The stories are built in dependency order
+
+*Made in planning.*
+
+**Chosen**: US-2, then US-1, then US-3, then US-4 to US-6 in one piece of work.
+
+**Why defensible**: the check asks a question only the field can answer, so the field comes first.
+US-4, US-5 and US-6 each add one setting to the same class and the same documentation page, and
+building them apart would have three pieces of work editing the same two files.

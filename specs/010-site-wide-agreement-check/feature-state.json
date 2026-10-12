@@ -1,0 +1,211 @@
+{
+ "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+ "feature": "010-site-wide-agreement-check",
+ "branch": "010-site-wide-agreement-check",
+ "repo": "django-mvp/django-mvp-compliance",
+ "state": "QUEUED",
+ "state_history": [
+  {
+   "state": "QUEUED",
+   "at": "2026-10-11T23:39:11Z",
+   "note": "specification approved on #89 at a744293; issue graph built (#87, #95 to #100)"
+  }
+ ],
+ "gates": {
+  "spec": {
+   "approved_by": "delegated review",
+   "at": "2026-10-11T23:39:07Z",
+   "self_resolved": [
+    "approved at commit a7442932cafeb7af0f8ebb4479b90cdb304fb2c1 under the maintainer's opened spec gate",
+    "the maintainer asked in session on 2026-10-12 for the build to continue, after merging FS-009"
+   ]
+  },
+  "plan": {
+   "approved_by": null,
+   "at": null
+  },
+  "merge": {
+   "approved_by": null,
+   "at": null
+  }
+ },
+ "stories": [
+  {
+   "id": "US1",
+   "priority": "P1",
+   "issue": 95,
+   "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T006",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T007",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T008",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T009",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T010",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US2",
+   "priority": "P1",
+   "issue": 96,
+   "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T001",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T002",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T003",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T004",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T005",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US3",
+   "priority": "P1",
+   "issue": 97,
+   "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T011",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T012",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T013",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US4",
+   "priority": "P2",
+   "issue": 98,
+   "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T014",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T015",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US5",
+   "priority": "P2",
+   "issue": 99,
+   "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T016",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T017",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  },
+  {
+   "id": "US6",
+   "priority": "P3",
+   "issue": 100,
+   "worktree": "/home/sam/projects/django-mvp/django-mvp-compliance-010",
+   "status": "todo",
+   "replans": 0,
+   "tasks": [
+    {
+     "id": "T018",
+     "status": "todo",
+     "attempts": 0
+    },
+    {
+     "id": "T019",
+     "status": "todo",
+     "attempts": 0
+    }
+   ]
+  }
+ ],
+ "budgets": {
+  "converge_cycles": {
+   "used": 0,
+   "max": 2
+  },
+  "review_cycles": {
+   "used": 0,
+   "max": 1
+  },
+  "design_review_cycles": {
+   "used": 0,
+   "max": 1
+  },
+  "tokens": {
+   "used": 0,
+   "max": 120
+  }
+ },
+ "pr": {
+  "number": 89,
+  "draft": true
+ }
+}
