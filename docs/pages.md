@@ -163,6 +163,32 @@ after a submission with no toggle on, the page is drawn again with a message say
 <a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
 ```
 
+**When an acceptance cannot be stored.** The acceptances of one submission are written inside
+one database transaction, so they are stored together or not at all. When the write fails with
+a `DatabaseError`, or the package refuses a version with a `RecordError`, none of that
+submission's acceptances is kept and every document is still outstanding for the person. They
+are not sent on: the page is drawn again with a message saying their agreement was not
+recorded, and the toggles that were on are still on, so submitting again is one click. The
+message does not say why, and nothing about the cause reaches the page. Submitting again once
+the write works records the acceptances and sends the person on to the address they were first
+heading for.
+
+**How the failure is reported.** The failure is logged at error level, with its traceback, on
+the `mvp_compliance.views` logger. Under Django's default `LOGGING` that goes to standard
+error and nowhere else. A project that mails or forwards its errors attaches its handler to
+that logger, as it would for any of its own:
+
+```python
+# settings.py
+LOGGING = {
+    "version": 1,
+    "handlers": {"mail_admins": {"class": "django.utils.log.AdminEmailHandler"}},
+    "loggers": {
+        "mvp_compliance.views": {"handlers": ["mail_admins"], "level": "ERROR"},
+    },
+}
+```
+
 **Who may use it.** A visitor who is not signed in is sent to `LOGIN_URL` with the page's full
 address, `next` included, to come back to. A submission needs Django's CSRF token. The page
 applies the protection itself, so a project without `CsrfViewMiddleware` refuses a forged

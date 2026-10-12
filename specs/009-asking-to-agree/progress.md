@@ -48,3 +48,10 @@ Did: Added TestAgreementNotRecorded to tests/test_views.py (8 cases across Datab
 Verified: `uv run pytest tests/test_views.py::TestAgreementNotRecorded -q` -> 7 failed, 1 passed. The seven fail because the DatabaseError / RecordError escapes post() (the right reason). The passing one is the no-error-nothing-stored case, which the US-1 view already satisfies by reading the records after the write. `uv run pre-commit run --all-files` green.
 Next: T008, the failure branch and the transaction in AgreementView.post(), the demo view and route, docs/pages.md.
 Watch: none.
+
+## 2026-10-12T09:08:45Z · Implementer US2 · T008
+
+Did: AgreementView.post() now wraps the write in `transaction.atomic()` inside a `try`, with the `except (DatabaseError, RecordError)` outside the block: it logs with `logger.exception` on mvp_compliance.views and draws the page with `failed`; get_context_data keeps the toggles that were submitted on (`checked`) after a failure, matching submitted values as strings. demo/views.py gains DemoAgreementView (record_agreed raises DatabaseError for unrecorded.user@example.com) and demo/urls.py routes legal/agree/ to it ahead of the include. docs/pages.md: what happens when an acceptance cannot be stored, and the logger to attach error reporting to. Catalog regenerated; only reference line numbers moved.
+Verified: `uv run pytest tests/test_views.py -q` all green; TestAgreementNotRecorded 8 passed. Probes: removing atomic() fails the write-all-then-fail test; letting through after a no-op write fails the no-error test. A throwaway script on demo.settings: unrecorded.user got 200 and no acceptance, another user 302 and one acceptance. `uv run pre-commit run --all-files` green.
+Next: full verify once, then the report.
+Watch: the demo's `is_optional` is not added: that is the next story.

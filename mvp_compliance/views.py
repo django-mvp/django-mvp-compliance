@@ -1,7 +1,9 @@
 """The pages that show a document's wording to a visitor."""
 
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.http import Http404, HttpResponseRedirect
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
@@ -14,7 +16,9 @@ from django.views.decorators.csrf import csrf_protect
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
-from mvp_compliance.models import Acceptance, Document, Version
+from mvp_compliance.models import Acceptance, Document, RecordError, Version
+
+logger = logging.getLogger(__name__)
 
 
 class VersionSubtitleMixin:
@@ -298,7 +302,8 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         A submitted version is honoured only when it is the version in force of
         a document outstanding for this person. Whether the person is sent on
         is read from the stored acceptances after the write, never from the
-        submission.
+        submission. When the write fails, nothing of it is kept, the failure
+        is logged and the page is drawn again with the toggles that were on.
         """
         submitted = set(request.POST.getlist("agree"))
         self.entries = self.get_entries()
@@ -308,8 +313,14 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             if str(entry["version"].pk) in submitted
         ]
         if agreed:
-            with transaction.atomic():
-                self.record_agreed(agreed)
+            try:
+                with transaction.atomic():
+                    self.record_agreed(agreed)
+            except (DatabaseError, RecordError):
+                logger.exception(
+                    "The agreement of user %s was not recorded", request.user.pk
+                )
+                return self.render_to_response(self.get_context_data(failed=True))
         self.entries = self.get_entries()
         if all(entry["optional"] for entry in self.entries):
             return HttpResponseRedirect(self.get_destination())
@@ -318,6 +329,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
     def get_context_data(self, **kwargs):
         """Add the entries, each with the attributes of its toggle, and the destination."""
         context = super().get_context_data(**kwargs)
+        kept = set(self.request.POST.getlist("agree")) if context.get("failed") else ()
         for entry in self.entries:
             slug = entry["document"].slug
             entry["field"] = {
@@ -330,6 +342,8 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             }
             if not entry["optional"]:
                 entry["field"]["data-required"] = True
+            if str(entry["version"].pk) in kept:
+                entry["field"]["checked"] = True
         context["entries"] = self.entries
         context["required_count"] = sum(not entry["optional"] for entry in self.entries)
         context["destination"] = self.get_destination()
