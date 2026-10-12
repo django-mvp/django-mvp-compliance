@@ -41,3 +41,10 @@ Did: TestAgreementStrings in tests/test_views.py (the rendered page, title and t
 Verified: uv run pytest tests/test_views.py::TestAgreementStrings tests/test_views.py::TestPageStrings -q, 15 passed. Probe: with "Compliance" put in the page title the new test fails; restored. makemessages -l en --no-obsolete leaves the catalog unchanged. uv run pre-commit run --all-files green.
 Next: full verify, then the report.
 Watch: the demo landing card still describes the unrecorded.user and optional accounts, which need the demo's own view from US-2 and US-3; today those accounts behave like any other.
+
+## 2026-10-12T09:06:24Z · Implementer US2 · T007
+
+Did: Added TestAgreementNotRecorded to tests/test_views.py (8 cases across DatabaseError and RecordError): failed write answers 200 with `failed` set, nothing recorded and the document still outstanding; submitted-on toggles come back checked; a second submission with the write working goes on to the first destination; the failure is logged on mvp_compliance.views at error level with the exception attached and its message absent from the page; a write that stores nothing and raises nothing does not let through; a write that stores three then raises keeps none.
+Verified: `uv run pytest tests/test_views.py::TestAgreementNotRecorded -q` -> 7 failed, 1 passed. The seven fail because the DatabaseError / RecordError escapes post() (the right reason). The passing one is the no-error-nothing-stored case, which the US-1 view already satisfies by reading the records after the write. `uv run pre-commit run --all-files` green.
+Next: T008, the failure branch and the transaction in AgreementView.post(), the demo view and route, docs/pages.md.
+Watch: none.

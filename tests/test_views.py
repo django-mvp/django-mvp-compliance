@@ -1,5 +1,6 @@
 """Tests for mvp_compliance.views."""
 
+import logging
 import re
 from datetime import timedelta
 from html.parser import HTMLParser
@@ -9,7 +10,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
 from django.core.management import call_command
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.templatetags.static import static
 from django.test import Client, override_settings
 from django.test.utils import CaptureQueriesContext
@@ -19,8 +20,15 @@ from django.utils.formats import date_format
 from mvp.menus import AppMenu
 
 import mvp_compliance
-from mvp_compliance.models import Acceptance, Disclosure, Document, Version
+from mvp_compliance.models import (
+    Acceptance,
+    Disclosure,
+    Document,
+    RecordError,
+    Version,
+)
 from mvp_compliance.rendering import MarkdownRenderer
+from mvp_compliance.views import AgreementView
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
@@ -1655,6 +1663,125 @@ class TestAgreement:
             assert "data-required" in toggle
             assert toggle["aria-describedby"] in page.ids
         assert static("mvp_compliance/agreement.js") in response.content.decode()
+
+
+@pytest.mark.django_db
+class TestAgreementNotRecorded:
+    """US-2: a submission whose acceptances could not be stored is asked again (FR-008
+    to FR-011, SC-002, SC-005)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def submission(*versions, destination="/dashboard/"):
+        """A submission that lists and agrees to ``versions``."""
+        ids = [version.pk for version in versions]
+        return {"agree": ids, "listed": ids, "next": destination}
+
+    @staticmethod
+    def failing(error):
+        """Make the write of the page's acceptances raise ``error``."""
+        return patch.object(AgreementView, "record_agreed", side_effect=error)
+
+    @pytest.mark.parametrize("error", [DatabaseError, RecordError])
+    def test_a_failed_write_shows_the_page_again_and_records_nothing(
+        self, signed_in, user, error
+    ):
+        document = DocumentFactory()
+        version = published(document)
+
+        with self.failing(error("the write failed")):
+            response = signed_in.post(agreement_address(), self.submission(version))
+
+        assert response.status_code == 200
+        assert response.context["failed"]
+        assert not Acceptance.objects.exists()
+        assert list(Document.objects.outstanding_for(user)) == [document]
+
+    def test_the_toggles_that_were_on_come_back_on(self, signed_in):
+        agreed = published(DocumentFactory())
+        left_off = published(DocumentFactory())
+
+        with self.failing(DatabaseError("the write failed")):
+            response = signed_in.post(
+                agreement_address(),
+                {
+                    "agree": [agreed.pk],
+                    "listed": [agreed.pk, left_off.pk],
+                    "next": "/dashboard/",
+                },
+            )
+
+        toggles = {
+            field["value"]: field
+            for field in controls(response).inputs
+            if field.get("name") == "agree"
+        }
+        assert "checked" in toggles[str(agreed.pk)]
+        assert "checked" not in toggles[str(left_off.pk)]
+
+    def test_submitting_again_once_the_write_works_goes_on_to_the_destination(
+        self, signed_in
+    ):
+        version = published(DocumentFactory())
+        submission = self.submission(version, destination="/dashboard/?tab=2")
+
+        with self.failing(DatabaseError("the write failed")):
+            signed_in.post(agreement_address(), submission)
+        response = signed_in.post(agreement_address(), submission)
+
+        assert response.status_code == 302
+        assert response["Location"] == "/dashboard/?tab=2"
+        assert Acceptance.objects.get().version == version
+
+    @pytest.mark.parametrize("error", [DatabaseError, RecordError])
+    def test_the_failure_is_logged_with_its_cause_and_kept_from_the_page(
+        self, signed_in, caplog, error
+    ):
+        version = published(DocumentFactory())
+        cause = error("secret cause of the failure")
+
+        with (
+            caplog.at_level(logging.ERROR, logger="mvp_compliance.views"),
+            self.failing(cause),
+        ):
+            response = signed_in.post(agreement_address(), self.submission(version))
+
+        (record,) = [
+            record for record in caplog.records if record.name == "mvp_compliance.views"
+        ]
+        assert record.levelno == logging.ERROR
+        assert record.exc_info[1] is cause
+        assert "secret cause of the failure" not in response.content.decode()
+
+    def test_a_write_that_stores_nothing_and_raises_nothing_does_not_let_through(
+        self, signed_in
+    ):
+        version = published(DocumentFactory())
+
+        with patch.object(AgreementView, "record_agreed", return_value=None):
+            response = signed_in.post(agreement_address(), self.submission(version))
+
+        assert response.status_code == 200
+        assert not Acceptance.objects.exists()
+
+    def test_a_failure_after_some_acceptances_were_written_keeps_none_of_them(
+        self, signed_in
+    ):
+        versions = [published(DocumentFactory()) for _ in range(3)]
+
+        def write_all_then_fail(view, versions):
+            Acceptance.objects.record_many(view.request.user, versions)
+            raise DatabaseError("the third write failed")
+
+        with patch.object(AgreementView, "record_agreed", write_all_then_fail):
+            response = signed_in.post(agreement_address(), self.submission(*versions))
+
+        assert response.status_code == 200
+        assert not Acceptance.objects.exists()
 
 
 @pytest.mark.django_db
