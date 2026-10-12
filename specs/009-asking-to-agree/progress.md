@@ -55,3 +55,10 @@ Did: AgreementView.post() now wraps the write in `transaction.atomic()` inside a
 Verified: `uv run pytest tests/test_views.py -q` all green; TestAgreementNotRecorded 8 passed. Probes: removing atomic() fails the write-all-then-fail test; letting through after a no-op write fails the no-error test. A throwaway script on demo.settings: unrecorded.user got 200 and no acceptance, another user 302 and one acceptance. `uv run pre-commit run --all-files` green.
 Next: full verify once, then the report.
 Watch: the demo's `is_optional` is not added: that is the next story.
+
+## 2026-10-12T09:15:02Z · Implementer US3 · T009
+
+Did: wrote TestSeveralOutstanding in tests/test_views.py, 14 tests covering the story's seven scenarios, the query counts and the rows a view marks optional. Optional rows are reached by patching AgreementView.is_optional with monkeypatch.
+Verified: `uv run pytest tests/test_views.py::TestSeveralOutstanding -q` gives 2 failed, 12 passed. The two failures are the `changed` cases (a version replaced, and a document published, after the page was drawn): `changed` is never set in the context, so the page is drawn with `missing` instead. The 12 that already passed were each probed by breaking the mechanism in views.py and restoring it: dropping order_by("name"), agreeing only the first version, a fixed "/" destination, ignoring outstanding_for, a query per document, a write per version, data-required on every toggle, never redirecting on all-optional, ignoring is_optional, not recording an optional agreement, and linking the first version instead of the current. Every one of the 12 failed under at least one probe.
+Next: T010, step 2 of post() sets `changed` and the page is drawn without `missing`; the demo's is_optional.
+Watch: required-first sorting is already in get_entries() from T005 and has no test, by rule, so T010 changes nothing there.
