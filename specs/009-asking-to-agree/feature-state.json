@@ -259,8 +259,21 @@
         },
         {
           "id": "T010",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_views.py::TestSeveralOutstanding"
+            ],
+            "commands": [
+              "uv run pytest tests/test_views.py::TestSeveralOutstanding tests/test_views.py::TestAgreement tests/test_views.py::TestAgreementNotRecorded tests/test_views.py::TestAgreementStrings -q",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/views.py:314",
+              "demo/views.py:24"
+            ]
+          }
         }
       ]
     },

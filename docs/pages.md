@@ -159,6 +159,17 @@ scheme other than `http` or `https`, with `http` when the request came over HTTP
 protocol-relative to another host, is replaced by `/`. When something required is left, as
 after a submission with no toggle on, the page is drawn again with a message saying so.
 
+**Agreeing to some of them.** A person may agree to part of the list. What was agreed to is
+recorded and the page is drawn again with the rest, still in alphabetical order. Agreeing to
+the last of them sends the person to the address they were first heading for.
+
+**When the list changed while it was open.** A version published after the page was drawn
+replaces the one the person was shown. Nothing is recorded for it, since they never saw its
+wording. The versions still in force that were agreed to are recorded, and the page is drawn
+again with the version now in force and a message saying a document changed, in place of the
+one saying something required is left. A document accepted elsewhere, or made a notice,
+since the page was drawn is passed over, and the rest are recorded as usual.
+
 ```html
 <a href="{% url 'mvp_compliance:agree' %}?next=/dashboard/">Review our documents</a>
 ```
@@ -310,7 +321,7 @@ change, and you do not fork it.
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
-| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, `destination`, `redirect_field_name`, and `missing` after a submission that leaves something required |
+| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, `destination`, `redirect_field_name`, `missing` after a submission that leaves something required, and `changed` after one made from a list in which a version was replaced or a document published |
 | `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.

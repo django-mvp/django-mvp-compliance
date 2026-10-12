@@ -296,3 +296,18 @@ describes the site once it does. It is one translatable string, asserted by no t
 can replace it. The point is raised with the maintainer when the pull request is put up for review.
 
 **Revisit if**: this feature is released before the site-wide check.
+
+## D21 — A changed list is judged on the entries read before the write
+
+**Decision**: `post()` sets `changed` from the entries read at the start of the submission, by
+comparing each one's version id with the submitted `listed` values. The second read, after the
+write, decides only whether the person is sent on. A failed write is drawn as `failed` and is
+not judged for `changed`.
+
+**Why**: the first read is the list the submitted versions were matched against, so `changed`
+says exactly that something the person was shown no longer matched what is in force. It follows
+the order the plan gives the steps. A version replaced in the instant of the write (D19) is not
+seen by this check; the second read still keeps the person on the page, with `missing`.
+
+**Revisit if**: the page lists documents in more than one place, or a submission can carry more
+than one list.

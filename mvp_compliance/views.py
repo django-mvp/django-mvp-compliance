@@ -304,9 +304,14 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         is read from the stored acceptances after the write, never from the
         submission. When the write fails, nothing of it is kept, the failure
         is logged and the page is drawn again with the toggles that were on.
+        When a version was replaced, or a document published, since the page
+        was drawn, the page is drawn again as ``changed`` rather than
+        ``missing``.
         """
         submitted = set(request.POST.getlist("agree"))
+        listed = set(request.POST.getlist("listed"))
         self.entries = self.get_entries()
+        changed = any(str(entry["version"].pk) not in listed for entry in self.entries)
         agreed = [
             entry["version"]
             for entry in self.entries
@@ -324,7 +329,9 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         self.entries = self.get_entries()
         if all(entry["optional"] for entry in self.entries):
             return HttpResponseRedirect(self.get_destination())
-        return self.render_to_response(self.get_context_data(missing=True))
+        return self.render_to_response(
+            self.get_context_data(changed=changed, missing=not changed)
+        )
 
     def get_context_data(self, **kwargs):
         """Add the entries, each with the attributes of its toggle, and the destination."""
