@@ -68,3 +68,9 @@ other test runs a project that has not switched the check on.
 |---|---|---|
 | T018 | `tests/test_middleware.py::TestCheckInterval` — with `MVP_COMPLIANCE_AGREEMENT_CHECK_INTERVAL = 5`, a user found clear is not asked about again within five seconds and is redirected on the first request after five seconds once a new version of an enforced document is published (scenario 1, FR-022, SC-005); the same holds when a document's enforcement is switched on, and when a notice that is enforced becomes a document people agree to (FR-022); with the setting at `0`, a user found clear is redirected on their very next request after publication and their session holds what it held before (scenario 2); a finding stored under an interval of `300` is not honoured once the setting is `5` and five seconds have passed; with the setting at `300`, a stopped user whose acceptance is recorded is served on the next request, and one whose acceptance was not recorded is still redirected (scenarios 4 and 5). Scenario 3, the default, is T006's sixty-second test | Fails before T019 |
 | T019 | `mvp_compliance/middleware.py` — the setting replaces the constant; with `0` nothing is stored. `docs/enforcement.md`: the setting, what the delay means for a newly published version, and what `0` costs. README settings. `CHANGELOG.md` | T018 passes; full suite green; docs check green |
+
+## Fixes made while building
+
+| Id | Task | Done when |
+|---|---|---|
+| T020 | US-2. `tests/test_models.py::TestDocument::test_document_holds_no_wording` lists the fields a document has, to show none holds wording. It gains `enforced`, the one existing test the new field touches | Full suite green |
