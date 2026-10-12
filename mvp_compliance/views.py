@@ -1,16 +1,27 @@
-"""The pages that show a document's wording to a visitor."""
+"""The pages a visitor reads, and the page that asks a person to agree."""
 
+import logging
+from urllib.parse import unquote, urljoin, urlsplit
+
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.db import DatabaseError, transaction
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import resolve_url
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.utils.formats import date_format
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
+from django.views.decorators.csrf import csrf_protect
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
-from mvp_compliance.models import Acceptance, Document, Version
+from mvp_compliance.models import Acceptance, Document, RecordError, Version
+
+logger = logging.getLogger(__name__)
 
 
 class VersionSubtitleMixin:
@@ -182,3 +193,193 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
             entry["shown"] = accepted[: self.shown_first] if fold else accepted
             entry["earlier"] = accepted[self.shown_first :] if fold else []
         return list(entries.values())
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class AgreementView(LoginRequiredMixin, MVPTemplateView):
+    """The page that asks a signed-in person to agree to what is outstanding.
+
+    Lists every document outstanding for them, each with a link to its version
+    in force and a toggle, and takes all the answers in one submission. A
+    submission records the versions agreed to, asks again what is outstanding
+    and sends the person on to ``next`` only when the stored acceptances leave
+    nothing required. Opening the page records nothing, and the page stops
+    nobody from going elsewhere.
+    """
+
+    template_name = "mvp_compliance/agreement.html"
+    page_title = gettext_lazy("Documents to agree to")
+    #: The name of the parameter that carries the address to go on to.
+    redirect_field_name = "next"
+
+    def get_breadcrumbs(self):
+        """Show the page's own title as the whole trail."""
+        return [{"text": self.page_title}]
+
+    def get_page_subtitle(self):
+        """Say what agreeing is for, according to whether anything is required."""
+        if any(not entry["optional"] for entry in self.entries):
+            return _(
+                "You will not be able to use the app without agreeing to all "
+                "required documents."
+            )
+        return _("Agreeing is optional.")
+
+    def is_optional(self, document: Document) -> bool:
+        """Say whether the person may go on without agreeing to ``document``.
+
+        Every outstanding document is required until the site-wide check
+        decides which are not. A project's own view overrides this.
+
+        Args:
+            document: An outstanding document.
+
+        Returns:
+            Whether agreeing to ``document`` is optional.
+        """
+        return False
+
+    def get_entries(self) -> list[dict]:
+        """Read what is outstanding for the signed-in person, required first.
+
+        Returns:
+            One dict per outstanding document, in the order the document pages
+            list them, holding its ``document``, the ``version`` in force and
+            whether agreeing is ``optional``. Two queries whatever the number
+            of documents.
+        """
+        documents = (
+            Document.objects.outstanding_for(self.request.user)
+            .in_force()
+            .order_by("name")
+        )
+        entries = [
+            {
+                "document": document,
+                "version": document.current_versions[0],
+                "optional": self.is_optional(document),
+            }
+            for document in documents
+        ]
+        return sorted(entries, key=lambda entry: entry["optional"])
+
+    def get_destination(self) -> str:
+        """Return the address to send the person on to.
+
+        Returns:
+            The ``next`` value of the submission or the query string when it
+            stays on this site and is not this page, otherwise the address
+            named by ``MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL``, ``/`` when the
+            project sets none.
+        """
+        destination: str = self.request.POST.get(
+            self.redirect_field_name, self.request.GET.get(self.redirect_field_name, "")
+        )
+        if url_has_allowed_host_and_scheme(
+            destination,
+            allowed_hosts={self.request.get_host()},
+            require_https=self.request.is_secure(),
+        ) and not self.is_own_address(destination):
+            return destination
+        return resolve_url(
+            getattr(settings, "MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL", "/")
+        )
+
+    def is_own_address(self, destination: str) -> bool:
+        """Say whether ``destination``, read from this page, is this page.
+
+        Args:
+            destination: An address on this site, as the person's browser
+                would follow it from the page.
+
+        Returns:
+            Whether it names this page's path, however it is written: with a
+            query string, without the trailing slash, percent-encoded, or as
+            ``.`` or a bare query string.
+        """
+        own: str = self.request.path
+        path = unquote(urlsplit(urljoin(own, destination)).path)
+        # Resolved again once decoded: a browser reads ``%2e`` as a dot segment.
+        path = urlsplit(urljoin(own, path)).path
+        return path.rstrip("/") == own.rstrip("/")
+
+    def record_agreed(self, versions: list[Version]) -> None:
+        """Record the signed-in person's acceptance of ``versions``.
+
+        The one place the page writes, and the one a project's own view
+        overrides to change how an agreement is stored.
+
+        Args:
+            versions: The versions the person agreed to.
+        """
+        Acceptance.objects.record_many(
+            self.request.user, versions, request=self.request
+        )
+
+    def get(self, request, *args, **kwargs):
+        """Send a person with nothing outstanding on, otherwise draw the page."""
+        self.entries = self.get_entries()
+        if not self.entries:
+            return HttpResponseRedirect(self.get_destination())
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """Record what was agreed to, then go on or ask again.
+
+        A submitted version is honoured only when it is the version in force of
+        a document outstanding for this person. Whether the person is sent on
+        is read from the stored acceptances after the write, never from the
+        submission. When the write fails, nothing of it is kept, the failure
+        is logged and the page is drawn again with the toggles that were on.
+        When a version was replaced, or a document published, since the page
+        was drawn, the page is drawn again as ``changed`` rather than
+        ``missing``.
+        """
+        submitted = set(request.POST.getlist("agree"))
+        listed = set(request.POST.getlist("listed"))
+        self.entries = self.get_entries()
+        changed = any(str(entry["version"].pk) not in listed for entry in self.entries)
+        agreed = [
+            entry["version"]
+            for entry in self.entries
+            if str(entry["version"].pk) in submitted
+        ]
+        if agreed:
+            try:
+                with transaction.atomic():
+                    self.record_agreed(agreed)
+            except (DatabaseError, RecordError):
+                logger.exception(
+                    "The agreement of user %s was not recorded", request.user.pk
+                )
+                return self.render_to_response(self.get_context_data(failed=True))
+        self.entries = self.get_entries()
+        if all(entry["optional"] for entry in self.entries):
+            return HttpResponseRedirect(self.get_destination())
+        return self.render_to_response(
+            self.get_context_data(changed=changed, missing=not changed)
+        )
+
+    def get_context_data(self, **kwargs):
+        """Add the entries, each with its toggle's attributes, and the destination."""
+        context = super().get_context_data(**kwargs)
+        kept = set(self.request.POST.getlist("agree")) if context.get("failed") else ()
+        for entry in self.entries:
+            slug = entry["document"].slug
+            entry["field"] = {
+                "name": "agree",
+                "value": entry["version"].pk,
+                "id": f"agree-{slug}",
+                # The label reads "I agree" for every document, so the name
+                # reaches assistive technology from the row.
+                "aria-describedby": f"document-{slug}",
+            }
+            if not entry["optional"]:
+                entry["field"]["data-required"] = True
+            if str(entry["version"].pk) in kept:
+                entry["field"]["checked"] = True
+        context["entries"] = self.entries
+        context["required_count"] = sum(not entry["optional"] for entry in self.entries)
+        context["destination"] = self.get_destination()
+        context["redirect_field_name"] = self.redirect_field_name
+        return context

@@ -115,6 +115,44 @@ ACCEPTORS = {
     ],
 }
 
+#: The people the page that asks is looked at with, beside the ones above.
+#: Each line is a document and the number of the version accepted. Recorded on
+#: every run, which is safe: accepting the same version twice leaves one record.
+#: Already reachable with the accounts above: regular.user has every document
+#: outstanding, returning.user four, longstanding.user two, veteran.user none.
+ASKED = {
+    # One document outstanding, an earlier version of which they agreed to.
+    "one-document.user@example.com": [
+        ("Privacy policy", "2025.1"),
+        ("Terms of use", "2025.1"),
+        ("House rules", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
+    # One document that holds them up and one that does not, side by side:
+    # the demo's settings name House rules as optional.
+    "optional.user@example.com": [
+        ("Privacy policy", "2025.1"),
+        ("Terms of use", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
+    # Only the optional document outstanding.
+    "optional-only.user@example.com": [
+        ("Privacy policy", "2026.1"),
+        ("Terms of use", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
+    # Two outstanding, and the write always fails: the demo's own view refuses
+    # to store an acceptance for this account, so the failure can be looked at.
+    "unrecorded.user@example.com": [
+        ("House rules", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
+}
+
 #: Someone whose account is closed and whose records outlived it, which is the
 #: ordinary case for a request and the one that cannot be asked for by an
 #: email address, because there is no account left to carry one.
@@ -342,6 +380,7 @@ class Command(BaseCommand):
         )
 
         self.make_acceptances()
+        self.make_asked()
         # After the acceptances: one of a notice is refused, so it has to be
         # recorded while the document is still one people agree to.
         Document.objects.filter(name="Delivery information").update(
@@ -393,6 +432,16 @@ class Command(BaseCommand):
         self.stdout.write(
             f"  {DEPARTED}: account removed, records kept — ask for subject {subject}"
         )
+
+    def make_asked(self):
+        """Leave each account in ``ASKED`` with the documents it is asked about."""
+        for email, accepted in ASKED.items():
+            person = self.make_account(email, False, False, [])
+            for name, number in accepted:
+                version = Version.objects.get(document__name=name, number=number)
+                with on(2026, 9, 20):
+                    Acceptance.objects.record(person, version)
+            self.stdout.write(f"  {email}: {len(accepted)} acceptances")
 
     def request(self):
         """A request carrying an address, so the optional evidence is reachable.

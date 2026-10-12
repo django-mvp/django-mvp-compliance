@@ -124,7 +124,9 @@ cost a fixed number of lookups, because R4's flow asks it on an ordinary page re
 The shape that does it is a single query with a subquery, not a loop over documents:
 
 ```python
-accepted = Acceptance.objects.filter(subject=..., version__status=Version.Status.CURRENT)
+accepted = Acceptance.objects.filter(
+    subject=..., version__status=Version.Status.CURRENT
+)
 Document.objects.filter(versions__status=Version.Status.CURRENT).exclude(
     pk__in=accepted.values("version__document_id")
 )
