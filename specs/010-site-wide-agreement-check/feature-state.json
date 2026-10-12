@@ -79,8 +79,21 @@
       "tasks": [
         {
           "id": "T006",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestAgreementCheck",
+              "tests/test_middleware.py::TestAgreementCheckOff",
+              "tests/test_middleware.py::TestAgreementCheckCost"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py -q"
+            ],
+            "code": [
+              "tests/test_middleware.py:116"
+            ]
+          }
         },
         {
           "id": "T007",
