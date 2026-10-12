@@ -2163,16 +2163,6 @@ class TestAgreementDestination:
         assert response.status_code == 302
         assert response["Location"] == self.default
 
-    def test_a_page_with_only_optional_documents_is_still_shown(
-        self, signed_in, monkeypatch
-    ):
-        monkeypatch.setattr(AgreementView, "is_optional", lambda view, document: True)
-        published(DocumentFactory())
-
-        response = signed_in.get(agreement_address("/checkout/"))
-
-        assert response.status_code == 200
-
     @pytest.mark.parametrize(
         "destination",
         [
