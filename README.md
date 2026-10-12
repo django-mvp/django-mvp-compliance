@@ -190,7 +190,19 @@ MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS = ["/help/", "/contact/"]  # empty by defau
 
 An entry covers itself and every address beneath it, a path segment at a time: `/help/`
 covers `/help/faq/` and not `/helpful/`. An entry of `/` covers every address, which
-switches the check off for everybody. See
+switches the check off for everybody.
+
+Accounts that should never be stopped are named by the value they sign in with, or
+given the `mvp_compliance.skip_agreement` permission, which can be granted to a group
+with no deploy:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["monitoring"]  # empty by default
+```
+
+Name only accounts whose sign-in value the holder cannot change, and remove a name
+when its account is removed. See
 [docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md)
 for what stays reachable, what a form submission and a request for part of a page
 receive, the delay, and the system checks that report a middleware that cannot work.
@@ -387,6 +399,13 @@ but coherent alternative — somebody holding only `view_version` and
 nothing themselves. Without `publish_version` the publish address is
 refused by both the page that confirms and the action that publishes it,
 and no link to it is offered.
+
+`mvp_compliance.skip_agreement` is a permission of a different kind: it is for
+accounts that should never be stopped by the [agreement check](#installation),
+such as a support team. An account that holds it, directly or through a group, is
+let past on a site that has switched the check on, and a superuser always is.
+Being let past records no acceptance. See
+[docs/enforcement.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/enforcement.md#letting-accounts-past).
 
 ## Publishing
 

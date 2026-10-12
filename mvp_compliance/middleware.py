@@ -50,7 +50,11 @@ class AgreementMiddleware:
             request that visiting an address would not repeat carries none.
             Only a finding that nothing stops the person is written to the
             session, and it is read back only when it is a number that is less
-            than ``CLEAR_FINDING_SECONDS`` old.
+            than ``CLEAR_FINDING_SECONDS`` old. An account named in
+            ``MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS``, and one that holds the
+            ``mvp_compliance.skip_agreement`` permission, are let through
+            and nothing is written for them: the permission is asked of a
+            person only once they are known to be outstanding.
         """
         user = getattr(request, "user", None)
         if user is None or not user.is_authenticated:
@@ -61,8 +65,13 @@ class AgreementMiddleware:
             and 0 <= timezone.now().timestamp() - found < CLEAR_FINDING_SECONDS
         ):
             return self.get_response(request)
+        exempt = getattr(settings, "MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS", [])
+        if user.get_username() in exempt:
+            return self.get_response(request)
         if not Document.objects.enforced_outstanding_for(user).exists():
             request.session[CLEAR_SINCE_KEY] = timezone.now().timestamp()
+            return self.get_response(request)
+        if user.has_perm("mvp_compliance.skip_agreement"):
             return self.get_response(request)
         try:
             address = reverse("mvp_compliance:agree")

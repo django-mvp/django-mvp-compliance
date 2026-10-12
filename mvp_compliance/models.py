@@ -226,6 +226,12 @@ class Document(models.Model):
     class Meta:
         verbose_name = _("document")
         verbose_name_plural = _("documents")
+        permissions = [
+            (
+                "skip_agreement",
+                _("Can continue without accepting enforced documents"),
+            )
+        ]
 
     def __str__(self) -> str:
         """Return the document's name."""

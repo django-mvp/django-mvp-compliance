@@ -100,6 +100,23 @@ page, never with that document. A document that was published under `agree` befo
 reserved keeps its versions and its acceptances, and its own page is no longer reachable. Its slug
 is fixed once a version is published, as the next section says, so the package cannot give it another.
 
+### The permission to continue without accepting
+
+`Document` carries one permission, `skip_agreement`, with the name "Can continue without accepting
+enforced documents". Its content type is `Document`, so it is asked for as
+`mvp_compliance.skip_agreement` and granted in the admin like any other, to a user or to a group:
+
+```python
+user.has_perm("mvp_compliance.skip_agreement")
+```
+
+On a site that has switched the [check](enforcement.md) on, an account that holds it, directly or
+through a group, is never stopped. A superuser holds every permission, so a superuser is never
+stopped either. Holding it records nothing and changes nothing about what is
+[outstanding](#enforced-and-outstanding) for the account. See [Letting accounts
+past](enforcement.md#letting-accounts-past). The permission is created by the migration that adds
+`enforced`, `0002`, which adds one migration for this release and nothing else.
+
 ### When the slug is fixed
 
 The slug can change until the document's first version is published. From then on it is

@@ -419,8 +419,28 @@
         },
         {
           "id": "T017",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_middleware.py::TestLetPast",
+              "tests/test_middleware.py::TestLetPastCost",
+              "tests/test_checks.py::TestListSettingChecks",
+              "tests/test_models.py::TestSkipAgreementPermission",
+              "tests/test_migrations.py::TestEnforcedColumn"
+            ],
+            "commands": [
+              "uv run pytest tests/test_middleware.py tests/test_checks.py tests/test_models.py tests/test_migrations.py tests/test_admin.py -q -n auto --dist loadscope",
+              "uv run python manage.py makemigrations --check --dry-run",
+              "forge verify --repo . --base origin/main --steps docs",
+              "uv run pre-commit run --all-files"
+            ],
+            "code": [
+              "mvp_compliance/middleware.py:64",
+              "mvp_compliance/models.py:226",
+              "mvp_compliance/checks.py:68"
+            ]
+          }
         }
       ]
     },

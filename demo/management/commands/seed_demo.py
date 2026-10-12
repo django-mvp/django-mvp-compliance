@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from unittest import mock
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 from django.http import HttpRequest
 
@@ -40,7 +40,17 @@ ACCOUNTS = {
     # being separate: fielding a request is a different job from writing a
     # document, and staff.user above holds neither.
     "disclosure.user@example.com": (True, False, ["produce_disclosure"]),
+    # Named in demo/settings.py, so it is never stopped by the agreement check.
+    "monitoring.user@example.com": (False, False, []),
+    # Holds nothing itself: it is in the group below, which holds the permission
+    # that lets an account past the agreement check.
+    "support.user@example.com": (False, False, []),
 }
+
+#: The group that holds the permission to continue without accepting what is
+#: enforced, and the account in it.
+SUPPORT_GROUP = "Support"
+SUPPORT_ACCOUNT = "support.user"
 
 #: A name long enough to wrap, on a document with many versions.
 COMMUNITY = (
@@ -313,6 +323,8 @@ class Command(BaseCommand):
         for email, (is_staff, is_superuser, codenames) in ACCOUNTS.items():
             self.make_account(email, is_staff, is_superuser, codenames)
 
+        self.make_support_group()
+
         publisher = get_user_model().objects.get(username="publisher.user")
         self.make_document(
             "Privacy policy",
@@ -391,6 +403,16 @@ class Command(BaseCommand):
         Document.objects.filter(name="House rules").update(enforced=False)
 
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
+
+    def make_support_group(self):
+        """Put the support account in a group that holds ``skip_agreement``."""
+        group, _created = Group.objects.get_or_create(name=SUPPORT_GROUP)
+        group.permissions.set(
+            Permission.objects.filter(
+                content_type__app_label="mvp_compliance", codename="skip_agreement"
+            )
+        )
+        group.user_set.add(get_user_model().objects.get(username=SUPPORT_ACCOUNT))
 
     def make_departed_publisher_document(self):
         """A version whose publisher's account has since been removed."""

@@ -40,12 +40,15 @@ For each request from a signed-in person, in this order:
 
 1. If they were found to have nothing enforced outstanding less than a minute ago, the request
    is served. See [The delay](#the-delay).
-2. If no enforced document is outstanding for them, the request is served, and the finding is
+2. If their sign-in value is in `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS`, the request is served.
+   See [Letting accounts past](#letting-accounts-past).
+3. If no enforced document is outstanding for them, the request is served, and the finding is
    remembered.
-3. If the page that asks has no address, the request is served. The
+4. If they hold the `mvp_compliance.skip_agreement` permission, the request is served.
+5. If the page that asks has no address, the request is served. The
    [system checks](#the-system-checks) report that.
-4. If the address asked for is [kept reachable](#what-stays-reachable), the request is served.
-5. Otherwise they are stopped: the view of the address they asked for does not run, and they are
+6. If the address asked for is [kept reachable](#what-stays-reachable), the request is served.
+7. Otherwise they are stopped: the view of the address they asked for does not run, and they are
    sent to the page that asks, `mvp_compliance:agree`.
 
 A person with two enforced documents outstanding is sent once, to the one page, which lists both.
@@ -132,6 +135,49 @@ need no entry.
 `account_logout`, `logout` or `admin:logout`. A project whose sign-out view is registered under
 another name has to list its address here, or a person who has not agreed cannot sign out.
 
+## Letting accounts past
+
+Some accounts should never be stopped: the one a monitoring service signs in with, the ones a
+browser test suite drives, a support team. There are two ways to name them, and an account that is
+let past by either is served at every address, whatever it has outstanding.
+
+**By the value it signs in with.** List it in the project's settings:
+
+```python
+# settings.py
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["monitoring"]  # empty by default
+```
+
+Each entry is compared with `user.get_username()`, so with a user model that signs in by email it
+is the email address. A name that matches no account changes nothing, and neither does the account
+being removed later. The setting is a list: a string, which would be read a character at a time, is
+reported by [`mvp_compliance.E003`](#the-system-checks).
+
+**By a permission.** An account that holds `mvp_compliance.skip_agreement`, directly or through a
+group, is let past. An administrator gives the permission to a group in the admin, with no change to
+the project's settings and no deploy, and takes it away the same way. An account whose permission
+is taken away is stopped on its next request. A superuser holds every permission, so a superuser is
+always let past. See [The permission to continue without
+accepting](models.md#the-permission-to-continue-without-accepting).
+
+Being let past records nothing. No acceptance is created, what is outstanding for the account is
+unchanged, and the account can still accept a document itself on the page that asks.
+
+Name only accounts whose sign-in value the holder cannot change, and remove a name when its
+account is removed. A name is a claim about whoever signs in with it: if people can choose their
+own username, or change it, somebody can take a name that is listed and is never stopped. A name
+left in the setting after its account was removed is open to whoever registers it next.
+
+### What it costs
+
+An account named in the setting is let past before the database is asked anything, so its requests
+cost what they would without the middleware. The permission is asked only of a person who has an
+enforced document outstanding and is about to be stopped, so it costs nothing for anybody else, on
+the request that makes the check and on those after it. A person who holds the permission is asked
+about on every request, because the answer is not remembered, and that is what makes taking the
+permission away take effect on their next request. The cost is the queries Django makes to read
+that account's permissions.
+
 ## A form submission, and a request for part of a page
 
 Letting either through would leave a way to keep using the site without agreeing, so both are
@@ -202,13 +248,13 @@ runs them, and so do `runserver` and `migrate`:
 |---|---|---|
 | `mvp_compliance.E001` | The page that asks has no address, because the package's addresses are not mounted. | Add `path("legal/", include("mvp_compliance.urls"))` to the project's URLconf. |
 | `mvp_compliance.E002` | No entry before the middleware is `AuthenticationMiddleware` or a subclass of it. | List the middleware after the one that identifies the signed-in user. |
-| `mvp_compliance.E003` | `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS` is a string. | Write it as a list, even for one entry. |
+| `mvp_compliance.E003` | `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS` or `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS` is a string. | Write it as a list, even for one entry. |
 
 A subclass of `AuthenticationMiddleware` counts, so a project with its own does not need to
 change anything. Left unfixed, the first means no request is stopped, because the middleware
 does not redirect anybody to an address that does not exist, and the second means it finds
 nobody signed in. Either way the check holds nobody, which is why both are errors. The third
 is reported once for each setting that is a string, because a string is read a character at a
-time and would keep reachable far more than was meant.
+time and would keep reachable or let past far more than was meant.
 
 Nothing is reported while the middleware is not listed, whatever else is wrong.

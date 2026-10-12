@@ -98,6 +98,11 @@ EASY_ICONS = {
 # personal data about somebody who did not ask for it to be kept.
 MVP_COMPLIANCE_RECORD_IP_ADDRESS = True
 
+# The account a monitoring service signs in with is never stopped. It is named
+# by the value it signs in with, and the demo's accounts sign in with the part
+# of the address before the @.
+MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS = ["monitoring.user"]
+
 # django-mvp's shell draws its navigation through flex-menu renderers, and
 # rendering any page raises until the host project registers them.
 FLEX_MENUS = {

@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reachable need no entry, and an entry of `/` covers every address. System check
   `mvp_compliance.E003` reports the setting when it is a string. See
   [docs/enforcement.md](docs/enforcement.md#keeping-your-own-addresses-reachable).
+- `MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS`, a list of the values accounts sign in with, compared
+  with `user.get_username()`. An account named in it is never stopped by the agreement check, and
+  a name that matches no account changes nothing. System check `mvp_compliance.E003` reports the
+  setting when it is a string, as it does `MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS`.
+- The permission `mvp_compliance.skip_agreement`, on `Document`. An account that holds it,
+  directly or through a group, is never stopped by the agreement check, and a superuser always is
+  let past. It is asked only of a person who is outstanding and about to be stopped, and the answer
+  is not remembered, so taking it away takes effect on the next request. Letting an account past by
+  either way records no acceptance and changes nothing outstanding for it. It is added by
+  migration `0002`, which is still the only migration this release adds. See
+  [docs/enforcement.md](docs/enforcement.md#letting-accounts-past).
 - `Document.enforced`, which says whether a person who has not accepted a document can be stopped
   until they do. A document created without a choice is enforced, and so is every document that
   existed before the migration. It is changed with an ordinary save or update at any time and

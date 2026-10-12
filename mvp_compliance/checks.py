@@ -11,7 +11,10 @@ AGREEMENT_MIDDLEWARE = "mvp_compliance.middleware.AgreementMiddleware"
 
 #: The settings that are lists of strings, which a bare string would be read
 #: from a character at a time.
-LIST_SETTINGS = ("MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS",)
+LIST_SETTINGS = (
+    "MVP_COMPLIANCE_AGREEMENT_EXEMPT_URLS",
+    "MVP_COMPLIANCE_AGREEMENT_EXEMPT_USERS",
+)
 
 
 def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
