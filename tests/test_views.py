@@ -12,7 +12,7 @@ import pytest
 from django.core.management import call_command
 from django.db import DatabaseError, connection
 from django.templatetags.static import static
-from django.test import Client, override_settings
+from django.test import Client, modify_settings, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -2413,3 +2413,254 @@ class TestAgreementStrings:
         lowered = re.sub(r"<[^>]+>", " ", content).lower()
         for word in FORBIDDEN_WORDS:
             assert word not in lowered, word
+
+
+@pytest.mark.django_db
+class TestAgreementEnforcement:
+    """US-3: the page that asks follows each document's enforcement, so it lets a
+    person go exactly when the check does (FR-015, FR-028 to FR-032, SC-008,
+    SC-009)."""
+
+    default = "/welcome/"
+
+    @pytest.fixture(autouse=True)
+    def project_default(self, settings):
+        settings.MVP_COMPLIANCE_AGREEMENT_REDIRECT_URL = self.default
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @pytest.fixture
+    def enforced(self):
+        """The version in force of a document that stops a person."""
+        return published(DocumentFactory())
+
+    @pytest.fixture
+    def unenforced(self):
+        """The version in force of a document that is offered and never required."""
+        return published(DocumentFactory(enforced=False))
+
+    @staticmethod
+    def submission(listed, agreed=None, destination="/dashboard/"):
+        """A submission listing ``listed`` and agreeing to ``agreed`` (default: all)."""
+        agreed = listed if agreed is None else agreed
+        return {
+            "agree": [version.pk for version in agreed],
+            "listed": [version.pk for version in listed],
+            "next": destination,
+        }
+
+    def test_agreeing_to_the_enforced_document_only_records_it_and_goes_on(
+        self, signed_in, user, enforced, unenforced
+    ):
+        response = signed_in.post(
+            agreement_address(),
+            self.submission([enforced, unenforced], agreed=[enforced]),
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == "/dashboard/"
+        (acceptance,) = Acceptance.objects.for_person(user)
+        assert acceptance.version == enforced
+
+    def test_agreeing_to_both_records_both_and_goes_on(
+        self, signed_in, user, enforced, unenforced
+    ):
+        response = signed_in.post(
+            agreement_address(), self.submission([enforced, unenforced])
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == "/dashboard/"
+        recorded = {acceptance.version for acceptance in Acceptance.objects.all()}
+        assert recorded == {enforced, unenforced}
+
+    def test_agreeing_to_one_of_two_enforced_documents_shows_the_other(
+        self, signed_in, user, enforced
+    ):
+        other = published(DocumentFactory())
+
+        response = signed_in.post(
+            agreement_address(), self.submission([enforced, other], agreed=[enforced])
+        )
+
+        assert response.status_code == 200
+        (entry,) = response.context["entries"]
+        assert entry["version"] == other
+        assert not entry["optional"]
+        assert Acceptance.objects.get().version == enforced
+
+    def test_agreeing_to_the_unenforced_document_only_records_it_and_asks_again(
+        self, signed_in, user, enforced, unenforced
+    ):
+        response = signed_in.post(
+            agreement_address(),
+            self.submission([enforced, unenforced], agreed=[unenforced]),
+        )
+
+        assert response.status_code == 200
+        (entry,) = response.context["entries"]
+        assert entry["version"] == enforced
+        assert Acceptance.objects.get().version == unenforced
+
+    def test_the_page_lists_both_and_only_the_unenforced_one_is_optional(
+        self, signed_in, enforced, unenforced
+    ):
+        response = signed_in.get(agreement_address())
+
+        assert response.status_code == 200
+        optional = {
+            entry["document"]: entry["optional"]
+            for entry in response.context["entries"]
+        }
+        assert optional == {
+            enforced.document: False,
+            unenforced.document: True,
+        }
+
+    def test_the_required_entries_are_the_enforced_outstanding_documents(
+        self, signed_in, user, enforced, unenforced
+    ):
+        published(DocumentFactory())
+        Acceptance.objects.record(user, published(DocumentFactory()))
+        published(DocumentFactory(kind=Document.Kind.NOTICE))
+
+        response = signed_in.get(agreement_address())
+
+        required = {
+            entry["document"]
+            for entry in response.context["entries"]
+            if not entry["optional"]
+        }
+        assert required == set(Document.objects.enforced_outstanding_for(user))
+        assert len(required) == 2
+
+    @pytest.mark.parametrize(
+        "destination", ["/checkout/?step=2", "https://elsewhere.example/", ""]
+    )
+    def test_only_unenforced_outstanding_and_an_address_sends_on_at_once(
+        self, signed_in, unenforced, destination
+    ):
+        response = signed_in.get(agreement_address(destination))
+
+        assert response.status_code == 302
+        assert response.content == b""
+        assert not response.templates
+        expected = destination if destination.startswith("/") else self.default
+        assert response["Location"] == expected
+
+    def test_only_unenforced_outstanding_and_no_address_shows_the_page(
+        self, signed_in, unenforced
+    ):
+        response = signed_in.get(agreement_address())
+
+        assert response.status_code == 200
+        (entry,) = response.context["entries"]
+        assert entry["version"] == unenforced
+        assert entry["optional"]
+
+    def test_agreeing_to_the_only_unenforced_document_records_it_and_goes_on(
+        self, signed_in, user, unenforced
+    ):
+        response = signed_in.post(
+            agreement_address(), self.submission([unenforced], destination="")
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == self.default
+        assert Acceptance.objects.get().version == unenforced
+
+    def test_agreeing_to_nothing_goes_on_to_the_default_destination(
+        self, signed_in, unenforced
+    ):
+        response = signed_in.post(
+            agreement_address(),
+            self.submission([unenforced], agreed=[], destination=""),
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == self.default
+        assert not Acceptance.objects.exists()
+
+    @pytest.mark.parametrize("destination", [None, "/checkout/", ""])
+    def test_nothing_outstanding_sends_on_with_or_without_an_address(
+        self, signed_in, user, destination
+    ):
+        Acceptance.objects.record(user, published(DocumentFactory()))
+        Acceptance.objects.record(user, published(DocumentFactory(enforced=False)))
+
+        response = signed_in.get(agreement_address(destination))
+
+        assert response.status_code == 302
+        assert response.content == b""
+
+    def test_a_failed_write_sends_nobody_on_and_records_neither_document(
+        self, signed_in, enforced, unenforced
+    ):
+        with patch.object(
+            AgreementView, "record_agreed", side_effect=DatabaseError("failed")
+        ):
+            response = signed_in.post(
+                agreement_address(), self.submission([enforced, unenforced])
+            )
+
+        assert response.status_code == 200
+        assert response.context["failed"]
+        assert not Acceptance.objects.exists()
+
+    def test_enforcement_switched_off_after_the_page_was_drawn_is_honoured(
+        self, signed_in, enforced
+    ):
+        other = published(DocumentFactory())
+        Document.objects.filter(pk=other.document_id).update(enforced=False)
+
+        response = signed_in.post(
+            agreement_address(), self.submission([enforced, other], agreed=[enforced])
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == "/dashboard/"
+
+    def test_enforcement_switched_on_after_the_page_was_drawn_is_honoured(
+        self, signed_in, enforced, unenforced
+    ):
+        Document.objects.filter(pk=unenforced.document_id).update(enforced=True)
+
+        response = signed_in.post(
+            agreement_address(),
+            self.submission([enforced, unenforced], agreed=[enforced]),
+        )
+
+        assert response.status_code == 200
+        (entry,) = response.context["entries"]
+        assert entry["version"] == unenforced
+        assert not entry["optional"]
+
+    def test_a_stopped_person_agrees_to_the_enforced_document_and_arrives(
+        self, signed_in, user, enforced, unenforced
+    ):
+        asked_for = reverse("account-center")
+
+        with modify_settings(
+            MIDDLEWARE={"append": "mvp_compliance.middleware.AgreementMiddleware"}
+        ):
+            stopped = signed_in.get(asked_for)
+            opened = signed_in.get(stopped["Location"])
+            sent = signed_in.post(
+                agreement_address(),
+                self.submission(
+                    [enforced, unenforced],
+                    agreed=[enforced],
+                    destination=opened.context["destination"],
+                ),
+            )
+            arrived = signed_in.get(sent["Location"])
+
+        assert stopped.status_code == 302
+        assert opened.status_code == 200
+        assert sent["Location"] == asked_for
+        assert arrived.status_code == 200
+        (acceptance,) = Acceptance.objects.for_person(user)
+        assert acceptance.version == enforced
