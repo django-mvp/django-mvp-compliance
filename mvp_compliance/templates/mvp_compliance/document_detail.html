@@ -5,10 +5,10 @@
   <link rel="stylesheet" href="{% static 'mvp_compliance/pages.css' %}" />
 {% endblock styles %}
 {% block page.content-wrapper %}
-  <c-page.content class="py-4">
+  <c-mvp.page.content class="py-4">
     <div class="flex flex-1 flex-col gap-6 lg:flex-row">
       <aside class="shrink-0 lg:w-1/4">
-        <c-card title="{% translate "Documents" %}" class="mvp-compliance-document-list overflow-y-auto lg:sticky">
+        <c-mvp.card title="{% translate "Documents" %}" class="mvp-compliance-document-list overflow-y-auto lg:sticky">
         <nav id="document-list" aria-label="{% translate "Legal documents" %}">
           <ul class="menu w-full p-0">
             {% for item in documents %}
@@ -18,12 +18,17 @@
             {% endfor %}
           </ul>
         </nav>
-        </c-card>
+        </c-mvp.card>
       </aside>
       <div class="flex-1 min-w-0 flex flex-col gap-3">
-        <c-page.title :title="page.title" :subtitle="page.subtitle">
+        <c-mvp.page.title :title="page.title" :subtitle="page.subtitle">
           <c-slot name="actions">
-            <c-dropdown halign="end" variant="primary" icon="chevron-down" reverse text="v{{ version.number }}">
+            <c-mvp.dropdown halign="end">
+              <c-slot name="button">
+                <c-button tabindex="0" role="button" variant="primary" text="v{{ version.number }}">
+                  <c-icon name="chevron-down" />
+                </c-button>
+              </c-slot>
               <ul class="menu menu-sm w-full">
                 {% for item in versions %}
                   <li>
@@ -31,9 +36,9 @@
                   </li>
                 {% endfor %}
               </ul>
-            </c-dropdown>
+            </c-mvp.dropdown>
           </c-slot>
-        </c-page.title>
+        </c-mvp.page.title>
         {% if version.replaced_at %}
           <c-alert variant="warning" class="alert-horizontal">
             <span>{% blocktranslate with published=version.published_at|date replaced=version.replaced_at|date %}This version has been replaced. It was in force from {{ published }} to {{ replaced }}.{% endblocktranslate %}</span>
@@ -43,5 +48,5 @@
         <div class="prose max-w-none">{{ version.html|safe }}</div>
       </div>
     </div>
-  </c-page.content>
+  </c-mvp.page.content>
 {% endblock page.content-wrapper %}

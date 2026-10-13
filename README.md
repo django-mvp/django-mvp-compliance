@@ -138,7 +138,7 @@ The standing directions this package steers by are in [GOALS.md](https://github.
 
 - Python 3.12 or later.
 - Django 5.2, 6.0 or 6.1.
-- [django-mvp](https://github.com/django-mvp/django-mvp) 0.23 or later, which the pages render in.
+- [django-mvp](https://github.com/django-mvp/django-mvp) 0.28.1 or later, which the pages render in.
 
 The CI matrix is the authoritative statement of what is supported.
 
