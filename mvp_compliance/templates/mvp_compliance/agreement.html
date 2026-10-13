@@ -26,11 +26,11 @@
   {% endif %}
 {% endblock page.header %}
 {% block page.content-wrapper %}
-  <c-page.content gap=4 class="py-4 max-w-3xl mx-auto w-full">
-    <c-page.title :title="page.title" :subtitle="page.subtitle" />
-    <c-form method="post" id="agreement" class="flex flex-col gap-4">
+  <c-mvp.page.content gap=4 class="py-4 max-w-3xl mx-auto w-full">
+    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <c-mvp.form method="post" id="agreement" class="flex flex-col gap-4">
       <input type="hidden" name="{{ redirect_field_name }}" value="{{ destination }}" />
-      <c-card tight>
+      <c-mvp.card tight>
         <ul class="list">
           {% for entry in entries %}
             <c-compliance.outstanding :document="entry.document"
@@ -39,7 +39,7 @@
                                       :optional="entry.optional" />
           {% endfor %}
         </ul>
-      </c-card>
+      </c-mvp.card>
       <div>
         {% if required_count %}
           <c-button type="submit" variant="primary" text="{% translate "Agree and continue" %}" />
@@ -47,6 +47,6 @@
           <c-button type="submit" variant="primary" text="{% translate "Continue" %}" />
         {% endif %}
       </div>
-    </c-form>
-  </c-page.content>
+    </c-mvp.form>
+  </c-mvp.page.content>
 {% endblock page.content-wrapper %}

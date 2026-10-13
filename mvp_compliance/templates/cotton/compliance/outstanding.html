@@ -24,5 +24,7 @@
        rel="noopener"
        aria-describedby="document-{{ document.slug }}">{% translate "View document in full" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
   </div>
-  <c-form.field type="toggle" class="toggle-primary" label="{% translate "I agree" %}" :attrs="field" />
+  <c-form.label class="gap-2" text="{% translate "I agree" %}">
+    <c-form.toggle variant="primary" :attrs="field" />
+  </c-form.label>
 </li>

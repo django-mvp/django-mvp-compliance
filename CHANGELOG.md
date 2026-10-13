@@ -72,6 +72,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking: the package needs django-mvp 0.28.1 or later.** It was 0.25.0. django-mvp 0.26 to
+  0.28 moved its forms to django-mvp-forms, took its basic components from daisy-cotton and put
+  its own components under an `mvp.` prefix, and this package's templates now use those names.
+  A project on an older django-mvp cannot install this release. Follow the upgrade notes in
+  [django-mvp's changelog](https://github.com/django-mvp/django-mvp/blob/main/CHANGELOG.md)
+  for the settings a project changes, which are `"mvp_forms"` in place of `"crispy_tailwind"`,
+  the `daisyui` crispy template pack and `"daisy_cotton"` below `"mvp"` in `INSTALLED_APPS`.
+  Nothing in this package's own settings, addresses or models changes.
+- A project template that replaces one of this package's templates, and was copied from it,
+  uses component names django-mvp no longer has. `<c-page>`, `<c-page.title>`,
+  `<c-page.content>`, `<c-page.list.empty>`, `<c-card>`, `<c-form>` and `<c-dropdown>` are now
+  `<c-mvp.page>`, `<c-mvp.page.title>`, `<c-mvp.page.content>`, `<c-mvp.page.list.empty>`,
+  `<c-mvp.card>`, `<c-mvp.form>` and `<c-mvp.dropdown>`. `<c-form.field>` no longer exists.
+- On the page that asks, each toggle is drawn by daisy-cotton's `<c-form.label>` and
+  `<c-form.toggle>`. The input keeps its name, value, id and `data-required`, and now also has
+  `role="switch"`. The words "I agree" are no longer wrapped in a `<span>`.
 - The page that asks follows each document's `enforced` field. A document that is not enforced is
   still listed, and is marked optional where it was marked required. After a submission a person is
   sent on once no enforced document is outstanding for them, whatever they left alone among the

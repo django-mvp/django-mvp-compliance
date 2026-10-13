@@ -21,9 +21,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "mvp",
+    "daisy_cotton",
     "easy_icons",
     "crispy_forms",
-    "crispy_tailwind",
+    "mvp_forms",
     "flex_menu",
     "django_cotton",
     "mvp_compliance",
@@ -65,8 +66,8 @@ DATABASES = {
     }
 }
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = ["tailwind"]
-CRISPY_TEMPLATE_PACK = "tailwind"
+CRISPY_ALLOWED_TEMPLATE_PACKS = ["daisyui"]
+CRISPY_TEMPLATE_PACK = "daisyui"
 
 # django-mvp's error pages name icons, and without a renderer a refused request
 # raises ImproperlyConfigured instead of returning its 403.

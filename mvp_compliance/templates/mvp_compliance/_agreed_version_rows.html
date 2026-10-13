@@ -5,9 +5,9 @@
     <span class="flex flex-wrap items-center gap-2">
       <a class="link" href="{% url 'mvp_compliance:document' document.slug %}?version={{ acceptance.version.number }}">{% blocktranslate with number=acceptance.version.number %}v{{ number }}{% endblocktranslate %}<span class="sr-only">, {{ document.name }}</span></a>
       {% if acceptance.version.status == "current" %}
-        <c-badge size="sm" variant="success" class="badge-soft" text="{% translate "In force" %}" />
+        <c-badge size="sm" variant="success" soft text="{% translate "In force" %}" />
       {% else %}
-        <c-badge size="sm" variant="ghost" text="{% translate "Replaced" %}" />
+        <c-badge size="sm" ghost text="{% translate "Replaced" %}" />
       {% endif %}
     </span>
   </th>

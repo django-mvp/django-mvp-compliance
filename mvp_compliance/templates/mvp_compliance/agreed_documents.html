@@ -1,11 +1,11 @@
 {% extends "mvp/account/base.html" %}
 {% load i18n %}
 {% block account.content %}
-  <c-page>
-    <c-page.title :title="page.title" :subtitle="page.subtitle" />
+  <c-mvp.page>
+    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
     <div id="agreed-documents" class="flex flex-col gap-4 max-w-3xl">
       {% for entry in entries %}
-        <c-card title="{{ entry.document.name }}">
+        <c-mvp.card title="{{ entry.document.name }}">
           {% if entry.newer %}
             <c-alert variant="warning" soft class="alert-horizontal">
               <span>{% blocktranslate with number=entry.newer.number date=entry.newer.published_at|date %}A newer version, v{{ number }}, has been in force since {{ date }}. You have not agreed to it.{% endblocktranslate %}</span>
@@ -45,12 +45,12 @@
               </div>
             </details>
           {% endif %}
-        </c-card>
+        </c-mvp.card>
       {% empty %}
-        <c-page.list.empty icon="document"
-                           heading="{% translate "Nothing to show yet" %}"
-                           message="{% translate "When you agree to a document on this site, it appears here with the version and the date." %}" />
+        <c-mvp.page.list.empty icon="document"
+                               heading="{% translate "Nothing to show yet" %}"
+                               message="{% translate "When you agree to a document on this site, it appears here with the version and the date." %}" />
       {% endfor %}
     </div>
-  </c-page>
+  </c-mvp.page>
 {% endblock account.content %}
