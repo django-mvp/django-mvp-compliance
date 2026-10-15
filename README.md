@@ -2,7 +2,13 @@
 
 [![Tests](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/tests.yml/badge.svg)](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/tests.yml)
 [![Build](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/build.yml/badge.svg)](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/build.yml)
+[![Publish](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/publish.yml/badge.svg)](https://github.com/django-mvp/django-mvp-compliance/actions/workflows/publish.yml)
 [![Coverage](https://codecov.io/gh/django-mvp/django-mvp-compliance/graph/badge.svg)](https://codecov.io/gh/django-mvp/django-mvp-compliance)
+[![PyPI](https://img.shields.io/pypi/v/django-mvp-compliance)](https://pypi.org/project/django-mvp-compliance/)
+[![Development status](https://img.shields.io/pypi/status/django-mvp-compliance)](https://pypi.org/project/django-mvp-compliance/)
+[![Python](https://img.shields.io/pypi/pyversions/django-mvp-compliance)](https://pypi.org/project/django-mvp-compliance/)
+[![Django](https://img.shields.io/pypi/djversions/django-mvp-compliance)](https://pypi.org/project/django-mvp-compliance/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Licence](https://img.shields.io/github/license/django-mvp/django-mvp-compliance)](https://github.com/django-mvp/django-mvp-compliance/blob/main/LICENSE)
 
 Legal documents, consent records and cookie consent for django-mvp projects, managed from the database rather than the repository.
