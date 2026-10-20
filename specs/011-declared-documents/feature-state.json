@@ -159,7 +159,7 @@
       "priority": "P2",
       "issue": 115,
       "worktree": "/home/sam/projects/worktrees/compliance-fs011",
-      "status": "todo",
+      "status": "done",
       "replans": 0,
       "tasks": [
         {
@@ -211,7 +211,7 @@
       "max": 1
     },
     "tokens": {
-      "used": 12.15,
+      "used": 15.78,
       "max": 120
     }
   },
