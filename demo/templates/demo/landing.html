@@ -24,12 +24,15 @@
         <p class="mt-2 opacity-75">
           A visitor reads the version in force at
           <code>/legal/&lt;slug&gt;/</code>. A document with nothing published is invisible to
-          a visitor, which is why the list below links only the ones that have something.
+          a visitor. The accessibility statement below is declared in the demo's settings
+          and has no version yet, so its link leads to a page that is not found until one
+          is published.
         </p>
         <ul class="mt-2 list-disc pl-6">
           <li><a class="link" href="{% url 'mvp_compliance:document' 'privacy-policy' %}">Privacy policy</a></li>
           <li><a class="link" href="{% url 'mvp_compliance:document' 'terms-of-use' %}">Terms of use</a></li>
           <li><a class="link" href="{% url 'mvp_compliance:document' 'impressum' %}">Impressum</a></li>
+          <li><a class="link" href="{% url 'mvp_compliance:document' 'accessibility-statement' %}">Accessibility statement</a></li>
         </ul>
         <a class="btn btn-primary mt-4 w-fit" href="/admin/">Open the admin</a>
       </div>
