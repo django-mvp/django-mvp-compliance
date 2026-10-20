@@ -184,6 +184,19 @@
               "docs/models.md:165"
             ]
           }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py migrate"
+            ],
+            "code": [
+              "demo/settings.py:99"
+            ]
+          }
         }
       ]
     },
