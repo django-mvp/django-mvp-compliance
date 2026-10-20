@@ -3,9 +3,10 @@
 import pytest
 from django.apps import apps as global_apps
 from django.apps.registry import Apps
+from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
-from mvp_compliance.management import create_declared_documents
 
+from mvp_compliance.management import create_declared_documents
 from mvp_compliance.models import Acceptance, Document, Version
 from tests.factories import (
     AcceptanceFactory,
@@ -156,3 +157,91 @@ class TestCreateDeclaredDocuments:
 
         assert response.status_code == 200
         assert response.context["version"] == version
+
+
+@pytest.mark.django_db
+class TestRefusedDeclarations:
+    def test_a_name_belonging_to_another_slug_is_refused_naming_both(self, settings):
+        DocumentFactory(slug="data-protection", name="Privacy policy")
+        settings.MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy"}
+
+        with pytest.raises(ImproperlyConfigured) as refused:
+            run()
+
+        assert "privacy-policy" in str(refused.value)
+        assert "data-protection" in str(refused.value)
+
+    def test_one_fault_stops_the_valid_declarations_too(self, settings):
+        DocumentFactory(slug="data-protection", name="Privacy policy")
+        settings.MVP_COMPLIANCE_DOCUMENTS = {
+            "privacy-policy": "Privacy policy",
+            "terms-of-use": "Terms of use",
+        }
+
+        with pytest.raises(ImproperlyConfigured):
+            run()
+
+        assert not Document.objects.filter(slug="terms-of-use").exists()
+
+    @pytest.mark.parametrize(
+        ("slug", "name"),
+        [
+            ("Privacy-Policy", "Privacy policy"),
+            ("agree", "Agree"),
+            ("privacy-policy", ""),
+            ("privacy-policy", "Privacy policy "),
+            ("privacy-policy", " Privacy policy"),
+        ],
+        ids=["capital", "reserved", "empty-name", "trailing-space", "leading-space"],
+    )
+    def test_a_declaration_the_model_would_refuse_creates_nothing(
+        self, settings, slug, name
+    ):
+        settings.MVP_COMPLIANCE_DOCUMENTS = {slug: name, "terms-of-use": "Terms"}
+
+        with pytest.raises(ImproperlyConfigured) as refused:
+            run()
+
+        assert slug in str(refused.value)
+        assert not Document.objects.exists()
+
+    def test_every_fault_is_named_in_one_refusal(self, settings):
+        settings.MVP_COMPLIANCE_DOCUMENTS = {"Bad-Slug": "One", "agree": "Two"}
+
+        with pytest.raises(ImproperlyConfigured) as refused:
+            run()
+
+        assert "Bad-Slug" in str(refused.value)
+        assert "agree" in str(refused.value)
+
+    def test_two_declarations_sharing_a_name_are_refused(self, settings):
+        settings.MVP_COMPLIANCE_DOCUMENTS = {
+            "privacy-policy": "Policy",
+            "terms-of-use": "Policy",
+        }
+
+        with pytest.raises(ImproperlyConfigured) as refused:
+            run()
+
+        assert "privacy-policy" in str(refused.value)
+        assert "terms-of-use" in str(refused.value)
+        assert not Document.objects.exists()
+
+    def test_a_name_that_is_already_its_own_documents_is_not_a_fault(self, settings):
+        DocumentFactory(slug="privacy-policy", name="Privacy policy")
+        settings.MVP_COMPLIANCE_DOCUMENTS = {
+            "privacy-policy": "Privacy policy",
+            "terms-of-use": "Terms of use",
+        }
+
+        run()
+
+        assert Document.objects.filter(slug="terms-of-use").exists()
+
+    def test_a_fault_in_an_existing_documents_declaration_is_ignored(self, settings):
+        DocumentFactory(slug="privacy-policy", name="Our policy")
+        settings.MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy "}
+
+        run()
+
+        assert Document.objects.get(slug="privacy-policy").name == "Our policy"
