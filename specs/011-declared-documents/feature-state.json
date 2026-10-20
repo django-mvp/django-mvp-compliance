@@ -3,7 +3,7 @@
   "feature": "011-declared-documents",
   "branch": "011-declared-documents",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "DESIGN_REVIEW",
+  "state": "IMPLEMENT",
   "state_history": [
     {
       "state": "QUEUED",
@@ -19,6 +19,11 @@
       "state": "DESIGN_REVIEW",
       "at": "2026-10-20T12:47:25Z",
       "note": "plan, research and tasks committed; design reviewer dispatched"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-10-20T12:54:47Z",
+      "note": "design review approved, six remedies applied; plan gate open"
     }
   ],
   "gates": {
