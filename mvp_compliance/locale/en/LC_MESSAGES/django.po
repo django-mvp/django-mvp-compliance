@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 13:57+0200\n"
+"POT-Creation-Date: 2026-10-20 14:59+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -75,7 +75,7 @@ msgstr "Publish"
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
 
-#: apps.py:13
+#: apps.py:14
 msgid "Compliance"
 msgstr "Compliance"
 
@@ -128,6 +128,28 @@ msgid ""
 msgstr ""
 "The account's login name or email address, or, for somebody whose account "
 "has since been removed, the identifier their records still carry."
+
+#: management.py:41
+msgid "The name must not start or end with a space."
+msgstr ""
+
+#: management.py:44
+#, python-format
+msgid "The name already belongs to the document “%(other)s”."
+msgstr ""
+
+#: management.py:48
+msgid "Another declaration gives the same name."
+msgstr ""
+
+#: management.py:51
+#, python-format
+msgid "Declaration “%(slug)s”: %(problems)s"
+msgstr ""
+
+#: management.py:103
+msgid "MVP_COMPLIANCE_DOCUMENTS cannot be applied:"
+msgstr ""
 
 #: menus.py:15
 msgid "Agreements"
@@ -311,7 +333,7 @@ msgstr ""
 "the version say an account was since removed after the link to it is "
 "cleared. Empty when nobody was recorded."
 
-#: models.py:493 models.py:1059
+#: models.py:493 models.py:1071
 #: templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
@@ -352,24 +374,24 @@ msgstr "This version is no longer a draft."
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: models.py:808 models.py:1161
+#: models.py:820 models.py:1173
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: models.py:813 models.py:1168
+#: models.py:825 models.py:1180
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: models.py:961 models.py:1004
+#: models.py:973 models.py:1016
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: models.py:1035
+#: models.py:1047
 msgid "user"
 msgstr "user"
 
-#: models.py:1037
+#: models.py:1049
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -379,11 +401,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: models.py:1047
+#: models.py:1059
 msgid "subject"
 msgstr "subject"
 
-#: models.py:1051
+#: models.py:1063
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -395,7 +417,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: models.py:1061
+#: models.py:1073
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -403,11 +425,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: models.py:1068
+#: models.py:1080
 msgid "accepted at"
 msgstr "accepted at"
 
-#: models.py:1072
+#: models.py:1084
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -415,11 +437,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: models.py:1077
+#: models.py:1089
 msgid "IP address"
 msgstr "IP address"
 
-#: models.py:1081
+#: models.py:1093
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -431,21 +453,21 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: models.py:1091
+#: models.py:1103
 msgid "acceptance"
 msgstr "acceptance"
 
-#: models.py:1092
+#: models.py:1104
 msgid "acceptances"
 msgstr "acceptances"
 
-#: models.py:1127
+#: models.py:1139
 msgid ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 msgstr ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 
-#: models.py:1152
+#: models.py:1164
 msgid ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
@@ -453,15 +475,15 @@ msgstr ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
 
-#: models.py:1186
+#: models.py:1198
 msgid "disclosure"
 msgstr "disclosure"
 
-#: models.py:1187
+#: models.py:1199
 msgid "everything held about a person"
 msgstr "everything held about a person"
 
-#: models.py:1189
+#: models.py:1201
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
@@ -494,7 +516,7 @@ msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
 #: templates/admin/mvp_compliance/document/change_form.html:10
-#: templates/mvp_compliance/document_detail.html:40
+#: templates/mvp_compliance/document_detail.html:45
 msgid "View current version"
 msgstr "View current version"
 
@@ -649,12 +671,12 @@ msgstr "Documents"
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: templates/mvp_compliance/document_detail.html:30 views.py:42
+#: templates/mvp_compliance/document_detail.html:35 views.py:42
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
 
-#: templates/mvp_compliance/document_detail.html:39
+#: templates/mvp_compliance/document_detail.html:44
 #, python-format
 msgid ""
 "This version has been replaced. It was in force from %(published)s to "
