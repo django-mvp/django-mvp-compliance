@@ -1,0 +1,115 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "011-declared-documents",
+  "branch": "011-declared-documents",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PLAN",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-10-20T12:44:30Z",
+      "note": "specification approved on #113 at 2c8de6d; issue graph built (#112, #114, #115)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-10-20T12:46:42Z",
+      "note": "claim held; branch level with origin/main 4e241d2; research, plan and tasks written"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "Sam",
+      "at": "2026-10-20T12:42:42Z",
+      "self_resolved": [
+        "approved in session at commit 2c8de6db2f14c1db995f2dfca9bd9154c58e359e"
+      ]
+    },
+    "plan": {
+      "approved_by": null,
+      "at": null
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 114,
+      "worktree": "/home/sam/projects/worktrees/compliance-fs011",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T002",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T003",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T004",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T005",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P2",
+      "issue": 115,
+      "worktree": "/home/sam/projects/worktrees/compliance-fs011",
+      "status": "todo",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T006",
+          "status": "todo",
+          "attempts": 0
+        },
+        {
+          "id": "T007",
+          "status": "todo",
+          "attempts": 0
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 0,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 0,
+      "max": 1
+    },
+    "tokens": {
+      "used": 0,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 113,
+    "draft": true
+  }
+}
