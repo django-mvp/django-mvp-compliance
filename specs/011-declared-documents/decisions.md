@@ -66,3 +66,29 @@ document in that run.
 **Why defensible**: names are unique, so the document cannot be created as declared. Skipping it
 quietly would leave the code linking to a document that will never exist. Creating the others and
 skipping one would leave a database that half matches its settings.
+
+## Design review
+
+One reviewer, three lenses, verdict approve, no critical or high finding. Remedies applied to the
+plan and tasks:
+
+- The admin appends `slug` to the read-only fields once, under one condition, not twice (ARCH-001).
+- US-1 is built before US-2 (SPEC-001).
+- The receiver reads and writes through `using` (ARCH-002).
+- `bulk_create(update_conflicts=True)` is documented as unguarded, as for the published lock
+  (SEC-001).
+- T001 tests that publishing a declared document fills its address (SPEC-002).
+- A name with surrounding whitespace is refused (ARCH-003).
+
+ADR 0019's Decision is edited to read as the current rule in US-2.
+
+**ADR:** none — the remedies are local to this feature's plan.
+
+## D5 — A declared slug refuses with its own exception
+
+**ADR:** none — follows ADR 0003, which already has every refusal raise a package exception.
+
+## D1 to D4
+
+**ADR:** D1 and D2 graduate together at convergence, as the decision to declare documents in a
+setting and create them after migrating.

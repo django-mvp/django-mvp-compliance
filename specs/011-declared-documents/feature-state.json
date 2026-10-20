@@ -30,12 +30,27 @@
       ]
     },
     "plan": {
-      "approved_by": null,
-      "at": null
+      "approved_by": "open",
+      "at": "2026-10-20T12:54:02Z",
+      "self_resolved": [
+        "plan gate open for this feature; passed without a stop"
+      ]
     },
     "merge": {
       "approved_by": null,
       "at": null
+    },
+    "design_review": {
+      "approved_by": "design reviewer",
+      "at": "2026-10-20T12:54:02Z",
+      "self_resolved": [
+        "ARCH-001 single slug append",
+        "SPEC-001 US-1 before US-2",
+        "ARCH-002 using",
+        "SEC-001 documented",
+        "SPEC-002 scenario 3 test",
+        "ARCH-003 whitespace names refused"
+      ]
     }
   },
   "stories": [

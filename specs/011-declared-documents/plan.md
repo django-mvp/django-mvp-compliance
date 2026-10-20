@@ -57,7 +57,11 @@ apps=global_apps, **kwargs)`, connected in `MvpComplianceConfig.ready()` with
 4. Any fault → raise `ImproperlyConfigured` listing them, each naming the declaration's slug and,
    for a clash, the other document's slug. Nothing is written.
 5. Otherwise create the missing documents in one `transaction.atomic(using=using)`, through the
-   historical model, with slug and name only.
+   historical model's `objects.using(using)`, with slug and name only. Every read in steps 2 and 3
+   also goes through `using`.
+
+Step 3 also refuses a name that is empty or has leading or trailing whitespace, which `clean()`
+does not strip.
 
 ### The slug lock
 
@@ -67,7 +71,8 @@ apps=global_apps, **kwargs)`, connected in `MvpComplianceConfig.ready()` with
 - `DocumentQuerySet.update()`: with `slug` in the update, raise `DeclaredDocumentError` if any row
   in the queryset has a declared slug, before the existing published check. `bulk_update()` goes
   through it.
-- `DocumentAdmin.get_readonly_fields()`: add `slug` when the document's slug is declared.
+- `DocumentAdmin.get_readonly_fields()`: the existing published condition becomes `published or declared`, so `slug` is appended once whichever holds.
+- `bulk_create(update_conflicts=True)`, `_base_manager` and a data migration's historical model are not guarded, as for the published lock today. `docs/models.md` names the routes that refuse.
 
 ### Documentation
 
@@ -84,7 +89,13 @@ apps=global_apps, **kwargs)`, connected in `MvpComplianceConfig.ready()` with
 ### The demo
 
 `demo/settings.py` declares the privacy policy, the terms of use and the impressum. `seed_demo`
-sets a found document's kind when it differs from the one it seeds.
+sets the kind of a document it is about to seed, after its early return for a document that
+already has versions.
+
+## Order
+
+US-1 is built before US-2: the slug lock reads `declared_documents()`, which US-1 adds, and both
+stories edit `models.py` and the same documentation pages.
 
 ## Project structure
 
