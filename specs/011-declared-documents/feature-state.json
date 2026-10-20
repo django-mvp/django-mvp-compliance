@@ -3,7 +3,7 @@
   "feature": "011-declared-documents",
   "branch": "011-declared-documents",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "REVIEW",
+  "state": "PR_READY",
   "state_history": [
     {
       "state": "QUEUED",
@@ -34,6 +34,11 @@
       "state": "REVIEW",
       "at": "2026-10-20T13:13:05Z",
       "note": "converged; ADR 0026 graduated"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-10-20T13:27:24Z",
+      "note": "review approved, DOC-001 fixed; walkthrough laid out"
     }
   ],
   "gates": {
@@ -75,6 +80,11 @@
         "note on case-insensitive collation accepted: nothing written either way",
         "note on admin comparison remedied in T008 wording"
       ]
+    },
+    "walkthrough": {
+      "approved_by": null,
+      "at": "2026-10-20T13:27:31Z",
+      "self_resolved": []
     }
   },
   "stories": [
@@ -263,6 +273,6 @@
   },
   "pr": {
     "number": 113,
-    "draft": true
+    "draft": false
   }
 }
