@@ -145,8 +145,8 @@ Only a missing document is created. One that already has the declared slug is le
 it is, including its name, its kind and its versions, and so is a document whose declaration is
 later removed. Declaring never updates or deletes anything.
 
-A declaration is refused when its slug or name is one the admin would refuse (a capital in the
-slug, a reserved slug, an empty name, a name with a space at either end), when its name already
+A declaration is refused when its slug or name breaks a rule a document's fields hold (a capital
+in the slug, a reserved slug, an empty name), when its name starts or ends with a space, when its name already
 belongs to a document under another slug, or when two declarations give the same name. `migrate`
 then raises `ImproperlyConfigured`, names every faulty declaration by its slug and, for a name
 that clashes, the slug of the other document, and creates none of the declared documents in that
@@ -161,6 +161,22 @@ the `post_migrate` receiver that creates the missing documents, and
 takes the declarations no document has, as slug to name, and the slug of the document that
 already holds each name, and returns one message per faulty declaration. It returns an empty
 list when all are sound.
+
+#### Declared documents in tests and seed data
+
+Test databases are migrated too, so every declared document already exists in each one, with no
+version. Declaring a document and creating it are two ways to get the same row, not steps to
+combine. A test, factory, fixture or seed command that creates a document with a declared slug or
+name fails with `IntegrityError`, and a count of all documents includes the declared ones. Fetch
+the declared document instead:
+
+```python
+privacy = Document.objects.get(slug="privacy-policy")
+```
+
+A test that needs a database with no documents in it overrides the setting with
+`MVP_COMPLIANCE_DOCUMENTS = {}` for its test settings, or creates its documents under slugs and
+names the project does not declare.
 
 ### When the slug is fixed
 

@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `MVP_COMPLIANCE_DOCUMENTS`, a setting that declares the documents a site links to, by slug and
   name. `migrate` creates each declared document that does not exist yet, with no version, so its
-  address can be linked in every environment before anything is published. An existing document is
+  address can be linked in every environment before anything is published. Declared documents exist in test databases too, so a test or
+  fixture that creates a document under a declared slug or name has to fetch it instead. An
+  existing document is
   never changed, and a declaration the admin would refuse, or whose name belongs to another
   document, stops `migrate` with `ImproperlyConfigured`. A declared document's slug is fixed from
   the start: `save()`, `update()`, `bulk_update()` and the admin refuse a change to it, with the

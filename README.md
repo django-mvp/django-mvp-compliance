@@ -251,7 +251,9 @@ MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy"}  # empty by defa
 ```
 
 A declaration that conflicts with an existing document, or that the admin would refuse, stops
-`migrate` with `ImproperlyConfigured`. See [docs/models.md](docs/models.md#declaring-documents).
+`migrate` with `ImproperlyConfigured`. A declared document already exists in every database,
+test databases included, so fetch it with `Document.objects.get(slug=...)` rather than creating
+it. See [docs/models.md](docs/models.md#declaring-documents).
 
 Publishing renders the Markdown to HTML once and makes that version
 **current** — the one in force — moving whichever version was current
