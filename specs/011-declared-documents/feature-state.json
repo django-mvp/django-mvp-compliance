@@ -69,13 +69,38 @@
       "tasks": [
         {
           "id": "T001",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py::TestCreateDeclaredDocuments"
+            ],
+            "commands": [
+              "uv run pytest tests/test_management.py -q"
+            ],
+            "code": [
+              "tests/test_management.py:28"
+            ]
+          }
         },
         {
           "id": "T002",
-          "status": "todo",
-          "attempts": 0
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py::TestCreateDeclaredDocuments",
+              "tests/test_app.py::TestDeclaredDocumentsAfterMigrate"
+            ],
+            "commands": [
+              "uv run pytest tests/test_management.py tests/test_app.py -q"
+            ],
+            "code": [
+              "mvp_compliance/management.py:10",
+              "mvp_compliance/models.py:750",
+              "mvp_compliance/apps.py:19"
+            ]
+          }
         },
         {
           "id": "T003",
