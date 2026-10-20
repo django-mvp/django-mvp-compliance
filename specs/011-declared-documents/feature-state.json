@@ -66,6 +66,15 @@
         "SPEC-002 scenario 3 test",
         "ARCH-003 whitespace names refused"
       ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-10-20T13:23:39Z",
+      "self_resolved": [
+        "DOC-001 remedied in T008: declared documents in tests documented",
+        "note on case-insensitive collation accepted: nothing written either way",
+        "note on admin comparison remedied in T008 wording"
+      ]
     }
   },
   "stories": [
@@ -159,6 +168,20 @@
               "docs/models.md:121",
               "demo/settings.py:100",
               "demo/management/commands/seed_demo.py:519"
+            ]
+          }
+        },
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest -q",
+              "forge verify --repo . --base origin/main"
+            ],
+            "code": [
+              "docs/models.md:165"
             ]
           }
         }
