@@ -964,6 +964,61 @@ class TestDocumentSlugInTheAdmin:
 
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
+class TestDeclaredDocumentAdmin:
+    """US-2 scenario 1, FR-011, FR-012: a declared document's slug is fixed in
+    the admin before any version is published.
+    """
+
+    @pytest.fixture
+    def declared(self, settings):
+        settings.MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy"}
+        return Document.objects.create(name="Privacy policy", slug="privacy-policy")
+
+    def test_the_change_form_has_no_slug_input(self, client, editor, declared) -> None:
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[declared.pk])
+
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert 'name="slug"' not in response.content.decode()
+
+    def test_a_post_carrying_a_different_slug_leaves_the_slug_alone(
+        self, client, editor, declared
+    ) -> None:
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[declared.pk])
+
+        response = client.post(
+            url,
+            {
+                "name": "Privacy",
+                "slug": "new-address",
+                "kind": Document.Kind.NOTICE,
+            },
+        )
+
+        assert response.status_code == 302
+        declared.refresh_from_db()
+        assert declared.slug == "privacy-policy"
+        assert declared.name == "Privacy"
+        assert declared.kind == Document.Kind.NOTICE
+        assert not declared.enforced
+
+    def test_an_undeclared_document_without_a_version_still_has_the_input(
+        self, client, editor, declared
+    ) -> None:
+        other = DocumentFactory()
+        client.force_login(editor)
+        url = reverse("admin:mvp_compliance_document_change", args=[other.pk])
+
+        response = client.get(url)
+
+        assert 'name="slug"' in response.content.decode()
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
 class TestDocumentEnforcement:
     """US-2 scenarios 4-6, FR-014: enforcement is chosen on the form and shown in the list."""
 

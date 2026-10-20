@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from mvp_compliance.exceptions import (
+    DeclaredDocumentError,
     PublishedVersionError,
     PublishError,
     RecordedAcceptanceError,
@@ -229,6 +230,129 @@ class TestDocumentSlug:
         response = client.get(address)
         assert response.status_code == 200
         assert "Privacy notice" in response.content.decode()
+
+
+@pytest.mark.django_db
+class TestDeclaredSlug:
+    """US-2 scenarios 2-4, FR-011 to FR-013: a declared slug is fixed from the
+    start, before any version is published.
+    """
+
+    @pytest.fixture
+    def declared(self, settings):
+        settings.MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy"}
+        return Document.objects.create(name="Privacy policy", slug="privacy-policy")
+
+    def test_save_refuses_a_new_slug_and_leaves_the_stored_slug(self, declared):
+        declared.slug = "privacy"
+
+        with pytest.raises(DeclaredDocumentError):
+            declared.save()
+
+        assert Document.objects.get(pk=declared.pk).slug == "privacy-policy"
+
+    def test_update_refuses_a_new_slug_and_leaves_the_stored_slug(self, declared):
+        with pytest.raises(DeclaredDocumentError):
+            Document.objects.filter(pk=declared.pk).update(slug="privacy")
+
+        assert Document.objects.get(pk=declared.pk).slug == "privacy-policy"
+
+    def test_bulk_update_refuses_a_new_slug_and_leaves_the_stored_slug(
+        self, declared
+    ):
+        declared.slug = "privacy"
+
+        with pytest.raises(DeclaredDocumentError):
+            Document.objects.bulk_update([declared], ["slug"])
+
+        assert Document.objects.get(pk=declared.pk).slug == "privacy-policy"
+
+    def test_save_with_the_same_slug_is_allowed(self, declared):
+        declared.name = "Privacy"
+
+        declared.save()
+
+        assert Document.objects.get(pk=declared.pk).name == "Privacy"
+
+    def test_name_kind_and_enforced_still_change_through_save(self, declared):
+        declared.name = "Privacy"
+        declared.kind = Document.Kind.NOTICE
+        declared.enforced = False
+
+        declared.save()
+
+        declared = Document.objects.get(pk=declared.pk)
+        assert declared.name == "Privacy"
+        assert declared.kind == Document.Kind.NOTICE
+        assert not declared.enforced
+
+    def test_name_kind_and_enforced_still_change_through_update(self, declared):
+        Document.objects.filter(pk=declared.pk).update(
+            name="Privacy", kind=Document.Kind.NOTICE, enforced=False
+        )
+
+        declared = Document.objects.get(pk=declared.pk)
+        assert declared.name == "Privacy"
+        assert declared.kind == Document.Kind.NOTICE
+        assert not declared.enforced
+
+    def test_update_refuses_a_queryset_holding_any_declared_slug(self, declared):
+        other = DocumentFactory()
+
+        with pytest.raises(DeclaredDocumentError):
+            Document.objects.filter(pk__in=[declared.pk, other.pk]).update(
+                slug="shared"
+            )
+
+        assert Document.objects.get(pk=other.pk).slug == other.slug
+
+    def test_an_undeclared_document_without_a_version_changes_its_slug(self, declared):
+        other = DocumentFactory()
+        other.slug = "elsewhere"
+
+        other.save()
+
+        assert Document.objects.get(pk=other.pk).slug == "elsewhere"
+
+    def test_a_declared_slug_is_refused_before_the_published_check(self, declared):
+        VersionFactory(document=declared).publish()
+        declared.slug = "privacy"
+
+        with pytest.raises(DeclaredDocumentError):
+            declared.save()
+        with pytest.raises(DeclaredDocumentError):
+            Document.objects.filter(pk=declared.pk).update(slug="privacy")
+
+    def test_a_published_slug_is_still_refused_once_the_declaration_is_removed(
+        self, declared, settings
+    ):
+        VersionFactory(document=declared).publish()
+        settings.MVP_COMPLIANCE_DOCUMENTS = {}
+        declared.slug = "privacy"
+
+        with pytest.raises(PublishedVersionError):
+            declared.save()
+
+    def test_with_the_declaration_removed_the_slug_changes_again(
+        self, declared, settings
+    ):
+        settings.MVP_COMPLIANCE_DOCUMENTS = {}
+        declared.slug = "privacy"
+
+        declared.save()
+
+        assert Document.objects.get(pk=declared.pk).slug == "privacy"
+
+    def test_a_declared_notice_is_outstanding_for_nobody_after_publication(
+        self, declared, user
+    ):
+        declared.kind = Document.Kind.NOTICE
+        declared.save()
+
+        VersionFactory(document=declared).publish()
+
+        assert declared not in Document.objects.outstanding_for(user)
+        assert declared not in Document.objects.enforced_outstanding_for(user)
 
 
 @pytest.mark.django_db
