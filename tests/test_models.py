@@ -257,12 +257,12 @@ class TestDeclaredSlug:
 
         assert Document.objects.get(pk=declared.pk).slug == "privacy-policy"
 
-    def test_bulk_update_refuses_a_new_slug_and_leaves_the_stored_slug(
-        self, declared
-    ):
+    def test_bulk_update_refuses_a_new_slug_and_leaves_the_stored_slug(self, declared):
         declared.slug = "privacy"
 
-        with pytest.raises(DeclaredDocumentError):
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False), so the test supplies the savepoint.
+        with pytest.raises(DeclaredDocumentError), transaction.atomic():
             Document.objects.bulk_update([declared], ["slug"])
 
         assert Document.objects.get(pk=declared.pk).slug == "privacy-policy"

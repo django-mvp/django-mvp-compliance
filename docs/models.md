@@ -99,7 +99,8 @@ person agreed to and of the page that asks, and no document is served at either.
 `Document.objects.create(slug="agree")` is not stopped, but the address still answers with the
 page, never with that document. A document that was published under `agree` before the slug was
 reserved keeps its versions and its acceptances, and its own page is no longer reachable. Its slug
-is fixed once a version is published, as the next section says, so the package cannot give it another.
+is fixed once a version is published, as the section on [when the slug is
+fixed](#when-the-slug-is-fixed) says, so the package cannot give it another.
 
 ### The permission to continue without accepting
 
@@ -163,14 +164,33 @@ list when all are sound.
 
 ### When the slug is fixed
 
-The slug can change until the document's first version is published. From then on it is
-fixed, because an address that has been published must keep working. The name stays
-editable, and the pages keep their addresses and show the new name.
+A slug is fixed from the start when the project declares it in `MVP_COMPLIANCE_DOCUMENTS`
+(see [Declaring documents](#declaring-documents)), and otherwise from the moment the document's
+first version is published. Either way an address that a page links to must keep working. The
+name, the kind and the enforcement stay editable, and the pages keep their addresses and show
+the new name.
 
-A document is fixed when any of its versions is current or superseded. After that,
+A declared document is fixed while its slug is in the setting, with or without a version.
 `document.save()` with a different slug, `Document.objects.filter(...).update(slug=...)` and
-`Document.objects.bulk_update(documents, ["slug"])` raise `PublishedVersionError` and leave
-the stored slug as it was:
+`Document.objects.bulk_update(documents, ["slug"])` raise `DeclaredDocumentError` and leave
+the stored slug as it was. The admin shows the slug read-only. The check reads the slug
+stored in the database, so a save that renames a document away from a declared slug is
+refused too. Remove the declaration from the setting and the document follows the rule for
+an undeclared one again:
+
+```python
+from mvp_compliance.exceptions import DeclaredDocumentError
+
+privacy.slug = "privacy"
+try:
+    privacy.save()
+except DeclaredDocumentError:
+    ...  # "privacy-policy" is declared; its slug stays as it was
+```
+
+An undeclared document is fixed when any of its versions is current or superseded. After
+that, the same three routes raise `PublishedVersionError` and leave the stored slug as it
+was:
 
 ```python
 from mvp_compliance.exceptions import PublishedVersionError
@@ -183,9 +203,14 @@ except PublishedVersionError:
 ```
 
 Saving a document with the slug it already has is always allowed, and so is a save whose
-`update_fields` leaves `slug` out. `update()` and `bulk_update()` are stricter: on a document
-with a published version they refuse any slug value, including the one it already has. The
-message is also available as `Document.SLUG_FIXED_MESSAGE`.
+`update_fields` leaves `slug` out. `update()` and `bulk_update()` are stricter: on a declared
+document or one with a published version they refuse any slug value, including the one it
+already has. The messages are also available as `Document.DECLARED_SLUG_MESSAGE` and
+`Document.SLUG_FIXED_MESSAGE`. When both rules hold, `DeclaredDocumentError` is the one raised.
+
+`save()`, `update()`, `bulk_update()` and the admin refuse. Three routes are not guarded:
+`bulk_create()` with `update_conflicts=True`, `Document._base_manager`, and the historical
+model inside a data migration. They write the slug without asking either rule.
 
 ### Documents with a version in force
 

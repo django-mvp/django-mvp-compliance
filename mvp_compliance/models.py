@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import (
+    DeclaredDocumentError,
     PublishedVersionError,
     PublishError,
     RecordedAcceptanceError,
@@ -60,20 +61,26 @@ def unreserved_slug(value: str) -> None:
 
 
 class DocumentQuerySet(models.QuerySet):
-    """Answers what a person has outstanding, and keeps a published slug fixed."""
+    """Answers what a person has outstanding, and keeps a fixed slug fixed."""
 
     def update(self, **kwargs) -> int:
-        """Refuse a new slug for any document with a published version (FR-017).
+        """Refuse a new slug for any declared document or any with a published version.
 
         ``bulk_update()`` calls this, so it is covered too.
+
+        Raises:
+            DeclaredDocumentError: When ``slug`` is in the update and a row's stored
+                slug is declared.
+            PublishedVersionError: When ``slug`` is in the update and a row has a
+                published version.
         """
-        if (
-            "slug" in kwargs
-            and self.filter(
+        if "slug" in kwargs:
+            if self.filter(slug__in=declared_documents()).exists():
+                raise DeclaredDocumentError(Document.DECLARED_SLUG_MESSAGE)
+            if self.filter(
                 versions__status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED]
-            ).exists()
-        ):
-            raise PublishedVersionError(Document.SLUG_FIXED_MESSAGE)
+            ).exists():
+                raise PublishedVersionError(Document.SLUG_FIXED_MESSAGE)
         return super().update(**kwargs)
 
     def in_force(self) -> "DocumentQuerySet":
@@ -221,6 +228,10 @@ class Document(models.Model):
         "A document's slug cannot be changed once a version of it has been published."
     )
 
+    DECLARED_SLUG_MESSAGE = _(
+        "The slug of a document the project declares cannot be changed."
+    )
+
     objects = DocumentManager()
 
     class Meta:
@@ -238,10 +249,14 @@ class Document(models.Model):
         return self.name
 
     def save(self, *args, **kwargs) -> None:
-        """Refuse a new slug once a version has been published; the name stays editable.
+        """Refuse a new slug for a declared document or once a version is published.
 
-        A save whose ``update_fields`` leaves the slug out never writes it, so it
-        is not checked.
+        The name, kind and enforcement stay editable. A save whose ``update_fields``
+        leaves the slug out never writes it, so it is not checked.
+
+        Raises:
+            DeclaredDocumentError: When the stored slug is declared.
+            PublishedVersionError: When a version has been published.
         """
         update_fields = kwargs.get("update_fields")
         writes_slug = update_fields is None or "slug" in update_fields
@@ -252,12 +267,11 @@ class Document(models.Model):
                 .values_list("slug", flat=True)
                 .first()
             )
-            if (
-                stored is not None
-                and stored != self.slug
-                and self.versions.published().exists()
-            ):
-                raise PublishedVersionError(self.SLUG_FIXED_MESSAGE)
+            if stored is not None and stored != self.slug:
+                if stored in declared_documents():
+                    raise DeclaredDocumentError(self.DECLARED_SLUG_MESSAGE)
+                if self.versions.published().exists():
+                    raise PublishedVersionError(self.SLUG_FIXED_MESSAGE)
         super().save(*args, **kwargs)
 
     @property

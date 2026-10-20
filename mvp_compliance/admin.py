@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import PublishError
 from mvp_compliance.forms import DisclosureForm, VersionForm
-from mvp_compliance.models import Disclosure, Document, Version
+from mvp_compliance.models import Disclosure, Document, Version, declared_documents
 from mvp_compliance.records import produce, resolve_subject
 from mvp_compliance.rendering import get_renderer
 
@@ -37,9 +37,11 @@ class DocumentAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
     def get_readonly_fields(self, request, obj=None):
-        """Show the slug read-only once a version of the document is published (FR-017)."""
+        """Show the slug read-only for a declared document or a published one."""
         readonly = list(super().get_readonly_fields(request, obj))
-        if obj is not None and obj.versions.published().exists():
+        if obj is not None and (
+            obj.slug in declared_documents() or obj.versions.published().exists()
+        ):
             readonly.append("slug")
         return readonly
 
