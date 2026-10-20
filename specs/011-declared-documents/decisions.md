@@ -27,6 +27,8 @@ already never raises: it is built from the slug without reading the database, an
 the version in force. django-dynamic-preferences shows where per-item classes lead: an
 autodiscovered module and a management command to reconcile the rows with the classes.
 
+**ADR:** docs/adr/0026-a-project-declares-the-documents-it-links-to-in-a-setting.md
+
 ## D2 — Created when the database is migrated
 
 **Ambiguous**: whether a declaration creates anything in the database at all, and if so when.
@@ -45,6 +47,8 @@ django-dynamic-preferences, Wagtail's settings, django-solo, django CMS's static
 django-legaltext. That was rejected because drawing a page would write to the database, and which
 documents an editor sees would depend on which pages had been visited.
 
+**ADR:** docs/adr/0026-a-project-declares-the-documents-it-links-to-in-a-setting.md
+
 ## D3 — No template tag
 
 **Ambiguous**: whether templates need a new way to reach a declared document.
@@ -54,6 +58,8 @@ documents an editor sees would depend on which pages had been visited.
 **Why defensible**: the address works in every environment the moment the document is declared,
 and leads to the version in force once one is published. A tag that hides a link until a version is
 in force is a separate want, and nobody has asked for it yet.
+
+**ADR:** docs/adr/0026-a-project-declares-the-documents-it-links-to-in-a-setting.md
 
 ## D4 — A conflicting declaration stops the run
 
@@ -66,6 +72,8 @@ document in that run.
 **Why defensible**: names are unique, so the document cannot be created as declared. Skipping it
 quietly would leave the code linking to a document that will never exist. Creating the others and
 skipping one would leave a database that half matches its settings.
+
+**ADR:** none — the refusal on a conflict is stated in ADR 0026's decision; the rest is local to this feature.
 
 ## Design review
 
@@ -87,8 +95,3 @@ ADR 0019's Decision is edited to read as the current rule in US-2.
 ## D5 — A declared slug refuses with its own exception
 
 **ADR:** none — follows ADR 0003, which already has every refusal raise a package exception.
-
-## D1 to D4
-
-**ADR:** D1 and D2 graduate together at convergence, as the decision to declare documents in a
-setting and create them after migrating.

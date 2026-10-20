@@ -3,7 +3,7 @@
   "feature": "011-declared-documents",
   "branch": "011-declared-documents",
   "repo": "django-mvp/django-mvp-compliance",
-  "state": "IMPLEMENT",
+  "state": "CONVERGE",
   "state_history": [
     {
       "state": "QUEUED",
@@ -24,6 +24,11 @@
       "state": "IMPLEMENT",
       "at": "2026-10-20T12:54:47Z",
       "note": "design review approved, six remedies applied; plan gate open"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-20T13:11:31Z",
+      "note": "US-1 and US-2 accepted"
     }
   ],
   "gates": {
@@ -199,7 +204,7 @@
   ],
   "budgets": {
     "converge_cycles": {
-      "used": 0,
+      "used": 1,
       "max": 2
     },
     "review_cycles": {
