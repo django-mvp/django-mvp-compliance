@@ -79,6 +79,10 @@ else in a template:
 <a href="{% url 'mvp_compliance:document' 'privacy-policy' %}">Privacy policy</a>
 ```
 
+A document declared in `MVP_COMPLIANCE_DOCUMENTS` (see [Declaring
+documents](models.md#declaring-documents)) can be linked before anything is published. Its
+address answers "not found" until a version is in force, then shows it.
+
 An impressum is linked the same way, from the footer of the site, wherever the law of your
 country expects to find it:
 

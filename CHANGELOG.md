@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `MVP_COMPLIANCE_DOCUMENTS`, a setting that declares the documents a site links to, by slug and
+  name. `migrate` creates each declared document that does not exist yet, with no version, so its
+  address can be linked in every environment before anything is published. An existing document is
+  never changed, and a declaration the admin would refuse, or whose name belongs to another
+  document, stops `migrate` with `ImproperlyConfigured`. See
+  [docs/models.md](docs/models.md#declaring-documents).
+
 ## [v0.2.0] - 2026-10-13
 
 ### Added

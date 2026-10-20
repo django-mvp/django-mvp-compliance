@@ -94,6 +94,14 @@ EASY_ICONS = {
     }
 }
 
+# The documents the demo's pages link to. `migrate` creates them; `seed_demo`
+# gives them their wording.
+MVP_COMPLIANCE_DOCUMENTS = {
+    "privacy-policy": "Privacy policy",
+    "terms-of-use": "Terms of use",
+    "impressum": "Impressum",
+}
+
 # On, so the demo shows the state a site that wants the address an agreement
 # came from would produce. The package's own default is off, because it is
 # personal data about somebody who did not ask for it to be kept.

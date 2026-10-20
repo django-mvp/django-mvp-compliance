@@ -519,6 +519,9 @@ class Command(BaseCommand):
         if not created and document.versions.exists():
             self.stdout.write(f"  {name}: already seeded")
             return
+        if document.kind != kind:
+            document.kind = kind
+            document.save(update_fields=["kind"])
 
         for markdown, day in published:
             version = Version.objects.create(document=document, markdown=markdown)

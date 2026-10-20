@@ -118,6 +118,41 @@ stopped either. Holding it records nothing and changes nothing about what is
 past](enforcement.md#letting-accounts-past). The permission is declared by the migration that adds
 `enforced`, `0002`, and Django creates it when `migrate` next runs.
 
+### Declaring documents
+
+A site that links to a document in its footer or its templates can declare it in the settings,
+by slug and name, and have it exist in every environment:
+
+```python
+# settings.py
+MVP_COMPLIANCE_DOCUMENTS = {
+    "privacy-policy": "Privacy policy",
+    "terms-of-use": "Terms of use",
+    "impressum": "Impressum",
+}
+```
+
+The setting is empty when unset. `migrate` creates each declared document that does not exist
+yet, with its slug and name and no version. The model's defaults fill in the rest: the kind is
+*agreed to* and the document is enforced, so declare nothing about either, and change them in
+the admin. A declared document with no version has no page, is absent from
+`Document.objects.in_force()` and is outstanding for nobody. Its address is
+`{% url 'mvp_compliance:document' 'privacy-policy' %}` from the day it is declared, and shows
+the version in force once one is published.
+
+Only a missing document is created. One that already has the declared slug is left exactly as
+it is, including its name, its kind and its versions, and so is a document whose declaration is
+later removed. Declaring never updates or deletes anything.
+
+A declaration is refused when its slug or name is one the admin would refuse (a capital in the
+slug, a reserved slug, an empty name, a name with a space at either end), when its name already
+belongs to a document under another slug, or when two declarations give the same name. `migrate`
+then raises `ImproperlyConfigured`, names every faulty declaration by its slug and, for a name
+that clashes, the slug of the other document, and creates none of the declared documents in that
+run. The migrations themselves have already been applied. Fix the setting and run `migrate`
+again: it completes what was skipped. `migrate` shows the message in English whatever the
+language of the site.
+
 ### When the slug is fixed
 
 The slug can change until the document's first version is published. From then on it is
