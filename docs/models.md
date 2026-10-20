@@ -153,6 +153,14 @@ run. The migrations themselves have already been applied. Fix the setting and ru
 again: it completes what was skipped. `migrate` shows the message in English whatever the
 language of the site.
 
+`mvp_compliance.models.declared_documents()` returns the setting, an empty dict when it is
+unset, read each time it is called. `mvp_compliance.management.create_declared_documents` is
+the `post_migrate` receiver that creates the missing documents, and
+`mvp_compliance.management.declaration_faults(missing, owners)` is the check it runs first. It
+takes the declarations no document has, as slug to name, and the slug of the document that
+already holds each name, and returns one message per faulty declaration. It returns an empty
+list when all are sound.
+
 ### When the slug is fixed
 
 The slug can change until the document's first version is published. From then on it is
