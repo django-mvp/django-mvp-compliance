@@ -1,0 +1,58 @@
+{
+  "story": "US2",
+  "skills_loaded": [
+    {
+      "name": "craft-tdd",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07",
+      "loaded_via": "path-read"
+    },
+    {
+      "name": "craft-increments",
+      "receipt": "craft-increments/2026-10-15/1ffa47c3",
+      "loaded_via": "path-read"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T006",
+      "status": "done",
+      "evidence": {
+        "tests_added": [
+          "tests/test_models.py::TestDeclaredSlug",
+          "tests/test_admin.py::TestDeclaredDocumentAdmin",
+          "tests/test_exceptions.py"
+        ],
+        "criteria": ["SC-004"],
+        "commands": [
+          "uv run pytest tests/test_models.py::TestDeclaredSlug tests/test_admin.py::TestDeclaredDocumentAdmin tests/test_exceptions.py -q (red: 7 failed, 18 passed, with DeclaredDocumentError present but unused)"
+        ],
+        "exit_code": 1
+      },
+      "commits": ["7e3eb64"]
+    },
+    {
+      "id": "T007",
+      "status": "done",
+      "evidence": {
+        "tests_added": [],
+        "criteria": ["SC-004"],
+        "commands": [
+          "uv run pytest tests/test_models.py::TestDeclaredSlug tests/test_models.py::TestDocumentSlug tests/test_admin.py::TestDeclaredDocumentAdmin tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_exceptions.py -q",
+          "uv run pre-commit run --all-files",
+          "DJANGO_SETTINGS_MODULE=tests.settings uv run django-admin makemigrations --check --dry-run",
+          "cd mvp_compliance && uv run django-admin makemessages -l en --no-obsolete",
+          "forge verify --repo . --base origin/main"
+        ],
+        "exit_code": 0
+      },
+      "commits": ["623f6aa"]
+    }
+  ],
+  "deviations": [],
+  "concerns": [
+    "The T006 commit (7e3eb64) does not import: DeclaredDocumentError arrives in the T007 commit, as the task table expects ('Fails before T007'). A later fix inside the T007 commit added the transaction.atomic() savepoint to my own bulk_update test, as the existing bulk_update tests have.",
+    "docs/adr/0003-refusals-raise-package-exceptions.md says 'Two exception classes ... carry every refusal' and lists only PublishedVersionError and PublishError. It was already out of date before this story (RecordError and RecordedAcceptanceError exist) and now omits DeclaredDocumentError too. Outside my tasks, left alone.",
+    "The last forge verify ran before the report and progress/ledger files were committed; those files are specs only."
+  ],
+  "blocked": []
+}
