@@ -4,12 +4,15 @@
 
 ## Decision
 
-Two exception classes in `mvp_compliance.exceptions` carry every refusal this package makes:
+The exception classes in `mvp_compliance.exceptions` carry every refusal this package makes:
 
-- `PublishedVersionError` — an attempt to change or delete a version that has been published.
+- `PublishedVersionError` — an attempt to change or delete a version that has been published, or to change the slug of a document with a published version.
 - `PublishError` — a publication that cannot go ahead, because the version is not a draft or because its wording renders to nothing.
+- `RecordedAcceptanceError` — an attempt to change or delete an acceptance.
+- `RecordError` — an acceptance that cannot be recorded, such as one of a draft or of a notice.
+- `DeclaredDocumentError` — an attempt to change the slug of a document the project declares.
 
-Neither subclasses `django.core.exceptions.ValidationError`. Code that presents these refusals to a person translates them deliberately, at the layer where somebody is being asked to fix something.
+None subclasses `django.core.exceptions.ValidationError`. Code that presents these refusals to a person translates them deliberately, at the layer where somebody is being asked to fix something.
 
 ## Why
 

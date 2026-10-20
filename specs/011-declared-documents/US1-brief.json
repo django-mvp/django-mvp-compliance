@@ -1,0 +1,114 @@
+{
+  "story": "US1",
+  "repo": "django-mvp/django-mvp-compliance",
+  "issue": 114,
+  "worktree": "/home/sam/projects/worktrees/compliance-fs011",
+  "required_skills": [
+    {
+      "name": "craft-tdd",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-tdd/SKILL.md",
+      "receipt": "craft-tdd/2026-09-28/b19e4d07"
+    },
+    {
+      "name": "craft-increments",
+      "path": "/home/sam/.openclaw/workspaces/forge/skills/craft-increments/SKILL.md",
+      "receipt": "craft-increments/2026-10-15/1ffa47c3"
+    }
+  ],
+  "tasks": [
+    "T001",
+    "T002",
+    "T003",
+    "T004",
+    "T005"
+  ],
+  "context": {
+    "why": "A developer declares, in the setting MVP_COMPLIANCE_DOCUMENTS (slug -> name), the documents the site links to. A post_migrate receiver creates each missing declared document with slug and name only and no version, and refuses with ImproperlyConfigured, writing nothing, when any missing declaration is at fault. Kind and enforcement are never declared: the model defaults apply. No slug lock in this story: that is US-2.",
+    "environment": "uv. Run everything with `uv run ...` from the worktree root; the virtualenv is synced. Narrow scope per task, e.g. `uv run pytest tests/test_models.py::TestEnforcement -q`. Lint gate: `uv run pre-commit run --all-files` (never a bare ruff check). Catalog: `cd mvp_compliance && uv run django-admin makemessages -l en --no-obsolete`. Full verify, once, at the end: `/home/sam/.openclaw/workspaces/forge/engineering-org/kit/forge verify --repo . --base origin/main`. The branch is 011-declared-documents; commit on it directly, one commit per task with the task id in the subject. The commit identity is already bound: do not change git config.",
+    "spec_sections": [
+      "specs/011-declared-documents/spec.md \u00a7 User Story 1 - Declaring the documents a site links to",
+      "specs/011-declared-documents/spec.md \u00a7 Edge Cases",
+      "specs/011-declared-documents/spec.md \u00a7 Requirements \u2014 FR-001 to FR-010, FR-014 to FR-016"
+    ],
+    "plan_sections": [
+      "specs/011-declared-documents/plan.md \u00a7 Design \u2192 The setting",
+      "specs/011-declared-documents/plan.md \u00a7 Design \u2192 Creating declared documents",
+      "specs/011-declared-documents/plan.md \u00a7 Design \u2192 Documentation",
+      "specs/011-declared-documents/plan.md \u00a7 Design \u2192 The demo",
+      "specs/011-declared-documents/research.md \u00a7 How a declared document is created",
+      "specs/011-declared-documents/research.md \u00a7 Checking a declaration before anything is written"
+    ],
+    "prior_decisions": [
+      "specs/011-declared-documents/decisions.md D1",
+      "specs/011-declared-documents/decisions.md D2",
+      "specs/011-declared-documents/decisions.md D3",
+      "specs/011-declared-documents/decisions.md D4"
+    ],
+    "glossary_terms": [
+      "Document",
+      "Slug",
+      "Version",
+      "Notice",
+      "Enforcement",
+      "Outstanding",
+      "Compliance editor",
+      "Host project"
+    ],
+    "acceptance": [
+      "Every clause of your tasks' rows in specs/011-declared-documents/tasks.md is met, each test written first and seen to fail for the right reason",
+      "Full verify green: lint, typecheck, test, build, conformance, docs",
+      "makemessages leaves the catalog clean",
+      "makemigrations --check is clean (no migration is added by this story)",
+      "docs/ pages named in your tasks are true for the branch as it stands"
+    ],
+    "conventions": [
+      "The receiver follows django.contrib.sites.management.create_default_site: signature (app_config, verbosity=2, interactive=True, using=DEFAULT_DB_ALIAS, apps=global_apps, **kwargs); apps.get_model in try/except LookupError; router.allow_migrate_model(using, Document); every read and write through .using(using) / objects.using(using); creation inside transaction.atomic(using=using). Connected in MvpComplianceConfig.ready() with post_migrate.connect(create_declared_documents, sender=self). Module mvp_compliance/management.py",
+      "declared_documents() in models.py returns getattr(settings, 'MVP_COMPLIANCE_DOCUMENTS', {}), read at the point of use like acceptances_survive_account_removal()",
+      "Validation runs on the GLOBAL Document model's fields: Document._meta.get_field('slug').clean(value, None) and the same for name. Also refuse a name that is empty or differs from name.strip(), a name another document has under a different slug, and a name two declarations share. Collect every fault, then raise one ImproperlyConfigured naming each declaration's slug and, for a clash, the other document's slug. Strings marked for translation",
+      "Tests assert ImproperlyConfigured by type and by the slugs the message contains, never by its sentence",
+      "Test module for management.py is tests/test_management.py; the migrate-wiring test goes in tests/test_app.py",
+      "seed_demo: set the kind of a document it is about to seed AFTER the early return for a document that already has versions (seed_demo.py around line 519)",
+      "Docs: a refused declaration leaves the migrations applied; running migrate again after fixing the settings completes what was skipped. migrate shows the message in English (@no_translations)",
+      "Repo standards that reviews have missed before: no leading-underscore names anywhere; line length 88; no compatibility aliases; no test of text content or wording; no test of layout or appearance",
+      "A mechanism an experienced Django developer would recognise beats a clever one: no dataclass, registry or settings object",
+      "Every user-facing string is wrapped for translation and none says 'compliant', 'compliance' or names a regulation",
+      "Docstrings follow docs/contributing/standards/code-documentation.md; tests follow docs/contributing/standards/testing.md",
+      "Text for docs is written for an outside contributor: plain words, no mention of agents, stages or tooling"
+    ],
+    "verified_base": {
+      "commit": "45c9b9bd3374d0f82e904b047523d2721f6a5833",
+      "at": "2026-10-20T13:05:00Z",
+      "steps": [
+        "lint",
+        "typecheck",
+        "test",
+        "build",
+        "conformance",
+        "docs"
+      ]
+    }
+  },
+  "budgets": {
+    "attempts_per_task": 5,
+    "wallclock_minutes": 75
+  },
+  "rituals": [
+    "Read /home/sam/.openclaw/workspaces/forge/skills/forge-feature-request/references/implement-story.md in full and follow it",
+    "Load every required skill by reading its path; copy each RECEIPT line verbatim",
+    "Read this brief fully",
+    "Read only your tasks' rows in specs/011-declared-documents/tasks.md",
+    "Read the plan.md sections named here",
+    "git log --oneline -10; confirm HEAD is the verified_base commit"
+  ],
+  "prohibitions": [
+    "Never modify or delete a test you did not author in this story",
+    "Never touch files outside this story's tasks",
+    "Never write feature-state.json by hand; record each finished task with forge ledger-task --stage S4 --path <worktree>",
+    "Never push, merge, or run gh; you have no tokens",
+    "Never touch .github/ or cut a release",
+    "Never weaken an assertion, add skip or xfail, or special-case code to pass a test",
+    "Never add a dependency",
+    "Never start with a required skill unloaded, and never write a receipt you did not read from a file",
+    "Never add the slug lock, DeclaredDocumentError or any admin change: those are US-2"
+  ]
+}

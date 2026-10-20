@@ -3,6 +3,7 @@
 from django.core.exceptions import ValidationError
 
 from mvp_compliance.exceptions import (
+    DeclaredDocumentError,
     PublishedVersionError,
     PublishError,
     RecordedAcceptanceError,
@@ -22,6 +23,12 @@ class TestExceptions:
 
     def test_published_version_error_has_a_docstring_naming_its_requirement(self):
         assert PublishedVersionError.__doc__
+
+    def test_declared_document_error_is_not_a_validation_error(self):
+        assert not issubclass(DeclaredDocumentError, ValidationError)
+
+    def test_declared_document_error_has_a_docstring_naming_its_requirement(self):
+        assert DeclaredDocumentError.__doc__
 
     def test_record_error_is_not_a_validation_error(self):
         assert not issubclass(RecordError, ValidationError)

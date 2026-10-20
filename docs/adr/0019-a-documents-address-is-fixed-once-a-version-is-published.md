@@ -5,9 +5,11 @@
 ## Decision
 
 A document's public address is built from `Document.slug`, never from its name. The slug is
-lowercase letters, digits and single hyphens, and unique across documents. It can be changed
-freely until a version of the document is published. After that, `Document.save()`, the queryset's
-`update()` and `bulk_update()` refuse a change to it with `PublishedVersionError`. The name stays
+lowercase letters, digits and single hyphens, and unique across documents. A slug the host project
+declares in `MVP_COMPLIANCE_DOCUMENTS` is fixed from the moment it is declared: `Document.save()`,
+the queryset's `update()` and `bulk_update()` refuse a change to it with `DeclaredDocumentError`.
+Any other slug can be changed freely until a version of the document is published, and the same
+three routes then refuse a change with `PublishedVersionError`. The name, kind and enforcement stay
 editable in every state.
 
 ## Why

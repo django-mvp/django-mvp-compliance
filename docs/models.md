@@ -99,7 +99,8 @@ person agreed to and of the page that asks, and no document is served at either.
 `Document.objects.create(slug="agree")` is not stopped, but the address still answers with the
 page, never with that document. A document that was published under `agree` before the slug was
 reserved keeps its versions and its acceptances, and its own page is no longer reachable. Its slug
-is fixed once a version is published, as the next section says, so the package cannot give it another.
+is fixed once a version is published, as the section on [when the slug is
+fixed](#when-the-slug-is-fixed) says, so the package cannot give it another.
 
 ### The permission to continue without accepting
 
@@ -118,16 +119,94 @@ stopped either. Holding it records nothing and changes nothing about what is
 past](enforcement.md#letting-accounts-past). The permission is declared by the migration that adds
 `enforced`, `0002`, and Django creates it when `migrate` next runs.
 
+### Declaring documents
+
+A site that links to a document in its footer or its templates can declare it in the settings,
+by slug and name, and have it exist in every environment:
+
+```python
+# settings.py
+MVP_COMPLIANCE_DOCUMENTS = {
+    "privacy-policy": "Privacy policy",
+    "terms-of-use": "Terms of use",
+    "impressum": "Impressum",
+}
+```
+
+The setting is empty when unset. `migrate` creates each declared document that does not exist
+yet, with its slug and name and no version. The model's defaults fill in the rest: the kind is
+*agreed to* and the document is enforced, so declare nothing about either, and change them in
+the admin. A declared document with no version has no page, is absent from
+`Document.objects.in_force()` and is outstanding for nobody. Its address is
+`{% url 'mvp_compliance:document' 'privacy-policy' %}` from the day it is declared, and shows
+the version in force once one is published.
+
+Only a missing document is created. One that already has the declared slug is left exactly as
+it is, including its name, its kind and its versions, and so is a document whose declaration is
+later removed. Declaring never updates or deletes anything.
+
+A declaration is refused when its slug or name breaks a rule a document's fields hold (a capital
+in the slug, a reserved slug, an empty name), when its name starts or ends with a space, when its name already
+belongs to a document under another slug, or when two declarations give the same name. `migrate`
+then raises `ImproperlyConfigured`, names every faulty declaration by its slug and, for a name
+that clashes, the slug of the other document, and creates none of the declared documents in that
+run. The migrations themselves have already been applied. Fix the setting and run `migrate`
+again: it completes what was skipped. `migrate` shows the message in English whatever the
+language of the site.
+
+`mvp_compliance.models.declared_documents()` returns the setting, an empty dict when it is
+unset, read each time it is called. `mvp_compliance.management.create_declared_documents` is
+the `post_migrate` receiver that creates the missing documents, and
+`mvp_compliance.management.declaration_faults(missing, owners)` is the check it runs first. It
+takes the declarations no document has, as slug to name, and the slug of the document that
+already holds each name, and returns one message per faulty declaration. It returns an empty
+list when all are sound.
+
+#### Declared documents in tests and seed data
+
+Test databases are migrated too, so every declared document already exists in each one, with no
+version. Declaring a document and creating it are two ways to get the same row, not steps to
+combine. A test, factory, fixture or seed command that creates a document with a declared slug or
+name fails with `IntegrityError`, and a count of all documents includes the declared ones. Fetch
+the declared document instead:
+
+```python
+privacy = Document.objects.get(slug="privacy-policy")
+```
+
+A test that needs a database with no documents in it overrides the setting with
+`MVP_COMPLIANCE_DOCUMENTS = {}` for its test settings, or creates its documents under slugs and
+names the project does not declare.
+
 ### When the slug is fixed
 
-The slug can change until the document's first version is published. From then on it is
-fixed, because an address that has been published must keep working. The name stays
-editable, and the pages keep their addresses and show the new name.
+A slug is fixed from the start when the project declares it in `MVP_COMPLIANCE_DOCUMENTS`
+(see [Declaring documents](#declaring-documents)), and otherwise from the moment the document's
+first version is published. Either way an address that a page links to must keep working. The
+name, the kind and the enforcement stay editable, and the pages keep their addresses and show
+the new name.
 
-A document is fixed when any of its versions is current or superseded. After that,
+A declared document is fixed while its slug is in the setting, with or without a version.
 `document.save()` with a different slug, `Document.objects.filter(...).update(slug=...)` and
-`Document.objects.bulk_update(documents, ["slug"])` raise `PublishedVersionError` and leave
-the stored slug as it was:
+`Document.objects.bulk_update(documents, ["slug"])` raise `DeclaredDocumentError` and leave
+the stored slug as it was. The admin shows the slug read-only. The check reads the slug
+stored in the database, so a save that renames a document away from a declared slug is
+refused too. Remove the declaration from the setting and the document follows the rule for
+an undeclared one again:
+
+```python
+from mvp_compliance.exceptions import DeclaredDocumentError
+
+privacy.slug = "privacy"
+try:
+    privacy.save()
+except DeclaredDocumentError:
+    ...  # "privacy-policy" is declared; its slug stays as it was
+```
+
+An undeclared document is fixed when any of its versions is current or superseded. After
+that, the same three routes raise `PublishedVersionError` and leave the stored slug as it
+was:
 
 ```python
 from mvp_compliance.exceptions import PublishedVersionError
@@ -140,9 +219,14 @@ except PublishedVersionError:
 ```
 
 Saving a document with the slug it already has is always allowed, and so is a save whose
-`update_fields` leaves `slug` out. `update()` and `bulk_update()` are stricter: on a document
-with a published version they refuse any slug value, including the one it already has. The
-message is also available as `Document.SLUG_FIXED_MESSAGE`.
+`update_fields` leaves `slug` out. `update()` and `bulk_update()` are stricter: on a declared
+document or one with a published version they refuse any slug value, including the one it
+already has. The messages are also available as `Document.DECLARED_SLUG_MESSAGE` and
+`Document.SLUG_FIXED_MESSAGE`. When both rules hold, `DeclaredDocumentError` is the one raised.
+
+`save()`, `update()`, `bulk_update()` and the admin refuse. Three routes are not guarded:
+`bulk_create()` with `update_conflicts=True`, `Document._base_manager`, and the historical
+model inside a data migration. They write the slug without asking either rule.
 
 ### Documents with a version in force
 

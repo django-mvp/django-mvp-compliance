@@ -242,6 +242,19 @@ version = privacy.versions.create(markdown="# Privacy policy\n\n...")
 version.publish()
 ```
 
+A site that links to its documents from templates can declare them in the settings, and
+`migrate` creates each one that is missing, with its slug and name and no version:
+
+```python
+# settings.py
+MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy"}  # empty by default
+```
+
+A declaration that conflicts with an existing document, or that the admin would refuse, stops
+`migrate` with `ImproperlyConfigured`. A declared document already exists in every database,
+test databases included, so fetch it with `Document.objects.get(slug=...)` rather than creating
+it. See [docs/models.md](docs/models.md#declaring-documents).
+
 Publishing renders the Markdown to HTML once and makes that version
 **current** — the one in force — moving whichever version was current
 before it to **superseded**. A published version's wording can never change

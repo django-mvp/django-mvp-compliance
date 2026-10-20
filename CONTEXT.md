@@ -22,10 +22,18 @@ it: it is never outstanding, and recording an acceptance of one of its versions 
 Whether a document is a notice is its kind; the other kind is a document people agree to.
 _Avoid_: information page, static page, legal notice (which names a legal category, not the kind).
 
+**Declared document**:
+A document the host project names in the setting `MVP_COMPLIANCE_DOCUMENTS`, by slug and name,
+so that it exists in every environment before anything is written. Migrating creates a missing
+one with no version and leaves an existing one alone. Its kind and enforcement are never
+declared.
+_Avoid_: registered document, configured document, built-in document.
+
 **Slug**:
 The document's identifier in its address, such as `privacy-policy`: lowercase letters, digits and
-single hyphens. It can change until the document's first version is published and is fixed from
-then on, so an address that has been published never moves. The name stays editable.
+single hyphens. A declared document's slug is fixed from the moment it is declared; any other
+slug can change until the document's first version is published and is fixed from then on, so
+an address that a page links to never moves. The name stays editable.
 _Avoid_: URL, path, key, id.
 
 **Version**:

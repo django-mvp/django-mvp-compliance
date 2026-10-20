@@ -1,0 +1,278 @@
+{
+  "$schema": "../../../../.openclaw/workspaces/forge/engineering-org/kit/schemas/feature-state.schema.json",
+  "feature": "011-declared-documents",
+  "branch": "011-declared-documents",
+  "repo": "django-mvp/django-mvp-compliance",
+  "state": "PR_READY",
+  "state_history": [
+    {
+      "state": "QUEUED",
+      "at": "2026-10-20T12:44:30Z",
+      "note": "specification approved on #113 at 2c8de6d; issue graph built (#112, #114, #115)"
+    },
+    {
+      "state": "PLAN",
+      "at": "2026-10-20T12:46:42Z",
+      "note": "claim held; branch level with origin/main 4e241d2; research, plan and tasks written"
+    },
+    {
+      "state": "DESIGN_REVIEW",
+      "at": "2026-10-20T12:47:25Z",
+      "note": "plan, research and tasks committed; design reviewer dispatched"
+    },
+    {
+      "state": "IMPLEMENT",
+      "at": "2026-10-20T12:54:47Z",
+      "note": "design review approved, six remedies applied; plan gate open"
+    },
+    {
+      "state": "CONVERGE",
+      "at": "2026-10-20T13:11:31Z",
+      "note": "US-1 and US-2 accepted"
+    },
+    {
+      "state": "REVIEW",
+      "at": "2026-10-20T13:13:05Z",
+      "note": "converged; ADR 0026 graduated"
+    },
+    {
+      "state": "PR_READY",
+      "at": "2026-10-20T13:27:24Z",
+      "note": "review approved, DOC-001 fixed; walkthrough laid out"
+    }
+  ],
+  "gates": {
+    "spec": {
+      "approved_by": "Sam",
+      "at": "2026-10-20T12:42:42Z",
+      "self_resolved": [
+        "approved in session at commit 2c8de6db2f14c1db995f2dfca9bd9154c58e359e"
+      ]
+    },
+    "plan": {
+      "approved_by": "open",
+      "at": "2026-10-20T12:54:02Z",
+      "self_resolved": [
+        "plan gate open for this feature; passed without a stop"
+      ]
+    },
+    "merge": {
+      "approved_by": null,
+      "at": null
+    },
+    "design_review": {
+      "approved_by": "design reviewer",
+      "at": "2026-10-20T12:54:02Z",
+      "self_resolved": [
+        "ARCH-001 single slug append",
+        "SPEC-001 US-1 before US-2",
+        "ARCH-002 using",
+        "SEC-001 documented",
+        "SPEC-002 scenario 3 test",
+        "ARCH-003 whitespace names refused"
+      ]
+    },
+    "review": {
+      "approved_by": "reviewer",
+      "at": "2026-10-20T13:23:39Z",
+      "self_resolved": [
+        "DOC-001 remedied in T008: declared documents in tests documented",
+        "note on case-insensitive collation accepted: nothing written either way",
+        "note on admin comparison remedied in T008 wording"
+      ]
+    },
+    "walkthrough": {
+      "approved_by": null,
+      "at": "2026-10-20T13:27:31Z",
+      "self_resolved": []
+    }
+  },
+  "stories": [
+    {
+      "id": "US1",
+      "priority": "P1",
+      "issue": 114,
+      "worktree": "/home/sam/projects/worktrees/compliance-fs011",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T001",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py::TestCreateDeclaredDocuments"
+            ],
+            "commands": [
+              "uv run pytest tests/test_management.py -q"
+            ],
+            "code": [
+              "tests/test_management.py:28"
+            ]
+          }
+        },
+        {
+          "id": "T002",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py::TestCreateDeclaredDocuments",
+              "tests/test_app.py::TestDeclaredDocumentsAfterMigrate"
+            ],
+            "commands": [
+              "uv run pytest tests/test_management.py tests/test_app.py -q"
+            ],
+            "code": [
+              "mvp_compliance/management.py:10",
+              "mvp_compliance/models.py:750",
+              "mvp_compliance/apps.py:19"
+            ]
+          }
+        },
+        {
+          "id": "T003",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py::TestRefusedDeclarations"
+            ],
+            "commands": [
+              "uv run pytest tests/test_management.py::TestRefusedDeclarations -q"
+            ],
+            "code": [
+              "tests/test_management.py:131"
+            ]
+          }
+        },
+        {
+          "id": "T004",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py::TestRefusedDeclarations"
+            ],
+            "commands": [
+              "uv run pytest tests/test_management.py tests/test_app.py -q"
+            ],
+            "code": [
+              "mvp_compliance/management.py:12"
+            ]
+          }
+        },
+        {
+          "id": "T005",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_management.py"
+            ],
+            "commands": [
+              "uv run python manage.py migrate; uv run python manage.py seed_demo; uv run python manage.py makemigrations --check"
+            ],
+            "code": [
+              "docs/models.md:121",
+              "demo/settings.py:100",
+              "demo/management/commands/seed_demo.py:519"
+            ]
+          }
+        },
+        {
+          "id": "T008",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run pytest -q",
+              "forge verify --repo . --base origin/main"
+            ],
+            "code": [
+              "docs/models.md:165"
+            ]
+          }
+        },
+        {
+          "id": "T009",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "commands": [
+              "uv run python manage.py migrate"
+            ],
+            "code": [
+              "demo/settings.py:99"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "US2",
+      "priority": "P2",
+      "issue": 115,
+      "worktree": "/home/sam/projects/worktrees/compliance-fs011",
+      "status": "done",
+      "replans": 0,
+      "tasks": [
+        {
+          "id": "T006",
+          "status": "done",
+          "attempts": 1,
+          "evidence": {
+            "tests": [
+              "tests/test_exceptions.py"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDeclaredSlug tests/test_admin.py::TestDeclaredDocumentAdmin tests/test_exceptions.py -q"
+            ],
+            "code": [
+              "tests/test_models.py:240"
+            ]
+          }
+        },
+        {
+          "id": "T007",
+          "status": "done",
+          "attempts": 2,
+          "evidence": {
+            "tests": [
+              "tests/test_admin.py::TestDeclaredDocumentAdmin"
+            ],
+            "commands": [
+              "uv run pytest tests/test_models.py::TestDeclaredSlug tests/test_models.py::TestDocumentSlug tests/test_admin.py::TestDeclaredDocumentAdmin tests/test_admin.py::TestDocumentSlugInTheAdmin tests/test_exceptions.py -q"
+            ],
+            "code": [
+              "mvp_compliance/exceptions.py:9"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "budgets": {
+    "converge_cycles": {
+      "used": 1,
+      "max": 2
+    },
+    "review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "design_review_cycles": {
+      "used": 1,
+      "max": 1
+    },
+    "tokens": {
+      "used": 15.78,
+      "max": 120
+    }
+  },
+  "pr": {
+    "number": 113,
+    "draft": false
+  }
+}

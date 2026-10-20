@@ -5,6 +5,10 @@ field error (docs/adr/0003-refusals-raise-package-exceptions.md).
 """
 
 
+class DeclaredDocumentError(Exception):
+    """Raised for an attempt to change the slug of a declared document."""
+
+
 class PublishedVersionError(Exception):
     """Raised for an attempt to change or delete a published version."""
 

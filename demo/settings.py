@@ -94,6 +94,16 @@ EASY_ICONS = {
     }
 }
 
+# The documents the demo's pages link to. `migrate` creates them; `seed_demo`
+# gives the first three their wording. The accessibility statement is left
+# without a version, to show a declared document waiting for its first one.
+MVP_COMPLIANCE_DOCUMENTS = {
+    "privacy-policy": "Privacy policy",
+    "terms-of-use": "Terms of use",
+    "impressum": "Impressum",
+    "accessibility-statement": "Accessibility statement",
+}
+
 # On, so the demo shows the state a site that wants the address an agreement
 # came from would produce. The package's own default is off, because it is
 # personal data about somebody who did not ask for it to be kept.
