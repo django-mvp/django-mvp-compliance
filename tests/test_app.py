@@ -2,6 +2,7 @@
 
 import importlib.util
 
+import pytest
 from django.apps import apps
 
 
@@ -35,3 +36,17 @@ class TestPackagedApp:
 
         assert Disclosure in admin.site._registry
         assert Acceptance not in admin.site._registry
+
+
+@pytest.mark.django_db
+class TestDeclaredDocumentsAfterMigrate:
+    def test_migrating_creates_the_declared_documents(self, settings) -> None:
+        from django.core.management import call_command
+
+        from mvp_compliance.models import Document
+
+        settings.MVP_COMPLIANCE_DOCUMENTS = {"privacy-policy": "Privacy policy"}
+
+        call_command("migrate", verbosity=0)
+
+        assert Document.objects.filter(slug="privacy-policy").exists()

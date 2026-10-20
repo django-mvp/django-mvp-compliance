@@ -760,6 +760,18 @@ def acceptances_survive_account_removal() -> bool:
     return getattr(settings, "MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL", True)
 
 
+def declared_documents() -> dict[str, str]:
+    """Return the documents the host project declares, by slug and name.
+
+    Read at the point of use, not cached, so a change to the setting takes
+    effect on the next migrate.
+
+    Returns:
+        ``MVP_COMPLIANCE_DOCUMENTS``, empty by default.
+    """
+    return getattr(settings, "MVP_COMPLIANCE_DOCUMENTS", {})
+
+
 def keep_or_remove_acceptances(collector, field, sub_objs, using) -> None:
     """Keep or remove a removed account's acceptances, as the setting says.
 

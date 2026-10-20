@@ -2,6 +2,7 @@
 
 from django.apps import AppConfig
 from django.core.checks import register
+from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
 
 
@@ -13,8 +14,10 @@ class MvpComplianceConfig(AppConfig):
     verbose_name = _("Compliance")
 
     def ready(self):
-        """Register the checks that report a misconfigured agreement check."""
-        # Not at module level: the auth middleware needs the app registry.
+        """Register the agreement check and create the declared documents."""
+        # Not at module level: both need the app registry.
         from mvp_compliance.checks import check_agreement_middleware
+        from mvp_compliance.management import create_declared_documents
 
         register(check_agreement_middleware)
+        post_migrate.connect(create_declared_documents, sender=self)
