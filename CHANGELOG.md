@@ -23,10 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** django-mvp 0.30 or later is required. To upgrade, list `"daisy_cotton"` directly
-  below `"mvp"` in `INSTALLED_APPS`, use `"mvp_forms"` for form rendering, and add
-  `"django_filters"`. django-mvp's own changelog lists everything else that changed between
-  releases.
+- **Breaking:** django-mvp 0.30 or later is required. It was 0.28.1. Add `"django_filters"` to
+  `INSTALLED_APPS`, which django-mvp 0.29 requires. django-mvp's own changelog lists everything
+  else that changed in those releases.
 - The list of documents on a document page is django-mvp's side panel. On a wide screen it is a
   column on the left that sticks under the header while the document scrolls. On a narrow screen
   it is a drawer, opened by a "Documents" button next to the version switcher. The document page
