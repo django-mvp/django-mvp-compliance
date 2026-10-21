@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "easy_icons",
     "crispy_forms",
     "mvp_forms",
+    "django_filters",
     "flex_menu",
     "django_cotton",
     "mvp_compliance",
