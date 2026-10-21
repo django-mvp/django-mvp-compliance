@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.0] - 2026-10-21
+
 ### Added
 
 - `MVP_COMPLIANCE_DOCUMENTS`, a setting that declares the documents a site links to, by slug and
