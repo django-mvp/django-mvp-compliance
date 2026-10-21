@@ -15,3 +15,12 @@ AccountCenterMenu.append(
         extra_context={"label": _("Agreements"), "icon": "document"},
     )
 )
+
+# SKETCH (FS-012): the page a person downloads a copy of their data from.
+AccountCenterMenu.append(
+    MenuItem(
+        name="personal-data",
+        view_name="mvp_compliance:personal-data",
+        extra_context={"label": _("Your data"), "icon": "download"},
+    )
+)

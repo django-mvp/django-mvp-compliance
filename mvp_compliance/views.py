@@ -6,7 +6,7 @@ from urllib.parse import unquote, urljoin, urlsplit
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import DatabaseError, transaction
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import resolve_url
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
@@ -396,3 +396,180 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         context["destination"] = self.get_destination()
         context["redirect_field_name"] = self.redirect_field_name
         return context
+
+
+# --- SKETCH (FS-012): the page a person downloads a copy of their data from. ---
+# Stub data, no tests. Rebuilt test-first once the sketch is approved.
+
+
+class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
+    """SKETCH: the account-area page that hands a person a copy of their data."""
+
+    template_name = "mvp_compliance/personal_data.html"
+    page_title = gettext_lazy("Your data")
+    page_subtitle = gettext_lazy(
+        "Download a copy of what this site holds about you, as a single file."
+    )
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            reverse("account-center")
+        except NoReverseMatch:
+            raise Http404(_("No account area")) from None
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_breadcrumbs(self):
+        return [
+            {"text": _("Account Center"), "href": reverse("account-center")},
+            {"text": self.page_title},
+        ]
+
+    @property
+    def state(self) -> str:
+        return self.request.GET.get("state", "")
+
+    def get_sections(self) -> list[dict]:
+        from demo.sketch_copy import sections
+
+        return [*sections(nothing=self.state == "nothing"), self.get_own_section()]
+
+    def get_own_section(self) -> dict:
+        from mvp_compliance import records
+
+        answer = records.produce(str(self.request.user.pk))
+        entries = [] if self.state == "nothing" else list(answer.sections[0].entries)
+        return {
+            "slug": "agreements",
+            "heading": _("Documents you agreed to"),
+            "description": _(
+                "Each version of this site's documents you agreed to, when you agreed, "
+                "and the wording you were shown."
+            ),
+            "acceptances": True,
+            "records": entries,
+        }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sections"] = kwargs.get("sections") or self.get_sections()
+        context["confirmed"] = self.state == "confirmed"
+        context.setdefault("form", None if context["confirmed"] else self.get_form())
+        return context
+
+    def get_form(self, data=None):
+        from mvp_compliance.forms import ConfirmIdentityForm
+
+        return ConfirmIdentityForm(self.request.user, data=data)
+
+    def post(self, request, *args, **kwargs):
+        if self.state == "failed":
+            return self.render_to_response(self.get_context_data(failed=True))
+        if self.state != "confirmed":
+            form = self.get_form(request.POST)
+            if not form.is_valid():
+                return self.render_to_response(self.get_context_data(form=form))
+        made_at = timezone.now()
+        content = build_copy(request, self.get_sections(), made_at)
+        response = HttpResponse(content, content_type="application/zip")
+        filename = f"copy-of-your-data-{timezone.localdate(made_at):%Y-%m-%d}.zip"
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class PersonalDataCopyView(PersonalDataView):
+    """SKETCH ONLY: the readable part of a copy, served so it can be looked at."""
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(render_copy(request, self.get_sections(), timezone.now()))
+
+
+def display_sections(sections: list[dict]) -> list[dict]:
+    """Pair each value with its label and format it as a person reads it."""
+    shown = []
+    for section in sections:
+        if section.get("acceptances"):
+            shown.append(section)
+            continue
+        rows = [
+            [(label, display_value(value)) for label, value in zip(section["labels"], record)]
+            for record in section["records"]
+        ]
+        shown.append({**section, "rows": rows})
+    return shown
+
+
+def display_value(value):
+    if hasattr(value, "year") and not isinstance(value, str):
+        return {"text": date_format(value)}
+    if isinstance(value, dict):
+        return {"text": value["name"], "path": value["path"]}
+    if value in (None, ""):
+        return {"text": None}
+    return {"text": value}
+
+
+def render_copy(request, sections, made_at) -> str:
+    from django.contrib.staticfiles import finders
+    from django.template.loader import render_to_string
+    from mvp.config import MVP_CONFIG
+
+    css = "".join(
+        open(finders.find(path), encoding="utf-8").read()
+        for path in ["css/django-mvp.css"]
+    )
+    return render_to_string(
+        "mvp_compliance/copy/index.html",
+        {
+            "css": css,
+            "theme": MVP_CONFIG["theme"]["default"],
+            "site_name": MVP_CONFIG["layout"]["sidebar"].get("title") or request.get_host(),
+            "made_at": made_at,
+            "person": request.user.get_username(),
+            "sections": display_sections(sections),
+        },
+    )
+
+
+def build_copy(request, sections, made_at) -> bytes:
+    import io
+    import json
+    import zipfile
+
+    def as_json(section):
+        if section.get("acceptances"):
+            records = [
+                {
+                    "document": entry.document,
+                    "version": entry.version,
+                    "accepted_at": entry.accepted_at.isoformat(),
+                    "wording": entry.wording,
+                }
+                for entry in section["records"]
+            ]
+        else:
+            records = [
+                {
+                    label: (value["path"] if isinstance(value, dict) else value)
+                    for label, value in zip(section["labels"], record)
+                }
+                for record in section["records"]
+            ]
+        return {"key": section["slug"], "heading": str(section["heading"]), "records": records}
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("index.html", render_copy(request, sections, made_at))
+        data = {
+            "made_at": made_at.isoformat(),
+            "person": request.user.get_username(),
+            "sections": [as_json(section) for section in sections],
+        }
+        archive.writestr(
+            "data.json", json.dumps(data, indent=2, ensure_ascii=False, default=str)
+        )
+        for section in sections:
+            for record in section["records"] if not section.get("acceptances") else []:
+                for value in record:
+                    if isinstance(value, dict):
+                        archive.writestr(value["path"], f"Placeholder for {value['name']}\n")
+    return buffer.getvalue()

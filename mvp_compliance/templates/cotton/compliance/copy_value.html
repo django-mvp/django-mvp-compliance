@@ -1,0 +1,5 @@
+{# @description One value in a copy of a person's data: a link to its file, the text, or an em dash when there is none. #}
+{# @prop value:object | description:"The display text and, for a file, its path inside the copy." #}
+{% load i18n %}
+<c-vars value />
+{% if value.path %}<a class="link" href="{{ value.path }}">{{ value.text }}</a>{% elif value.text is None %}<span aria-hidden="true">—</span><span class="sr-only">{% translate "No value" %}</span>{% else %}{{ value.text }}{% endif %}

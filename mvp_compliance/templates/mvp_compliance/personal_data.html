@@ -1,0 +1,36 @@
+{% extends "mvp/account/base.html" %}
+{% load i18n %}
+{% block account.content %}
+  <c-mvp.page>
+    {% if failed %}
+      <c-alert variant="error">
+        <span>{% translate "Your copy could not be made, and nothing was downloaded. Try again later." %}</span>
+      </c-alert>
+    {% endif %}
+    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <div id="personal-data" class="flex flex-col gap-4 max-w-3xl">
+      <c-mvp.card title="{% translate "What the copy holds" %}">
+        <ul class="list">
+          {% for section in sections %}
+            <li class="list-row px-0">
+              <div>
+                <div class="font-medium">{{ section.heading }}</div>
+                <div class="text-sm text-base-content/70">{{ section.description }}</div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </c-mvp.card>
+      <c-mvp.card title="{% translate "Download a copy" %}">
+        <p class="max-w-prose">
+          {% translate "The copy is a single .zip file. Inside it is a page you can open in any web browser, the same records in a JSON file for use in other software, and the files you uploaded." %}
+        </p>
+        <c-mvp.form method="post" class="flex flex-col gap-4 mt-2" :form-obj="form">
+          <div>
+            <c-button type="submit" variant="primary" icon="download" text="{% translate "Download a copy" %}" />
+          </div>
+        </c-mvp.form>
+      </c-mvp.card>
+    </div>
+  </c-mvp.page>
+{% endblock account.content %}
