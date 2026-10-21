@@ -664,6 +664,20 @@ class TestDocumentList:
         )
         assert side_list.count("menu-active") == 1
 
+    def test_a_button_among_the_actions_opens_the_panel_holding_the_list(
+        self, client, documents
+    ):
+        _cookies, privacy, _terms = documents
+
+        content = client.get(document_address(privacy)).content.decode()
+
+        toggle = re.search(
+            r'class="btn mvp-page-side-toggle[^"]*"\s+aria-controls="([^"]+)"', content
+        )
+        assert toggle is not None
+        panel = content.index(f'id="{toggle.group(1)}"')
+        assert panel < content.index('<nav id="document-list"')
+
     def test_a_draft_only_document_and_an_empty_one_are_absent(self, client):
         shown = DocumentFactory(name="Privacy policy")
         published(shown)
