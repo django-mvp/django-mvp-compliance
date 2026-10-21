@@ -18,8 +18,8 @@ ADR 0012 forbade anything outside the package from adding to the answer about a 
 project that implemented an extension badly would produce an answer that looked complete and was
 not. The person's copy cannot avoid that risk: reaching a project's data through a hook the
 project implements is what R11 and Article XIII ask for. The risk is handled instead by refusing to
-hand over a copy if any part of it fails (US-4), and by naming every kind the copy holds without
-claiming it is everything (US-5). The staff page keeps ADR 0012 unchanged. A new ADR records the
+hand over a copy if any part of it fails (US-1), and by naming every kind the copy holds without
+claiming it is everything (US-1). The staff page keeps ADR 0012 unchanged. A new ADR records the
 split.
 
 ## D3 — The copy carries the time it was made

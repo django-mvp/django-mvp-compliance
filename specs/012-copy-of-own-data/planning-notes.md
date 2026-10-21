@@ -27,7 +27,7 @@ class Datasets(PersonalData):
         return Dataset.objects.filter(owner=user)
 ```
 
-Overriding `collect(user)` covers data that is not one queryset (US-6), and a `template_name`
+Overriding `collect(user)` covers data that is not one queryset (US-2), and a `template_name`
 gives a kind its own presentation in the readable part. The copy is one zip: `index.html`
 readable offline, `data.json`, and `files/`. The person's identity is confirmed before the copy is
 made, using allauth's reauthentication where the project has it, which mvp-accounts already wires
