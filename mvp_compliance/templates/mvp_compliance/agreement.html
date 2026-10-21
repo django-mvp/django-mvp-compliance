@@ -8,17 +8,17 @@
   {% if failed or missing or changed %}
     <div id="agreement-notices" class="flex flex-col gap-2 max-w-3xl mx-auto w-full pt-4">
       {% if failed %}
-        <c-alert variant="error">
+        <c-alert variant="error" icon="error">
           <span>{% translate "Your agreement was not recorded. Submit the page again." %}</span>
         </c-alert>
       {% endif %}
       {% if missing %}
-        <c-alert variant="error">
+        <c-alert variant="error" icon="error">
           <span>{% translate "All documents marked as required need your agreement." %}</span>
         </c-alert>
       {% endif %}
       {% if changed %}
-        <c-alert variant="info">
+        <c-alert variant="info" icon="info">
           <span>{% translate "A document changed while you were reading. Check the list and submit again." %}</span>
         </c-alert>
       {% endif %}
