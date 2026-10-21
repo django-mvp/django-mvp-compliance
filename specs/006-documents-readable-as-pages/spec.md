@@ -128,7 +128,7 @@ A reader who knows a document was reworded, but has no link to the old wording, 
 Every document page has a version switcher among its actions listing every published version,
 newest first. Choosing one reloads the same page with `?version=` and that number.
 
-A site usually publishes several documents. Every document page is laid out in two columns: a list
+A site usually publishes several documents. On a wide screen every document page is laid out in two columns: a list
 of every document that has a version in force on the side, marking the one being read, and the
 document itself as the main content.
 
@@ -229,9 +229,9 @@ document page's template in the demo's templates and confirm it is used.
 - **FR-003**: Every document page MUST list the document's published versions newest first, each as
   `v<number> - <date>` linking to the same page with `?version=<number>`, and mark the version being
   shown. No draft is listed. *(US-3)*
-- **FR-004**: Every document page MUST be laid out in two columns: a list of every document that has
-  a version in force, linking to each document's page and marking the one shown, on the side, and
-  the version being shown as the main content. There is no separate page listing documents.
+- **FR-004**: Every document page MUST be laid out, on a wide screen, in two columns: a list of
+  every document that has a version in force, linking to each document's page and marking the one
+  shown, on the side, and the version being shown as the main content. There is no separate page listing documents.
   *(US-3)*
 - **FR-005**: Every page this feature adds MUST be readable by any visitor, signed in or not, with
   no permission required. *(US-1, US-2, US-3)*

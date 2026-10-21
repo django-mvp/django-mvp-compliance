@@ -21,6 +21,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [docs/models.md](docs/models.md#declaring-documents) and
   [when the slug is fixed](docs/models.md#when-the-slug-is-fixed).
 
+### Changed
+
+- **Breaking:** django-mvp 0.30 or later is required. To upgrade, list `"daisy_cotton"` directly
+  below `"mvp"` in `INSTALLED_APPS`, use `"mvp_forms"` for form rendering, and add
+  `"django_filters"`. django-mvp's own changelog lists everything else that changed between
+  releases.
+- The list of documents on a document page is django-mvp's side panel. On a wide screen it is a
+  column on the left that sticks under the header while the document scrolls. On a narrow screen
+  it is a drawer, opened by a "Documents" button next to the version switcher. The document page
+  now fills the `page.side`, `page.actions` and `page.content` blocks of `page_view.html`, so a
+  project template that extends it can override any one of them. It no longer fills `styles` or
+  `page.content-wrapper`.
+- The alerts the package draws pass their icon, because daisy-cotton 0.2 no longer picks one from
+  the alert's variant.
+
+### Removed
+
+- **Breaking:** `mvp_compliance/pages.css` and its `--mvp-compliance-header-clearance` property.
+  The panel follows the header's measured height, which django-mvp publishes as
+  `--mvp-header-height`. A project that set the clearance can delete that rule.
+
 ## [v0.2.0] - 2026-10-13
 
 ### Added

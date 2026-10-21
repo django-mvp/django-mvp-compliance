@@ -97,22 +97,14 @@ shown: the version in force by default, or the one named by `?version=`. When a 
 version is published, the plain address shows it at once; an earlier `?version=` address
 keeps showing what it always showed.
 
-On wide screens the page is two columns. The left column is a card titled "Documents" that
-lists every document with a version in force, alphabetically, each linking to its own page,
-with the one being shown marked. The right column holds the document's name, the version
-switcher and the wording. On a narrow screen the card stacks above the document. A document
-with only drafts, or with no versions, is left out. The list is the same on a `?version=`
-address as on the plain one.
-
-The card stays in view while a long document scrolls. It stops below the shell's top bar,
-at an offset the package's stylesheet, `mvp_compliance/pages.css`, sets to `5rem`. If your
-project's top bar is a different height, set the custom property in your own stylesheet:
-
-```css
-:root {
-  --mvp-compliance-header-clearance: 6rem;
-}
-```
+The list of documents is django-mvp's side panel, titled "Documents". From the `lg` breakpoint
+the page is two columns: the panel on the left lists every document with a version in force,
+alphabetically, each linking to its own page, with the one being shown marked, and the right
+column holds the document's name, the version switcher and the wording. The panel sticks under
+the shell's header while a long document scrolls, at the header's measured height, so it needs
+no offset from you. Below `lg` the panel is a drawer, opened by a "Documents" button next to the
+version switcher. A document with only drafts, or with no versions, is left out. The list is the
+same on a `?version=` address as on the plain one.
 
 The line under the name reads `v2026.1 - 26 September 2026`: the shown version's
 number and the day it was published, in the project's date format. When the signed-in
@@ -412,14 +404,14 @@ Nothing on the page links to editing or deleting a document. That is done in the
 ## Overriding a template
 
 Every page has one template under `mvp_compliance/`. The document page extends django-mvp's
-`page_view.html` and fills its `styles` and `page.content-wrapper` blocks. It replaces the
-wrapper whole, so the `page.title`, `page.actions` and `page.content` blocks inside it are not
-drawn on this page, and a project template that extends the package's and overrides one of
-them has no effect. The list extends `mvp/account/base.html` and fills its `account.content`
-block, and draws its rows through the partial `mvp_compliance/_agreed_version_rows.html`. To
-restyle a page, place a template at the same path in your project. Django finds yours first,
-and the package's is never used for that page. The package needs no other
-change, and you do not fork it.
+`page_view.html` and fills its `page.side`, `page.actions` and `page.content` blocks: the list of
+documents, the version switcher with the button that opens the list on a narrow screen, and the
+wording. The title comes from the page's own `page.title` block. A project template that extends
+the package's can override any one of those blocks and keep the rest. The list extends
+`mvp/account/base.html` and fills its `account.content` block, and draws its rows through the
+partial `mvp_compliance/_agreed_version_rows.html`. To restyle a page, place a template at the same
+path in your project. Django finds yours first, and the package's is never used for that page. The
+package needs no other change, and you do not fork it.
 
 | Template path | Page | Receives |
 |---|---|---|
