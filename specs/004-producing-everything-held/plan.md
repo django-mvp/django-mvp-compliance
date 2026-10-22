@@ -88,9 +88,7 @@ specs/004-producing-everything-held/
 ├── decisions.md         # on main; appended to, never restarted
 ├── plan.md              # this file
 ├── research.md          # the eight questions the design rests on
-├── tasks.md             # the task list feature-state.json tracks
-├── progress.md          # the running log
-└── feature-state.json   # the ledger
+└── tasks.md             # the task list
 ```
 
 No `data-model.md` and no `contracts/`: this feature stores nothing, and its contract is a Python

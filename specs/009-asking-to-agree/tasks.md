@@ -1,6 +1,6 @@
 # Tasks — 009 Asking a signed-in person to agree to what is outstanding
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task that changes behaviour follows Article I: the failing test comes first. Tests find
 elements by fixture data, role, id or `data-` hook, never by wording, and never assert layout,
 alignment or a badge's variant.
