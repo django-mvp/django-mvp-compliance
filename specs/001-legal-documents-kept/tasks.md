@@ -1,6 +1,6 @@
 # Tasks — 001 Legal documents kept as versioned records
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task follows Article I: the failing test comes first.
 
 ## Foundational — sequential, before any story

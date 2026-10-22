@@ -1,6 +1,6 @@
 # Tasks — 008 What a person has agreed to, in their account area
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task that changes behaviour follows Article I: the failing test comes first. Tests find
 elements by fixture data, role or id, never by wording.
 

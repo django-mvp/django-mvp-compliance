@@ -91,9 +91,7 @@ specs/002-writing-and-publishing/
 ├── decisions.md         # merged with it; appended to here
 ├── plan.md              # this file
 ├── research.md          # what had to be settled first
-├── tasks.md             # the task graph
-├── progress.md          # run narrative
-└── feature-state.json   # the ledger
+└── tasks.md             # the task graph
 ```
 
 No `contracts/`: the contract is a set of admin addresses and the test suite states it. No

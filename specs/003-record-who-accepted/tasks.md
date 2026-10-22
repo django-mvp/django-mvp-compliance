@@ -1,6 +1,6 @@
 # Tasks — 003 The record of who accepted which version
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task follows Article I: the failing test comes first.
 
 Documentation is not batched into a closing story. Each public name is documented in the story that

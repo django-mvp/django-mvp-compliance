@@ -1,6 +1,6 @@
 # Tasks — 010 Applying the agreement check across the whole site
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task that changes behaviour follows Article I: the failing test comes first. Tests find
 elements by fixture data, role, id or `data-` hook, never by wording, and assert a system check by
 its id and a validation error by its code.
