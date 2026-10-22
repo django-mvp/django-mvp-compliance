@@ -271,7 +271,7 @@ since nothing ties them to the enum.
 unique index being translated into `PublishError` inside `publish()`. This story does not build
 that translation.
 
-**Why**: no task's acceptance criteria in `US2-brief.json` exercises it, and on every backend the
+**Why**: no acceptance criterion of a US2 task exercises it, and on every backend the
 row lock `publish()` takes serialises the ordinary path before the index is ever reached — the
 index only fires on a route that bypasses `publish()` entirely (T025's own test does exactly
 that, directly, not through `publish()`). Adding a catch clause with no test behind it is the
