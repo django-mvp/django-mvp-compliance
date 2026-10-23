@@ -268,8 +268,12 @@ class TestPersonalDataCopy:
 
         archive = open_copy(user, "tests.kinds.Notes")
 
-        assert archive.read(f"files/notes/{first.pk}/a.txt") == b"one"
-        assert archive.read(f"files/notes/{second.pk}/a.txt") == b"two"
+        held = {
+            name.split("/")[2]: archive.read(name)
+            for name in archive.namelist()
+            if name.startswith("files/")
+        }
+        assert held == {str(first.pk): b"one", str(second.pk): b"two"}
 
     def test_the_data_holds_every_kind_in_declared_order_then_the_agreements(
         self, user

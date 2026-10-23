@@ -56,6 +56,7 @@ MVP_COMPLIANCE_PERSONAL_DATA = [
 # datasets/personal_data.py
 from mvp_compliance.personal_data import PersonalData
 
+
 class Datasets(PersonalData):
     heading = _("Datasets you uploaded")
     description = _("Every dataset you uploaded, with its file.")

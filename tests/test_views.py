@@ -3,6 +3,7 @@
 import io
 import logging
 import re
+import tempfile
 import time
 import zipfile
 from datetime import timedelta
@@ -2878,11 +2879,18 @@ def downloaded(declare, client, user, stored_files):
     )
     client.force_login(user)
     confirm(client)
-    response = client.post(personal_data_address())
-    stream = response.file_to_stream
+    opened = []
+    spooled = tempfile.SpooledTemporaryFile
+
+    def spool(*args, **kwargs):
+        opened.append(spooled(*args, **kwargs))
+        return opened[-1]
+
+    with patch("mvp_compliance.views.tempfile.SpooledTemporaryFile", side_effect=spool):
+        response = client.post(personal_data_address())
     archive = zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
     response.close()
-    return {"response": response, "stream": stream, "archive": archive, "note": note}
+    return {"response": response, "stream": opened[0], "archive": archive, "note": note}
 
 
 @pytest.mark.django_db

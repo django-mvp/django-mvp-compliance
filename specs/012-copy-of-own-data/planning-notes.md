@@ -17,11 +17,12 @@ MVP_COMPLIANCE_PERSONAL_DATA = [
     "datasets.personal_data.Datasets",
 ]
 
+
 class Datasets(PersonalData):
     heading = _("Datasets you uploaded")
     model = Dataset
     fields = ["title", "licence", "created"]  # labels from verbose_name
-    file_fields = ["upload"]                   # copied into files/
+    file_fields = ["upload"]  # copied into files/
 
     def get_queryset(self, user):
         return Dataset.objects.filter(owner=user)

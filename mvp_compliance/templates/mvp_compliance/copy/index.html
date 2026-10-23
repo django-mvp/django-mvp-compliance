@@ -30,33 +30,35 @@
         </div>
       </nav>
       {% for section in sections %}
-        <section id="{{ section.slug }}" aria-labelledby="{{ section.slug }}-heading" class="card bg-base-100 shadow-sm">
+        <section id="{{ section.slug }}" data-section="{{ section.slug }}" aria-labelledby="{{ section.slug }}-heading" class="card bg-base-100 shadow-sm">
           <div class="card-body">
             <h2 id="{{ section.slug }}-heading" class="card-title">{{ section.heading }}</h2>
             <p class="text-sm text-base-content/70">{{ section.description }}</p>
             {% if not section.records %}
               <p class="py-2">{% translate "Nothing of this kind is held about you." %}</p>
+            {% elif section.rendered %}
+              {{ section.rendered }}
             {% elif section.acceptances %}
               <ul class="flex flex-col">
                 {% for entry in section.records %}
-                  <li class="py-2 border-b border-base-300">
+                  <li class="py-2 border-b border-base-300" data-record>
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                       <span class="font-medium">{% blocktranslate with document=entry.document number=entry.version %}{{ document }}, v{{ number }}{% endblocktranslate %}</span>
                       <span class="text-sm tabular-nums">{% blocktranslate with when=entry.accepted_at|date:"DATETIME_FORMAT" %}Agreed on {{ when }}{% endblocktranslate %}</span>
                     </div>
                     <details class="mt-1">
                       <summary class="link link-hover cursor-pointer text-sm">{% translate "The wording you agreed to" %}</summary>
-                      <div class="prose max-w-prose py-2">{{ entry.wording|safe }}</div>
+                      <div class="prose max-w-prose py-2" data-field="wording">{{ entry.wording|safe }}</div>
                     </details>
                   </li>
                 {% endfor %}
               </ul>
             {% elif section.single %}
               {% for row in section.rows %}
-                <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-4">
-                  {% for label, value in row %}
+                <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-4" data-record>
+                  {% for name, label, value in row %}
                     <dt class="text-sm font-medium text-base-content/70 pt-2">{{ label }}</dt>
-                    <dd class="col-span-2 pb-2 border-b border-base-300 break-words"><c-compliance.copy_value :value="value" /></dd>
+                    <dd class="col-span-2 pb-2 border-b border-base-300 break-words" data-field="{{ name }}"><c-compliance.copy_value :value="value" /></dd>
                   {% endfor %}
                 </dl>
               {% endfor %}
@@ -71,8 +73,8 @@
                   </thead>
                   <tbody>
                     {% for row in section.rows %}
-                      <tr>
-                        {% for label, value in row %}<td class="break-words"><c-compliance.copy_value :value="value" /></td>{% endfor %}
+                      <tr data-record>
+                        {% for name, label, value in row %}<td class="break-words" data-field="{{ name }}"><c-compliance.copy_value :value="value" /></td>{% endfor %}
                       </tr>
                     {% endfor %}
                   </tbody>

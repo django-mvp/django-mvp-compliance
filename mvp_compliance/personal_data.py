@@ -5,17 +5,33 @@ A project lists dotted paths to ``PersonalData`` subclasses in
 holds about a person. Reading a kind for one user gives a section.
 """
 
+import json
 import os
+import shutil
+import zipfile
 from dataclasses import dataclass
-from typing import Any
+from datetime import date, datetime
+from typing import IO, Any
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.staticfiles import finders
+from django.core.exceptions import ImproperlyConfigured
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models.fields.files import FieldFile
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.functional import Promise
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
+
+from mvp_compliance import records
+from mvp_compliance.models import Acceptance
+
+#: The key of the package's own section, always the copy's last.
+AGREEMENTS = "agreements"
 
 #: The text of a label or heading: a string, or a lazy one translated when read.
 _Text = str | Promise
@@ -194,7 +210,33 @@ class AgreementsPersonalData(PersonalData):
     @property
     def key(self) -> str:
         """The section's key, ``agreements``."""
-        return "agreements"
+        return AGREEMENTS
+
+    def collect(self, user: AbstractBaseUser) -> PersonalDataSection:
+        """Read the person's acceptances, each with the wording stored at publication.
+
+        Args:
+            user: The person whose acceptances are wanted.
+
+        Returns:
+            One row per acceptance: document, version, time and wording.
+        """
+        (section,) = records.produce(Acceptance.subject_of(user)).sections
+        return PersonalDataSection(
+            key=self.key,
+            heading=self.heading,
+            description=self.description,
+            columns=(
+                ("document", _("Document")),
+                ("version", _("Version")),
+                ("accepted_at", _("Agreed on")),
+                ("wording", _("The wording you agreed to")),
+            ),
+            rows=tuple(
+                (entry.document, entry.version, entry.accepted_at, entry.wording)
+                for entry in section.entries
+            ),
+        )
 
 
 def get_personal_data() -> list[PersonalData] | None:
@@ -209,3 +251,183 @@ def get_personal_data() -> list[PersonalData] | None:
     if paths is None:
         return None
     return [import_string(path)() for path in paths]
+
+
+class PersonalDataCopy:
+    """A person's copy: a readable page, the same records as data, and their files.
+
+    Attributes:
+        user: The person the copy is for.
+        sections: What each kind holds about them, in the order they appear.
+        made_at: When the copy was made.
+        site_name: What the readable page calls the site.
+        theme: The theme the readable page is drawn in.
+    """
+
+    def __init__(
+        self,
+        user: AbstractBaseUser,
+        sections: list[PersonalDataSection],
+        made_at: datetime,
+        site_name: str,
+        theme: str,
+    ) -> None:
+        self.user = user
+        self.sections = sections
+        self.made_at = made_at
+        self.site_name = site_name
+        self.theme = theme
+
+    @staticmethod
+    def collect(
+        user: AbstractBaseUser, kinds: list[PersonalData]
+    ) -> list[PersonalDataSection]:
+        """Read every kind's records about ``user``, before anything is written.
+
+        Args:
+            user: The person whose records are wanted.
+            kinds: The kinds to read, in the order they are to appear.
+
+        Returns:
+            One section per kind, in the same order.
+        """
+        return [kind.collect(user) for kind in kinds]
+
+    def write(self, file: IO[bytes]) -> None:
+        """Write the copy as a zip archive.
+
+        Args:
+            file: A seekable binary file to write the archive to.
+        """
+        with zipfile.ZipFile(file, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("index.html", self.get_page())
+            archive.writestr(
+                "data.json",
+                json.dumps(
+                    self.get_data(), cls=DjangoJSONEncoder, indent=2, ensure_ascii=False
+                ),
+            )
+            for section in self.sections:
+                for row in section.rows:
+                    for value in row:
+                        if isinstance(value, CopiedFile):
+                            with (
+                                value.field_file.open("rb") as source,
+                                archive.open(
+                                    value.path, "w", force_zip64=True
+                                ) as target,
+                            ):
+                                shutil.copyfileobj(source, target)
+
+    def get_data(self) -> dict[str, Any]:
+        """Return the copy as data: every kind, each record keyed by field name.
+
+        Returns:
+            The structure written to ``data.json``. A file is its path in the copy.
+        """
+        return {
+            "made_at": self.made_at,
+            "person": self.user.get_username(),
+            "sections": [
+                {
+                    "key": section.key,
+                    "heading": str(section.heading),
+                    "fields": {name: str(label) for name, label in section.columns},
+                    "records": [
+                        {
+                            name: value.path if isinstance(value, CopiedFile) else value
+                            for (name, _label), value in zip(
+                                section.columns, row, strict=True
+                            )
+                        }
+                        for row in section.rows
+                    ],
+                }
+                for section in self.sections
+            ],
+        }
+
+    def get_page(self) -> str:
+        """Draw the readable page, with the site's stylesheet inline.
+
+        Returns:
+            The page's HTML.
+        """
+        path = finders.find("css/django-mvp.css")
+        if not isinstance(path, str):
+            raise ImproperlyConfigured("django-mvp's stylesheet cannot be found.")
+        with open(path, encoding="utf-8") as stylesheet:
+            css = stylesheet.read()
+        return render_to_string(
+            "mvp_compliance/copy/index.html",
+            {
+                "css": css,
+                "theme": self.theme,
+                "site_name": self.site_name,
+                "made_at": self.made_at,
+                "person": self.user.get_username(),
+                "sections": [self.get_section(section) for section in self.sections],
+            },
+        )
+
+    def get_section(self, section: PersonalDataSection) -> dict[str, Any]:
+        """Describe one section for the readable page.
+
+        Args:
+            section: What one kind holds.
+
+        Returns:
+            What the page's template draws: the section's labels, its rows as
+            ``(name, label, value)`` and, for a kind with its own template, that
+            template's output.
+        """
+        rows = [
+            [
+                (name, label, self.get_value(value))
+                for (name, label), value in zip(section.columns, row, strict=True)
+            ]
+            for row in section.rows
+        ]
+        acceptances = section.key == AGREEMENTS
+        names = [name for name, _label in section.columns]
+        rendered = ""
+        if section.template_name and section.rows and not acceptances:
+            rendered = render_to_string(
+                section.template_name, {"section": section, "user": self.user}
+            )
+        return {
+            "slug": section.key,
+            "heading": section.heading,
+            "description": section.description,
+            "single": section.single,
+            "labels": [label for _name, label in section.columns],
+            "rows": rows,
+            "records": (
+                [dict(zip(names, row, strict=True)) for row in section.rows]
+                if acceptances
+                else rows
+            ),
+            "rendered": rendered,
+            "acceptances": acceptances,
+        }
+
+    @staticmethod
+    def get_value(value: Any) -> dict[str, Any]:
+        """Return a value as a person reads it, with its path when it is a file.
+
+        Args:
+            value: One value of a record.
+
+        Returns:
+            The ``text`` to show, ``None`` when there is no value, and the
+            ``path`` of a file inside the copy.
+        """
+        if isinstance(value, CopiedFile):
+            return {"text": value.name, "path": value.path}
+        if value is None or value == "":
+            return {"text": None}
+        if isinstance(value, datetime):
+            return {"text": date_format(timezone.localtime(value), "DATETIME_FORMAT")}
+        if isinstance(value, date):
+            return {"text": date_format(value)}
+        return {"text": value}

@@ -1,13 +1,14 @@
 """The pages a visitor reads, and the page that asks a person to agree."""
 
 import logging
+import tempfile
 from urllib.parse import unquote, urljoin, urlsplit
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import DatabaseError, transaction
-from django.http import Http404, HttpResponseRedirect
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import resolve_url
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
@@ -17,11 +18,17 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from django.views.decorators.csrf import csrf_protect
+from mvp.config import MVP_CONFIG
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.models import Acceptance, Document, RecordError, Version
-from mvp_compliance.personal_data import AgreementsPersonalData, get_personal_data
+from mvp_compliance.personal_data import (
+    AgreementsPersonalData,
+    PersonalData,
+    PersonalDataCopy,
+    get_personal_data,
+)
 
 try:
     from allauth.account.decorators import reauthentication_required
@@ -427,6 +434,9 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
         "Download a copy of what this site holds about you, as a single file."
     )
 
+    #: How large a copy grows in memory before it is spooled to disk.
+    spool_bytes = 10 * 1024 * 1024
+
     def dispatch(self, request, *args, **kwargs):
         """Answer "not found" without the account area or allauth's account app.
 
@@ -451,10 +461,39 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
             {"text": self.page_title},
         ]
 
+    def get_kinds(self) -> list[PersonalData]:
+        """Return the kinds a copy holds: the project's, then the package's own.
+
+        Returns:
+            The declared kinds in order, ending with the agreements.
+        """
+        return [*(get_personal_data() or []), AgreementsPersonalData()]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["sections"] = [*(get_personal_data() or []), AgreementsPersonalData()]
+        context["sections"] = self.get_kinds()
         return context
 
     def post(self, request, *args, **kwargs):
-        return self.render_to_response(self.get_context_data())
+        """Make the person's copy and hand it over as a download.
+
+        Nothing is stored: the copy is built in a temporary file that the
+        response closes once it has been sent.
+        """
+        made_at = timezone.now()
+        copy = PersonalDataCopy(
+            request.user,
+            PersonalDataCopy.collect(request.user, self.get_kinds()),
+            made_at,
+            MVP_CONFIG["layout"]["sidebar"].get("title") or request.get_host(),
+            MVP_CONFIG["theme"]["default"],
+        )
+        file = tempfile.SpooledTemporaryFile(max_size=self.spool_bytes)  # noqa: SIM115
+        copy.write(file)
+        file.seek(0)
+        return FileResponse(
+            file,
+            as_attachment=True,
+            filename=f"copy-of-your-data-{timezone.localdate(made_at):%Y-%m-%d}.zip",
+            content_type="application/zip",
+        )
