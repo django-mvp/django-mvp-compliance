@@ -12,11 +12,10 @@ of `mvp_compliance.personal_data.PersonalData`, shaped like a Django generic vie
 - `model`, `fields` and `get_queryset(user)` cover the common case. Labels come from each field's
   `verbose_name` and values from the field itself: `get_<field>_display()` for a field with
   choices, `str()` of a related object, the date and time formats Django already applies.
-- `file_fields` names the `FileField`s whose files go into the download. Each file is read
-  through the field's own storage, so files kept on S3 or another backend work the same as local
-  files.
-- `collect(user)` is the override for data that is not one queryset. It returns rows of
-  `(name, label, value)` and the package presents them like any other kind.
+- A `FileField` named in `fields` puts its file into the download. Each file is read through
+  the field's own storage, so files kept on S3 or another backend work the same as local files.
+- `collect(user)` is the override for data that is not one queryset. It returns a
+  `PersonalDataSection` and the package presents it like any other kind.
 - `template_name` gives a kind its own presentation in the readable part only. The
   machine-readable part is always built the same way.
 - `heading` and `description` are what the page and the copy show for the kind.
@@ -51,11 +50,11 @@ reads the request.
 |---|---|
 | Each kind's heading and description, without gathering records | `PersonalData.heading` and `.description` are class attributes. The page instantiates the classes and reads them, and never calls `get_queryset` or `collect`. |
 | Whether the person confirmed their identity recently | Delegated to django-allauth (below). The page is not shown until they have. |
-| Each kind's records, labelled, as a person reads them | `PersonalData.collect(user)` returns rows of `(name, label, value)`. The default implementation reads `fields` from `get_queryset(user)`. |
+| Each kind's records, labelled, as a person reads them | `PersonalData.collect(user)` returns a `PersonalDataSection` of labelled columns and rows. The default implementation reads `fields` from `get_queryset(user)`. |
 | One record or several | `PersonalData.single`, default `False`. A profile sets it. |
 | Unique file paths in the download | `files/<kind key>/<record pk>/<file name>`. The primary key keeps two files with one name apart, inside a kind and across kinds. |
 | Site name, time made, sign-in name, default theme | Site name from `MVP_CONFIG`'s sidebar title, which the shell already shows, else the request host. Time from `timezone.now()` once. Sign-in name from `get_username()`. Theme from `MVP_CONFIG["theme"]["default"]`. |
-| The site's stylesheet as text | `django.contrib.staticfiles.storage.staticfiles_storage.open("css/django-mvp.css")`, which works under `ManifestStaticFilesStorage` and remote storage, where `finders.find` returns nothing in production. |
+| The site's stylesheet as text | `django.contrib.staticfiles.finders.find("css/django-mvp.css")`, opened from the installed package. It works in tests, development and production with no `collectstatic`. `staticfiles_storage.open` was checked and rejected: it raises without `STATIC_ROOT`. |
 | JSON keyed by field name | `data.json` keys each value by the field's name. The label goes alongside it once per kind, under `fields`. |
 | Stub project kinds | The demo declares two real kinds against a model of its own (`demo.Upload`, with a file) and the user's own row. |
 | Placeholder files | Real `FileField` uploads in the demo, seeded by `seed_demo`. |
@@ -128,7 +127,7 @@ does.
 | JSON for dates and decimals | 4, Django | `django.core.serializers.json.DjangoJSONEncoder` |
 | Zip and temporary file | 4, standard library | `zipfile`, `tempfile.SpooledTemporaryFile` |
 | Streaming the download | 4, Django | `django.http.FileResponse` |
-| The stylesheet as text | 4, Django | `staticfiles_storage.open` |
+| The stylesheet as text | 4, Django | `django.contrib.staticfiles.finders.find` |
 | The acceptances with their wording | 2, this repo | `mvp_compliance.records.produce` |
 | Telling the project | 2, this repo | the `version_published` pattern in `signals.py`, `send_robust` |
 | Account-area page, breadcrumbs, 404 without the area | 2, this repo | `AgreedDocumentsView` |

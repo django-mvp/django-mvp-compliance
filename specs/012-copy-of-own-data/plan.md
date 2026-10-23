@@ -61,7 +61,6 @@ class Datasets(PersonalData):
     description = _("Every dataset you uploaded, with its file.")
     model = Dataset
     fields = ["title", "licence", "created", "upload"]
-    file_fields = ["upload"]
 
     def get_queryset(self, user):
         return Dataset.objects.filter(owner=user)
@@ -70,14 +69,16 @@ class Datasets(PersonalData):
 `mvp_compliance/personal_data.py`:
 
 - `PersonalData`: class attributes `heading`, `description`, `model = None`, `fields = []`,
-  `file_fields = []`, `single = False`, `template_name = None`. `key` defaults to the class name
+  `single = False`, `template_name = None`. `key` defaults to the class name
   in lower case, used for the section's anchor and its folder under `files/`.
 - `get_queryset(user)`: raises `NotImplementedError` unless overridden. No default filter is
   guessed, because which field points at the person is the project's knowledge.
 - `collect(user)`: returns a `PersonalDataSection`. The default reads `get_queryset(user)` and,
   for each object, each declared field: its `verbose_name` as the label, `get_<name>_display()`
   for a field with choices, `str()` for a relation, the raw value otherwise, `None` for an empty
-  value. A `file_fields` value with a file becomes a `CopiedFile(path, name, field_file)`.
+  value. A name in `fields` whose model field is a `FileField` becomes a `CopiedFile(path, name,
+  field_file)` when it has a file, and `None` when it has not. There is no separate list of file
+  fields.
   Overriding `collect` is the escape for data that is not one queryset.
 - `PersonalDataSection`, a frozen dataclass: `key`, `heading`, `description`, `single`,
   `template_name`, `columns` (tuple of `(name, label)`), `rows` (tuple of tuples of values).
@@ -86,36 +87,43 @@ class Datasets(PersonalData):
   function, a thin wrapper as Article X allows.
 
 The package's own section is built by `AgreementsPersonalData`, a subclass in the same module
-whose `collect` reads `records.produce(str(user.pk))`. It is always last and never declared.
+whose `collect` reads `records.produce(Acceptance.subject_of(user))`. It is always last and never declared.
 
 ### Building the copy
 
 `PersonalDataCopy(user, sections, made_at, site_name, theme)` in the same module:
 
 - `write(file)`: writes the zip to a binary file object. `index.html` from
-  `mvp_compliance/copy/index.html` with the stylesheet read through `staticfiles_storage`,
+  `mvp_compliance/copy/index.html` with the stylesheet read from the path
+  `django.contrib.staticfiles.finders.find("css/django-mvp.css")` returns,
   `data.json` with `DjangoJSONEncoder`, then each `CopiedFile` copied in with `shutil.copyfileobj`.
-- File paths are `files/<key>/<pk>/<file name>`, so no two collide.
+- File paths are `files/<key>/<pk>/<base name of the stored file>`, so no two collide.
 - `data.json`: `{"made_at", "person", "sections": [{"key", "heading", "fields": {name: label},
   "records": [{name: value}]}]}`. A file value is its path inside the zip.
 - `PersonalDataCopy.collect(user, kinds)`: collects every kind before anything is written. An
   exception from a kind's `collect()` is raised as `PersonalDataError` naming the kind's dotted
-  path, from the original. So is one from a file's `open()` during `write`.
+  path, from the original. So is one from a file's `open()` during `write`, and one from rendering
+  a kind's own `template_name`: each kind with a template is rendered to a string inside the same
+  per-kind guard, and `index.html` places the result.
 
 ### The page
 
 `PersonalDataView(LoginRequiredMixin, MVPTemplateView)` in `views.py`:
 
-- `dispatch` is wrapped with allauth's `reauthentication_required` (no `allow_get`) through
-  `method_decorator`, imported where the view is defined, guarded so the module still imports
-  without allauth. 404 when the account area is not mounted, as `AgreedDocumentsView`.
+- `get` and `post` are wrapped with allauth's `reauthentication_required` (no `allow_get`) through
+  `method_decorator`, as allauth's own TOTP view does, so `dispatch` runs first: 404 when the
+  account area is not mounted (as `AgreedDocumentsView`) or when `allauth.account` is not
+  installed, then the sign-in check, then confirmation. The import is guarded so the module still
+  loads without allauth.
 - `get`: the headings and descriptions of the kinds and the button. Nothing collected.
-- `post`: builds the copy into a `SpooledTemporaryFile`, returns a `FileResponse` attachment named
+- `post`: builds the copy into a `SpooledTemporaryFile`, rewinds it, returns a `FileResponse` attachment named
   `copy-of-your-data-<date>.zip`, then sends `personal_data_copied` with `send_robust` (sender
   `PersonalDataView`, `user`, `kinds` as the list of keys), logging a failed receiver. On
-  `PersonalDataError`: `logger.exception` naming the kind, then the page again with the failure
-  alert, status 500.
-- The route `data/` (name `personal-data`) is in `urls.py` only while the setting is set. The menu
+  `PersonalDataError`: close the temporary file, `logger.exception` naming the kind, then the page
+  again with the failure alert, status 500. The signal is sent when the response is returned,
+  which is what "handed over" means here, and `kinds` includes the agreements section's key.
+- The route `data/` (name `personal-data`) is in `urls.py` only while the setting `is not None`,
+  so an empty list counts as a declaration. The menu
   entry is appended in `menus.py` and dropped by the menu when the route is absent (ADR 0020).
 
 ### The system check
@@ -124,9 +132,10 @@ whose `collect` reads `records.produce(str(user.pk))`. It is always last and nev
 
 - `mvp_compliance.E005`: the setting is not a list or tuple.
 - `mvp_compliance.E006`: a path cannot be imported, or does not name a `PersonalData` subclass.
-  One error per path, naming it.
-- `mvp_compliance.E007`: a kind with `model` set names a field in `fields` or `file_fields` that
-  the model does not have, or a `file_fields` entry that is not a `FileField`.
+  One error per path, naming it. Two declared kinds with the same `key` are reported too, naming
+  both paths.
+- `mvp_compliance.E007`: a kind with `model` set names a field in `fields` that the model does
+  not have.
 - `mvp_compliance.E008`: `allauth.account` is not installed, or its `AccountMiddleware` is not in
   `MIDDLEWARE`.
 

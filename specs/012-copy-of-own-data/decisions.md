@@ -48,4 +48,15 @@ copy on a site without it. Detail in research.md, "Confirming identity".
 allauth's decorator can let the page be viewed and ask only on the download. It then replays the
 download after confirmation, which leaves the person on the confirmation page while the file
 arrives. Guarding the whole page makes confirmation the first step and returns them to the page,
-which is what allauth's own sensitive pages do.
+which is what allauth's own sensitive pages do. A download pressed after the confirmation has
+expired is still replayed from the confirmation page by allauth, which is acceptable.
+
+**ADR:** none — the page's flow, recorded in docs/personal-data.md.
+
+## D7 — A kind that is always one record says so
+
+The design review offered to drop `single` and lay out any kind with one row as label and value
+pairs. Kept: the approved screen shows a profile as pairs because a profile is always one record,
+and a list of datasets that happens to hold one should still read as a table.
+
+**ADR:** none — local to how the copy is laid out.
