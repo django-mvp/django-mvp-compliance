@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 00:19+0200\n"
+"POT-Creation-Date: 2026-10-24 00:23+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1040,7 +1040,7 @@ msgstr ""
 msgid "Remove your account and what this site holds about you."
 msgstr ""
 
-#: views.py:680
+#: views.py:703
 msgid "Your account has been deleted"
 msgstr ""
 

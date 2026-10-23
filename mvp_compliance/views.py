@@ -39,7 +39,7 @@ from mvp_compliance.personal_data import (
     PersonalDataCopy,
     get_personal_data,
 )
-from mvp_compliance.signals import personal_data_copied
+from mvp_compliance.signals import account_deleted, personal_data_copied
 
 try:
     from allauth.account.decorators import reauthentication_required
@@ -658,8 +658,10 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
         if not form.is_valid():
             return self.render_to_response(self.get_context_data(form=form))
         user = request.user
+        kinds = get_personal_data() or []
+        subject = Acceptance.subject_of(user)
         try:
-            delete_account(user, get_personal_data() or [])
+            delete_account(user, kinds)
         except AccountDeletionError as error:
             logger.exception(
                 "The account of user %s could not be deleted: %s failed",
@@ -670,7 +672,28 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
                 self.get_context_data(failed=True), status=500
             )
         logout(request)
+        # After the commit, so a project's receiver never hears of a deletion
+        # that an outer transaction later rolls back.
+        transaction.on_commit(
+            lambda: self.announce(user, subject, [kind.key for kind in kinds])
+        )
         return HttpResponseRedirect(reverse("mvp_compliance:account-deleted"))
+
+    def announce(self, user, subject: str, kinds: list[str]) -> None:
+        """Tell the project the account is gone, logging any receiver that fails.
+
+        A receiver that fails is the project's own fault and never undoes the
+        deletion or changes what the person is shown.
+        """
+        for receiver, result in account_deleted.send_robust(
+            sender=DeleteAccountView, user=user, subject=subject, kinds=kinds
+        ):
+            if isinstance(result, Exception):
+                logger.error(
+                    "A receiver of account_deleted failed: %r",
+                    receiver,
+                    exc_info=result,
+                )
 
 
 class AccountDeletedView(MVPTemplateView):

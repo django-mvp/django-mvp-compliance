@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when any step fails. The person is signed out and sent to `account-deleted`, a page that needs
   nobody signed in. The slugs `delete` and `deleted` are now reserved. See
   [docs/how-to/delete-an-account.md](docs/how-to/delete-an-account.md).
+- A signal, `mvp_compliance.signals.account_deleted`, sent once a person's deletion of their own
+  account has committed. It passes the project's own receivers the deleted account (`user`, its
+  email address and other fields as they were), its primary key as text (`subject`), and the keys
+  of the kinds deleted (`kinds`). Nothing is stored by the package. See
+  [docs/how-to/delete-an-account.md](docs/how-to/delete-an-account.md).
 - A declared kind can say how a person's records of that kind are deleted: `erasure =
   PersonalData.DELETE` deletes the rows `get_queryset(user)` returns, `erasure =
   PersonalData.WITH_ACCOUNT` leaves them to the account's own deletion, and a kind can override

@@ -148,5 +148,30 @@ signed in, and the failure is logged at ERROR naming the kind. Files removed in
 
 The slugs `delete` and `deleted` are reserved, so no document can take either address.
 
+## Hearing about each deletion
+
+The package keeps no record that an account was deleted. If your site needs one, or needs to do
+something afterwards such as send a last email, connect a receiver to
+`mvp_compliance.signals.account_deleted`. It is sent once for each deletion, after the deletion
+has committed, and never for one that could not be done:
+
+```python
+from django.core.mail import send_mail
+from django.dispatch import receiver
+from mvp_compliance.signals import account_deleted
+
+
+@receiver(account_deleted)
+def say_goodbye(sender, user, subject, kinds, **kwargs):
+    send_mail("Your account has been deleted", "...", None, [user.email])
+```
+
+`user` is the deleted account. Its `pk` is `None` by then, and its other fields, such as the
+email address, are as they were. `subject` is its primary key as text, the value every acceptance
+it leaves behind carries, so `Acceptance.objects.for_subject(subject)` finds them. `kinds` is the
+key of each declared kind that was deleted, in order. A receiver that raises is logged, and the
+account stays deleted. Whatever your receiver keeps about the person is your project's own record,
+kept under your project's rules.
+
 Deleting an account removes the user's own row, which is a row of your project's user model. It
 is the one thing the package deletes outside what a kind names.
