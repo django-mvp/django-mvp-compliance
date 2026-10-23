@@ -1,6 +1,6 @@
 # Tasks — 002 Writing and publishing a document without a developer
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task follows Article I: the failing test comes first.
 
 Every admin page is exercised through the `client` fixture against a real user holding a real

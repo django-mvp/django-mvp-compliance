@@ -7,7 +7,7 @@
       {% for entry in entries %}
         <c-mvp.card title="{{ entry.document.name }}">
           {% if entry.newer %}
-            <c-alert variant="warning" soft class="alert-horizontal">
+            <c-alert variant="warning" icon="warning" soft class="alert-horizontal">
               <span>{% blocktranslate with number=entry.newer.number date=entry.newer.published_at|date %}A newer version, v{{ number }}, has been in force since {{ date }}. You have not agreed to it.{% endblocktranslate %}</span>
               <a class="btn btn-sm" href="{% url 'mvp_compliance:document' entry.document.slug %}">{% blocktranslate with number=entry.newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
             </c-alert>

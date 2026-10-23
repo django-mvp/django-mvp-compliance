@@ -1,6 +1,6 @@
 # Tasks — 011 Declaring the documents a site links to
 
-Derived from [plan.md](./plan.md). Task ids are stable and are what `feature-state.json` tracks.
+Derived from [plan.md](./plan.md). Task ids are stable.
 Every task that changes behaviour follows Article I: the failing test comes first. Tests find
 elements by fixture data, id or `data-` hook, never by wording, and assert an error by its type
 and by the slugs it names, never by its sentence.

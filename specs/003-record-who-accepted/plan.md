@@ -87,9 +87,7 @@ specs/003-record-who-accepted/
 ├── decisions.md         # on main; appended to, never restarted
 ├── plan.md              # this file
 ├── research.md          # the six questions the design rests on
-├── tasks.md             # the task list feature-state.json tracks
-├── progress.md          # the running log
-└── feature-state.json   # the ledger
+└── tasks.md             # the task list
 ```
 
 No `data-model.md` and no `contracts/`: the data model is one table and lives in the Design section
