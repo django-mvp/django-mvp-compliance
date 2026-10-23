@@ -3288,3 +3288,164 @@ class TestDeleteAccountPageWithoutTheAccountArea:
         declare("tests.kinds.Erases")
 
         assert client.get(delete_address()).status_code == 404
+
+
+def error_codes(response):
+    """The codes of the errors the confirmation field was refused with."""
+    return [e.code for e in response.context["form"].errors.as_data()["confirmation"]]
+
+
+@pytest.fixture
+def leaving(declare, client, user):
+    """A confirmed person holding a note of each deleted kind, on the delete page."""
+    declare("tests.kinds.DeletesNotes", "tests.kinds.WithAccount")
+    NoteFactory(owner=user)
+    client.force_login(user)
+    confirm(client)
+    return user
+
+
+@pytest.mark.django_db
+class TestDeleteAccountSubmit:
+    """US-1 scenarios 6, 8, 9 and 12, FR-007, FR-010 to FR-012, SC-006."""
+
+    @pytest.mark.parametrize(
+        ("data", "code"),
+        [
+            ({}, "required"),
+            ({"confirmation": ""}, "required"),
+            ({"confirmation": "x"}, "mismatch"),
+        ],
+        ids=["absent", "empty", "wrong"],
+    )
+    def test_an_empty_or_wrong_confirmation_deletes_nothing_and_says_why(
+        self, client, leaving, data, code
+    ):
+        response = client.post(delete_address(), data)
+
+        assert response.status_code == 200
+        assert error_codes(response) == [code]
+        assert type(leaving).objects.filter(pk=leaving.pk).exists()
+        assert Note.objects.filter(owner=leaving).count() == 1
+
+    def test_an_account_with_no_email_is_asked_for_its_username(
+        self, declare, client, user
+    ):
+        declare("tests.kinds.DeletesNotes")
+        user.email = ""
+        user.save()
+        client.force_login(user)
+        confirm(client)
+
+        refused = client.post(
+            delete_address(), {"confirmation": "somebody@example.com"}
+        )
+        accepted = client.post(delete_address(), {"confirmation": user.get_username()})
+
+        assert error_codes(refused) == ["mismatch"]
+        assert accepted.status_code == 302
+        assert not type(user).objects.filter(pk=user.pk).exists()
+
+    @pytest.mark.parametrize("shape", [str.upper, lambda value: f"  {value}  "])
+    def test_the_address_is_compared_ignoring_case_and_surrounding_spaces(
+        self, client, leaving, shape
+    ):
+        response = client.post(delete_address(), {"confirmation": shape(leaving.email)})
+
+        assert response.status_code == 302
+        assert not type(leaving).objects.filter(pk=leaving.pk).exists()
+
+    def test_a_correct_confirmation_deletes_the_account_and_every_kind_and_signs_out(
+        self, client, leaving
+    ):
+        other = NoteFactory()
+
+        response = client.post(delete_address(), {"confirmation": leaving.email})
+
+        assert response.status_code == 302
+        assert response["Location"] == reverse("mvp_compliance:account-deleted")
+        assert not type(leaving).objects.filter(pk=leaving.pk).exists()
+        assert list(Note.objects.all()) == [other]
+        assert "_auth_user_id" not in client.session
+
+    def test_another_browser_signed_in_as_the_account_is_signed_out_too(
+        self, client, leaving
+    ):
+        second = Client()
+        second.force_login(leaving)
+        assert second.get(reverse("mvp_compliance:agreed")).status_code == 200
+
+        client.post(delete_address(), {"confirmation": leaving.email})
+
+        response = second.get(reverse("mvp_compliance:agreed"))
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_login"))
+
+    def test_the_deleted_page_answers_an_anonymous_request(self, client):
+        assert client.get(reverse("mvp_compliance:account-deleted")).status_code == 200
+
+    def test_signing_in_with_the_old_details_fails(self, client, leaving):
+        username = leaving.get_username()
+        client.post(delete_address(), {"confirmation": leaving.email})
+
+        assert not Client().login(username=username, password="password")
+
+    def test_a_post_made_before_confirming_completes_once_the_confirmation_replays_it(
+        self, declare, user
+    ):
+        declare("tests.kinds.DeletesNotes")
+        NoteFactory(owner=user)
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+        token = client.get(reverse("account_reauthenticate")).context["csrf_token"]
+
+        sent = client.post(
+            delete_address(),
+            {"confirmation": user.email, "csrfmiddlewaretoken": str(token)},
+        )
+        assert sent.status_code == 302
+        assert type(user).objects.filter(pk=user.pk).exists()
+
+        client.post(
+            sent["Location"],
+            {"password": "password", "csrfmiddlewaretoken": str(token)},
+        )
+
+        assert not type(user).objects.filter(pk=user.pk).exists()
+        assert not Note.objects.exists()
+
+    def test_a_post_without_the_csrf_token_is_refused(self, declare, user):
+        declare("tests.kinds.DeletesNotes")
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(user)
+        confirm(client)
+
+        response = client.post(delete_address(), {"confirmation": user.email})
+
+        assert response.status_code == 403
+        assert type(user).objects.filter(pk=user.pk).exists()
+
+
+@pytest.mark.django_db
+class TestDeleteAccountFails:
+    """US-1 scenario 12, FR-011, FR-012: a failing kind costs the person nothing."""
+
+    def test_a_kind_that_fails_leaves_the_account_signed_in_and_says_so(
+        self, declare, client, user, caplog
+    ):
+        declare("tests.kinds.DeletesNotes", "tests.kinds.Refuses")
+        NoteFactory(owner=user)
+        client.force_login(user)
+        confirm(client)
+
+        with caplog.at_level(logging.ERROR, logger="mvp_compliance.views"):
+            response = client.post(delete_address(), {"confirmation": user.email})
+
+        assert response.status_code == 500
+        assert "data-deletion-failed" in response.content.decode()
+        assert type(user).objects.filter(pk=user.pk).exists()
+        assert Note.objects.filter(owner=user).count() == 1
+        assert client.session["_auth_user_id"] == str(user.pk)
+        (record,) = [r for r in caplog.records if r.levelno == logging.ERROR]
+        assert "tests.kinds.Refuses" in record.getMessage()
+        assert isinstance(record.exc_info[1].__cause__, RuntimeError)
