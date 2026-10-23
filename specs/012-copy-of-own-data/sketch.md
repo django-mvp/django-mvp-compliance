@@ -76,4 +76,12 @@ Written before the build. Class: **convention** (a source settles it) or **taste
 
 ## What was ruled by eye
 
-Nothing yet.
+- **Confirming identity is a separate step** (Sam, 2026-10-23). The page carries only the list and
+  the **Download a copy** button. A person who has not confirmed recently is sent to a page of its
+  own that asks for their password and then returns them, the way django-allauth guards its
+  sensitive pages. Where allauth is installed, that page is allauth's own. This replaces rationale
+  item 2.
+- Everything else in the sketch is approved as shown: the list of what the copy holds, the failure
+  alert above the title, the readable copy's layout (contents list, profile as label and value
+  pairs, tables for several records, em dash for a missing value, the agreed wording folded, the
+  agreements last) and the download's file name.
