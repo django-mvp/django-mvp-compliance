@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     "django_filters",
     "flex_menu",
     "django_cotton",
+    "allauth",
+    "allauth.account",
     "mvp_compliance",
     "demo",
 ]
@@ -50,6 +52,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "mvp_compliance.middleware.AgreementMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -132,7 +135,11 @@ MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
 LOGIN_URL = "account_login"
 
 # The demo's accounts are signed in to with their email address or their username.
-AUTHENTICATION_BACKENDS = ["demo.backends.EmailOrUsernameBackend"]
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
 
 STATIC_URL = "/static/"
 

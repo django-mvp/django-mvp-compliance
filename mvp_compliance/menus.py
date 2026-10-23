@@ -16,7 +16,6 @@ AccountCenterMenu.append(
     )
 )
 
-# SKETCH (FS-012): the page a person downloads a copy of their data from.
 AccountCenterMenu.append(
     MenuItem(
         name="personal-data",

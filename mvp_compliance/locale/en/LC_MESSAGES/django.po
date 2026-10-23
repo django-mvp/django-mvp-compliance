@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 15:08+0200\n"
+"POT-Creation-Date: 2026-10-23 11:21+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -154,6 +154,10 @@ msgstr ""
 #: menus.py:15
 msgid "Agreements"
 msgstr "Agreements"
+
+#: menus.py:23 views.py:406
+msgid "Your data"
+msgstr ""
 
 #: models.py:41
 msgid "Use lowercase letters, digits and single hyphens only."
@@ -520,7 +524,7 @@ msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
 #: templates/admin/mvp_compliance/document/change_form.html:10
-#: templates/mvp_compliance/document_detail.html:45
+#: templates/mvp_compliance/document_detail.html:37
 msgid "View current version"
 msgstr "View current version"
 
@@ -555,6 +559,10 @@ msgstr ""
 #: templates/admin/mvp_compliance/version/publish_confirmation.html:20
 msgid "Back"
 msgstr "Back"
+
+#: templates/cotton/compliance/copy_value.html:5
+msgid "No value"
+msgstr ""
 
 #: templates/cotton/compliance/outstanding.html:15
 msgid "Optional"
@@ -667,20 +675,69 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: templates/mvp_compliance/document_detail.html:11
+#: templates/mvp_compliance/copy/index.html:7
+#, python-format
+msgid "A copy of your data from %(site_name)s"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:14
+msgid "A copy of your data"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:16
+#, python-format
+msgid "Made on %(when)s for %(person)s."
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:19
+msgid ""
+"It holds the kinds of record listed below. The same records are in "
+"data.json, for use in other software, and the files you uploaded are in the "
+"files folder beside this page."
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:24
+msgid "Contents"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:38
+#, fuzzy
+#| msgid "Nothing is held about this person."
+msgid "Nothing of this kind is held about you."
+msgstr "Nothing is held about this person."
+
+#: templates/mvp_compliance/copy/index.html:44
+#, fuzzy, python-format
+#| msgid "Read v%(number)s"
+msgid "%(document)s, v%(number)s"
+msgstr "Read v%(number)s"
+
+#: templates/mvp_compliance/copy/index.html:45
+#, python-format
+msgid "Agreed on %(when)s"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:48
+#, fuzzy
+#| msgid "Documents you agreed to"
+msgid "The wording you agreed to"
+msgstr "Documents you agreed to"
+
+#: templates/mvp_compliance/document_detail.html:4
+#: templates/mvp_compliance/document_detail.html:31
 msgid "Documents"
 msgstr "Documents"
 
-#: templates/mvp_compliance/document_detail.html:12
+#: templates/mvp_compliance/document_detail.html:5
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: templates/mvp_compliance/document_detail.html:35 views.py:42
+#: templates/mvp_compliance/document_detail.html:26 views.py:42
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
 
-#: templates/mvp_compliance/document_detail.html:44
+#: templates/mvp_compliance/document_detail.html:36
 #, python-format
 msgid ""
 "This version has been replaced. It was in force from %(published)s to "
@@ -716,6 +773,27 @@ msgstr "See it in the admin"
 msgid "%(name)s: version %(number)s is now in force"
 msgstr "%(name)s: version %(number)s is now in force"
 
+#: templates/mvp_compliance/personal_data.html:7
+msgid ""
+"Your copy could not be made, and nothing was downloaded. Try again later."
+msgstr ""
+
+#: templates/mvp_compliance/personal_data.html:12
+msgid "What the copy holds"
+msgstr ""
+
+#: templates/mvp_compliance/personal_data.html:24
+#: templates/mvp_compliance/personal_data.html:31
+msgid "Download a copy"
+msgstr ""
+
+#: templates/mvp_compliance/personal_data.html:26
+msgid ""
+"The copy is a single .zip file. Inside it is a page you can open in any web "
+"browser, the same records in a JSON file for use in other software, and the "
+"files you uploaded."
+msgstr ""
+
 #: views.py:57
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
@@ -737,11 +815,11 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:146
+#: views.py:146 views.py:420
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:151
+#: views.py:151 views.py:425
 msgid "Account Center"
 msgstr "Account Center"
 
@@ -759,6 +837,10 @@ msgstr ""
 
 #: views.py:226
 msgid "Agreeing is optional."
+msgstr ""
+
+#: views.py:408
+msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
 #: widgets.py:21

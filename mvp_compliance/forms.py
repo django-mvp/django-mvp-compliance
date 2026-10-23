@@ -40,28 +40,3 @@ class DisclosureForm(forms.Form):
             "records still carry."
         ),
     )
-
-
-class ConfirmIdentityForm(forms.Form):
-    """SKETCH (FS-012): the person's password, asked again before a copy is made."""
-
-    password = forms.CharField(
-        label=_("Your password"),
-        help_text=_(
-            "Asked again so that nobody else using this browser can download your data."
-        ),
-        strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
-    )
-
-    def __init__(self, user, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.user = user
-
-    def clean_password(self):
-        password = self.cleaned_data["password"]
-        if not self.user.check_password(password):
-            raise forms.ValidationError(
-                _("That password is not right. Try again."), code="wrong_password"
-            )
-        return password

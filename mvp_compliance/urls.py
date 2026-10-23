@@ -10,7 +10,6 @@ from mvp_compliance.views import (
     AgreedDocumentsView,
     AgreementView,
     DocumentView,
-    PersonalDataCopyView,
     PersonalDataView,
 )
 
@@ -21,7 +20,5 @@ urlpatterns = [
     path("agree/", AgreementView.as_view(), name="agree"),
     path("agreed/", AgreedDocumentsView.as_view(), name="agreed"),
     path("data/", PersonalDataView.as_view(), name="personal-data"),
-    # SKETCH ONLY: the readable part of a copy, in the browser.
-    path("data/copy/", PersonalDataCopyView.as_view(), name="personal-data-copy"),
     path("<slug:slug>/", DocumentView.as_view(), name="document"),
 ]

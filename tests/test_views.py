@@ -874,6 +874,7 @@ TEMPLATES = Path(mvp_compliance.__file__).parent / "templates"
 PAGE_TEMPLATES = sorted(
     [
         *(TEMPLATES / "mvp_compliance").glob("*.html"),
+        *(TEMPLATES / "mvp_compliance" / "copy").glob("*.html"),
         *(TEMPLATES / "cotton" / "compliance").glob("*.html"),
     ],
     key=lambda path: path.name,
@@ -907,8 +908,11 @@ class TestPageStrings:
             "_agreed_version_rows.html",
             "agreed_documents.html",
             "agreement.html",
+            "copy_value.html",
             "document_detail.html",
+            "index.html",
             "outstanding.html",
+            "personal_data.html",
         ]
 
     @pytest.mark.parametrize("path", PAGE_TEMPLATES, ids=lambda path: path.name)

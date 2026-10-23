@@ -37,6 +37,11 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 
+[project.optional-dependencies]
+# The page where a person downloads a copy of their data asks them to confirm
+# who they are first, which is django-allauth's reauthentication.
+personal-data = ["django-allauth>=65.19,<66"]
+
 [project.urls]
 Homepage = "https://github.com/django-mvp/django-mvp-compliance"
 Repository = "https://github.com/django-mvp/django-mvp-compliance"
@@ -61,7 +66,7 @@ include = ["/mvp_compliance", "/README.md", "/LICENSE"]
 # Shared toolchain bundle from django-mvp/shared, pinned to a release tag so
 # every package in this organisation runs one version of each tool. Ships ruff,
 # mypy, deptry, pre-commit, pytest, pytest-django, coverage and django-stubs.
-dev = ["mvp-shared[dev,test]"]
+dev = ["mvp-shared[dev,test]", "django-allauth>=65.19,<66"]
 
 [tool.uv.sources]
 mvp-shared = { git = "https://github.com/django-mvp/shared.git", tag = "v0.6.0" }
@@ -154,4 +159,7 @@ extend_exclude = ["tests/", "demo/", "docs/"]
 # takes from it is not an import: its pages render inside django-mvp's layout
 # and read their colours from the daisyUI theme it supplies. Dropping the
 # dependency would leave every page unthemed even if the imports still resolved.
-DEP002 = ["django-mvp"]
+#
+# django-allauth is the extra personal-data. The package names its apps and
+# middleware in the system check and settings rather than importing it.
+DEP002 = ["django-mvp", "django-allauth"]
