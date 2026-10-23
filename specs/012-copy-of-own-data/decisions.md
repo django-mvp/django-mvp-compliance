@@ -140,3 +140,16 @@ orchestrator rather than dispatched to an implementer.
 design content. A dispatch would have cost more than the work.
 
 **ADR:** none — how the work was done, not a decision about the package.
+
+## D14 — data.json holds stored values, the readable page their labels
+
+**Decision:** a choice is written to `data.json` as its stored value and a relation as the related
+row's key. `index.html` shows the choice's label and the related row's text. Both are carried in a
+`Shown(value, text)`. The test that both parts hold the same records now compares the plain text
+fields, because a choice is deliberately written differently in each.
+
+**Why:** Sam's ruling at the merge gate, 2026-10-23. A label is translated, so a copy made in
+German and one made in English held different data, and software could not match a label back to
+what the project stores.
+
+**ADR:** none — the shape of the data file, documented in the how-to.

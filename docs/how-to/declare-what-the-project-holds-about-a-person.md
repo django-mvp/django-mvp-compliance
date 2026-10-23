@@ -143,11 +143,16 @@ failing kind's dotted path, with the original exception attached. The error is a
 Each name in `fields` becomes a column, labelled with the model field's `verbose_name`, which
 stays lazy so it is translated when it is read. The value in each row is:
 
-- the choice's display value, for a field with `choices`,
-- `str()` of the related object, for a relation,
+- a `Shown`, for a field with `choices`: its stored value and its label,
+- a `Shown`, for a relation: the related row's key and its `str()`,
 - `None`, for an empty value (`None` or an empty string),
 - a `CopiedFile`, for a `FileField` that has a file, and `None` when it has none,
 - the stored value, for anything else.
+
+`data.json` holds the stored side of a `Shown`, so the data is the same whatever language the
+person reads the site in, and software can match a value back to what the project stores. The
+readable page shows the label. A kind that overrides `collect` can return a `Shown` of its own for
+any value that is stored one way and read another.
 
 A `CopiedFile` holds the file's `name`, the stored `field_file` and the `path` it takes
 inside a copy: `files/<key>/<pk>/<field>/<name>`. The primary key and the field's name are in

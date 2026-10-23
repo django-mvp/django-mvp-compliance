@@ -372,12 +372,14 @@ class TestPersonalDataCopy:
 
         read = CopyReader(archive.read("index.html").decode())
 
+        # A choice is shown by its label and held by its stored value, so only
+        # the plain text fields are compared one to one.
         shown = [
-            {name: record[name] for name in ("title", "status", "summary")}
+            {name: record[name] for name in ("title", "summary")}
             for record in read.sections["notes"]
         ]
         held = [
-            {name: record[name] for name in ("title", "status", "summary")}
+            {name: record[name] for name in ("title", "summary")}
             for record in section_of(archive, "notes")["records"]
         ]
         assert shown == held

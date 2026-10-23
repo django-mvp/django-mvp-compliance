@@ -54,6 +54,22 @@ class CopiedFile:
 
 
 @dataclass(frozen=True)
+class Shown:
+    """A value stored one way and shown to a person another.
+
+    ``data.json`` holds ``value``, which does not change with the person's
+    language. The readable page shows ``text``.
+
+    Attributes:
+        value: What is stored: a choice's value, or a related row's key.
+        text: What a person reads: a choice's label, or the related row's text.
+    """
+
+    value: Any
+    text: Any
+
+
+@dataclass(frozen=True)
 class PersonalDataSection:
     """One kind's records about one person.
 
@@ -162,8 +178,9 @@ class PersonalData:
             field: The model field to read.
 
         Returns:
-            A ``CopiedFile`` for a file, the choice's display value for a field
-            with choices, ``str()`` for a relation, ``None`` for an empty value
+            A ``CopiedFile`` for a file, ``None`` for an empty value, a
+            ``Shown`` holding the stored value and its label for a field with
+            choices, or the related row's key and its ``str()`` for a relation,
             and the stored value otherwise.
         """
         value = getattr(record, field.name)
@@ -172,9 +189,9 @@ class PersonalData:
         if value is None or value == "":
             return None
         if field.choices:
-            return getattr(record, f"get_{field.name}_display")()
+            return Shown(value, getattr(record, f"get_{field.name}_display")())
         if field.is_relation:
-            return str(value)
+            return Shown(field.value_from_object(record), str(value))
         return value
 
     def get_copied_file(
@@ -381,7 +398,7 @@ class PersonalDataCopy:
                     "fields": {name: str(label) for name, label in section.columns},
                     "records": [
                         {
-                            name: value.path if isinstance(value, CopiedFile) else value
+                            name: self.get_stored(value)
                             for (name, _label), value in zip(
                                 section.columns, row, strict=True
                             )
@@ -459,6 +476,23 @@ class PersonalDataCopy:
         }
 
     @staticmethod
+    def get_stored(value: Any) -> Any:
+        """Return a value as ``data.json`` holds it.
+
+        Args:
+            value: One value of a record.
+
+        Returns:
+            A file's path in the copy, the stored side of a ``Shown``, or the
+            value itself.
+        """
+        if isinstance(value, CopiedFile):
+            return value.path
+        if isinstance(value, Shown):
+            return value.value
+        return value
+
+    @staticmethod
     def get_value(value: Any) -> dict[str, Any]:
         """Return a value as a person reads it, with its path when it is a file.
 
@@ -471,6 +505,8 @@ class PersonalDataCopy:
         """
         if isinstance(value, CopiedFile):
             return {"text": value.name, "path": value.path}
+        if isinstance(value, Shown):
+            value = value.text
         if value is None or value == "":
             return {"text": None}
         if isinstance(value, datetime):

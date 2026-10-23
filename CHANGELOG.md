@@ -24,7 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MVP_COMPLIANCE_PERSONAL_DATA` is set, and the page is not found in a project with no account
   area. A copy that cannot be completed is not handed over: the person sees an error and the log
   names the failing kind. Nothing is stored. A kind can draw itself in `index.html` with
-  `template_name`. See
+  `template_name`. In `data.json` a choice is its stored value and a relation the related row's
+  key, so the data does not change with the person's language. The readable page shows their
+  labels. See
   [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
 - The slug `data` is reserved, as `agreed` and `agree` are, because it is the address of the
   page a person downloads their data from. A document already published under it keeps its
