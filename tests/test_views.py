@@ -3216,8 +3216,10 @@ class TestDeleteAccountPage:
         assert "agreements" not in listed_kinds(response)
 
     def test_the_agreements_are_listed_as_deleted_when_they_do_not_survive(
-        self, declare, client, user, settings
+        self, settings, declare, client, user
     ):
+        # settings before declare: declare's override is enabled after this one,
+        # so it has to be torn down first or it restores the changed setting.
         settings.MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = False
         declare("tests.kinds.DeletesNotes")
         client.force_login(user)
