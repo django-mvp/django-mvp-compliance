@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with files as `CopiedFile`. The setting is optional and does nothing while absent.
   `manage.py check` reports a declaration that cannot work, as `mvp_compliance.E005` to
   `mvp_compliance.E008`. See [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
+- A page, **Your data**, in the account area at `data/` under wherever the package's URLs are
+  mounted (`mvp_compliance:personal-data`), where a signed-in person downloads one `.zip` copy of
+  their data: a readable `index.html`, `data.json` and the files the declared kinds hold, ending
+  with the documents they agreed to. The person confirms who they are first, with django-allauth's
+  own confirmation page. The page and its menu entry exist only while
+  `MVP_COMPLIANCE_PERSONAL_DATA` is set, and the page is not found in a project with no account
+  area. A copy that cannot be completed is not handed over: the person sees an error and the log
+  names the failing kind. Nothing is stored. A kind can draw itself in `index.html` with
+  `template_name`. See
+  [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
+- The demo declares a profile and uploaded files, with real files stored under `demo_media/`,
+  so the page and the download can be tried.
 - The extra `personal-data`, which installs django-allauth. The feature asks a person to confirm who
   they are with allauth's reauthentication, so the extra is needed only by a project that sets
   `MVP_COMPLIANCE_PERSONAL_DATA`.

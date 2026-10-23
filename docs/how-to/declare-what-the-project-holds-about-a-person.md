@@ -4,7 +4,8 @@ A person can only be given a copy of their data if the package knows where your 
 it. You tell it by writing one small class for each kind of record your project holds about a
 person, such as their profile or the files they uploaded, and listing the classes in a
 setting. The package holds none of this data itself and reads nothing from your models that
-you have not named.
+you have not named. Once you have declared your kinds, the account area gains a page,
+**Your data**, where a signed-in person downloads a copy ([what it holds](#what-a-person-gets)).
 
 ## Before you start
 
@@ -78,13 +79,58 @@ urlpatterns = [
    ]
    ```
 
-3. Run `python manage.py check`. A path that cannot be imported, a field the model does not
+3. Mount the package's pages, and django-mvp's account area beside them, if you have not
+   already:
+
+   ```python
+   # urls.py
+   urlpatterns = [
+       # ...
+       path("legal/", include("mvp_compliance.urls")),
+   ]
+   ```
+
+   The page is then at `legal/data/` (the name `mvp_compliance:personal-data`), and the
+   account area's menu has an entry for it, **Your data**.
+
+4. Run `python manage.py check`. A path that cannot be imported, a field the model does not
    have and a missing allauth setup are each reported, with the id of the check that found
    them (see [The checks](#the-checks)).
 
-The setting is optional. While it is absent, nothing of this feature exists in your project.
-An empty list counts as a declaration: it declares that your project holds no personal data
-of its own.
+The setting is optional. While it is absent, nothing of this feature exists in your project:
+the page's address does not resolve and the menu has no entry. An empty list counts as a
+declaration: it declares that your project holds no personal data of its own, and the person's
+copy then holds only the documents they agreed to. The page also answers "not found" in a
+project that mounts no account area.
+
+## What a person gets
+
+A signed-in person opens **Your data** and is first sent to allauth's own confirmation page
+to confirm who they are, then returned to the page. A person whose account has no password
+and no second factor is not asked, because allauth treats that account as already confirmed.
+
+The page lists the kinds the copy holds, by heading and description, and a **Download a copy**
+button. Opening it reads none of your data. Pressing the button builds one `.zip` file, named
+`copy-of-your-data-<date>.zip`, holding:
+
+- `index.html`, a page that opens in any browser with no network. It has a contents list, a
+  section for each kind in the order you declared them (a kind with `single = True` as pairs of
+  label and value, any other as a table), and the package's own section, the documents the
+  person agreed to, always last. Each acceptance shows the document, version and time, with the
+  wording as it stood at publication folded away. A missing value shows as a dash.
+- `data.json`, the same records for use in other software: `made_at`, `person` and a list of
+  sections, each with its `key`, `heading`, `fields` (name to label) and `records`. Every record
+  is keyed by field name, and a file's value is its path inside the zip. A kind with no rows is
+  present with an empty list of records.
+- `files/<key>/<pk>/<name>`, each file your kinds put into the copy, with its bytes.
+
+Nothing is stored. The copy is built for the request, sent, and gone. There is no limit on how
+often a person asks.
+
+A copy that cannot be completed is never handed over in part. If any kind fails, whether its
+`collect` raises, a file cannot be opened or its own template fails to draw, the person gets
+the page again with an error alert and the status 500, and the log has an error naming the
+failing kind's dotted path, with the original exception attached.
 
 ## What a value becomes
 
@@ -152,9 +198,11 @@ A file in a row is a `CopiedFile`, built the same way the default builds it.
 
 ## A kind drawn your own way
 
-Set `template_name` to a template of your own to have a kind drawn by it instead of the
-standard table. The section carries the name, so the code that draws a copy can tell which
-kinds to hand to a template.
+Set `template_name` to a template of your own to have a kind drawn by it in the readable page
+of a copy, `index.html`, instead of the standard table or pairs. The template receives
+`section`, the kind's `PersonalDataSection`, and `user`, and its output is placed inside the
+kind's section. A kind with no rows is not drawn with it. `data.json` keeps the standard shape
+whatever the template does, so the two always hold the same records.
 
 ## Reading the declared kinds in code
 

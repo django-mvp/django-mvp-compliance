@@ -143,6 +143,17 @@ AUTHENTICATION_BACKENDS = [
 
 STATIC_URL = "/static/"
 
+# Where the files people upload to the demo are stored. Git-ignored.
+MEDIA_ROOT = BASE_DIR / "demo_media"
+MEDIA_URL = "/media/"
+
+# What the demo holds about a person beyond their agreements. Declaring it is
+# what gives the account area its "Your data" page.
+MVP_COMPLIANCE_PERSONAL_DATA = [
+    "demo.personal_data.Profile",
+    "demo.personal_data.Uploads",
+]
+
 USE_TZ = True
 USE_I18N = True
 LANGUAGE_CODE = "en-us"

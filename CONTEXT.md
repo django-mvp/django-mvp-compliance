@@ -36,6 +36,13 @@ fields and whose rows belong to a person, and reading it for one user gives a se
 holds none of this data and never reads a model the project has not declared.
 _Avoid_: data source, collector, exporter, registered model.
 
+**Copy**:
+The single `.zip` file a signed-in person downloads from the account area's **Your data** page,
+after confirming who they are. It holds `index.html` (the same records, readable in any browser),
+`data.json` (the records for other software) and the files the declared kinds put into it, and it
+always ends with the documents the person agreed to. It is built for the request and kept nowhere.
+_Avoid_: export, dump, archive, download (for the file itself), report.
+
 **Slug**:
 The document's identifier in its address, such as `privacy-policy`: lowercase letters, digits and
 single hyphens. A declared document's slug is fixed from the moment it is declared; any other

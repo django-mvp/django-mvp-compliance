@@ -512,7 +512,9 @@ MVP_COMPLIANCE_PERSONAL_DATA = [
 The feature asks a person to confirm who they are with django-allauth, which is an optional
 extra: install `django-mvp-compliance[personal-data]`, add `allauth` and `allauth.account` to
 `INSTALLED_APPS` and `allauth.account.middleware.AccountMiddleware` to `MIDDLEWARE`.
-`manage.py check` reports a declaration that cannot work. See
+`manage.py check` reports a declaration that cannot work. Once it is set, the account area has a
+**Your data** page where a signed-in person, after confirming who they are, downloads one `.zip`
+holding a readable page, the same records as `data.json` and their files. See
 [docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md).
 
 ## Documentation

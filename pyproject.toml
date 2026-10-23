@@ -159,7 +159,4 @@ extend_exclude = ["tests/", "demo/", "docs/"]
 # takes from it is not an import: its pages render inside django-mvp's layout
 # and read their colours from the daisyUI theme it supplies. Dropping the
 # dependency would leave every page unthemed even if the imports still resolved.
-#
-# django-allauth is the extra personal-data. The package names its apps and
-# middleware in the system check and settings rather than importing it.
-DEP002 = ["django-mvp", "django-allauth"]
+DEP002 = ["django-mvp"]
