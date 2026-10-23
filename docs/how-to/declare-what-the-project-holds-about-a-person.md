@@ -122,7 +122,7 @@ button. Opening it reads none of your data. Pressing the button builds one `.zip
   sections, each with its `key`, `heading`, `fields` (name to label) and `records`. Every record
   is keyed by field name, and a file's value is its path inside the zip. A kind with no rows is
   present with an empty list of records.
-- `files/<key>/<pk>/<name>`, each file your kinds put into the copy, with its bytes.
+- `files/<key>/<pk>/<field>/<name>`, each file your kinds put into the copy, with its bytes.
 
 The page is `mvp_compliance.views.PersonalDataView`, and `PersonalDataCopy` in
 `mvp_compliance.personal_data` builds the zip from the sections the kinds return. The
@@ -150,8 +150,9 @@ stays lazy so it is translated when it is read. The value in each row is:
 - the stored value, for anything else.
 
 A `CopiedFile` holds the file's `name`, the stored `field_file` and the `path` it takes
-inside a copy: `files/<key>/<pk>/<name>`. The primary key is in the path so two records that
-each have a file called `report.pdf` do not collide. The `key` is the class name in lower
+inside a copy: `files/<key>/<pk>/<field>/<name>`. The primary key and the field's name are in
+the path, so two records, or two file fields of one record, that each hold a file called
+`report.pdf` do not collide. A primary key is made safe to use as a folder name first. The `key` is the class name in lower
 case, so `Datasets` has the key `datasets`. Set `key` on the class to choose another. Two
 kinds cannot share a key.
 
@@ -252,7 +253,7 @@ if kinds is not None:
 | Id | Reported when |
 |---|---|
 | `mvp_compliance.E005` | The setting is a string or anything that is not a list or tuple. |
-| `mvp_compliance.E006` | A path cannot be imported, does not name a `PersonalData` subclass, or gives a key an earlier kind already has. One error for each, naming the path. |
+| `mvp_compliance.E006` | A path cannot be imported, does not name a `PersonalData` subclass, or gives a key an earlier kind already has, or `agreements`, the key of the package's own section. One error for each, naming the path. |
 | `mvp_compliance.E007` | A kind with a `model` lists a field in `fields` that the model does not have. |
 | `mvp_compliance.E008` | `allauth.account` is not installed, or its `AccountMiddleware` is not in `MIDDLEWARE`. |
 

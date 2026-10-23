@@ -4,9 +4,9 @@ Mount them with ``path("legal/", include("mvp_compliance.urls"))`` and link
 with ``{% url 'mvp_compliance:document' 'privacy-policy' %}``.
 """
 
+from django.conf import settings
 from django.urls import path
 
-from mvp_compliance.personal_data import get_personal_data
 from mvp_compliance.views import (
     AgreedDocumentsView,
     AgreementView,
@@ -23,8 +23,9 @@ urlpatterns = [
 ]
 
 # Only while the project declares what it holds, an empty list included: a
-# project that says nothing about its own data gets no page.
-if get_personal_data() is not None:
+# project that says nothing about its own data gets no page. Nothing declared is
+# imported here, so a path that cannot be is reported by the system check.
+if getattr(settings, "MVP_COMPLIANCE_PERSONAL_DATA", None) is not None:
     urlpatterns.append(path("data/", PersonalDataView.as_view(), name="personal-data"))
 
 urlpatterns.append(path("<slug:slug>/", DocumentView.as_view(), name="document"))

@@ -27,6 +27,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.functional import Promise
 from django.utils.module_loading import import_string
+from django.utils.text import get_valid_filename
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance import records
@@ -170,7 +171,7 @@ class PersonalData:
         """
         value = getattr(record, field.name)
         if isinstance(field, models.FileField):
-            return self.get_copied_file(record, value)
+            return self.get_copied_file(record, field, value)
         if value is None or value == "":
             return None
         if field.choices:
@@ -180,12 +181,17 @@ class PersonalData:
         return value
 
     def get_copied_file(
-        self, record: models.Model, field_file: FieldFile
+        self, record: models.Model, field: models.Field, field_file: FieldFile
     ) -> CopiedFile | None:
         """Place a stored file inside the copy.
 
+        Its path is ``files/<key>/<record key>/<field name>/<file name>``, so two
+        fields or two records holding files of one name never share a path, and
+        a record key is made safe to use as a folder name.
+
         Args:
             record: The row the file belongs to.
+            field: The file field the value came from.
             field_file: The row's value for the file field.
 
         Returns:
@@ -194,8 +200,9 @@ class PersonalData:
         if not field_file:
             return None
         name = os.path.basename(str(field_file.name))
+        folder = get_valid_filename(str(record.pk)) if str(record.pk) else "_"
         return CopiedFile(
-            path=f"files/{self.key}/{record.pk}/{name}",
+            path=f"files/{self.key}/{folder}/{field.name}/{name}",
             name=name,
             field_file=field_file,
         )
@@ -333,12 +340,7 @@ class PersonalDataCopy:
         """
         with zipfile.ZipFile(file, "w", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("index.html", self.get_page())
-            archive.writestr(
-                "data.json",
-                json.dumps(
-                    self.get_data(), cls=DjangoJSONEncoder, indent=2, ensure_ascii=False
-                ),
-            )
+            archive.writestr("data.json", self.get_json())
             for section in self.sections:
                 for row in section.rows:
                     for value in row:
@@ -351,6 +353,20 @@ class PersonalDataCopy:
                                 ) as target,
                             ):
                                 shutil.copyfileobj(source, target)
+
+    def get_json(self) -> str:
+        """Return ``data.json``, each section encoded under its kind's guard.
+
+        A value a kind hands back that JSON cannot hold fails as that kind.
+
+        Returns:
+            The JSON text.
+        """
+        data = self.get_data()
+        for section, encoded in zip(self.sections, data["sections"], strict=True):
+            with self.guard(section.kind):
+                json.dumps(encoded, cls=DjangoJSONEncoder)
+        return json.dumps(data, cls=DjangoJSONEncoder, indent=2, ensure_ascii=False)
 
     def get_data(self) -> dict[str, Any]:
         """Return the copy as data: every kind, each record keyed by field name.

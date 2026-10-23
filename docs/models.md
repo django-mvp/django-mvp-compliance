@@ -91,8 +91,9 @@ admin calls, refuses the others. The rule is `mvp_compliance.models.lowercase_sl
 `RegexValidator` you can reuse on your own forms. Writing through the ORM is not validated, the same as every
 other field, and a slug no address matches answers "not found".
 
-The slugs `agreed` and `agree` are reserved: they are the addresses of the list of what a
-person agreed to and of the page that asks, and no document is served at either.
+The slugs `agreed`, `agree` and `data` are reserved: they are the addresses of the list of what
+a person agreed to, of the page that asks, and of the page a person downloads their data from, and
+no document is served at any of them.
 `Document.RESERVED_SLUGS` holds the reserved slugs, and the validator
 `mvp_compliance.models.unreserved_slug` refuses them with the code `reserved`. It runs where
 `lowercase_slug` does, in forms and `full_clean()`, so the admin's add form refuses both.

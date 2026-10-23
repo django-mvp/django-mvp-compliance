@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names the failing kind. Nothing is stored. A kind can draw itself in `index.html` with
   `template_name`. See
   [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
+- The slug `data` is reserved, as `agreed` and `agree` are, because it is the address of the
+  page a person downloads their data from. A document already published under it keeps its
+  versions and acceptances but is no longer reachable at its page.
 - `mvp_compliance.signals.personal_data_copied`, sent each time a person's copy of their data is
   handed over. It passes the person's user account, and the kinds of record the copy held, to
   whatever code the project connects to it. The package itself keeps no record of a copy.

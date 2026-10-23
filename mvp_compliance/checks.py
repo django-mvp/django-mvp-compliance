@@ -9,7 +9,7 @@ from django.urls import NoReverseMatch, reverse
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 
-from mvp_compliance.personal_data import PersonalData
+from mvp_compliance.personal_data import AGREEMENTS, PersonalData
 
 AGREEMENT_MIDDLEWARE = "mvp_compliance.middleware.AgreementMiddleware"
 ACCOUNT_MIDDLEWARE = "allauth.account.middleware.AccountMiddleware"
@@ -131,7 +131,10 @@ def check_personal_data(app_configs, **kwargs) -> list[CheckMessage]:
             )
         ]
     errors: list[CheckMessage] = []
-    kinds: dict[str, str] = {}
+    # The package's own section is always in a copy, so its key is taken.
+    kinds: dict[str, str] = {
+        AGREEMENTS: "mvp_compliance.personal_data.AgreementsPersonalData"
+    }
     for path in paths:
         kind = import_kind(path)
         if kind is None:
