@@ -81,7 +81,8 @@ documents a person agreed to, is not a kind you declare and is never part of thi
    ```
 
    `on_commit` runs the function only if the surrounding transaction commits, and straight away
-   when there is none.
+   when there is none. If it fails, the account is still deleted: the failure is logged, and the
+   person is told their account has gone.
 
 3. Run `python manage.py check`. A kind that does not say how, while another does, is reported
    as `mvp_compliance.E009`, naming the kind's path.

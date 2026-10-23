@@ -7,7 +7,7 @@ from mvp_compliance.exceptions import AccountDeletionError
 from mvp_compliance.models import Acceptance
 from mvp_compliance.personal_data import kind_path
 from tests.factories import AcceptanceFactory, NoteFactory, UserFactory
-from tests.kinds import DeletesNotes, Erases, Refuses, WithAccount
+from tests.kinds import DeletesNotes, Erases, FailsAfterCommit, Refuses, WithAccount
 from tests.models import Note, Pin
 
 
@@ -107,3 +107,20 @@ class TestDeleteAccount:
 
         other.refresh_from_db()
         assert other.user is not None
+
+
+@pytest.mark.django_db(transaction=True)
+class TestDeleteAccountAfterCommit:
+    """FR-011: a deletion that has committed is never reported as one that failed."""
+
+    def test_a_failing_after_commit_step_leaves_the_deletion_done(self, caplog):
+        user = UserFactory()
+        pk = user.pk
+
+        delete_account(user, [FailsAfterCommit()])
+
+        assert not type(user).objects.filter(pk=pk).exists()
+        assert any(
+            isinstance(record.exc_info and record.exc_info[1], OSError)
+            for record in caplog.records
+        )

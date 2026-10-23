@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mvp_compliance.deletion.delete_account(user, kinds)` then runs each kind's `erase` and removes
   the account in one transaction, raising `AccountDeletionError` and leaving everything in place
   when any step fails. The person is signed out and sent to `account-deleted`, a page that needs
-  nobody signed in. The slugs `delete` and `deleted` are now reserved. See
+  nobody signed in. The slugs `delete` and `deleted` are now reserved, so a document already
+  published under either is no longer served at its own address. See
   [docs/how-to/delete-an-account.md](docs/how-to/delete-an-account.md).
 - A signal, `mvp_compliance.signals.account_deleted`, sent once a person's deletion of their own
   account has committed. It passes the project's own receivers the deleted account (`user`, its

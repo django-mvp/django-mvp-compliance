@@ -1,5 +1,7 @@
 """Kinds of record the tests declare, by dotted path, in the setting."""
 
+from django.db import transaction
+
 from mvp_compliance.personal_data import PersonalData, PersonalDataSection
 from tests.models import Note
 
@@ -136,3 +138,13 @@ class Refuses(Notes):
 
     def erase(self, user):
         raise RuntimeError("the records cannot be erased")
+
+
+class FailsAfterCommit(Notes):
+    """A kind whose own after-commit step fails, once the deletion is done."""
+
+    def erase(self, user):
+        def fail():
+            raise OSError("the file could not be removed")
+
+        transaction.on_commit(fail)
