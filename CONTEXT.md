@@ -29,6 +29,13 @@ one with no version and leaves an existing one alone. Its kind and enforcement a
 declared.
 _Avoid_: registered document, configured document, built-in document.
 
+**Declared kind**:
+A kind of record the host project holds about a person, named by a dotted path in the setting
+`MVP_COMPLIANCE_PERSONAL_DATA` and written as a subclass of `PersonalData`. It names a model, its
+fields and whose rows belong to a person, and reading it for one user gives a section. The package
+holds none of this data and never reads a model the project has not declared.
+_Avoid_: data source, collector, exporter, registered model.
+
 **Slug**:
 The document's identifier in its address, such as `privacy-policy`: lowercase letters, digits and
 single hyphens. A declared document's slug is fixed from the moment it is declared; any other

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `MVP_COMPLIANCE_PERSONAL_DATA`, a setting that declares the kinds of record a project holds
+  about a person, as dotted paths to subclasses of the new
+  `mvp_compliance.personal_data.PersonalData`. A kind names a model, its fields and, in
+  `get_queryset(user)`, whose rows belong to the person. Reading it gives a `PersonalDataSection`,
+  with files as `CopiedFile`. The setting is optional and does nothing while absent.
+  `manage.py check` reports a declaration that cannot work, as `mvp_compliance.E005` to
+  `mvp_compliance.E008`. See [docs/personal-data.md](docs/personal-data.md).
+- The extra `personal-data`, which installs django-allauth. The feature asks a person to confirm who
+  they are with allauth's reauthentication, so the extra is needed only by a project that sets
+  `MVP_COMPLIANCE_PERSONAL_DATA`.
+
 ## [v0.3.0] - 2026-10-21
 
 ### Added
