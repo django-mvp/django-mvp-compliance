@@ -37,9 +37,6 @@ from mvp_compliance.models import Acceptance
 #: The key of the package's own section, always the copy's last.
 AGREEMENTS = "agreements"
 
-#: The text of a label or heading: a string, or a lazy one translated when read.
-LabelText = str | Promise
-
 
 @dataclass(frozen=True)
 class CopiedFile:
@@ -74,10 +71,10 @@ class PersonalDataSection:
     """
 
     key: str
-    heading: LabelText
-    columns: tuple[tuple[str, LabelText], ...]
+    heading: str | Promise
+    columns: tuple[tuple[str, str | Promise], ...]
     rows: tuple[tuple[Any, ...], ...]
-    description: LabelText = ""
+    description: str | Promise = ""
     single: bool = False
     template_name: str | None = None
     kind: str = ""
@@ -101,8 +98,8 @@ class PersonalData:
             place of the standard table.
     """
 
-    heading: LabelText = ""
-    description: LabelText = ""
+    heading: str | Promise = ""
+    description: str | Promise = ""
     model: type[models.Model] | None = None
     fields: list[str] = []
     single: bool = False
