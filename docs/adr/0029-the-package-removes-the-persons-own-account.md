@@ -16,8 +16,9 @@ declared kind's own `get_queryset(user)` returns when that kind sets
 person's data already uses. Nothing else the project holds is deleted by the package; anything
 further is the project's own `erase`.
 
-Deletion is offered only while every declared kind says how its records are deleted, so the
-declarations are the only switch and there is no setting of its own.
+A kind says how its records are deleted with `erasure = PersonalData.DELETE`, `erasure =
+PersonalData.WITH_ACCOUNT`, or its own `erase(user)`. Deletion is offered only while every declared
+kind says how, so the declarations are the only switch and there is no setting of its own.
 
 ## Why
 
@@ -25,6 +26,10 @@ The account is a row of the project's user model, so removing it is data in anot
 model. The alternative was to leave removing the account to the project's own code and check
 afterwards that it is gone. A page that tells a person their account has been deleted should not
 depend on each project remembering the last step, so the package removes it.
+
+Two ready-made values cover the common cases with no code, and overriding `erase` covers the rest.
+A single attribute would need a third value meaning "I wrote my own", which is the override said
+twice, and a method alone would make every project write `get_queryset(user).delete()` by hand.
 
 Tying the page to every kind saying how it is deleted means the page never promises more than the
 deletion does, and a project that declared its kinds only for the copy is unchanged. Doing it in

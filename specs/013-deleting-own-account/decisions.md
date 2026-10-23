@@ -13,6 +13,8 @@ request, after every kind the project declares has run its own deletion. Everyth
 project holds is still reached only through the project's code. A new ADR records the amendment and
 the reason.
 
+**ADR:** docs/adr/0029-the-package-removes-the-persons-own-account.md
+
 ## D2 — Deletion is switched on by the declarations, not by a setting of its own
 
 A separate setting would let a site offer deletion while some declared kind had never said how it is
@@ -20,12 +22,16 @@ deleted, so the page would promise more than the deletion does. Tying the page t
 kind saying how it is deleted (FR-018, FR-019) makes the declarations the only switch, and leaves a
 project that declared its kinds for the copy alone exactly as it was.
 
+**ADR:** docs/adr/0029-the-package-removes-the-persons-own-account.md
+
 ## D3 — Files outside the database are the kind's own responsibility
 
 FR-011 promises that nothing in the database changes when a deletion fails. A file a kind's own code
 has already removed from storage cannot be put back by rolling the database back. Research decides
 whether the package can do better than documenting this, for instance by running the kinds that
 only delete rows first. The spec promises no more than the database.
+
+**ADR:** none — superseded by D5, which ADR 0029 records
 
 ## D4 — A kind says how it is deleted with `erasure` or its own `erase()`
 
@@ -35,6 +41,8 @@ PersonalData.WITH_ACCOUNT` leaves the rows to the account's own removal, and ove
 my own", which is the override written twice. A single method with nothing ready-made would make
 every project write `get_queryset(user).delete()` by hand for the common case (SC-001).
 
+**ADR:** docs/adr/0029-the-package-removes-the-persons-own-account.md
+
 ## D5 — Files go in `on_commit`, from the kind's own code
 
 D3 asked whether the package can do better than documenting that files are not rolled back. It can
@@ -42,17 +50,23 @@ show the way without touching storage itself: a kind that removes files does it 
 `transaction.on_commit()` from its `erase`, so they go only when the deletion has committed. The
 demo's `Uploads` kind does this and the how-to documents it. The package never deletes a file.
 
+**ADR:** docs/adr/0029-the-package-removes-the-persons-own-account.md
+
 ## D6 — The person types their email address
 
 Asked for by Sam at the sketch, in place of the checkbox. The email address over a fixed word: it
 needs no translation and names the account being deleted. An account with no email address types
 its username. Compared ignoring case and surrounding spaces.
 
+**ADR:** none — a choice of screen made by eye at the sketch, recorded in sketch.md
+
 ## D7 — Deletion is a function, the view calls it
 
 `delete_account(user, kinds)` in `mvp_compliance/deletion.py` holds the transaction, so the view's
 post is about the request and a project's own management code could run the same deletion. It is
 the only new module.
+
+**ADR:** none — where one function lives, local to this feature
 
 ## D8 — `erasure = DELETE` is the project's hook, read the same way as the copy
 
@@ -65,17 +79,23 @@ kind's own `get_queryset(user)` names when that kind asks for it. Nothing else t
 touched except by the project's `erase`. FR-015 was in the approved spec, so this keeps the spec
 and states the rule it already implied.
 
+**ADR:** docs/adr/0029-the-package-removes-the-persons-own-account.md
+
 ## D9 — SC-003 names the routes that act on an account
 
 The page shown after a deletion must answer somebody not signed in, which SC-003 as first written
 forbade. It now reads "every route the feature adds that acts on an account". The two routes it
 covers are unchanged.
 
+**ADR:** none — a wording correction to the specification
+
 ## D10 — The failure alert keeps its approved wording
 
 "Nothing was removed" holds for the database by FR-011, and for files when a kind removes them in
 `on_commit` (D5), which the how-to documents. A kind that removes files outside that pattern is the
 limit D3 already names.
+
+**ADR:** none — the wording of one alert, local to this feature
 
 ## D11 — Design review applied
 
@@ -84,6 +104,8 @@ SPC-002 (D8), ARC-003 (the signal in `on_commit`), SEC-004 (`csrf_protect`), SPC
 other halves tested), SPC-006 (reserved slugs), ARC-007 (`kind_path`), ARC-008 (a broken kind
 module never breaks the URLconf), SPC-009 (D10), SPC-010 (D9). Remedies checked against each
 finding's evidence in plan.md and tasks.md.
+
+**ADR:** none — a record of review findings applied, nothing downstream inherits it
 
 ## D12 — US-3 built without a separate dispatch
 
