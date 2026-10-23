@@ -37,6 +37,7 @@ from mvp_compliance.models import (
 )
 from mvp_compliance.personal_data import PersonalData
 from mvp_compliance.rendering import MarkdownRenderer
+from mvp_compliance.signals import personal_data_copied
 from mvp_compliance.views import AgreementView
 from tests.factories import (
     AcceptanceFactory,
@@ -3021,3 +3022,68 @@ class TestPersonalDataCopyFails:
         _path, _original, result = failure
 
         assert all(file.closed for file in result["opened"])
+
+
+@pytest.mark.django_db
+class TestPersonalDataCopiedSignal:
+    """US-3, FR-025, FR-026: the project is told each time a copy is handed over."""
+
+    @pytest.fixture
+    def received(self):
+        calls = []
+
+        def receiver(sender, **kwargs):
+            calls.append(kwargs)
+
+        personal_data_copied.connect(receiver)
+        yield calls
+        personal_data_copied.disconnect(receiver)
+
+    def test_it_is_sent_once_naming_the_person_and_the_kinds(
+        self, declare, client, user, received
+    ):
+        declare("tests.kinds.Notes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.post(personal_data_address())
+
+        assert response.status_code == 200
+        assert len(received) == 1
+        assert received[0]["user"] == user
+        assert received[0]["kinds"] == ["notes", "agreements"]
+
+    def test_it_is_not_sent_when_the_copy_cannot_be_made(
+        self, declare, client, user, received
+    ):
+        declare("tests.kinds.Failing")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.post(personal_data_address())
+
+        assert response.status_code == 500
+        assert received == []
+
+    def test_a_failing_receiver_does_not_stop_the_download(
+        self, declare, client, user, caplog
+    ):
+        def receiver(sender, **kwargs):
+            raise RuntimeError("the project's own code failed")
+
+        declare("tests.kinds.Notes")
+        client.force_login(user)
+        confirm(client)
+        personal_data_copied.connect(receiver)
+        try:
+            response = client.post(personal_data_address())
+        finally:
+            personal_data_copied.disconnect(receiver)
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/zip"
+        failure = next(
+            record for record in caplog.records if record.name == "mvp_compliance.views"
+        )
+        assert failure.levelname == "ERROR"
+        assert isinstance(failure.exc_info[1], RuntimeError)
