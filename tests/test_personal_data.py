@@ -4,12 +4,12 @@ import pytest
 from django.core.files.base import ContentFile
 from django.utils import translation
 from django.utils.functional import Promise
+
 from mvp_compliance.personal_data import (
     CopiedFile,
     PersonalDataSection,
     get_personal_data,
 )
-
 from tests.factories import NoteFactory, TopicFactory, UserFactory
 from tests.kinds import Bare, Custom, Notes
 from tests.models import Note

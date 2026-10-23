@@ -7,6 +7,8 @@ from mvp_compliance.signals import version_published
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
+    NoteFactory,
+    TopicFactory,
     UserFactory,
     VersionFactory,
 )
@@ -15,6 +17,16 @@ from tests.factories import (
 @pytest.fixture
 def user(db):
     return UserFactory()
+
+
+@pytest.fixture
+def topic(db):
+    return TopicFactory()
+
+
+@pytest.fixture
+def note(db):
+    return NoteFactory()
 
 
 @pytest.fixture

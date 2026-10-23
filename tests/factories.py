@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from mvp_compliance.models import Acceptance, Document, Version
+from tests.models import Note, Topic
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -71,3 +72,25 @@ class AcceptanceFactory(factory.django.DjangoModelFactory):
     subject = factory.LazyAttribute(lambda o: str(o.user.pk))
     version = factory.SubFactory(VersionFactory)
     accepted_at = factory.LazyFunction(timezone.now)
+
+
+class TopicFactory(factory.django.DjangoModelFactory):
+    """Build a saved :class:`Topic` with a unique name."""
+
+    class Meta:
+        model = Topic
+
+    name = factory.Sequence(lambda n: f"Topic {n}")
+
+
+class NoteFactory(factory.django.DjangoModelFactory):
+    """Build a saved :class:`Note`, auto-creating its owner.
+
+    The topic, summary and attachment are left empty.
+    """
+
+    class Meta:
+        model = Note
+
+    owner = factory.SubFactory(UserFactory)
+    title = factory.Sequence(lambda n: f"Note {n}")
