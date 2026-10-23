@@ -60,3 +60,33 @@ pairs. Kept: the approved screen shows a profile as pairs because a profile is a
 and a list of datasets that happens to hold one should still read as a table.
 
 **ADR:** none — local to how the copy is laid out.
+
+## D8 — The how-to page lives under docs/how-to/
+
+**Decision:** the page that tasks.md names `docs/personal-data.md` is
+`docs/how-to/declare-what-the-project-holds-about-a-person.md`.
+
+**Why:** the conformance check refuses a new page outside `tutorial`, `how-to/`, `reference/` and
+`explanation/`, and the page is a how-to. The older flat pages are not new, so they pass.
+
+**Revisit if:** the flat pages are moved, or US-1 adds a reference page for the settings.
+
+## D9 — The stub page view is removed until T008
+
+**Decision:** `PersonalDataView` and the `data/` route were removed after T001 rather than kept as a
+stub. The three templates and the menu entry stay; the menu drops the entry while no route exists.
+
+**Why:** the docs gate counts a new public view that no page documents, and the stub answered on
+every project whether or not it declared anything, which Article XV forbids. T008 builds the view
+and the conditional route.
+
+**Revisit if:** T008 is dropped from the plan.
+
+## D10 — django-allauth is exempt from deptry's unused-dependency rule
+
+**Decision:** `django-allauth` is listed in deptry's `DEP002` ignore, as `django-mvp` is.
+
+**Why:** the extra is declared in this story, and no package module imports allauth until T008. The
+system check names allauth's app and middleware as strings.
+
+**Revisit if:** T008's guarded import makes the ignore unnecessary, in which case remove it.
