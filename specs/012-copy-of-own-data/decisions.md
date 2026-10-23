@@ -34,3 +34,18 @@ the copy still carries only the times stored on the acceptances.
 Each request builds a copy afresh and keeps nothing. A limit would need the package to store when a
 person last asked, which is personal data it otherwise has no reason to keep, and a project that
 needs one has throttling of its own. Moving the work off the web request is #116.
+
+## D5 — The page requires django-allauth to confirm identity
+
+The sketch review asked for confirmation as a separate step, the way allauth guards its sensitive
+pages. allauth's `reauthentication_required` does exactly that, and a page of the package's own
+would be a second password form without allauth's rate limits, second factors or memory of when
+a person last confirmed. allauth becomes an optional extra, and a system check reports a declared
+copy on a site without it. Detail in research.md, "Confirming identity".
+
+## D6 — Opening the page asks, not pressing the button
+
+allauth's decorator can let the page be viewed and ask only on the download. It then replays the
+download after confirmation, which leaves the person on the confirmation page while the file
+arrives. Guarding the whole page makes confirmation the first step and returns them to the page,
+which is what allauth's own sensitive pages do.
