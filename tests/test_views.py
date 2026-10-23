@@ -3090,3 +3090,201 @@ class TestPersonalDataCopiedSignal:
         )
         assert failure.levelname == "ERROR"
         assert isinstance(failure.exc_info[1], RuntimeError)
+
+
+def delete_address():
+    return reverse("mvp_compliance:delete-account")
+
+
+@pytest.fixture
+def erasing():
+    """Every ``erase`` the declared test kinds have, replaced by a recording mock."""
+    with (
+        patch.object(PersonalData, "erase") as base,
+        patch("tests.kinds.Erases.erase") as own,
+    ):
+        yield [base, own]
+
+
+@pytest.mark.django_db
+class TestDeleteAccountPage:
+    """US-1 scenarios 1 to 5, FR-001 to FR-006, FR-008, FR-018."""
+
+    def test_without_a_declaration_the_route_does_not_exist_and_no_menu_entry_leads_to_it(
+        self, rf, user
+    ):
+        request = rf.get(reverse("account-center"))
+        request.user = user
+
+        with pytest.raises(NoReverseMatch):
+            delete_address()
+        assert "delete-account" not in [
+            child.name for child in AccountCenterMenu.process(request).children
+        ]
+
+    @pytest.mark.parametrize(
+        "paths",
+        [
+            ["tests.kinds.Notes"],
+            ["tests.kinds.DeletesNotes", "tests.kinds.Notes"],
+        ],
+        ids=["silent", "mixed"],
+    )
+    def test_while_a_kind_says_nothing_there_is_no_route_and_no_menu_entry(
+        self, declare, rf, user, paths
+    ):
+        declare(*paths)
+        request = rf.get(reverse("account-center"))
+        request.user = user
+
+        with pytest.raises(NoReverseMatch):
+            delete_address()
+        assert "delete-account" not in [
+            child.name for child in AccountCenterMenu.process(request).children
+        ]
+
+    def test_when_every_kind_says_how_the_route_resolves_and_the_menu_leads_to_it(
+        self, declare, rf, user
+    ):
+        declare("tests.kinds.DeletesNotes", "tests.kinds.WithAccount")
+        request = rf.get(reverse("account-center"))
+        request.user = user
+
+        entries = [
+            child
+            for child in AccountCenterMenu.process(request).children
+            if child.name == "delete-account"
+        ]
+
+        assert [entry.url for entry in entries] == [delete_address()]
+
+    def test_the_route_takes_no_argument(self, declare, user):
+        declare("tests.kinds.DeletesNotes")
+
+        with pytest.raises(NoReverseMatch):
+            reverse("mvp_compliance:delete-account", args=[user.pk])
+
+    @pytest.mark.parametrize("method", ["get", "post"])
+    def test_an_anonymous_request_goes_to_sign_in_and_deletes_nothing(
+        self, declare, client, user, erasing, method
+    ):
+        declare("tests.kinds.Erases")
+
+        response = getattr(client, method)(delete_address())
+
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_login"))
+        assert type(user).objects.filter(pk=user.pk).exists()
+        assert not any(mock.called for mock in erasing)
+
+    @pytest.mark.parametrize("method", ["get", "post"])
+    def test_a_person_who_has_not_confirmed_is_sent_to_confirm_and_nothing_is_deleted(
+        self, declare, client, user, erasing, method
+    ):
+        declare("tests.kinds.Erases")
+        client.force_login(user)
+
+        response = getattr(client, method)(delete_address())
+
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_reauthenticate"))
+        assert type(user).objects.filter(pk=user.pk).exists()
+        assert not any(mock.called for mock in erasing)
+
+    def test_after_confirming_it_lists_the_account_then_every_kind_in_order(
+        self, declare, client, user, erasing
+    ):
+        declare("tests.kinds.WithAccount", "tests.kinds.DeletesNotes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(delete_address())
+
+        assert response.status_code == 200
+        assert listed_kinds(response) == ["account", "withaccount", "deletesnotes"]
+        assert type(user).objects.filter(pk=user.pk).exists()
+        assert not any(mock.called for mock in erasing)
+
+    def test_the_agreements_are_kept_by_default(self, declare, client, user):
+        declare("tests.kinds.DeletesNotes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(delete_address())
+
+        assert 'data-kept="agreements"' in response.content.decode()
+        assert "agreements" not in listed_kinds(response)
+
+    def test_the_agreements_are_listed_as_deleted_when_they_do_not_survive(
+        self, declare, client, user, settings
+    ):
+        settings.MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = False
+        declare("tests.kinds.DeletesNotes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(delete_address())
+
+        assert 'data-kept="' not in response.content.decode()
+        assert listed_kinds(response) == ["account", "deletesnotes", "agreements"]
+
+    def test_the_link_to_the_copy_is_present(self, declare, client, user):
+        declare("tests.kinds.DeletesNotes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(delete_address())
+
+        assert response.context["copy_url"] == personal_data_address()
+        assert personal_data_address() in response.content.decode()
+
+    @pytest.mark.parametrize("method", ["get", "post"])
+    def test_an_account_with_no_password_reaches_the_page_without_confirming(
+        self, declare, client, user, method
+    ):
+        declare("tests.kinds.DeletesNotes")
+        user.set_unusable_password()
+        user.save()
+        client.force_login(user)
+
+        response = getattr(client, method)(delete_address())
+
+        assert response.status_code == 200
+
+    def test_with_allauth_account_not_installed_the_page_is_not_found(
+        self, declare, client, user, erasing
+    ):
+        declare("tests.kinds.Erases")
+        client.force_login(user)
+        confirm(client)
+
+        with patch.object(
+            apps, "is_installed", side_effect=lambda name: name != "allauth.account"
+        ):
+            response = client.get(delete_address())
+
+        assert response.status_code == 404
+        assert not any(mock.called for mock in erasing)
+
+
+@pytest.mark.django_db
+@pytest.mark.urls("tests.urls_package_only")
+class TestDeleteAccountPageWithoutTheAccountArea:
+    """A project that mounts no account area has no page, whoever asks."""
+
+    def test_the_page_is_not_found_for_a_confirmed_person(
+        self, declare, client, user, erasing
+    ):
+        declare("tests.kinds.Erases")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(delete_address())
+
+        assert response.status_code == 404
+        assert not any(mock.called for mock in erasing)
+
+    def test_the_page_is_not_found_for_an_anonymous_visitor(self, declare, client):
+        declare("tests.kinds.Erases")
+
+        assert client.get(delete_address()).status_code == 404

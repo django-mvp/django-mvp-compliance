@@ -379,6 +379,15 @@ class TestReservedSlug:
 
         assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
 
+    @pytest.mark.parametrize("slug", ["delete", "deleted"])
+    def test_the_slugs_of_the_pages_for_deleting_an_account_are_refused(self, slug):
+        document = Document(name="Delete", slug=slug)
+
+        with pytest.raises(ValidationError) as error:
+            document.full_clean()
+
+        assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
+
     def test_the_slug_of_the_page_that_asks_is_refused_with_the_reserved_code(self):
         document = Document(name="Agree", slug="agree")
 
