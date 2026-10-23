@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A declared kind can say how a person's records of that kind are deleted: `erasure =
+  PersonalData.DELETE` deletes the rows `get_queryset(user)` returns, `erasure =
+  PersonalData.WITH_ACCOUNT` leaves them to the account's own deletion, and a kind can override
+  `erase(user)`. `PersonalData.says_how_erased`, `mvp_compliance.personal_data.deletion_offered()`
+  and `kind_path()` report on it. `manage.py check` reports a kind that does not say how while
+  another does, and an `erasure` that is neither constant, as `mvp_compliance.E009`. See
+  [docs/how-to/delete-an-account.md](docs/how-to/delete-an-account.md).
 - `MVP_COMPLIANCE_PERSONAL_DATA`, a setting that declares the kinds of record a project holds
   about a person, as dotted paths to subclasses of the new
   `mvp_compliance.personal_data.PersonalData`. A kind names a model, its fields and, in

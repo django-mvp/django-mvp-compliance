@@ -33,7 +33,9 @@ _Avoid_: registered document, configured document, built-in document.
 A kind of record the host project holds about a person, named by a dotted path in the setting
 `MVP_COMPLIANCE_PERSONAL_DATA` and written as a subclass of `PersonalData`. It names a model, its
 fields and whose rows belong to a person, and reading it for one user gives a section. The package
-holds none of this data and never reads a model the project has not declared.
+holds none of this data and never reads a model the project has not declared. A kind also says how
+its records are deleted: `erasure = PersonalData.DELETE`, `erasure = PersonalData.WITH_ACCOUNT`, or
+its own `erase(user)`. Deletion is offered only when every declared kind says how.
 _Avoid_: data source, collector, exporter, registered model.
 
 **Copy**:
