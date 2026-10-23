@@ -22,6 +22,21 @@ class OwnTemplate(Notes):
     template_name = "tests/notes_copy.html"
 
 
+class BrokenTemplate(Notes):
+    """A kind whose own template raises while it is drawn."""
+
+    template_name = "tests/broken_copy.html"
+
+
+class Failing(PersonalData):
+    """A kind that cannot read its records."""
+
+    heading = "Unreadable"
+
+    def collect(self, user):
+        raise RuntimeError("the records cannot be read")
+
+
 class Bare(PersonalData):
     """A kind that never says whose rows are whose."""
 

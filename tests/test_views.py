@@ -27,6 +27,7 @@ from django.utils.formats import date_format
 from mvp.menus import AccountCenterMenu, AppMenu
 
 import mvp_compliance
+from mvp_compliance.exceptions import PersonalDataError
 from mvp_compliance.models import (
     Acceptance,
     Disclosure,
@@ -2933,3 +2934,86 @@ class TestPersonalDataDownload:
 
         assert sorted(path for path in stored_files.rglob("*")) == before
         assert (Note.objects.count(), Acceptance.objects.count()) == rows
+
+
+@pytest.mark.django_db
+class TestPersonalDataCopyFails:
+    """US-1 scenario 10, FR-018, FR-019: a copy that cannot be made is not handed over."""
+
+    @pytest.fixture
+    def attempt(self, declare, client, user, stored_files, caplog):
+        """Ask for a copy while ``path`` is declared and ``damage`` has been done."""
+        opened = []
+        spooled = tempfile.SpooledTemporaryFile
+
+        def spool(*args, **kwargs):
+            opened.append(spooled(*args, **kwargs))
+            return opened[-1]
+
+        def ask(path, damage=lambda: None):
+            declare(path)
+            note = NoteFactory(
+                owner=user, attachment=ContentFile(b"bytes", name="heron.txt")
+            )
+            damage_done = damage(note)
+            client.force_login(user)
+            confirm(client)
+            with (
+                caplog.at_level(logging.ERROR, logger="mvp_compliance.views"),
+                patch(
+                    "mvp_compliance.views.tempfile.SpooledTemporaryFile",
+                    side_effect=spool,
+                ),
+            ):
+                response = client.post(personal_data_address())
+            return {
+                "response": response,
+                "opened": opened,
+                "records": [r for r in caplog.records if r.levelno >= logging.ERROR],
+                "damage": damage_done,
+            }
+
+        return ask
+
+    @staticmethod
+    def lose_the_file(note):
+        note.attachment.storage.delete(note.attachment.name)
+
+    @pytest.fixture(
+        params=[
+            ("tests.kinds.Failing", None, RuntimeError),
+            ("tests.kinds.Notes", "lose_the_file", FileNotFoundError),
+            ("tests.kinds.BrokenTemplate", None, NoReverseMatch),
+        ],
+        ids=["collect", "file", "template"],
+    )
+    def failure(self, request, attempt):
+        path, damage, original = request.param
+        damage = getattr(self, damage) if damage else (lambda note: None)
+        return path, original, attempt(path, damage)
+
+    def test_it_answers_500_with_no_attachment(self, failure):
+        _path, _original, result = failure
+
+        assert result["response"].status_code == 500
+        assert not result["response"].has_header("Content-Disposition")
+
+    def test_it_draws_the_page_with_the_failure_alert(self, failure):
+        _path, _original, result = failure
+
+        response = result["response"]
+        assert "data-copy-failed" in response.content.decode()
+        assert response.context["failed"] is True
+
+    def test_it_logs_an_error_naming_the_kind_with_the_original_attached(self, failure):
+        path, original, result = failure
+
+        (record,) = result["records"]
+        assert path in record.getMessage()
+        assert isinstance(record.exc_info[1], PersonalDataError)
+        assert isinstance(record.exc_info[1].__cause__, original)
+
+    def test_it_keeps_no_temporary_file_open(self, failure):
+        _path, _original, result = failure
+
+        assert all(file.closed for file in result["opened"])
