@@ -37,7 +37,7 @@ from mvp_compliance.models import Acceptance
 AGREEMENTS = "agreements"
 
 #: The text of a label or heading: a string, or a lazy one translated when read.
-_Text = str | Promise
+LabelText = str | Promise
 
 
 @dataclass(frozen=True)
@@ -73,10 +73,10 @@ class PersonalDataSection:
     """
 
     key: str
-    heading: _Text
-    columns: tuple[tuple[str, _Text], ...]
+    heading: LabelText
+    columns: tuple[tuple[str, LabelText], ...]
     rows: tuple[tuple[Any, ...], ...]
-    description: _Text = ""
+    description: LabelText = ""
     single: bool = False
     template_name: str | None = None
     kind: str = ""
@@ -100,8 +100,8 @@ class PersonalData:
             place of the standard table.
     """
 
-    heading: _Text = ""
-    description: _Text = ""
+    heading: LabelText = ""
+    description: LabelText = ""
     model: type[models.Model] | None = None
     fields: list[str] = []
     single: bool = False
@@ -138,7 +138,7 @@ class PersonalData:
         Returns:
             One row per record, with a value for each name in ``fields``.
         """
-        records = self.get_queryset(user)
+        queryset = self.get_queryset(user)
         fields: list[Any] = [
             self.model._meta.get_field(name)  # type: ignore[union-attr]
             for name in self.fields
@@ -152,7 +152,7 @@ class PersonalData:
             columns=tuple((field.name, field.verbose_name) for field in fields),
             rows=tuple(
                 tuple(self.get_value(record, field) for field in fields)
-                for record in records
+                for record in queryset
             ),
         )
 

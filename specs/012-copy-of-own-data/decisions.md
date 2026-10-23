@@ -12,6 +12,8 @@ holds. Making the page depend on the declaration turns the decision into the pro
 where Article XIII puts it. An empty declaration is allowed, so a project that really does hold
 nothing else about a person can still offer the page.
 
+**ADR:** docs/adr/0027-a-persons-copy-of-their-data-is-built-from-kinds-the-project-declares.md
+
 ## D2 — ADR 0012 stays for the staff page and is superseded for the person's copy
 
 ADR 0012 forbade anything outside the package from adding to the answer about a person, because a
@@ -22,6 +24,8 @@ hand over a copy if any part of it fails (US-1), and by naming every kind the co
 claiming it is everything (US-1). The staff page keeps ADR 0012 unchanged. A new ADR records the
 split.
 
+**ADR:** docs/adr/0027-a-persons-copy-of-their-data-is-built-from-kinds-the-project-declares.md
+
 ## D3 — The copy carries the time it was made
 
 ADR 0013 keeps the staff answer free of a production time so that two readings of the same records
@@ -29,11 +33,15 @@ are equal. A person's copy is not evidence handed to somebody else. It is the pe
 somebody who downloads two copies needs to know which is newer. The package's own section inside
 the copy still carries only the times stored on the acceptances.
 
+**ADR:** docs/adr/0027-a-persons-copy-of-their-data-is-built-from-kinds-the-project-declares.md
+
 ## D4 — No limit on how often a person can ask
 
 Each request builds a copy afresh and keeps nothing. A limit would need the package to store when a
 person last asked, which is personal data it otherwise has no reason to keep, and a project that
 needs one has throttling of its own. Moving the work off the web request is #116.
+
+**ADR:** none — nothing is built for it, and the reason is in the spec's scope.
 
 ## D5 — The page requires django-allauth to confirm identity
 
@@ -42,6 +50,8 @@ pages. allauth's `reauthentication_required` does exactly that, and a page of th
 would be a second password form without allauth's rate limits, second factors or memory of when
 a person last confirmed. allauth becomes an optional extra, and a system check reports a declared
 copy on a site without it. Detail in research.md, "Confirming identity".
+
+**ADR:** docs/adr/0028-a-person-confirms-who-they-are-with-django-allauth-before-a-copy.md
 
 ## D6 — Opening the page asks, not pressing the button
 
@@ -71,6 +81,8 @@ and a list of datasets that happens to hold one should still read as a table.
 
 **Revisit if:** the flat pages are moved, or US-1 adds a reference page for the settings.
 
+**ADR:** none — follows the documentation layout the repo already requires.
+
 ## D9 — The stub page view is removed until T008
 
 **Decision:** `PersonalDataView` and the `data/` route were removed after T001 rather than kept as a
@@ -82,6 +94,8 @@ and the conditional route.
 
 **Revisit if:** T008 is dropped from the plan.
 
+**ADR:** none — a step during the build, with no lasting effect.
+
 ## D10 — django-allauth is exempt from deptry's unused-dependency rule
 
 **Decision:** `django-allauth` is listed in deptry's `DEP002` ignore, as `django-mvp` is.
@@ -90,6 +104,8 @@ and the conditional route.
 system check names allauth's app and middleware as strings.
 
 **Revisit if:** T008's guarded import makes the ignore unnecessary, in which case remove it.
+
+**ADR:** none — the ignore was removed once the page imported allauth.
 
 ## D11 — An account with nothing to confirm with is not asked
 
@@ -103,7 +119,7 @@ are amended to say so.
 (`allauth/account/internal/flows/reauthentication.py:76-83`). It matches allauth's own sensitive
 pages, such as adding a second factor, and does not lock a person out of their own data.
 
-**ADR:** none — follows allauth, recorded in the spec and the how-to page.
+**ADR:** docs/adr/0028-a-person-confirms-who-they-are-with-django-allauth-before-a-copy.md
 
 ## D12 — A section records the kind that produced it
 
@@ -112,6 +128,8 @@ pages, such as adding a second factor, and does not lock a person out of their o
 **Why:** the plan names the kind's path in every failure, but a section alone does not say which kind made it. Carrying the path with the section avoids a second mapping beside it.
 
 **Revisit if:** sections are built anywhere other than `collect`, in which case the field is empty and the failure names no kind.
+
+**ADR:** none — a field on an internal structure.
 
 ## D13 — US-3 was built directly, not dispatched
 
