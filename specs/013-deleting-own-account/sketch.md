@@ -87,3 +87,7 @@ Written before the build. Class: **convention** (a source settles it) or **taste
   the account being deleted. An account with no email address types its username. This replaces
   rationale item 6.
 - Confirming identity on allauth's own page first is approved (Sam, 2026-10-23).
+- Everything else in the sketch is approved as shown (Sam, 2026-10-23): the menu entry last in the
+  account area, the list of what will be deleted with the account first, the "what is kept" card,
+  the link to a copy of one's data before the confirmation, the red **Delete my account** button
+  with **Cancel** beside it, the failure alert above the title, and the page shown afterwards.
