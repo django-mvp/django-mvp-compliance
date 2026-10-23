@@ -84,3 +84,11 @@ SPC-002 (D8), ARC-003 (the signal in `on_commit`), SEC-004 (`csrf_protect`), SPC
 other halves tested), SPC-006 (reserved slugs), ARC-007 (`kind_path`), ARC-008 (a broken kind
 module never breaks the URLconf), SPC-009 (D10), SPC-010 (D9). Remedies checked against each
 finding's evidence in plan.md and tasks.md.
+
+## D12 — US-3 built without a separate dispatch
+
+One signal and its send, three tests, following the shape `personal_data_copied` already has. A
+handoff would have cost more than the work. Its tests were written first and seen to fail, and the
+send was checked to be on commit by moving it out of `on_commit` and watching the first test fail.
+
+**ADR:** none — how this story was built, nothing downstream inherits it
