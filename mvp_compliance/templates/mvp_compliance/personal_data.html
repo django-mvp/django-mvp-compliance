@@ -3,7 +3,7 @@
 {% block account.content %}
   <c-mvp.page>
     {% if failed %}
-      <c-alert variant="error">
+      <c-alert variant="error" data-copy-failed>
         <span>{% translate "Your copy could not be made, and nothing was downloaded. Try again later." %}</span>
       </c-alert>
     {% endif %}

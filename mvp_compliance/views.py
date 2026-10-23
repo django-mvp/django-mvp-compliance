@@ -22,6 +22,7 @@ from mvp.config import MVP_CONFIG
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
+from mvp_compliance.exceptions import PersonalDataError
 from mvp_compliance.models import Acceptance, Document, RecordError, Version
 from mvp_compliance.personal_data import (
     AgreementsPersonalData,
@@ -481,15 +482,26 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
         response closes once it has been sent.
         """
         made_at = timezone.now()
-        copy = PersonalDataCopy(
-            request.user,
-            PersonalDataCopy.collect(request.user, self.get_kinds()),
-            made_at,
-            MVP_CONFIG["layout"]["sidebar"].get("title") or request.get_host(),
-            MVP_CONFIG["theme"]["default"],
-        )
         file = tempfile.SpooledTemporaryFile(max_size=self.spool_bytes)  # noqa: SIM115
-        copy.write(file)
+        try:
+            copy = PersonalDataCopy(
+                request.user,
+                PersonalDataCopy.collect(request.user, self.get_kinds()),
+                made_at,
+                MVP_CONFIG["layout"]["sidebar"].get("title") or request.get_host(),
+                MVP_CONFIG["theme"]["default"],
+            )
+            copy.write(file)
+        except PersonalDataError as error:
+            file.close()
+            logger.exception(
+                "The copy for user %s could not be made: %s failed",
+                request.user.pk,
+                error.kind,
+            )
+            return self.render_to_response(
+                self.get_context_data(failed=True), status=500
+            )
         file.seek(0)
         return FileResponse(
             file,

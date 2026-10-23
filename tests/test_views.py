@@ -2969,7 +2969,11 @@ class TestPersonalDataCopyFails:
             return {
                 "response": response,
                 "opened": opened,
-                "records": [r for r in caplog.records if r.levelno >= logging.ERROR],
+                "records": [
+                    r
+                    for r in caplog.records
+                    if r.name == "mvp_compliance.views" and r.levelno == logging.ERROR
+                ],
                 "damage": damage_done,
             }
 

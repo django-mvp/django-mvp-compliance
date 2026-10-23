@@ -9,7 +9,9 @@ import json
 import os
 import shutil
 import zipfile
-from dataclasses import dataclass
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import IO, Any
 
@@ -28,6 +30,7 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance import records
+from mvp_compliance.exceptions import PersonalDataError
 from mvp_compliance.models import Acceptance
 
 #: The key of the package's own section, always the copy's last.
@@ -65,6 +68,8 @@ class PersonalDataSection:
             the standard table.
         columns: ``(name, label)`` for each field, in order.
         rows: One tuple of values per record, in the order of ``columns``.
+        kind: The dotted path of the kind that produced it, set when a copy
+            collects it and used to name the kind when it fails.
     """
 
     key: str
@@ -74,6 +79,7 @@ class PersonalDataSection:
     description: _Text = ""
     single: bool = False
     template_name: str | None = None
+    kind: str = ""
 
 
 class PersonalData:
@@ -290,8 +296,34 @@ class PersonalDataCopy:
 
         Returns:
             One section per kind, in the same order.
+
+        Raises:
+            PersonalDataError: When a kind cannot read its records.
         """
-        return [kind.collect(user) for kind in kinds]
+        sections = []
+        for kind in kinds:
+            path = f"{type(kind).__module__}.{type(kind).__qualname__}"
+            with PersonalDataCopy.guard(path):
+                sections.append(replace(kind.collect(user), kind=path))
+        return sections
+
+    @staticmethod
+    @contextmanager
+    def guard(kind: str) -> Iterator[None]:
+        """Name the kind that fails, whatever the failure.
+
+        Args:
+            kind: The dotted path of the kind being read, written or drawn.
+
+        Raises:
+            PersonalDataError: When the block raises, from the original error.
+        """
+        try:
+            yield
+        except PersonalDataError:
+            raise
+        except Exception as error:
+            raise PersonalDataError(kind) from error
 
     def write(self, file: IO[bytes]) -> None:
         """Write the copy as a zip archive.
@@ -312,6 +344,7 @@ class PersonalDataCopy:
                     for value in row:
                         if isinstance(value, CopiedFile):
                             with (
+                                self.guard(section.kind),
                                 value.field_file.open("rb") as source,
                                 archive.open(
                                     value.path, "w", force_zip64=True
@@ -392,9 +425,10 @@ class PersonalDataCopy:
         names = [name for name, _label in section.columns]
         rendered = ""
         if section.template_name and section.rows and not acceptances:
-            rendered = render_to_string(
-                section.template_name, {"section": section, "user": self.user}
-            )
+            with self.guard(section.kind):
+                rendered = render_to_string(
+                    section.template_name, {"section": section, "user": self.user}
+                )
         return {
             "slug": section.key,
             "heading": section.heading,
