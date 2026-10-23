@@ -113,8 +113,11 @@ def check_personal_data(app_configs, **kwargs) -> list[CheckMessage]:
         ``mvp_compliance.E006`` for each path that does not name a
         ``PersonalData`` subclass and for each kind whose key an earlier kind
         already has, ``mvp_compliance.E007`` for each field a kind lists that
-        its model lacks, and ``mvp_compliance.E008`` for each part of
-        django-allauth's account app the page needs and the project lacks.
+        its model lacks, ``mvp_compliance.E008`` for each part of
+        django-allauth's account app the page needs and the project lacks, and
+        ``mvp_compliance.E009`` for each kind that does not say how it is
+        erased once another does, and for each ``erasure`` that is neither
+        constant.
     """
     paths = getattr(settings, "MVP_COMPLIANCE_PERSONAL_DATA", None)
     if paths is None:
@@ -131,6 +134,7 @@ def check_personal_data(app_configs, **kwargs) -> list[CheckMessage]:
             )
         ]
     errors: list[CheckMessage] = []
+    imported: list[tuple[str, PersonalData]] = []
     # The package's own section is always in a copy, so its key is taken.
     kinds: dict[str, str] = {
         AGREEMENTS: "mvp_compliance.personal_data.AgreementsPersonalData"
@@ -148,7 +152,9 @@ def check_personal_data(app_configs, **kwargs) -> list[CheckMessage]:
                 )
             )
             continue
-        key = kind().key
+        instance = kind()
+        imported.append((path, instance))
+        key = instance.key
         if key in kinds:
             errors.append(
                 Error(
@@ -174,7 +180,44 @@ def check_personal_data(app_configs, **kwargs) -> list[CheckMessage]:
                         id="mvp_compliance.E007",
                     )
                 )
-    return errors + check_account_app()
+    return errors + check_erasure(imported) + check_account_app()
+
+
+def check_erasure(kinds: list[tuple[str, PersonalData]]) -> list[CheckMessage]:
+    """Report a declaration that says how some kinds are erased and not others.
+
+    Args:
+        kinds: Each declared kind with the path it was declared by.
+
+    Returns:
+        ``mvp_compliance.E009`` for each kind that does not say how it is
+        erased while another does, and for each ``erasure`` that is neither
+        ``PersonalData.DELETE`` nor ``PersonalData.WITH_ACCOUNT``. Nothing
+        while no kind says anything.
+    """
+    if not any(kind.says_how_erased for _path, kind in kinds):
+        return []
+    constants = (PersonalData.DELETE, PersonalData.WITH_ACCOUNT)
+    errors: list[CheckMessage] = []
+    for path, kind in kinds:
+        if kind.erasure is not None and kind.erasure not in constants:
+            message = _("%(path)s sets erasure to something other than %(constants)s.")
+        elif not kind.says_how_erased:
+            message = _("%(path)s does not say how its records are deleted.")
+        else:
+            continue
+        errors.append(
+            Error(
+                message
+                % {"path": path, "constants": "PersonalData.DELETE or WITH_ACCOUNT"},
+                hint=_(
+                    "Set erasure to PersonalData.DELETE or PersonalData.WITH_ACCOUNT, "
+                    "or override erase()."
+                ),
+                id="mvp_compliance.E009",
+            )
+        )
+    return errors
 
 
 def check_account_app() -> list[CheckMessage]:
