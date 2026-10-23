@@ -204,6 +204,10 @@ UPLOADS = {
 #: The account to delete on the page for deleting an account, so the walkthrough
 #: never costs the standard ones. Recreated on every run.
 LEAVING = "leaving.user@example.com"
+#: Deleted the same way, with no email address, so it types its username.
+LEAVING_NAMELESS = "leaving.nameless@example.com"
+#: An account the demo refuses to delete, so the failure can be looked at.
+UNDELETED = "undeleted.user@example.com"
 
 #: Someone whose account is closed and whose records outlived it, which is the
 #: ordinary case for a request and the one that cannot be asked for by an
@@ -534,28 +538,34 @@ class Command(BaseCommand):
             self.stdout.write(f"  {username}: {len(uploads)} uploads")
 
     def make_leaving(self):
-        """Create ``leaving.user`` with an upload and an acceptance, afresh.
+        """Create the accounts the page for deleting an account is tried with, afresh.
 
-        An account left over from an earlier run is deleted the way the page
-        deletes one, so its file goes too. Its acceptance outlives it, as any
-        acceptance does, and the new account gets its own.
+        ``leaving.user`` is deleted for real. ``leaving.nameless`` has no email
+        address, so it is asked for its username and signs in with it.
+        ``undeleted.user`` is one the demo refuses to delete, so the failure can
+        be looked at. An account left over from an earlier run is deleted the
+        way the page deletes one, so its file goes too, and its acceptances
+        outlive it, as any acceptance does.
         """
         model = get_user_model()
-        leftover = model.objects.filter(username=LEAVING.split("@")[0]).first()
-        if leftover:
-            delete_account(leftover, [Uploads()])
-        person = self.make_account(LEAVING, False, False, [])
-        upload = Upload(owner=person, title="Leaving note", licence="private")
-        upload.file.save("note.txt", ContentFile(b"Delete me.\n"), save=False)
-        upload.save()
-        version = Version.objects.get(document__name="Terms of use", number="2025.1")
-        with on(2026, 9, 20):
-            Acceptance.objects.record(person, version)
-        # Everything else in force is accepted today, so the site-wide check
-        # never stops this account on its way to the page that deletes it.
-        for document in Document.objects.outstanding_for(person):
-            Acceptance.objects.record(person, document.current)
-        self.stdout.write(f"  {LEAVING}: an upload and acceptances of every document")
+        for email in (LEAVING, LEAVING_NAMELESS, UNDELETED):
+            username = email.split("@")[0]
+            leftover = model.objects.filter(username=username).first()
+            if leftover and email != UNDELETED:
+                delete_account(leftover, [Uploads()])
+            person = self.make_account(email, False, False, [])
+            if email == LEAVING_NAMELESS:
+                person.email = ""
+                person.save()
+            Upload.objects.filter(owner=person).delete()
+            upload = Upload(owner=person, title="Leaving note", licence="private")
+            upload.file.save("note.txt", ContentFile(b"Delete me.\n"), save=False)
+            upload.save()
+            # Everything in force is accepted, so the site-wide check never
+            # stops the account on its way to the page that deletes it.
+            for document in Document.objects.outstanding_for(person):
+                Acceptance.objects.record(person, document.current)
+            self.stdout.write(f"  {username}: an upload and every document accepted")
 
     def request(self):
         """A request carrying an address, so the optional evidence is reachable.

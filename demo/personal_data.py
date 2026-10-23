@@ -1,7 +1,7 @@
 """The kinds of record the demo declares it holds about a person."""
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.utils.translation import gettext_lazy as _
 
 from demo.models import Upload
@@ -34,7 +34,13 @@ class Uploads(PersonalData):
         return Upload.objects.filter(owner=user)
 
     def erase(self, user):
-        """Delete the person's rows, and their files once the deletion commits."""
+        """Delete the person's rows, and their files once the deletion commits.
+
+        Signed in as ``undeleted.user@example.com``, the deletion fails here, so
+        the page shows what a person sees when their account could not be deleted.
+        """
+        if user.email == "undeleted.user@example.com":
+            raise DatabaseError("The demo cannot delete this person's uploads.")
         uploads = self.get_queryset(user)
         stored = [
             (upload.file.storage, upload.file.name) for upload in uploads if upload.file
