@@ -14,10 +14,14 @@ class MvpComplianceConfig(AppConfig):
     verbose_name = _("Compliance")
 
     def ready(self):
-        """Register the agreement check and create the declared documents."""
-        # Not at module level: both need the app registry.
-        from mvp_compliance.checks import check_agreement_middleware
+        """Register the checks and create the declared documents."""
+        # Not at module level: these need the app registry.
+        from mvp_compliance.checks import (
+            check_agreement_middleware,
+            check_personal_data,
+        )
         from mvp_compliance.management import create_declared_documents
 
         register(check_agreement_middleware)
+        register(check_personal_data)
         post_migrate.connect(create_declared_documents, sender=self)

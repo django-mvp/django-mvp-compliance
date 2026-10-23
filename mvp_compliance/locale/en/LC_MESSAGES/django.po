@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 11:21+0200\n"
+"POT-Creation-Date: 2026-10-23 11:27+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -79,43 +79,106 @@ msgstr "Everything held about a person"
 msgid "Compliance"
 msgstr "Compliance"
 
-#: checks.py:47
+#: checks.py:54
 msgid "The page that asks a person to agree has no address."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:48
+#: checks.py:55
 #, python-format
 msgid "Add %(line)s to the project's URLconf."
 msgstr "Add %(line)s to the project's URLconf."
 
-#: checks.py:59
+#: checks.py:66
 msgid "Nothing that identifies the signed-in user comes before the check."
 msgstr "Nothing that identifies the signed-in user comes before the check."
 
-#: checks.py:60
+#: checks.py:67
 #, python-format
 msgid "List %(check)s after %(authentication)s in MIDDLEWARE."
 msgstr "List %(check)s after %(authentication)s in MIDDLEWARE."
 
-#: checks.py:73
+#: checks.py:80
 #, python-format
 msgid "%(setting)s is a string, and has to be a list."
 msgstr "%(setting)s is a string, and has to be a list."
 
-#: checks.py:75
+#: checks.py:82
 #, python-format
 msgid "Write it as a list, even for one entry: %(example)s."
 msgstr "Write it as a list, even for one entry: %(example)s."
 
-#: checks.py:84
+#: checks.py:91
 #, python-format
 msgid "%(setting)s is not a number."
 msgstr "%(setting)s is not a number."
 
-#: checks.py:86
+#: checks.py:93
 #, python-format
 msgid "Give it as a number of seconds, such as %(example)s."
 msgstr "Give it as a number of seconds, such as %(example)s."
+
+#: checks.py:125
+#, fuzzy, python-format
+#| msgid "%(setting)s is not a number."
+msgid "%(setting)s is not a list."
+msgstr "%(setting)s is not a number."
+
+#: checks.py:127
+#, fuzzy, python-format
+#| msgid "Write it as a list, even for one entry: %(example)s."
+msgid "Write it as a list of dotted paths, even for one kind: %(example)s."
+msgstr "Write it as a list, even for one entry: %(example)s."
+
+#: checks.py:140
+#, python-format
+msgid "%(path)s does not name a PersonalData subclass."
+msgstr ""
+
+#: checks.py:142
+#, python-format
+msgid "Name a class that subclasses %(base)s."
+msgstr ""
+
+#: checks.py:152
+#, python-format
+msgid "%(first)s and %(second)s have the same key, %(key)s."
+msgstr ""
+
+#: checks.py:154
+msgid "Set a different key on one of them."
+msgstr ""
+
+#: checks.py:165
+#, python-format
+msgid "%(path)s lists %(field)s, which %(model)s does not have."
+msgstr ""
+
+#: checks.py:167
+msgid "Remove it from fields, or correct its spelling."
+msgstr ""
+
+#: checks.py:185
+#, fuzzy
+#| msgid "The page that asks a person to agree has no address."
+msgid "The page that gives a person a copy of their data needs allauth."
+msgstr "The page that asks a person to agree has no address."
+
+#: checks.py:186
+#, python-format
+msgid "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
+msgstr ""
+
+#: checks.py:198
+#, fuzzy
+#| msgid "The page that asks a person to agree has no address."
+msgid ""
+"The page that gives a person a copy of their data needs allauth's middleware."
+msgstr "The page that asks a person to agree has no address."
+
+#: checks.py:200
+#, python-format
+msgid "Add %(middleware)s to MIDDLEWARE."
+msgstr ""
 
 #: forms.py:36
 msgid "Person"
