@@ -1,7 +1,11 @@
 """Shared fixtures for the test suite."""
 
+import importlib
+
 import pytest
 from django.contrib.auth.models import Permission
+from django.test import override_settings
+from django.urls import clear_url_caches
 
 from mvp_compliance.signals import version_published
 from tests.factories import (
@@ -12,6 +16,41 @@ from tests.factories import (
     UserFactory,
     VersionFactory,
 )
+
+#: The routes that follow the personal-data setting, the package's first.
+URLCONF_MODULES = (
+    "mvp_compliance.urls",
+    "tests.urls",
+    "tests.urls_package_only",
+    "tests.urls_own_agree_page",
+)
+
+
+def reload_urlconf():
+    """Import the routes again, so they follow the settings as they stand."""
+    for name in URLCONF_MODULES:
+        importlib.reload(importlib.import_module(name))
+    clear_url_caches()
+
+
+@pytest.fixture
+def declare():
+    """Declare kinds of personal data by dotted path, with the routes following.
+
+    Called with no path it declares nothing held, which is a declaration.
+    """
+    overrides = []
+
+    def declare_kinds(*paths):
+        override = override_settings(MVP_COMPLIANCE_PERSONAL_DATA=list(paths))
+        override.enable()
+        overrides.append(override)
+        reload_urlconf()
+
+    yield declare_kinds
+    for override in reversed(overrides):
+        override.disable()
+    reload_urlconf()
 
 
 @pytest.fixture

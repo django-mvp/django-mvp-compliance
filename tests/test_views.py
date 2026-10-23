@@ -2,6 +2,7 @@
 
 import logging
 import re
+import time
 from datetime import timedelta
 from html.parser import HTMLParser
 from pathlib import Path
@@ -9,15 +10,17 @@ from unittest.mock import patch
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 import pytest
+from allauth.account.internal.flows.login import AUTHENTICATION_METHODS_SESSION_KEY
+from django.apps import apps
 from django.core.management import call_command
 from django.db import DatabaseError, connection
 from django.templatetags.static import static
 from django.test import Client, modify_settings, override_settings
 from django.test.utils import CaptureQueriesContext
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone, translation
 from django.utils.formats import date_format
-from mvp.menus import AppMenu
+from mvp.menus import AccountCenterMenu, AppMenu
 
 import mvp_compliance
 from mvp_compliance.models import (
@@ -27,6 +30,7 @@ from mvp_compliance.models import (
     RecordError,
     Version,
 )
+from mvp_compliance.personal_data import PersonalData
 from mvp_compliance.rendering import MarkdownRenderer
 from mvp_compliance.views import AgreementView
 from tests.factories import (
@@ -2682,3 +2686,179 @@ class TestAgreementEnforcement:
         assert arrived.status_code == 200
         (acceptance,) = Acceptance.objects.for_person(user)
         assert acceptance.version == enforced
+
+
+def personal_data_address():
+    return reverse("mvp_compliance:personal-data")
+
+
+def confirm(client):
+    """Record, as allauth's confirmation page does, that the person just confirmed."""
+    session = client.session
+    session[AUTHENTICATION_METHODS_SESSION_KEY] = [
+        {"method": "password", "at": time.time(), "reauthenticated": True}
+    ]
+    session.save()
+
+
+def listed_kinds(response):
+    """The keys of the kinds the page lists, in the order it lists them."""
+    return re.findall(r'data-section="([^"]+)"', response.content.decode())
+
+
+@pytest.fixture
+def collects():
+    """Every ``collect`` the declared test kinds have, replaced by a recording mock."""
+    with (
+        patch.object(PersonalData, "collect") as base,
+        patch("tests.kinds.Custom.collect") as custom,
+    ):
+        yield [base, custom]
+
+
+@pytest.mark.django_db
+class TestPersonalDataPage:
+    """US-1 scenarios 1 to 4, FR-001 to FR-003, FR-009, FR-010, FR-011, FR-016."""
+
+    def test_without_a_declaration_the_route_does_not_exist_and_no_menu_entry_leads_to_it(
+        self, rf, user
+    ):
+        request = rf.get(reverse("account-center"))
+        request.user = user
+
+        with pytest.raises(NoReverseMatch):
+            personal_data_address()
+        assert "personal-data" not in [
+            child.name for child in AccountCenterMenu.process(request).children
+        ]
+
+    def test_with_a_declaration_the_route_resolves_and_the_menu_leads_to_it(
+        self, declare, rf, user
+    ):
+        declare("tests.kinds.Notes")
+        request = rf.get(reverse("account-center"))
+        request.user = user
+
+        entries = [
+            child
+            for child in AccountCenterMenu.process(request).children
+            if child.name == "personal-data"
+        ]
+
+        assert [entry.url for entry in entries] == [personal_data_address()]
+
+    def test_the_route_takes_no_argument(self, declare, user):
+        declare("tests.kinds.Notes")
+
+        with pytest.raises(NoReverseMatch):
+            reverse("mvp_compliance:personal-data", args=[user.pk])
+
+    def test_an_anonymous_get_goes_to_sign_in_and_collects_nothing(
+        self, declare, client, collects
+    ):
+        declare("tests.kinds.Notes")
+
+        response = client.get(personal_data_address())
+
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_login"))
+        assert not any(mock.called for mock in collects)
+
+    def test_an_anonymous_post_goes_to_sign_in_and_collects_nothing(
+        self, declare, client, collects
+    ):
+        declare("tests.kinds.Notes")
+
+        response = client.post(personal_data_address())
+
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_login"))
+        assert not any(mock.called for mock in collects)
+
+    @pytest.mark.parametrize("method", ["get", "post"])
+    def test_a_person_who_has_not_confirmed_is_sent_to_confirm_and_nothing_is_collected(
+        self, declare, client, user, collects, method
+    ):
+        declare("tests.kinds.Notes")
+        client.force_login(user)
+
+        response = getattr(client, method)(personal_data_address())
+
+        assert response.status_code == 302
+        assert response["Location"].startswith(reverse("account_reauthenticate"))
+        assert not any(mock.called for mock in collects)
+
+    def test_after_confirming_it_lists_every_kind_in_order_then_the_agreements(
+        self, declare, client, user, collects
+    ):
+        declare("tests.kinds.Custom", "tests.kinds.Notes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(personal_data_address())
+
+        assert response.status_code == 200
+        assert listed_kinds(response) == ["custom", "notes", "agreements"]
+        assert not any(mock.called for mock in collects)
+
+    def test_an_empty_declaration_lists_only_the_agreements(
+        self, declare, client, user
+    ):
+        declare()
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(personal_data_address())
+
+        assert response.status_code == 200
+        assert listed_kinds(response) == ["agreements"]
+
+    def test_an_account_with_no_password_reaches_the_page_without_confirming(
+        self, declare, client, user
+    ):
+        declare("tests.kinds.Notes")
+        user.set_unusable_password()
+        user.save()
+        client.force_login(user)
+
+        response = client.get(personal_data_address())
+
+        assert response.status_code == 200
+
+    def test_with_allauth_account_not_installed_the_page_is_not_found(
+        self, declare, client, user, collects
+    ):
+        declare("tests.kinds.Notes")
+        client.force_login(user)
+        confirm(client)
+
+        with patch.object(
+            apps, "is_installed", side_effect=lambda name: name != "allauth.account"
+        ):
+            response = client.get(personal_data_address())
+
+        assert response.status_code == 404
+        assert not any(mock.called for mock in collects)
+
+
+@pytest.mark.django_db
+@pytest.mark.urls("tests.urls_package_only")
+class TestPersonalDataPageWithoutTheAccountArea:
+    """A project that mounts no account area has no page, whoever asks."""
+
+    def test_the_page_is_not_found_for_a_confirmed_person(
+        self, declare, client, user, collects
+    ):
+        declare("tests.kinds.Notes")
+        client.force_login(user)
+        confirm(client)
+
+        response = client.get(personal_data_address())
+
+        assert response.status_code == 404
+        assert not any(mock.called for mock in collects)
+
+    def test_the_page_is_not_found_for_an_anonymous_visitor(self, declare, client):
+        declare("tests.kinds.Notes")
+
+        assert client.get(personal_data_address()).status_code == 404
