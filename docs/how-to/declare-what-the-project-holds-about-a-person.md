@@ -124,13 +124,19 @@ button. Opening it reads none of your data. Pressing the button builds one `.zip
   present with an empty list of records.
 - `files/<key>/<pk>/<name>`, each file your kinds put into the copy, with its bytes.
 
+The page is `mvp_compliance.views.PersonalDataView`, and `PersonalDataCopy` in
+`mvp_compliance.personal_data` builds the zip from the sections the kinds return. The
+package's own section is `AgreementsPersonalData`, a kind with the key `agreements` that the
+package adds after yours. You never declare it.
+
 Nothing is stored. The copy is built for the request, sent, and gone. There is no limit on how
 often a person asks.
 
 A copy that cannot be completed is never handed over in part. If any kind fails, whether its
 `collect` raises, a file cannot be opened or its own template fails to draw, the person gets
 the page again with an error alert and the status 500, and the log has an error naming the
-failing kind's dotted path, with the original exception attached.
+failing kind's dotted path, with the original exception attached. The error is a
+`PersonalDataError`, raised from the original, whose `kind` is that path.
 
 ## What a value becomes
 
