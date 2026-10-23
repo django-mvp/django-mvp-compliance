@@ -62,7 +62,8 @@ Written before the build. Class: **convention** (a source settles it) or **taste
 - The page needs to know whether the project keeps a person's acceptances when an account goes.
 - The page needs to know whether the copy page exists, to link to it.
 - The page and its menu entry need to know whether every declared kind says how it is deleted.
-- The form needs the confirmation box to be required, with its error shown at the box.
+- The form needs the account's email address, or its username where it has none, to show in the
+  label and to compare what is typed against, ignoring case and surrounding spaces.
 - The page afterwards needs nobody signed in, and is reachable without an account.
 
 ## What the sketch faked
@@ -80,4 +81,9 @@ Written before the build. Class: **convention** (a source settles it) or **taste
 
 ## What was ruled by eye
 
-Nothing yet.
+- **Type to confirm, not a checkbox** (Sam, 2026-10-23). The person types their own email address
+  before **Delete my account** does anything. Anything else shows the field's own error. The email
+  address was chosen over a fixed word such as DELETE because it needs no translation and names
+  the account being deleted. An account with no email address types its username. This replaces
+  rationale item 6.
+- Confirming identity on allauth's own page first is approved (Sam, 2026-10-23).

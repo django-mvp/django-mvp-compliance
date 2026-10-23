@@ -529,17 +529,30 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
 
 
 class DeleteAccountForm(forms.Form):
-    """The person's own statement that they mean to delete their account."""
+    """The person typing their own email address to say they mean it."""
 
-    confirm = forms.BooleanField(
-        label=gettext_lazy(
-            "I understand that my account and everything listed above will be "
-            "deleted permanently"
-        ),
+    confirmation = forms.CharField(
+        strip=True,
+        widget=forms.TextInput(attrs={"autocomplete": "off", "spellcheck": "false"}),
         error_messages={
-            "required": gettext_lazy("Tick the box to confirm you want your account deleted."),
+            "required": gettext_lazy("Type your email address to confirm."),
         },
     )
+
+    def __init__(self, *args, expected: str, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.expected = expected
+        self.fields["confirmation"].label = _(
+            "To confirm, type your email address, %(expected)s"
+        ) % {"expected": expected}
+
+    def clean_confirmation(self):
+        value = self.cleaned_data["confirmation"]
+        if value.casefold() != self.expected.casefold():
+            raise forms.ValidationError(
+                _("That is not your email address. Type it exactly as shown.")
+            )
+        return value
 
 
 @method_decorator(reauthentication_required, name="get")
@@ -581,7 +594,7 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
             kinds.append(AgreementsPersonalData())
         context["sections"] = kinds
         context["kept"] = AgreementsPersonalData() if kept else None
-        context["form"] = kwargs.get("form") or DeleteAccountForm()
+        context["form"] = kwargs.get("form") or self.get_form()
         context["failed"] = state == "failed"
         context["account_center_url"] = reverse("account-center")
         try:
@@ -590,8 +603,14 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
             context["copy_url"] = None
         return context
 
+    def get_form(self, data=None):
+        """Ask for the account's email address, or its username without one."""
+        user = self.request.user
+        expected = getattr(user, user.get_email_field_name(), "") or user.get_username()
+        return DeleteAccountForm(data, expected=expected)
+
     def post(self, request, *args, **kwargs):
-        form = DeleteAccountForm(request.POST)
+        form = self.get_form(request.POST)
         if not form.is_valid():
             return self.render_to_response(self.get_context_data(form=form))
         return HttpResponseRedirect(reverse("mvp_compliance:account-deleted"))
