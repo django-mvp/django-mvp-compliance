@@ -51,7 +51,7 @@ arrives. Guarding the whole page makes confirmation the first step and returns t
 which is what allauth's own sensitive pages do. A download pressed after the confirmation has
 expired is still replayed from the confirmation page by allauth, which is acceptable.
 
-**ADR:** none — the page's flow, recorded in docs/personal-data.md.
+**ADR:** none — the page's flow, recorded in docs/how-to/declare-what-the-project-holds-about-a-person.md.
 
 ## D7 — A kind that is always one record says so
 
@@ -90,3 +90,17 @@ and the conditional route.
 system check names allauth's app and middleware as strings.
 
 **Revisit if:** T008's guarded import makes the ignore unnecessary, in which case remove it.
+
+## D11 — An account with nothing to confirm with is not asked
+
+**Decision:** an account with no password and no second factor reaches the page and downloads its
+copy without being asked to confirm, because allauth treats it as recently confirmed. The package
+adds no stricter rule of its own. The spec's FR-010, SC-004 and the assumption about confirming
+are amended to say so.
+
+**Why:** Sam's ruling, 2026-10-23, after the design review (SEC-001) found that allauth's
+`did_recently_authenticate` returns true for such an account
+(`allauth/account/internal/flows/reauthentication.py:76-83`). It matches allauth's own sensitive
+pages, such as adding a second factor, and does not lock a person out of their own data.
+
+**ADR:** none — follows allauth, recorded in the spec and the how-to page.

@@ -81,7 +81,9 @@ of anybody else's. Make one kind fail and confirm no download is produced.
    are sent to sign in and nothing is made.
 4. **Given** a signed-in person who has not confirmed their identity recently, **When** they ask for
    a copy, **Then** they are asked to confirm it is them, and no copy is made until they have. One
-   who confirmed a moment ago is not asked again.
+   who confirmed a moment ago is not asked again. An account with nothing to confirm with, no
+   password and no second factor, is treated as having confirmed, as the site's sign-in treats it
+   on its own sensitive pages.
 5. **Given** a person who has confirmed it is them, **When** they ask for the copy, **Then** they
    receive one download holding a part readable in a web browser with nothing installed, a part in
    a format a program can read, and every file the declared kinds name for them.
@@ -212,7 +214,8 @@ confirm the code is not told.
 - **FR-008**: The package MUST keep nothing of a copy once it has been handed over. *(US-1)*
 - **FR-009**: Somebody not signed in MUST be sent to sign in and MUST receive nothing. *(US-1)*
 - **FR-010**: A copy MUST NOT be made until the person has confirmed their identity, unless they
-  did so recently. *(US-1)*
+  did so recently, or their account has nothing to confirm with and the site's sign-in treats it
+  as confirmed. *(US-1)*
 - **FR-011**: No route the feature adds MAY accept a person, account or identifier. A copy MUST
   always be about the signed-in person, and the package MUST ask each declared kind for that person
   only. *(US-1)*
@@ -270,7 +273,8 @@ confirm the code is not told.
   acceptances of two documents, the copy holds every record, every file and every acceptance with
   its wording, and nothing belonging to anybody else.
 - **SC-003**: Every route the feature adds refuses somebody not signed in, with one test per route.
-- **SC-004**: No copy is made for a person who has not confirmed their identity recently.
+- **SC-004**: No copy is made for a person with a password or a second factor who has not
+  confirmed their identity recently.
 - **SC-005**: When any declared kind fails, no download is produced, in every case tested.
 - **SC-006**: After a copy has been downloaded, nothing of it remains in the database or in the
   site's file storage.
@@ -302,6 +306,10 @@ confirm the code is not told.
   section inside it still carries only the times stored on the records.
 - **Q**: Is making a copy recorded? → **A**: Not by the package (FR-008, FR-025), consistent with
   FS-004: a log of reads is more personal data. The project is told and decides what to keep.
+- **Q**: What about an account with no password and no second factor? → **A**: It is treated as
+  having confirmed, as allauth treats it on its own sensitive pages (FR-010, SC-004). Sam's
+  ruling, 2026-10-23, after the design review found the gap. The alternative, refusing such an
+  account a copy until it adds a password or a second factor, was put to him and not taken.
 - **Q**: Built while the person waits, or in the background? → **A**: While they wait, here.
   Background preparation, and the setting that chooses between them, is #116. The way a project
   declares its kinds does not depend on a request, so switching later needs no change to a
@@ -311,8 +319,10 @@ confirm the code is not told.
 
 - The account area is django-mvp's, as for the list of what a person has agreed to (FS-008). Its
   menu entry follows ADR 0020.
-- How a person confirms it is them follows whatever the site's sign-in already offers. A site whose
-  accounts have no password still needs a way to confirm, and research settles how.
+- How a person confirms it is them is the site's sign-in's own confirmation, django-allauth's,
+  exactly as on its other sensitive pages such as adding a second factor. An account with no
+  password and no second factor, such as one that signs in only through another provider, has
+  nothing to confirm with, and allauth treats it as confirmed. So does this page.
 - The uploaded files a copy holds are ones the project's models point to in the site's file
   storage. Files kept anywhere else are reached through a kind the project supplies itself (US-2).
 - A copy is built in one request. A copy too large for that is #116's problem to solve.
