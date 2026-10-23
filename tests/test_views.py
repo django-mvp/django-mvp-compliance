@@ -37,7 +37,7 @@ from mvp_compliance.models import (
 )
 from mvp_compliance.personal_data import PersonalData
 from mvp_compliance.rendering import MarkdownRenderer
-from mvp_compliance.signals import personal_data_copied
+from mvp_compliance.signals import account_deleted, personal_data_copied
 from mvp_compliance.views import AgreementView
 from tests.factories import (
     AcceptanceFactory,
@@ -3449,3 +3449,70 @@ class TestDeleteAccountFails:
         (record,) = [r for r in caplog.records if r.name == "mvp_compliance.views"]
         assert "tests.kinds.Refuses" in record.getMessage()
         assert isinstance(record.exc_info[1].__cause__, RuntimeError)
+
+
+@pytest.mark.django_db
+class TestAccountDeletedSignal:
+    """US-3, FR-021 to FR-023: the project is told once each deletion has committed."""
+
+    @pytest.fixture
+    def received(self):
+        calls = []
+
+        def receiver(sender, **kwargs):
+            calls.append(kwargs)
+
+        account_deleted.connect(receiver)
+        yield calls
+        account_deleted.disconnect(receiver)
+
+    def test_it_is_sent_once_on_commit_naming_the_account_and_the_kinds(
+        self, client, leaving, received, django_capture_on_commit_callbacks
+    ):
+        subject = Acceptance.subject_of(leaving)
+        email = leaving.email
+
+        with django_capture_on_commit_callbacks(execute=False) as callbacks:
+            response = client.post(delete_address(), {"confirmation": email})
+            assert received == []
+        for callback in callbacks:
+            callback()
+
+        assert response.status_code == 302
+        assert len(received) == 1
+        assert received[0]["user"].email == email
+        assert received[0]["subject"] == subject
+        assert received[0]["kinds"] == ["deletesnotes", "withaccount"]
+
+    def test_it_is_not_sent_when_the_deletion_fails(
+        self, declare, client, user, received, django_capture_on_commit_callbacks
+    ):
+        declare("tests.kinds.DeletesNotes", "tests.kinds.Refuses")
+        client.force_login(user)
+        confirm(client)
+
+        with django_capture_on_commit_callbacks(execute=True):
+            response = client.post(delete_address(), {"confirmation": user.email})
+
+        assert response.status_code == 500
+        assert received == []
+
+    def test_a_failing_receiver_leaves_the_account_deleted(
+        self, client, leaving, caplog, django_capture_on_commit_callbacks
+    ):
+        def receiver(sender, **kwargs):
+            raise RuntimeError("the project's own code failed")
+
+        account_deleted.connect(receiver)
+        try:
+            with django_capture_on_commit_callbacks(execute=True):
+                response = client.post(
+                    delete_address(), {"confirmation": leaving.email}
+                )
+        finally:
+            account_deleted.disconnect(receiver)
+
+        assert response.status_code == 302
+        assert response["Location"] == reverse("mvp_compliance:account-deleted")
+        assert not type(leaving).objects.filter(pk=leaving.pk).exists()
+        assert any(record.exc_info for record in caplog.records)
