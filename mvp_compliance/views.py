@@ -7,6 +7,7 @@ from urllib.parse import unquote, urljoin, urlsplit
 from django import forms
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import DatabaseError, transaction
 from django.http import FileResponse, Http404, HttpResponseRedirect
@@ -23,7 +24,8 @@ from mvp.config import MVP_CONFIG
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
-from mvp_compliance.exceptions import PersonalDataError
+from mvp_compliance.deletion import delete_account
+from mvp_compliance.exceptions import AccountDeletionError, PersonalDataError
 from mvp_compliance.models import (
     Acceptance,
     Document,
@@ -545,22 +547,35 @@ class DeleteAccountForm(forms.Form):
         },
     )
 
-    def __init__(self, *args, expected: str, **kwargs):
+    def __init__(self, *args, expected: str, asks_username: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.expected = expected
-        self.fields["confirmation"].label = _(
-            "To confirm, type your email address, %(expected)s"
-        ) % {"expected": expected}
+        self.asks_username = asks_username
+        label = (
+            _("To confirm, type your username, %(expected)s")
+            if asks_username
+            else _("To confirm, type your email address, %(expected)s")
+        )
+        self.fields["confirmation"].label = label % {"expected": expected}
 
     def clean_confirmation(self):
+        """Refuse anything but the expected text, ignoring case.
+
+        Raises:
+            ValidationError: With the code ``mismatch``.
+        """
         value = self.cleaned_data["confirmation"]
         if value.casefold() != self.expected.casefold():
-            raise forms.ValidationError(
-                _("That is not your email address. Type it exactly as shown.")
+            message = (
+                _("That is not your username. Type it exactly as shown.")
+                if self.asks_username
+                else _("That is not your email address. Type it exactly as shown.")
             )
+            raise forms.ValidationError(message, code="mismatch")
         return value
 
 
+@method_decorator(csrf_protect, name="dispatch")
 @method_decorator(reauthentication_required, name="get")
 @method_decorator(reauthentication_required, name="post")
 class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
@@ -627,13 +642,34 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
     def get_form(self, data=None):
         """Ask for the account's email address, or its username without one."""
         user = self.request.user
-        expected = getattr(user, user.get_email_field_name(), "") or user.get_username()
-        return DeleteAccountForm(data, expected=expected)
+        email = getattr(user, user.get_email_field_name(), "")
+        return DeleteAccountForm(
+            data, expected=email or user.get_username(), asks_username=not email
+        )
 
     def post(self, request, *args, **kwargs):
+        """Delete the account once the person has typed their address.
+
+        Nothing is deleted unless every kind and the account itself go, in one
+        transaction. A failure is logged with the kind that failed, and the
+        page is shown again with an alert while the person stays signed in.
+        """
         form = self.get_form(request.POST)
         if not form.is_valid():
             return self.render_to_response(self.get_context_data(form=form))
+        user = request.user
+        try:
+            delete_account(user, get_personal_data() or [])
+        except AccountDeletionError as error:
+            logger.exception(
+                "The account of user %s could not be deleted: %s failed",
+                user.pk,
+                error.kind,
+            )
+            return self.render_to_response(
+                self.get_context_data(failed=True), status=500
+            )
+        logout(request)
         return HttpResponseRedirect(reverse("mvp_compliance:account-deleted"))
 
 

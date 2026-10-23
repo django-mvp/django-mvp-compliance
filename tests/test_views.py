@@ -3446,6 +3446,6 @@ class TestDeleteAccountFails:
         assert type(user).objects.filter(pk=user.pk).exists()
         assert Note.objects.filter(owner=user).count() == 1
         assert client.session["_auth_user_id"] == str(user.pk)
-        (record,) = [r for r in caplog.records if r.levelno == logging.ERROR]
+        (record,) = [r for r in caplog.records if r.name == "mvp_compliance.views"]
         assert "tests.kinds.Refuses" in record.getMessage()
         assert isinstance(record.exc_info[1].__cause__, RuntimeError)
