@@ -148,6 +148,19 @@ class TestPersonalDataCheck:
         assert [message.id for message in messages] == ["mvp_compliance.E006"]
         assert "tests.kinds.Nothing" in messages[0].msg
 
+    def test_a_bad_path_is_reported_with_the_routes_loaded(self, declare):
+        declare("tests.kinds.Nothing")
+
+        ids = [message.id for message in run_checks() if message.id in PERSONAL_DATA]
+
+        assert ids == ["mvp_compliance.E006"]
+
+    def test_a_kind_with_the_agreements_key_is_an_error_naming_it(self):
+        messages = declared("tests.kinds.Agreements")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"]
+        assert "tests.kinds.Agreements" in messages[0].msg
+
     def test_a_class_that_is_not_a_kind_is_an_error_naming_it(self):
         messages = declared("tests.kinds.NotAKind")
 

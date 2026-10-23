@@ -35,3 +35,4 @@ class Note(models.Model):
     )
     summary = models.TextField(_("Summary"), blank=True)
     attachment = models.FileField(_("Attachment"), upload_to="notes/", blank=True)
+    cover = models.FileField(_("Cover"), upload_to="covers/", blank=True)

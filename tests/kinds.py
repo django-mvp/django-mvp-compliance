@@ -68,5 +68,29 @@ class MissingField(PersonalData):
         return Note.objects.filter(owner=user)
 
 
+class TwoFiles(Notes):
+    """A kind with two file fields, which a record can fill with same-named files."""
+
+    fields = ["title", "attachment", "cover"]
+
+
+class Undumpable(PersonalData):
+    """A kind whose own code hands back a value the data file cannot hold."""
+
+    heading = "Raw"
+
+    def collect(self, user):
+        return PersonalDataSection(
+            key=self.key,
+            heading=self.heading,
+            columns=(("raw", "Raw"),),
+            rows=((b"\x00\x01",),),
+        )
+
+
+class Agreements(Custom):
+    """A kind whose key is the one the package's own section has."""
+
+
 class NotAKind:
     """A class a project could name by mistake."""

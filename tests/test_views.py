@@ -2913,7 +2913,7 @@ class TestPersonalDataDownload:
         self, downloaded
     ):
         archive = downloaded["archive"]
-        path = f"files/notes/{downloaded['note'].pk}/heron.txt"
+        path = f"files/notes/{downloaded['note'].pk}/attachment/heron.txt"
 
         assert set(archive.namelist()) == {"index.html", "data.json", path}
         assert archive.read(path) == b"bytes"
@@ -2989,8 +2989,9 @@ class TestPersonalDataCopyFails:
             ("tests.kinds.Failing", None, RuntimeError),
             ("tests.kinds.Notes", "lose_the_file", FileNotFoundError),
             ("tests.kinds.BrokenTemplate", None, NoReverseMatch),
+            ("tests.kinds.Undumpable", None, TypeError),
         ],
-        ids=["collect", "file", "template"],
+        ids=["collect", "file", "template", "data"],
     )
     def failure(self, request, attempt):
         path, damage, original = request.param

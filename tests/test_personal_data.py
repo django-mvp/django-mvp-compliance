@@ -126,7 +126,7 @@ class TestCollect:
         (copied,) = column(section, "attachment")
         assert isinstance(copied, CopiedFile)
         assert copied.name == note.attachment.name.rsplit("/", 1)[-1]
-        assert copied.path == f"files/notes/{note.pk}/{copied.name}"
+        assert copied.path == f"files/notes/{note.pk}/attachment/{copied.name}"
         assert copied.field_file.name == note.attachment.name
 
     def test_two_records_with_same_named_files_get_distinct_paths(
@@ -139,9 +139,10 @@ class TestCollect:
 
         paths = [copied.path for copied in column(section, "attachment")]
         assert len(set(paths)) == 2
-        assert {f"files/notes/{first.pk}/", f"files/notes/{second.pk}/"} == {
-            path.rsplit("/", 1)[0] + "/" for path in paths
-        }
+        assert {
+            f"files/notes/{first.pk}/attachment/",
+            f"files/notes/{second.pk}/attachment/",
+        } == {path.rsplit("/", 1)[0] + "/" for path in paths}
 
     def test_an_empty_file_field_yields_none(self, user):
         NoteFactory(owner=user, attachment="")
@@ -258,9 +259,39 @@ class TestPersonalDataCopy:
 
         archive = open_copy(user, "tests.kinds.Notes")
 
-        path = f"files/notes/{note.pk}/report.txt"
+        path = f"files/notes/{note.pk}/attachment/report.txt"
         assert set(archive.namelist()) == {"index.html", "data.json", path}
         assert archive.read(path) == b"the bytes"
+
+    def test_two_file_fields_of_one_record_with_the_same_name_are_both_kept(
+        self, user, stored_files
+    ):
+        NoteFactory(
+            owner=user,
+            attachment=ContentFile(b"attached", name="report.txt"),
+            cover=ContentFile(b"cover", name="report.txt"),
+        )
+
+        archive = open_copy(user, "tests.kinds.TwoFiles")
+
+        held = sorted(
+            archive.read(name)
+            for name in archive.namelist()
+            if name.startswith("files/")
+        )
+        assert held == [b"attached", b"cover"]
+
+    def test_a_record_key_cannot_climb_out_of_its_folder(self, stored_files):
+        record = Note(pk=None)
+        record.pk = "../../outside"
+        field_file = Note(attachment="notes/a.txt").attachment
+
+        copied = Notes().get_copied_file(
+            record, Note._meta.get_field("attachment"), field_file
+        )
+
+        assert ".." not in copied.path.split("/")
+        assert copied.path.startswith("files/notes/")
 
     def test_two_files_with_the_same_name_are_both_kept(self, user, stored_files):
         first = NoteFactory(owner=user, attachment=ContentFile(b"one", name="a.txt"))
@@ -311,7 +342,7 @@ class TestPersonalDataCopy:
             "status": "Draft",
             "topic": "Wildlife",
             "summary": None,
-            "attachment": f"files/notes/{note.pk}/heron.txt",
+            "attachment": f"files/notes/{note.pk}/attachment/heron.txt",
         }
         assert list(section["fields"]) == Notes.fields
 
