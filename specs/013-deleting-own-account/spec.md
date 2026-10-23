@@ -281,7 +281,8 @@ deleted. Make a deletion that fails and confirm the code is not told.
 - **SC-002**: For a person with records in three declared kinds and acceptances of two documents,
   deleting the account removes the account and every record of every kind, keeps every
   acceptance under the default setting, and changes nothing belonging to anybody else.
-- **SC-003**: Every route the feature adds refuses somebody not signed in, with one test per route.
+- **SC-003**: Every route the feature adds that acts on an account refuses somebody not signed in,
+  with one test per route.
 - **SC-004**: No deletion runs for a person with a password or a second factor who has not
   confirmed their identity recently, nor for anyone who has not confirmed the deletion itself.
 - **SC-005**: When any declared kind's deletion fails, the account and every database record about

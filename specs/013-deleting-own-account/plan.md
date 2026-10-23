@@ -28,12 +28,14 @@ settings `tests.settings`.
   one check message. No registry and no new setting: the declarations are the switch (D2).
 - **Article XI**: acceptances are never written to. The deletion leaves them to
   `keep_or_remove_acceptances`, unchanged.
-- **Article XIII**: amended in this branch to name the one removal the package makes itself, the
-  signed-in person's own account (D1, ADR 0029). Every other row is deleted only by the project's
-  `erase`. No wording claims completeness or names a regulation.
+- **Article XIII**: amended in this branch (D1, D8, ADR 0029). The package deletes the signed-in
+  person's own account, and, for a kind declaring `erasure = DELETE`, the rows that kind's own
+  `get_queryset(user)` names, the same hook FS-012 already reads them through. Nothing else the
+  project holds is touched except by the project's own `erase`. No wording claims completeness or
+  names a regulation.
 - **Article XIV**: nothing is stored. The signal passes the deleted user and its key to the
   project's own code, which gets a CHANGELOG entry naming them.
-- **Article XV**: a project whose kinds say nothing about deletion sees no page, no route and no
+- **Article XV**: a project whose kinds say nothing about deletion sees no deletion page and no
   menu entry, and its copy works as before.
 
 ## Design
@@ -77,8 +79,12 @@ On `PersonalData`:
 `AgreementsPersonalData` is never erased by this route and never part of the check.
 
 A module-level `deletion_offered() -> bool` in `personal_data.py`: the setting is a non-empty list,
-every path imports to a `PersonalData` subclass, and every kind says how it is erased. It returns
-`False` rather than raising on a path that cannot be imported, which the check reports.
+every path imports to a `PersonalData` subclass, and every kind says how it is erased. It catches
+any exception raised while importing a kind and returns `False`, so a broken kind module never
+breaks the URLconf; the system check reports it (E006).
+
+`kind_path(kind) -> str` in `personal_data.py`, the `module.qualname` expression
+`PersonalDataCopy.collect` already writes inline, used by both it and the deletion.
 
 ### The check
 
@@ -94,18 +100,22 @@ should run the same thing:
 
 ```python
 def delete_account(user, kinds) -> None:
-    with transaction.atomic():
-        for kind in kinds:
-            try:
+    current = "account"
+    try:
+        with transaction.atomic():
+            for kind in kinds:
+                current = kind_path(kind)
                 kind.erase(user)
-            except Exception as error:
-                raise AccountDeletionError(path_of(kind)) from error
-        user.delete()
+            current = "account"
+            user.delete()
+    except Exception as error:
+        raise AccountDeletionError(current) from error
 ```
 
 `AccountDeletionError(kind)` in `exceptions.py`, beside `PersonalDataError`, carrying the kind's
-dotted path. A failure in `user.delete()` itself raises it with the kind `"account"`. Because the
-`raise` happens inside the `with`, the transaction rolls back before the caller sees it.
+dotted path, or `"account"` for a failure in `user.delete()` (a `PROTECT` row pointing at the user)
+or at commit (a deferred constraint). The `try` wraps the whole block, so every failure, including
+one at commit, has rolled back and reaches the caller as this one exception.
 
 ### The page
 
@@ -113,21 +123,27 @@ dotted path. A failure in `user.delete()` itself raises it with the kind `"accou
 `?state=` handling:
 
 - `dispatch`: 404 with no account area or without `allauth.account`, exactly as `PersonalDataView`.
-- `get` and `post` decorated with `reauthentication_required`; `LoginRequiredMixin`.
+- `dispatch` decorated with `csrf_protect`, as `AgreementView`; `get` and `post` decorated with
+  `reauthentication_required`; `LoginRequiredMixin`. allauth stashes a POST made before
+  reauthentication and replays it afterwards, so the person does not type the address twice.
 - Context: `sections` (declared kinds, then `AgreementsPersonalData()` when acceptances do not
   survive), `kept` (`AgreementsPersonalData()` when they do), `form`, `copy_url` when
   `mvp_compliance:personal-data` reverses, `account_center_url`.
 - `DeleteAccountForm` from the sketch: the email address, or the username when the account has
-  none, compared ignoring case and surrounding spaces.
+  none, compared ignoring case and surrounding spaces. Its label says "email address" or
+  "username" to match what is asked for.
 - `post`: invalid form → page with the field error, nothing deleted. Valid → capture
   `subject = Acceptance.subject_of(user)` and the kinds' keys, call `delete_account`. On
   `AccountDeletionError` log at ERROR with the kind and the original exception, and render the page
-  with `failed=True`, status 500. On success `logout(request)`, send `account_deleted` with
-  `send_robust`, log any receiver's exception, and redirect to `mvp_compliance:account-deleted`.
+  with `failed=True`, status 500. On success `logout(request)`, register the
+  `account_deleted` send with `transaction.on_commit` (it runs at once with no outer transaction,
+  and after the request's own under `ATOMIC_REQUESTS`), sent with `send_robust`, any receiver's
+  exception logged, and redirect to `mvp_compliance:account-deleted`.
 
 `AccountDeletedView`, from the sketch, needs nobody signed in.
 
-Routes in `urls.py`: `deleted/` always; `delete/` only when `deletion_offered()`. The menu entry is
+Routes in `urls.py`: `deleted/` always; `delete/` only when `deletion_offered()`. `delete` and
+`deleted` join `Document.RESERVED_SLUGS`, so no document can take either address. The menu entry is
 already in `menus.py` and follows the route.
 
 ### The signal

@@ -53,3 +53,34 @@ its username. Compared ignoring case and surrounding spaces.
 `delete_account(user, kinds)` in `mvp_compliance/deletion.py` holds the transaction, so the view's
 post is about the request and a project's own management code could run the same deletion. It is
 the only new module.
+
+## D8 — `erasure = DELETE` is the project's hook, read the same way as the copy
+
+The design review found that FR-015 has package code delete project rows, which the amendment in D1
+did not name. FS-012 already reads project rows in package code, through the kind's own
+`get_queryset(user)`, under Article XIII's "reached through a documented hook the project
+implements". `erasure = DELETE` deletes exactly those rows through the same hook, so the amendment
+names it beside the account: the package deletes the person's own account, and the rows a declared
+kind's own `get_queryset(user)` names when that kind asks for it. Nothing else the project holds is
+touched except by the project's `erase`. FR-015 was in the approved spec, so this keeps the spec
+and states the rule it already implied.
+
+## D9 — SC-003 names the routes that act on an account
+
+The page shown after a deletion must answer somebody not signed in, which SC-003 as first written
+forbade. It now reads "every route the feature adds that acts on an account". The two routes it
+covers are unchanged.
+
+## D10 — The failure alert keeps its approved wording
+
+"Nothing was removed" holds for the database by FR-011, and for files when a kind removes them in
+`on_commit` (D5), which the how-to documents. A kind that removes files outside that pattern is the
+limit D3 already names.
+
+## D11 — Design review applied
+
+SPC-001 (every failure becomes `AccountDeletionError`, including `user.delete()` and commit),
+SPC-002 (D8), ARC-003 (the signal in `on_commit`), SEC-004 (`csrf_protect`), SPC-005 (scenario 5's
+other halves tested), SPC-006 (reserved slugs), ARC-007 (`kind_path`), ARC-008 (a broken kind
+module never breaks the URLconf), SPC-009 (D10), SPC-010 (D9). Remedies checked against each
+finding's evidence in plan.md and tasks.md.
