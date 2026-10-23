@@ -26,3 +26,30 @@ FR-011 promises that nothing in the database changes when a deletion fails. A fi
 has already removed from storage cannot be put back by rolling the database back. Research decides
 whether the package can do better than documenting this, for instance by running the kinds that
 only delete rows first. The spec promises no more than the database.
+
+## D4 — A kind says how it is deleted with `erasure` or its own `erase()`
+
+`erasure = PersonalData.DELETE` deletes what `get_queryset(user)` returns, `erasure =
+PersonalData.WITH_ACCOUNT` leaves the rows to the account's own removal, and overriding
+`erase(user)` runs the project's code. A single attribute would need a third value meaning "I wrote
+my own", which is the override written twice. A single method with nothing ready-made would make
+every project write `get_queryset(user).delete()` by hand for the common case (SC-001).
+
+## D5 — Files go in `on_commit`, from the kind's own code
+
+D3 asked whether the package can do better than documenting that files are not rolled back. It can
+show the way without touching storage itself: a kind that removes files does it in
+`transaction.on_commit()` from its `erase`, so they go only when the deletion has committed. The
+demo's `Uploads` kind does this and the how-to documents it. The package never deletes a file.
+
+## D6 — The person types their email address
+
+Asked for by Sam at the sketch, in place of the checkbox. The email address over a fixed word: it
+needs no translation and names the account being deleted. An account with no email address types
+its username. Compared ignoring case and surrounding spaces.
+
+## D7 — Deletion is a function, the view calls it
+
+`delete_account(user, kinds)` in `mvp_compliance/deletion.py` holds the transaction, so the view's
+post is about the request and a project's own management code could run the same deletion. It is
+the only new module.
