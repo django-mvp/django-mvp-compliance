@@ -15,6 +15,7 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.functional import Promise
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext_lazy as _
 
 #: The text of a label or heading: a string, or a lazy one translated when read.
 _Text = str | Promise
@@ -176,6 +177,24 @@ class PersonalData:
             name=name,
             field_file=field_file,
         )
+
+
+class AgreementsPersonalData(PersonalData):
+    """The documents a person agreed to, which the package holds itself.
+
+    Never declared: a copy always ends with it.
+    """
+
+    heading = _("Documents you agreed to")
+    description = _(
+        "Each version of this site's documents you agreed to, when you agreed, "
+        "and the wording you were shown."
+    )
+
+    @property
+    def key(self) -> str:
+        """The section's key, ``agreements``."""
+        return "agreements"
 
 
 def get_personal_data() -> list[PersonalData] | None:

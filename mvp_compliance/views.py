@@ -3,6 +3,7 @@
 import logging
 from urllib.parse import unquote, urljoin, urlsplit
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import DatabaseError, transaction
@@ -20,6 +21,16 @@ from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.models import Acceptance, Document, RecordError, Version
+from mvp_compliance.personal_data import AgreementsPersonalData, get_personal_data
+
+try:
+    from allauth.account.decorators import reauthentication_required
+except ImportError:
+    # Without allauth the page answers 404 before this is reached.
+    def reauthentication_required(view):
+        """Stand in for allauth's decorator, so the module still loads."""
+        return view
+
 
 logger = logging.getLogger(__name__)
 
@@ -396,3 +407,54 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         context["destination"] = self.get_destination()
         context["redirect_field_name"] = self.redirect_field_name
         return context
+
+
+@method_decorator(reauthentication_required, name="get")
+@method_decorator(reauthentication_required, name="post")
+class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
+    """The signed-in person's own page for downloading a copy of their data.
+
+    Lists the kinds the project declares and the package's own, gathering
+    nothing, and takes the person's identity through django-allauth's own
+    confirmation page before it shows anything. Takes nothing from the address
+    that could name another person. Not found in a project that mounts no
+    account area or does not install ``allauth.account``.
+    """
+
+    template_name = "mvp_compliance/personal_data.html"
+    page_title = gettext_lazy("Your data")
+    page_subtitle = gettext_lazy(
+        "Download a copy of what this site holds about you, as a single file."
+    )
+
+    def dispatch(self, request, *args, **kwargs):
+        """Answer "not found" without the account area or allauth's account app.
+
+        Runs before the sign-in check, so an anonymous visitor to such a project
+        is told there is no page rather than sent to sign in for one.
+
+        Raises:
+            Http404: When ``account-center`` does not reverse, or
+                ``allauth.account`` is not installed.
+        """
+        try:
+            reverse("account-center")
+        except NoReverseMatch:
+            raise Http404(_("No account area")) from None
+        if not apps.is_installed("allauth.account"):
+            raise Http404(_("No confirmation page"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_breadcrumbs(self):
+        return [
+            {"text": _("Account Center"), "href": reverse("account-center")},
+            {"text": self.page_title},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["sections"] = [*(get_personal_data() or []), AgreementsPersonalData()]
+        return context
+
+    def post(self, request, *args, **kwargs):
+        return self.render_to_response(self.get_context_data())

@@ -12,7 +12,7 @@
       <c-mvp.card title="{% translate "What the copy holds" %}">
         <ul class="list">
           {% for section in sections %}
-            <li class="list-row px-0">
+            <li class="list-row px-0" data-section="{{ section.key }}">
               <div>
                 <div class="font-medium">{{ section.heading }}</div>
                 <div class="text-sm text-base-content/70">{{ section.description }}</div>
