@@ -1,0 +1,69 @@
+{% extends "mvp/account/base.html" %}
+{% load i18n %}
+{% block account.content %}
+  <c-mvp.page>
+    {% if failed %}
+      <c-alert variant="error" icon="error" data-deletion-failed>
+        <span>{% translate "Your account could not be deleted, and nothing was removed. Try again later." %}</span>
+      </c-alert>
+    {% endif %}
+    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <div id="delete-account" class="flex flex-col gap-4 max-w-3xl">
+      <c-mvp.card title="{% translate "What will be deleted" %}">
+        <ul class="list">
+          <li class="list-row px-0" data-section="account">
+            <div>
+              <div class="font-medium">{% translate "Your account" %}</div>
+              <div class="text-sm text-base-content/70">
+                {% translate "Your sign-in details. You will be signed out and cannot sign in again." %}
+              </div>
+            </div>
+          </li>
+          {% for section in sections %}
+            <li class="list-row px-0" data-section="{{ section.key }}">
+              <div>
+                <div class="font-medium">{{ section.heading }}</div>
+                <div class="text-sm text-base-content/70">{{ section.description }}</div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </c-mvp.card>
+      {% if kept %}
+        <c-mvp.card title="{% translate "What is kept" %}">
+          <ul class="list">
+            <li class="list-row px-0" data-kept="{{ kept.key }}">
+              <div>
+                <div class="font-medium">{{ kept.heading }}</div>
+                <div class="text-sm text-base-content/70">
+                  {% translate "The record of each version you agreed to, and when, is kept as evidence of what you agreed to. It no longer names your account." %}
+                </div>
+              </div>
+            </li>
+          </ul>
+        </c-mvp.card>
+      {% endif %}
+      <c-mvp.card title="{% translate "Delete your account" %}">
+        <div class="flex flex-col gap-4">
+          {% if copy_url %}
+            <c-alert variant="info" icon="info">
+              <span>
+                {% translate "Deleting cannot be undone." %}
+                <a class="link" href="{{ copy_url }}">{% translate "Download a copy of your data" %}</a>
+                {% translate "first if you want to keep it." %}
+              </span>
+            </c-alert>
+          {% else %}
+            <p class="max-w-prose">{% translate "Deleting cannot be undone." %}</p>
+          {% endif %}
+          <c-mvp.form method="post" :form-obj="form" class="flex flex-col gap-4" novalidate>
+            <div class="flex flex-wrap items-center gap-4">
+              <c-button type="submit" variant="error" icon="delete" text="{% translate "Delete my account" %}" />
+              <a class="link" href="{{ account_center_url }}">{% translate "Cancel" %}</a>
+            </div>
+          </c-mvp.form>
+        </div>
+      </c-mvp.card>
+    </div>
+  </c-mvp.page>
+{% endblock account.content %}

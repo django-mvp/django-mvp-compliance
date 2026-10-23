@@ -4,6 +4,7 @@ import logging
 import tempfile
 from urllib.parse import unquote, urljoin, urlsplit
 
+from django import forms
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -525,3 +526,79 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
                     exc_info=result,
                 )
         return response
+
+
+class DeleteAccountForm(forms.Form):
+    """The person's own statement that they mean to delete their account."""
+
+    confirm = forms.BooleanField(
+        label=gettext_lazy(
+            "I understand that my account and everything listed above will be "
+            "deleted permanently"
+        ),
+        error_messages={
+            "required": gettext_lazy("Tick the box to confirm you want your account deleted."),
+        },
+    )
+
+
+@method_decorator(reauthentication_required, name="get")
+@method_decorator(reauthentication_required, name="post")
+class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
+    """The signed-in person's own page for deleting their account.
+
+    SKETCH: lists what will be deleted and asks for confirmation. Submitting
+    deletes nothing and signs nobody out.
+    """
+
+    template_name = "mvp_compliance/delete_account.html"
+    page_title = gettext_lazy("Delete your account")
+    page_subtitle = gettext_lazy(
+        "Remove your account and what this site holds about you."
+    )
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            reverse("account-center")
+        except NoReverseMatch:
+            raise Http404(_("No account area")) from None
+        if not apps.is_installed("allauth.account"):
+            raise Http404(_("No confirmation page"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_breadcrumbs(self):
+        return [
+            {"text": _("Account Center"), "href": reverse("account-center")},
+            {"text": self.page_title},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        state = self.request.GET.get("state")
+        kept = state != "removed"
+        kinds = list(get_personal_data() or [])
+        if not kept:
+            kinds.append(AgreementsPersonalData())
+        context["sections"] = kinds
+        context["kept"] = AgreementsPersonalData() if kept else None
+        context["form"] = kwargs.get("form") or DeleteAccountForm()
+        context["failed"] = state == "failed"
+        context["account_center_url"] = reverse("account-center")
+        try:
+            context["copy_url"] = reverse("mvp_compliance:personal-data")
+        except NoReverseMatch:
+            context["copy_url"] = None
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = DeleteAccountForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+        return HttpResponseRedirect(reverse("mvp_compliance:account-deleted"))
+
+
+class AccountDeletedView(MVPTemplateView):
+    """The page a person sees once their account has been deleted."""
+
+    template_name = "mvp_compliance/account_deleted.html"
+    page_title = gettext_lazy("Your account has been deleted")

@@ -1,0 +1,17 @@
+{% extends "page_view.html" %}
+{% load i18n %}
+{% block page.content-wrapper %}
+  <c-mvp.page.content gap=4 class="py-4 max-w-3xl mx-auto w-full">
+    <c-mvp.page.title :title="page.title" />
+    <c-mvp.card>
+      <div class="flex flex-col gap-4">
+        <p class="max-w-prose">
+          {% translate "Your account and the records listed before you confirmed have been deleted, and you have been signed out." %}
+        </p>
+        <div>
+          <c-button href="/" variant="primary" text="{% translate "Go to the home page" %}" />
+        </div>
+      </div>
+    </c-mvp.card>
+  </c-mvp.page.content>
+{% endblock page.content-wrapper %}
