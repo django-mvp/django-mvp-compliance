@@ -17,6 +17,7 @@ from mvp_compliance.personal_data import (
     CopiedFile,
     PersonalDataCopy,
     PersonalDataSection,
+    Shown,
     get_personal_data,
 )
 from tests.factories import (
@@ -86,20 +87,22 @@ class TestCollect:
 
         assert all(isinstance(label, Promise) for _name, label in section.columns)
 
-    def test_a_field_with_choices_yields_its_display_value(self, user):
+    def test_a_field_with_choices_yields_its_stored_value_and_display_text(self, user):
         NoteFactory(owner=user, status=Note.Status.SHARED)
 
         section = Notes().collect(user)
 
-        assert column(section, "status") == [Note.Status.SHARED.label]
+        assert column(section, "status") == [
+            Shown(Note.Status.SHARED.value, Note.Status.SHARED.label)
+        ]
 
-    def test_a_relation_yields_its_str(self, user):
+    def test_a_relation_yields_its_key_and_its_str(self, user):
         topic = TopicFactory(name="Fieldwork")
         NoteFactory(owner=user, topic=topic)
 
         section = Notes().collect(user)
 
-        assert column(section, "topic") == [str(topic)]
+        assert column(section, "topic") == [Shown(topic.pk, str(topic))]
 
     def test_an_empty_value_yields_none(self, user):
         NoteFactory(owner=user, topic=None, summary="")
@@ -339,12 +342,28 @@ class TestPersonalDataCopy:
         (record,) = section["records"]
         assert record == {
             "title": "Heron",
-            "status": "Draft",
-            "topic": "Wildlife",
+            "status": Note.Status.DRAFT.value,
+            "topic": topic.pk,
             "summary": None,
             "attachment": f"files/notes/{note.pk}/attachment/heron.txt",
         }
         assert list(section["fields"]) == Notes.fields
+
+    def test_the_data_does_not_change_with_the_persons_language(self, user):
+        NoteFactory(owner=user, status=Note.Status.SHARED)
+
+        with translation.override("de"):
+            german = section_of(open_copy(user, "tests.kinds.Notes"), "notes")
+        english = section_of(open_copy(user, "tests.kinds.Notes"), "notes")
+
+        assert german["records"] == english["records"]
+
+    def test_the_readable_page_shows_the_display_text(self, user):
+        NoteFactory(owner=user, status=Note.Status.SHARED)
+
+        page = open_copy(user, "tests.kinds.Notes").read("index.html").decode()
+
+        assert str(Note.Status.SHARED.label) in page
 
     def test_the_readable_page_holds_the_same_records_as_the_data(self, user):
         NoteFactory(owner=user, title="Second", summary="Later")
