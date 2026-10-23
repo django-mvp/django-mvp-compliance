@@ -16,6 +16,12 @@ class Notes(PersonalData):
         return Note.objects.filter(owner=user).order_by("title")
 
 
+class OwnTemplate(Notes):
+    """A kind that draws itself in the readable copy."""
+
+    template_name = "tests/notes_copy.html"
+
+
 class Bare(PersonalData):
     """A kind that never says whose rows are whose."""
 

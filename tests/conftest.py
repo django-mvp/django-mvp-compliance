@@ -54,6 +54,13 @@ def declare():
 
 
 @pytest.fixture
+def stored_files(settings, tmp_path):
+    """An empty folder for the files the tests store, and where they are read from."""
+    settings.MEDIA_ROOT = tmp_path
+    return tmp_path
+
+
+@pytest.fixture
 def user(db):
     return UserFactory()
 

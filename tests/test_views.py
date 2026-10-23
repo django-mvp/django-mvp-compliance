@@ -1,8 +1,10 @@
 """Tests for mvp_compliance.views."""
 
+import io
 import logging
 import re
 import time
+import zipfile
 from datetime import timedelta
 from html.parser import HTMLParser
 from pathlib import Path
@@ -12,6 +14,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 import pytest
 from allauth.account.internal.flows.login import AUTHENTICATION_METHODS_SESSION_KEY
 from django.apps import apps
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.db import DatabaseError, connection
 from django.templatetags.static import static
@@ -36,9 +39,11 @@ from mvp_compliance.views import AgreementView
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
+    NoteFactory,
     UserFactory,
     VersionFactory,
 )
+from tests.models import Note
 from tests.test_admin import catalog_entries
 
 
@@ -2862,3 +2867,61 @@ class TestPersonalDataPageWithoutTheAccountArea:
         declare("tests.kinds.Notes")
 
         assert client.get(personal_data_address()).status_code == 404
+
+
+@pytest.fixture
+def downloaded(declare, client, user, stored_files):
+    """Download a copy as a confirmed person holding a note with a file."""
+    declare("tests.kinds.Notes")
+    note = NoteFactory(
+        owner=user, title="Heron", attachment=ContentFile(b"bytes", name="heron.txt")
+    )
+    client.force_login(user)
+    confirm(client)
+    response = client.post(personal_data_address())
+    stream = response.file_to_stream
+    archive = zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
+    response.close()
+    return {"response": response, "stream": stream, "archive": archive, "note": note}
+
+
+@pytest.mark.django_db
+class TestPersonalDataDownload:
+    """US-1 scenarios 5 and 11, FR-004, FR-008, FR-015, SC-006."""
+
+    def test_it_answers_with_a_zip_attachment_named_for_the_day(self, downloaded):
+        response = downloaded["response"]
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/zip"
+        today = timezone.localdate()
+        assert response["Content-Disposition"] == (
+            f'attachment; filename="copy-of-your-data-{today:%Y-%m-%d}.zip"'
+        )
+
+    def test_the_zip_holds_the_page_the_data_and_the_file_with_its_bytes(
+        self, downloaded
+    ):
+        archive = downloaded["archive"]
+        path = f"files/notes/{downloaded['note'].pk}/heron.txt"
+
+        assert set(archive.namelist()) == {"index.html", "data.json", path}
+        assert archive.read(path) == b"bytes"
+
+    def test_the_streamed_file_is_closed_when_the_response_is(self, downloaded):
+        assert downloaded["stream"].closed
+
+    def test_it_stores_nothing(self, declare, client, user, stored_files):
+        declare("tests.kinds.Notes")
+        NoteFactory(owner=user, attachment=ContentFile(b"bytes", name="heron.txt"))
+        client.force_login(user)
+        confirm(client)
+        before = sorted(path for path in stored_files.rglob("*"))
+        rows = (Note.objects.count(), Acceptance.objects.count())
+
+        response = client.post(personal_data_address())
+        b"".join(response.streaming_content)
+        response.close()
+
+        assert sorted(path for path in stored_files.rglob("*")) == before
+        assert (Note.objects.count(), Acceptance.objects.count()) == rows
