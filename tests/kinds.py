@@ -35,3 +35,17 @@ class Custom(PersonalData):
             columns=(("greeting", "Greeting"),),
             rows=((f"Hello, {user.get_username()}",),),
         )
+
+
+class MissingField(PersonalData):
+    """A kind that lists a field its model does not have."""
+
+    model = Note
+    fields = ["title", "nickname"]
+
+    def get_queryset(self, user):
+        return Note.objects.filter(owner=user)
+
+
+class NotAKind:
+    """A class a project could name by mistake."""
