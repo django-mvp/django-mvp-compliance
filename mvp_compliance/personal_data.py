@@ -17,7 +17,7 @@ from django.utils.functional import Promise
 from django.utils.module_loading import import_string
 
 #: The text of a label or heading: a string, or a lazy one translated when read.
-Text = str | Promise
+_Text = str | Promise
 
 
 @dataclass(frozen=True)
@@ -51,10 +51,10 @@ class PersonalDataSection:
     """
 
     key: str
-    heading: Text
-    columns: tuple[tuple[str, Text], ...]
+    heading: _Text
+    columns: tuple[tuple[str, _Text], ...]
     rows: tuple[tuple[Any, ...], ...]
-    description: Text = ""
+    description: _Text = ""
     single: bool = False
     template_name: str | None = None
 
@@ -77,8 +77,8 @@ class PersonalData:
             place of the standard table.
     """
 
-    heading: Text = ""
-    description: Text = ""
+    heading: _Text = ""
+    description: _Text = ""
     model: type[models.Model] | None = None
     fields: list[str] = []
     single: bool = False

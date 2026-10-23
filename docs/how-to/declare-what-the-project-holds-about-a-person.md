@@ -156,6 +156,20 @@ Set `template_name` to a template of your own to have a kind drawn by it instead
 standard table. The section carries the name, so the code that draws a copy can tell which
 kinds to hand to a template.
 
+## Reading the declared kinds in code
+
+`get_personal_data()` returns an instance of each declared kind, in the order declared. It
+returns `None` while the setting is absent and `[]` when it is an empty list, so test the
+result with `is None`, never for truthiness:
+
+```python
+from mvp_compliance.personal_data import get_personal_data
+
+kinds = get_personal_data()
+if kinds is not None:
+    sections = [kind.collect(user) for kind in kinds]
+```
+
 ## The checks
 
 `manage.py check` reports a declaration that cannot work:

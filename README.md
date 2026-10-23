@@ -513,7 +513,7 @@ The feature asks a person to confirm who they are with django-allauth, which is 
 extra: install `django-mvp-compliance[personal-data]`, add `allauth` and `allauth.account` to
 `INSTALLED_APPS` and `allauth.account.middleware.AccountMiddleware` to `MIDDLEWARE`.
 `manage.py check` reports a declaration that cannot work. See
-[docs/personal-data.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/personal-data.md).
+[docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md).
 
 ## Documentation
 
@@ -531,7 +531,7 @@ extra: install `django-mvp-compliance[personal-data]`, add `allauth` and `allaut
   the form, and reading a version back the way the public will see it.
 - [docs/disclosure.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/disclosure.md) — producing everything held about a person: the
   page, its permission, and what the answer contains.
-- [docs/personal-data.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/personal-data.md) — declaring the kinds of record the project holds
+- [docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md) — declaring the kinds of record the project holds
   about a person: writing a kind, what a value becomes, a kind with one record, data that is
   not one queryset, the allauth requirement and the system checks.
 - [docs/adr](https://github.com/django-mvp/django-mvp-compliance/tree/main/docs/adr) — the decisions behind the design, and why the alternatives were not

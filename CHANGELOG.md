@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `get_queryset(user)`, whose rows belong to the person. Reading it gives a `PersonalDataSection`,
   with files as `CopiedFile`. The setting is optional and does nothing while absent.
   `manage.py check` reports a declaration that cannot work, as `mvp_compliance.E005` to
-  `mvp_compliance.E008`. See [docs/personal-data.md](docs/personal-data.md).
+  `mvp_compliance.E008`. See [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
 - The extra `personal-data`, which installs django-allauth. The feature asks a person to confirm who
   they are with allauth's reauthentication, so the extra is needed only by a project that sets
   `MVP_COMPLIANCE_PERSONAL_DATA`.

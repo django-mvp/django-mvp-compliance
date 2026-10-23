@@ -396,32 +396,3 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         context["destination"] = self.get_destination()
         context["redirect_field_name"] = self.redirect_field_name
         return context
-
-
-class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
-    """The account-area page where a person downloads a copy of their data."""
-
-    http_method_names = ["get", "head"]
-    template_name = "mvp_compliance/personal_data.html"
-    page_title = gettext_lazy("Your data")
-    page_subtitle = gettext_lazy(
-        "Download a copy of what this site holds about you, as a single file."
-    )
-
-    def dispatch(self, request, *args, **kwargs):
-        """Answer "not found" when the project mounts no account area.
-
-        Raises:
-            Http404: When ``account-center`` does not reverse.
-        """
-        try:
-            reverse("account-center")
-        except NoReverseMatch:
-            raise Http404(_("No account area")) from None
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_breadcrumbs(self):
-        return [
-            {"text": _("Account Center"), "href": reverse("account-center")},
-            {"text": self.page_title},
-        ]
