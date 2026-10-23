@@ -157,9 +157,42 @@ any value that is stored one way and read another.
 A `CopiedFile` holds the file's `name`, the stored `field_file` and the `path` it takes
 inside a copy: `files/<key>/<pk>/<field>/<name>`. The primary key and the field's name are in
 the path, so two records, or two file fields of one record, that each hold a file called
-`report.pdf` do not collide. A primary key is made safe to use as a folder name first. The `key` is the class name in lower
-case, so `Datasets` has the key `datasets`. Set `key` on the class to choose another. Two
+`report.pdf` do not collide. A primary key is made safe to use as a folder name first. The `key` is the class name in
+lower case, so `Datasets` has the key `datasets`. Set `key` on the class to choose another. Two
 kinds cannot share a key.
+
+## Values that JSON cannot hold
+
+`data.json` is written with Django's `DjangoJSONEncoder`, so every value a kind hands back must
+be one it can encode: text, numbers, booleans and `None`; lists and dicts, which covers
+`JSONField` and `ArrayField`; dates, datetimes and timedeltas; and `Decimal`, `UUID` and lazily
+translated text. Anything else, such as the bytes of a `BinaryField`, a GIS geometry, a
+timezone-aware `time` or an object of your own, cannot be written.
+
+A value that cannot be written fails the copy as a whole, as any other failure does: the person
+gets no download, and the error is logged naming the kind. Nothing tells you at start-up, so
+convert such a value yourself by overriding `get_value`:
+
+```python
+import base64
+
+
+class Signatures(PersonalData):
+    model = Signature
+    fields = ["signed_at", "image", "location"]
+
+    def get_queryset(self, user):
+        return Signature.objects.filter(signer=user)
+
+    def get_value(self, record, field):
+        if field.name == "image":
+            return base64.b64encode(record.image).decode()
+        if field.name == "location":
+            return record.location.geojson
+        return super().get_value(record, field)
+```
+
+A kind that overrides `collect` converts its values the same way before it returns them.
 
 ## A person who has one record
 
