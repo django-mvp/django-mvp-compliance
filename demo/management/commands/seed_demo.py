@@ -551,7 +551,11 @@ class Command(BaseCommand):
         version = Version.objects.get(document__name="Terms of use", number="2025.1")
         with on(2026, 9, 20):
             Acceptance.objects.record(person, version)
-        self.stdout.write(f"  {LEAVING}: an upload and an acceptance")
+        # Everything else in force is accepted today, so the site-wide check
+        # never stops this account on its way to the page that deletes it.
+        for document in Document.objects.outstanding_for(person):
+            Acceptance.objects.record(person, document.current)
+        self.stdout.write(f"  {LEAVING}: an upload and acceptances of every document")
 
     def request(self):
         """A request carrying an address, so the optional evidence is reachable.
