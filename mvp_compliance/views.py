@@ -30,6 +30,7 @@ from mvp_compliance.personal_data import (
     PersonalDataCopy,
     get_personal_data,
 )
+from mvp_compliance.signals import personal_data_copied
 
 try:
     from allauth.account.decorators import reauthentication_required
@@ -503,9 +504,24 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
                 self.get_context_data(failed=True), status=500
             )
         file.seek(0)
-        return FileResponse(
+        response = FileResponse(
             file,
             as_attachment=True,
             filename=f"copy-of-your-data-{timezone.localdate(made_at):%Y-%m-%d}.zip",
             content_type="application/zip",
         )
+        # A receiver that fails is the project's own fault and never costs the
+        # person their copy, so it is logged and the download goes ahead.
+        for receiver, result in personal_data_copied.send_robust(
+            sender=PersonalDataView,
+            user=request.user,
+            kinds=[section.key for section in copy.sections],
+        ):
+            if isinstance(result, Exception):
+                logger.error(
+                    "%r failed on the copy for user %s",
+                    receiver,
+                    request.user.pk,
+                    exc_info=result,
+                )
+        return response

@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   names the failing kind. Nothing is stored. A kind can draw itself in `index.html` with
   `template_name`. See
   [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
+- `mvp_compliance.signals.personal_data_copied`, sent each time a person's copy of their data is
+  handed over. It passes the person's user account, and the kinds of record the copy held, to
+  whatever code the project connects to it. The package itself keeps no record of a copy.
 - The demo declares a profile and uploaded files, with real files stored under `demo_media/`,
   so the page and the download can be tried.
 - The extra `personal-data`, which installs django-allauth. The feature asks a person to confirm who

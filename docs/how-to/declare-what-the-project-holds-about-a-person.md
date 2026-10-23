@@ -210,6 +210,27 @@ of a copy, `index.html`, instead of the standard table or pairs. The template re
 kind's section. A kind with no rows is not drawn with it. `data.json` keeps the standard shape
 whatever the template does, so the two always hold the same records.
 
+## Hearing about each copy
+
+The package keeps no record that a copy was made. If your site needs one, connect a receiver to
+`mvp_compliance.signals.personal_data_copied`. It is sent once for each copy handed over, when the
+download starts, and never for a copy that could not be made:
+
+```python
+from django.dispatch import receiver
+from mvp_compliance.signals import personal_data_copied
+
+
+@receiver(personal_data_copied)
+def note_copy(sender, user, kinds, **kwargs):
+    CopyRequest.objects.create(user=user, kinds=kinds)
+```
+
+`user` is the person the copy is about. `kinds` is the key of each kind of record in the copy,
+in order, ending with `"agreements"`. A receiver that raises is logged and does not stop the
+person getting their copy. Whatever your receiver keeps about the person is your project's own
+record, kept under your project's rules.
+
 ## Reading the declared kinds in code
 
 `get_personal_data()` returns an instance of each declared kind, in the order declared. It

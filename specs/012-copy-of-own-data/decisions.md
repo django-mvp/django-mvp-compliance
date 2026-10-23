@@ -112,3 +112,13 @@ pages, such as adding a second factor, and does not lock a person out of their o
 **Why:** the plan names the kind's path in every failure, but a section alone does not say which kind made it. Carrying the path with the section avoids a second mapping beside it.
 
 **Revisit if:** sections are built anywhere other than `collect`, in which case the field is empty and the failure names no kind.
+
+## D13 — US-3 was built directly, not dispatched
+
+**Decision:** the two tasks of US-3, the signal and its three tests, were written by the
+orchestrator rather than dispatched to an implementer.
+
+**Why:** one signal declaration and one `send_robust` call in a view that already exists, with no
+design content. A dispatch would have cost more than the work.
+
+**ADR:** none — how the work was done, not a decision about the package.
