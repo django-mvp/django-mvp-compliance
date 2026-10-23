@@ -557,6 +557,10 @@ class DeleteAccountForm(forms.Form):
             else _("To confirm, type your email address, %(expected)s")
         )
         self.fields["confirmation"].label = label % {"expected": expected}
+        if asks_username:
+            self.fields["confirmation"].error_messages["required"] = _(
+                "Type your username to confirm."
+            )
 
     def clean_confirmation(self):
         """Refuse anything but the expected text, ignoring case.
