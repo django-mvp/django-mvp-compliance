@@ -106,6 +106,7 @@ PERSONAL_DATA = {
     "mvp_compliance.E006",
     "mvp_compliance.E007",
     "mvp_compliance.E008",
+    "mvp_compliance.E009",
 }
 NOTES = "tests.kinds.Notes"
 ACCOUNT_MIDDLEWARE = "allauth.account.middleware.AccountMiddleware"
@@ -217,3 +218,36 @@ class TestPersonalDataCheck:
         ]
 
         assert personal_data_messages(MIDDLEWARE=middleware) == []
+
+
+class TestErasureCheck:
+    def test_one_silent_kind_in_a_mixed_declaration_is_an_error_naming_it(self):
+        messages = declared("tests.kinds.DeletesNotes", "tests.kinds.Custom")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E009"]
+        assert "tests.kinds.Custom" in messages[0].msg
+
+    def test_each_silent_kind_is_its_own_error(self):
+        messages = declared(
+            "tests.kinds.Erases", "tests.kinds.Custom", "tests.kinds.StillSilent"
+        )
+
+        assert [message.id for message in messages] == ["mvp_compliance.E009"] * 2
+        assert "tests.kinds.Custom" in messages[0].msg
+        assert "tests.kinds.StillSilent" in messages[1].msg
+
+    def test_an_erasure_that_is_neither_constant_is_an_error_naming_the_kind(self):
+        messages = declared("tests.kinds.NeitherConstant")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E009"]
+        assert "tests.kinds.NeitherConstant" in messages[0].msg
+
+    def test_a_declaration_where_every_kind_is_silent_is_told_nothing(self):
+        assert declared(NOTES, "tests.kinds.Custom") == []
+
+    def test_a_declaration_where_every_kind_says_how_is_told_nothing(self):
+        messages = declared(
+            "tests.kinds.DeletesNotes", "tests.kinds.WithAccount", "tests.kinds.Erases"
+        )
+
+        assert messages == []
