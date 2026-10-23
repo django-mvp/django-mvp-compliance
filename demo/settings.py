@@ -130,6 +130,9 @@ MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
 # registers, so a visitor sent to sign in would land on a page that is not there.
 LOGIN_URL = "account_login"
 
+# The demo's accounts are signed in to with their email address or their username.
+AUTHENTICATION_BACKENDS = ["demo.backends.EmailOrUsernameBackend"]
+
 STATIC_URL = "/static/"
 
 USE_TZ = True
