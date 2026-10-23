@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 11:27+0200\n"
+"POT-Creation-Date: 2026-10-23 11:30+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -148,34 +148,34 @@ msgstr ""
 msgid "Set a different key on one of them."
 msgstr ""
 
-#: checks.py:165
+#: checks.py:168
 #, python-format
 msgid "%(path)s lists %(field)s, which %(model)s does not have."
 msgstr ""
 
-#: checks.py:167
+#: checks.py:170
 msgid "Remove it from fields, or correct its spelling."
 msgstr ""
 
-#: checks.py:185
+#: checks.py:188
 #, fuzzy
 #| msgid "The page that asks a person to agree has no address."
 msgid "The page that gives a person a copy of their data needs allauth."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:186
+#: checks.py:189
 #, python-format
 msgid "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
 msgstr ""
 
-#: checks.py:198
+#: checks.py:201
 #, fuzzy
 #| msgid "The page that asks a person to agree has no address."
 msgid ""
 "The page that gives a person a copy of their data needs allauth's middleware."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:200
+#: checks.py:203
 #, python-format
 msgid "Add %(middleware)s to MIDDLEWARE."
 msgstr ""
@@ -218,7 +218,7 @@ msgstr ""
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:406
+#: menus.py:23
 msgid "Your data"
 msgstr ""
 
@@ -878,11 +878,11 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:146 views.py:420
+#: views.py:146
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:151 views.py:425
+#: views.py:151
 msgid "Account Center"
 msgstr "Account Center"
 
@@ -900,10 +900,6 @@ msgstr ""
 
 #: views.py:226
 msgid "Agreeing is optional."
-msgstr ""
-
-#: views.py:408
-msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
 #: widgets.py:21
