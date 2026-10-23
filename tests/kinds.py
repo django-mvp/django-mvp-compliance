@@ -94,3 +94,38 @@ class Agreements(Custom):
 
 class NotAKind:
     """A class a project could name by mistake."""
+
+
+class DeletesNotes(Notes):
+    """A kind that says its rows are deleted with the queryset."""
+
+    erasure = PersonalData.DELETE
+
+
+class WithAccount(Notes):
+    """A kind whose rows go with the account itself."""
+
+    erasure = PersonalData.WITH_ACCOUNT
+
+
+class Erases(Notes):
+    """A kind that does its own erasing and records that it did."""
+
+    erased: list = []
+
+    def erase(self, user):
+        self.erased.append(user.pk)
+
+
+class ErasesAgain(Erases):
+    """A subclass of a kind that overrides ``erase``, which inherits it."""
+
+
+class StillSilent(Notes):
+    """A subclass of a silent kind, which still says nothing."""
+
+
+class NeitherConstant(Notes):
+    """A kind whose erasure is neither constant."""
+
+    erasure = "wipe"
