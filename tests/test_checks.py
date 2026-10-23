@@ -1,6 +1,10 @@
 """Tests for mvp_compliance.checks."""
 
+from unittest.mock import patch
+
 import pytest
+from django.apps import apps
+from django.conf import settings
 from django.contrib.auth.middleware import AuthenticationMiddleware
 from django.core.checks import run_checks
 from django.test import override_settings
@@ -95,3 +99,121 @@ class TestListSettingChecks:
             ids = {message.id for message in run_checks()}
 
         assert "mvp_compliance.E004" not in ids
+
+
+PERSONAL_DATA = {
+    "mvp_compliance.E005",
+    "mvp_compliance.E006",
+    "mvp_compliance.E007",
+    "mvp_compliance.E008",
+}
+NOTES = "tests.kinds.Notes"
+ACCOUNT_MIDDLEWARE = "allauth.account.middleware.AccountMiddleware"
+
+
+def personal_data_messages(**overrides):
+    """This check's messages, with the given settings overridden."""
+    with override_settings(**overrides):
+        return [message for message in run_checks() if message.id in PERSONAL_DATA]
+
+
+def declared(*paths, **overrides):
+    """This check's messages when the project declares ``paths``."""
+    return personal_data_messages(MVP_COMPLIANCE_PERSONAL_DATA=list(paths), **overrides)
+
+
+class TestPersonalDataCheck:
+    def test_a_project_that_declares_nothing_is_told_nothing(self):
+        assert personal_data_messages() == []
+
+    def test_an_empty_declaration_is_told_nothing(self):
+        assert declared() == []
+
+    def test_a_valid_declaration_is_told_nothing(self):
+        assert declared(NOTES, "tests.kinds.Custom") == []
+
+    def test_a_tuple_is_as_good_as_a_list(self):
+        messages = personal_data_messages(MVP_COMPLIANCE_PERSONAL_DATA=(NOTES,))
+
+        assert messages == []
+
+    def test_a_string_instead_of_a_list_is_one_error(self):
+        messages = personal_data_messages(MVP_COMPLIANCE_PERSONAL_DATA=NOTES)
+
+        assert [message.id for message in messages] == ["mvp_compliance.E005"]
+
+    def test_a_path_that_cannot_be_imported_is_an_error_naming_it(self):
+        messages = declared("tests.kinds.Nothing")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"]
+        assert "tests.kinds.Nothing" in messages[0].msg
+
+    def test_a_bad_path_is_reported_with_the_routes_loaded(self, declare):
+        declare("tests.kinds.Nothing")
+
+        ids = [message.id for message in run_checks() if message.id in PERSONAL_DATA]
+
+        assert ids == ["mvp_compliance.E006"]
+
+    def test_a_kind_with_the_agreements_key_is_an_error_naming_it(self):
+        messages = declared("tests.kinds.Agreements")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"]
+        assert "tests.kinds.Agreements" in messages[0].msg
+
+    def test_a_class_that_is_not_a_kind_is_an_error_naming_it(self):
+        messages = declared("tests.kinds.NotAKind")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"]
+        assert "tests.kinds.NotAKind" in messages[0].msg
+
+    def test_an_entry_that_is_not_a_string_is_an_error(self):
+        messages = declared(42)
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"]
+
+    def test_each_bad_path_is_its_own_error(self):
+        messages = declared("tests.kinds.Nothing", NOTES, "tests.kinds.NotAKind")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"] * 2
+
+    def test_a_field_the_model_lacks_is_an_error_naming_the_kind(self):
+        messages = declared("tests.kinds.MissingField")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E007"]
+        assert "tests.kinds.MissingField" in messages[0].msg
+
+    def test_two_kinds_with_the_same_key_are_an_error_naming_both(self):
+        messages = declared(NOTES, "tests.other_kinds.Notes")
+
+        assert [message.id for message in messages] == ["mvp_compliance.E006"]
+        assert NOTES in messages[0].msg
+        assert "tests.other_kinds.Notes" in messages[0].msg
+
+    def test_allauth_not_installed_is_an_error(self):
+        installed = apps.is_installed
+
+        with patch.object(
+            apps,
+            "is_installed",
+            side_effect=lambda name: name != "allauth.account" and installed(name),
+        ):
+            messages = declared(NOTES)
+
+        assert [message.id for message in messages] == ["mvp_compliance.E008"]
+
+    def test_the_account_middleware_missing_is_an_error(self):
+        middleware = [
+            name for name in settings.MIDDLEWARE if name != ACCOUNT_MIDDLEWARE
+        ]
+
+        messages = declared(NOTES, MIDDLEWARE=middleware)
+
+        assert [message.id for message in messages] == ["mvp_compliance.E008"]
+
+    def test_allauth_is_not_asked_for_while_nothing_is_declared(self):
+        middleware = [
+            name for name in settings.MIDDLEWARE if name != ACCOUNT_MIDDLEWARE
+        ]
+
+        assert personal_data_messages(MIDDLEWARE=middleware) == []

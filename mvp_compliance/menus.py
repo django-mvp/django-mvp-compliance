@@ -15,3 +15,11 @@ AccountCenterMenu.append(
         extra_context={"label": _("Agreements"), "icon": "document"},
     )
 )
+
+AccountCenterMenu.append(
+    MenuItem(
+        name="personal-data",
+        view_name="mvp_compliance:personal-data",
+        extra_context={"label": _("Your data"), "icon": "download"},
+    )
+)

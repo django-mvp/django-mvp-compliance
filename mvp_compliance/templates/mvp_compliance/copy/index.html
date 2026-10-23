@@ -1,0 +1,89 @@
+{% load i18n %}<!doctype html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}" data-theme="{{ theme }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% blocktranslate %}A copy of your data from {{ site_name }}{% endblocktranslate %}</title>
+    <style>{{ css|safe }}</style>
+  </head>
+  <body class="bg-base-200 min-h-screen">
+    <main class="max-w-4xl mx-auto px-4 py-8 flex flex-col gap-6">
+      <header class="flex flex-col gap-2">
+        <p class="text-sm text-base-content/70">{{ site_name }}</p>
+        <h1 class="text-3xl font-bold">{% translate "A copy of your data" %}</h1>
+        <p>
+          {% blocktranslate with when=made_at|date:"DATETIME_FORMAT" %}Made on {{ when }} for {{ person }}.{% endblocktranslate %}
+        </p>
+        <p class="max-w-prose">
+          {% translate "It holds the kinds of record listed below. The same records are in data.json, for use in other software, and the files you uploaded are in the files folder beside this page." %}
+        </p>
+      </header>
+      <nav aria-labelledby="contents-heading" class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 id="contents-heading" class="card-title">{% translate "Contents" %}</h2>
+          <ol class="list-decimal ps-6">
+            {% for section in sections %}
+              <li><a class="link" href="#{{ section.slug }}">{{ section.heading }}</a></li>
+            {% endfor %}
+          </ol>
+        </div>
+      </nav>
+      {% for section in sections %}
+        <section id="{{ section.slug }}" data-section="{{ section.slug }}" aria-labelledby="{{ section.slug }}-heading" class="card bg-base-100 shadow-sm">
+          <div class="card-body">
+            <h2 id="{{ section.slug }}-heading" class="card-title">{{ section.heading }}</h2>
+            <p class="text-sm text-base-content/70">{{ section.description }}</p>
+            {% if not section.records %}
+              <p class="py-2">{% translate "Nothing of this kind is held about you." %}</p>
+            {% elif section.rendered %}
+              {{ section.rendered }}
+            {% elif section.acceptances %}
+              <ul class="flex flex-col">
+                {% for entry in section.records %}
+                  <li class="py-2 border-b border-base-300" data-record>
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                      <span class="font-medium">{% blocktranslate with document=entry.document number=entry.version %}{{ document }}, v{{ number }}{% endblocktranslate %}</span>
+                      <span class="text-sm tabular-nums">{% blocktranslate with when=entry.accepted_at|date:"DATETIME_FORMAT" %}Agreed on {{ when }}{% endblocktranslate %}</span>
+                    </div>
+                    <details class="mt-1">
+                      <summary class="link link-hover cursor-pointer text-sm">{% translate "The wording you agreed to" %}</summary>
+                      <div class="prose max-w-prose py-2" data-field="wording">{{ entry.wording|safe }}</div>
+                    </details>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% elif section.single %}
+              {% for row in section.rows %}
+                <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-4" data-record>
+                  {% for name, label, value in row %}
+                    <dt class="text-sm font-medium text-base-content/70 pt-2">{{ label }}</dt>
+                    <dd class="col-span-2 pb-2 border-b border-base-300 break-words" data-field="{{ name }}"><c-compliance.copy_value :value="value" /></dd>
+                  {% endfor %}
+                </dl>
+              {% endfor %}
+            {% else %}
+              <div class="overflow-x-auto">
+                <table class="table">
+                  <caption class="sr-only">{{ section.heading }}</caption>
+                  <thead>
+                    <tr>
+                      {% for label in section.labels %}<th scope="col">{{ label }}</th>{% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in section.rows %}
+                      <tr data-record>
+                        {% for name, label, value in row %}<td class="break-words" data-field="{{ name }}"><c-compliance.copy_value :value="value" /></td>{% endfor %}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+        </section>
+      {% endfor %}
+    </main>
+  </body>
+</html>

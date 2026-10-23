@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `MVP_COMPLIANCE_PERSONAL_DATA`, a setting that declares the kinds of record a project holds
+  about a person, as dotted paths to subclasses of the new
+  `mvp_compliance.personal_data.PersonalData`. A kind names a model, its fields and, in
+  `get_queryset(user)`, whose rows belong to the person. Reading it gives a `PersonalDataSection`,
+  with files as `CopiedFile`. The setting is optional and does nothing while absent.
+  `manage.py check` reports a declaration that cannot work, as `mvp_compliance.E005` to
+  `mvp_compliance.E008`. See [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
+- A page, **Your data**, in the account area at `data/` under wherever the package's URLs are
+  mounted (`mvp_compliance:personal-data`), where a signed-in person downloads one `.zip` copy of
+  their data: a readable `index.html`, `data.json` and the files the declared kinds hold, ending
+  with the documents they agreed to. The person confirms who they are first, with django-allauth's
+  own confirmation page. The page and its menu entry exist only while
+  `MVP_COMPLIANCE_PERSONAL_DATA` is set, and the page is not found in a project with no account
+  area. A copy that cannot be completed is not handed over: the person sees an error and the log
+  names the failing kind. Nothing is stored. A kind can draw itself in `index.html` with
+  `template_name`. In `data.json` a choice is its stored value and a relation the related row's
+  key, so the data does not change with the person's language. The readable page shows their
+  labels. See
+  [docs/how-to/declare-what-the-project-holds-about-a-person.md](docs/how-to/declare-what-the-project-holds-about-a-person.md).
+- The slug `data` is reserved, as `agreed` and `agree` are, because it is the address of the
+  page a person downloads their data from. A document already published under it keeps its
+  versions and acceptances but is no longer reachable at its page.
+- `mvp_compliance.signals.personal_data_copied`, sent each time a person's copy of their data is
+  handed over. It passes the person's user account, and the kinds of record the copy held, to
+  whatever code the project connects to it. The package itself keeps no record of a copy.
+- The demo declares a profile and uploaded files, with real files stored under `demo_media/`,
+  so the page and the download can be tried.
+- The extra `personal-data`, which installs django-allauth. The feature asks a person to confirm who
+  they are with allauth's reauthentication, so the extra is needed only by a project that sets
+  `MVP_COMPLIANCE_PERSONAL_DATA`.
+
 ## [v0.3.0] - 2026-10-21
 
 ### Added

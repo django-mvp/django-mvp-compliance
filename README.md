@@ -134,6 +134,7 @@ The standing directions this package steers by are in [GOALS.md](https://github.
 - [Permissions](#permissions)
 - [Publishing](#publishing)
 - [Starting the next version from the one in force](#starting-the-next-version-from-the-one-in-force)
+- [Declaring what the project holds about a person](#declaring-what-the-project-holds-about-a-person)
 - [Documentation](#documentation)
 - [Prior art](#prior-art)
 - [Contributing](#contributing)
@@ -494,6 +495,28 @@ Nothing is copied on the server: the wording is read once and handed to a
 new, unsaved form as a starting point. The version it came from is never
 opened for writing, and the model would refuse it if anything tried.
 
+## Declaring what the project holds about a person
+
+A project lists, in a setting, the kinds of record it keeps about a person. Each entry is a
+dotted path to a subclass of `PersonalData`, which names a model, its fields and whose rows
+belong to the person:
+
+```python
+# settings.py
+MVP_COMPLIANCE_PERSONAL_DATA = [
+    "accounts.personal_data.Profile",
+    "datasets.personal_data.Datasets",
+]  # absent by default, so nothing of this exists until it is set
+```
+
+The feature asks a person to confirm who they are with django-allauth, which is an optional
+extra: install `django-mvp-compliance[personal-data]`, add `allauth` and `allauth.account` to
+`INSTALLED_APPS` and `allauth.account.middleware.AccountMiddleware` to `MIDDLEWARE`.
+`manage.py check` reports a declaration that cannot work. Once it is set, the account area has a
+**Your data** page where a signed-in person, after confirming who they are, downloads one `.zip`
+holding a readable page, the same records as `data.json` and their files. See
+[docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md).
+
 ## Documentation
 
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
@@ -510,6 +533,9 @@ opened for writing, and the model would refuse it if anything tried.
   the form, and reading a version back the way the public will see it.
 - [docs/disclosure.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/disclosure.md) — producing everything held about a person: the
   page, its permission, and what the answer contains.
+- [docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md) — declaring the kinds of record the project holds
+  about a person: writing a kind, what a value becomes, a kind with one record, data that is
+  not one queryset, the allauth requirement and the system checks.
 - [docs/adr](https://github.com/django-mvp/django-mvp-compliance/tree/main/docs/adr) — the decisions behind the design, and why the alternatives were not
   taken.
 

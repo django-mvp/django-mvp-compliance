@@ -1,6 +1,7 @@
 # ADR 0012 — The answer about a person is a list of sections, not a list of acceptances
 
-**Status:** accepted
+**Status:** accepted. It governs the admin page staff use. A person's own copy of their data takes
+kinds a project declares, as ADR 0027 sets out.
 
 ## Decision
 

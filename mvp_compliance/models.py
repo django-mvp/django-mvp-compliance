@@ -220,9 +220,9 @@ class Document(models.Model):
     )
 
     #: Slugs that name a page of the package, not a document. ``agreed`` is the
-    #: list of what a person agreed to and ``agree`` the page that asks; both sit
-    #: ahead of the slug route.
-    RESERVED_SLUGS = frozenset({"agreed", "agree"})
+    #: list of what a person agreed to, ``agree`` the page that asks and ``data``
+    #: the page a person downloads their data from; all sit ahead of the slug route.
+    RESERVED_SLUGS = frozenset({"agreed", "agree", "data"})
 
     SLUG_FIXED_MESSAGE = _(
         "A document's slug cannot be changed once a version of it has been published."

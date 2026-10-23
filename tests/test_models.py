@@ -371,6 +371,14 @@ class TestReservedSlug:
     def test_a_slug_that_only_contains_the_reserved_one_is_valid(self, slug):
         Document(name="Terms", slug=slug).full_clean()
 
+    def test_the_slug_of_the_page_a_person_downloads_their_data_from_is_refused(self):
+        document = Document(name="Data", slug="data")
+
+        with pytest.raises(ValidationError) as error:
+            document.full_clean()
+
+        assert [e.code for e in error.value.error_dict["slug"]] == ["reserved"]
+
     def test_the_slug_of_the_page_that_asks_is_refused_with_the_reserved_code(self):
         document = Document(name="Agree", slug="agree")
 

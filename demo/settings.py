@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     "django_filters",
     "flex_menu",
     "django_cotton",
+    "allauth",
+    "allauth.account",
     "mvp_compliance",
     "demo",
 ]
@@ -50,6 +52,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "mvp_compliance.middleware.AgreementMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -131,7 +134,25 @@ MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
 # registers, so a visitor sent to sign in would land on a page that is not there.
 LOGIN_URL = "account_login"
 
+# The demo's accounts are signed in to with their email address or their username.
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
 STATIC_URL = "/static/"
+
+# Where the files people upload to the demo are stored. Git-ignored.
+MEDIA_ROOT = BASE_DIR / "demo_media"
+MEDIA_URL = "/media/"
+
+# What the demo holds about a person beyond their agreements. Declaring it is
+# what gives the account area its "Your data" page.
+MVP_COMPLIANCE_PERSONAL_DATA = [
+    "demo.personal_data.Profile",
+    "demo.personal_data.Uploads",
+]
 
 USE_TZ = True
 USE_I18N = True

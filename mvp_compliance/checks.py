@@ -1,13 +1,20 @@
 """System checks that report an agreement check that cannot work as configured."""
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.middleware import AuthenticationMiddleware
 from django.core.checks import CheckMessage, Error
+from django.core.exceptions import FieldDoesNotExist
 from django.urls import NoReverseMatch, reverse
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 
+from mvp_compliance.personal_data import AGREEMENTS, PersonalData
+
 AGREEMENT_MIDDLEWARE = "mvp_compliance.middleware.AgreementMiddleware"
+ACCOUNT_MIDDLEWARE = "allauth.account.middleware.AccountMiddleware"
+
+SETTING = "MVP_COMPLIANCE_PERSONAL_DATA"
 
 #: The settings that are lists of strings, which a bare string would be read
 #: from a character at a time.
@@ -89,6 +96,140 @@ def check_agreement_middleware(app_configs, **kwargs) -> list[CheckMessage]:
             )
         )
     return errors
+
+
+def check_personal_data(app_configs, **kwargs) -> list[CheckMessage]:
+    """Report a declaration of personal data that cannot be read or confirmed.
+
+    Registered from ``MvpComplianceConfig.ready()``. Nothing is reported while
+    the project has not set ``MVP_COMPLIANCE_PERSONAL_DATA``.
+
+    Args:
+        app_configs: The app configs being checked. Not used.
+        **kwargs: The remaining arguments Django passes to every check.
+
+    Returns:
+        ``mvp_compliance.E005`` when the setting is a string or not a list,
+        ``mvp_compliance.E006`` for each path that does not name a
+        ``PersonalData`` subclass and for each kind whose key an earlier kind
+        already has, ``mvp_compliance.E007`` for each field a kind lists that
+        its model lacks, and ``mvp_compliance.E008`` for each part of
+        django-allauth's account app the page needs and the project lacks.
+    """
+    paths = getattr(settings, "MVP_COMPLIANCE_PERSONAL_DATA", None)
+    if paths is None:
+        return []
+    if not isinstance(paths, list | tuple):
+        return [
+            Error(
+                _("%(setting)s is not a list.") % {"setting": SETTING},
+                hint=_(
+                    "Write it as a list of dotted paths, even for one kind: %(example)s."
+                )
+                % {"example": f'{SETTING} = ["accounts.personal_data.Profile"]'},
+                id="mvp_compliance.E005",
+            )
+        ]
+    errors: list[CheckMessage] = []
+    # The package's own section is always in a copy, so its key is taken.
+    kinds: dict[str, str] = {
+        AGREEMENTS: "mvp_compliance.personal_data.AgreementsPersonalData"
+    }
+    for path in paths:
+        kind = import_kind(path)
+        if kind is None:
+            errors.append(
+                Error(
+                    _("%(path)s does not name a PersonalData subclass.")
+                    % {"path": path},
+                    hint=_("Name a class that subclasses %(base)s.")
+                    % {"base": "mvp_compliance.personal_data.PersonalData"},
+                    id="mvp_compliance.E006",
+                )
+            )
+            continue
+        key = kind().key
+        if key in kinds:
+            errors.append(
+                Error(
+                    _("%(first)s and %(second)s have the same key, %(key)s.")
+                    % {"first": kinds[key], "second": path, "key": key},
+                    hint=_("Set a different key on one of them."),
+                    id="mvp_compliance.E006",
+                )
+            )
+        kinds.setdefault(key, path)
+        model = kind.model
+        if model is None:
+            continue
+        for name in kind.fields:
+            try:
+                model._meta.get_field(name)
+            except FieldDoesNotExist:
+                errors.append(
+                    Error(
+                        _("%(path)s lists %(field)s, which %(model)s does not have.")
+                        % {"path": path, "field": name, "model": model.__name__},
+                        hint=_("Remove it from fields, or correct its spelling."),
+                        id="mvp_compliance.E007",
+                    )
+                )
+    return errors + check_account_app()
+
+
+def check_account_app() -> list[CheckMessage]:
+    """Report what django-allauth's account app lacks for confirming a person.
+
+    Returns:
+        ``mvp_compliance.E008`` when ``allauth.account`` is not installed, and
+        again when its middleware is not listed.
+    """
+    errors: list[CheckMessage] = []
+    if not apps.is_installed("allauth.account"):
+        errors.append(
+            Error(
+                _("The page that gives a person a copy of their data needs allauth."),
+                hint=_("Install the extra %(extra)s and add %(app)s to INSTALLED_APPS.")
+                % {
+                    "extra": "django-mvp-compliance[personal-data]",
+                    "app": "allauth.account",
+                },
+                id="mvp_compliance.E008",
+            )
+        )
+    if ACCOUNT_MIDDLEWARE not in settings.MIDDLEWARE:
+        errors.append(
+            Error(
+                _(
+                    "The page that gives a person a copy of their data needs allauth's middleware."
+                ),
+                hint=_("Add %(middleware)s to MIDDLEWARE.")
+                % {"middleware": ACCOUNT_MIDDLEWARE},
+                id="mvp_compliance.E008",
+            )
+        )
+    return errors
+
+
+def import_kind(path: object) -> type[PersonalData] | None:
+    """Import the kind a path in the setting names.
+
+    Args:
+        path: An entry of ``MVP_COMPLIANCE_PERSONAL_DATA``.
+
+    Returns:
+        The class, or ``None`` when the entry is not a string, cannot be
+        imported or is not a ``PersonalData`` subclass.
+    """
+    if not isinstance(path, str):
+        return None
+    try:
+        kind = import_string(path)
+    except ImportError:
+        return None
+    if isinstance(kind, type) and issubclass(kind, PersonalData):
+        return kind
+    return None
 
 
 def identifies_the_user(name: str) -> bool:

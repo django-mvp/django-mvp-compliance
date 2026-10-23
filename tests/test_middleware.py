@@ -40,6 +40,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("legal/", include("mvp_compliance.urls")),
     path("", include("mvp.urls")),
+    path("accounts/", include("allauth.urls")),
     path("elsewhere/", recording_view, name="elsewhere"),
     path("help/", recording_view),
     path("help/<path:name>", recording_view),

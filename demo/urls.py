@@ -14,5 +14,6 @@ urlpatterns = [
     # sign in and see the pages as someone who has agreed to a version. It is
     # mounted at the root and puts its pages under account/ itself.
     path("", include("mvp.urls")),
+    path("accounts/", include("allauth.urls")),
     path("", LandingView.as_view(), name="landing"),
 ]

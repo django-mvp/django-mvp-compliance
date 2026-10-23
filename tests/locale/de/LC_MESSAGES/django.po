@@ -40,3 +40,6 @@ msgid ""
 msgstr ""
 "Diese Version wurde ersetzt. Sie war vom %(published)s bis zum "
 "%(replaced)s in Kraft."
+
+msgid "Title"
+msgstr "Titel"

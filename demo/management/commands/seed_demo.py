@@ -11,9 +11,11 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.http import HttpRequest
 
+from demo.models import Upload
 from mvp_compliance.models import Acceptance, Document, Version
 
 PASSWORD = "password"
@@ -160,6 +162,40 @@ ASKED = {
         ("House rules", "2025.1"),
         (COMMUNITY, "2026.2"),
         (MEMBERSHIP, "2026.1"),
+    ],
+}
+
+#: account -> (title, licence, day uploaded, file name and text; None for no file).
+#: Two of veteran.user's files share a name, and one upload has no file.
+UPLOADS = {
+    "veteran.user": [
+        (
+            "Garden survey",
+            Upload.Licence.CC_BY,
+            (2025, 5, 4),
+            ("notes.txt", "Beds 1 to 4 were surveyed in May.\n"),
+        ),
+        (
+            "Pond survey",
+            Upload.Licence.CC_BY,
+            (2025, 8, 19),
+            ("notes.txt", "The pond held three frogs.\n"),
+        ),
+        (
+            "Seed list",
+            Upload.Licence.PRIVATE,
+            (2026, 1, 12),
+            ("seeds.csv", "name,count\nfoxglove,40\nlupin,25\n"),
+        ),
+        ("Walking route", Upload.Licence.CC0, (2026, 3, 30), None),
+    ],
+    "regular.user": [
+        (
+            "Holiday plan",
+            Upload.Licence.PRIVATE,
+            (2026, 7, 2),
+            ("plan.txt", "Three days by the sea.\n"),
+        ),
     ],
 }
 
@@ -393,6 +429,7 @@ class Command(BaseCommand):
 
         self.make_acceptances()
         self.make_asked()
+        self.make_uploads()
         # After the acceptances: one of a notice is refused, so it has to be
         # recorded while the document is still one people agree to.
         Document.objects.filter(name="Delivery information").update(
@@ -467,6 +504,27 @@ class Command(BaseCommand):
                 with on(2026, 9, 20):
                     Acceptance.objects.record(person, version)
             self.stdout.write(f"  {email}: {len(accepted)} acceptances")
+
+    def make_uploads(self):
+        """Give two accounts uploads with real files, for the copy of their data.
+
+        Guarded on there being none at all, as the acceptances are: a stored
+        file cannot be told from a copy of itself on a second run.
+        """
+        if Upload.objects.exists():
+            self.stdout.write("  uploads: already seeded")
+            return
+        for username, uploads in UPLOADS.items():
+            owner = get_user_model().objects.get(username=username)
+            for title, licence, day, stored in uploads:
+                with on(*day):
+                    upload = Upload(owner=owner, title=title, licence=licence)
+                    upload.uploaded = datetime(*day, 9, 0, tzinfo=UTC)
+                    if stored:
+                        name, text = stored
+                        upload.file.save(name, ContentFile(text.encode()), save=False)
+                    upload.save()
+            self.stdout.write(f"  {username}: {len(uploads)} uploads")
 
     def request(self):
         """A request carrying an address, so the optional evidence is reachable.

@@ -2,4 +2,7 @@
 
 from django.urls import include, path
 
-urlpatterns = [path("legal/", include("mvp_compliance.urls"))]
+urlpatterns = [
+    path("accounts/", include("allauth.urls")),
+    path("legal/", include("mvp_compliance.urls")),
+]

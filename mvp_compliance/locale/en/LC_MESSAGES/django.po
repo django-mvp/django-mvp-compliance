@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 15:08+0200\n"
+"POT-Creation-Date: 2026-10-23 11:45+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -79,43 +79,106 @@ msgstr "Everything held about a person"
 msgid "Compliance"
 msgstr "Compliance"
 
-#: checks.py:47
+#: checks.py:54
 msgid "The page that asks a person to agree has no address."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:48
+#: checks.py:55
 #, python-format
 msgid "Add %(line)s to the project's URLconf."
 msgstr "Add %(line)s to the project's URLconf."
 
-#: checks.py:59
+#: checks.py:66
 msgid "Nothing that identifies the signed-in user comes before the check."
 msgstr "Nothing that identifies the signed-in user comes before the check."
 
-#: checks.py:60
+#: checks.py:67
 #, python-format
 msgid "List %(check)s after %(authentication)s in MIDDLEWARE."
 msgstr "List %(check)s after %(authentication)s in MIDDLEWARE."
 
-#: checks.py:73
+#: checks.py:80
 #, python-format
 msgid "%(setting)s is a string, and has to be a list."
 msgstr "%(setting)s is a string, and has to be a list."
 
-#: checks.py:75
+#: checks.py:82
 #, python-format
 msgid "Write it as a list, even for one entry: %(example)s."
 msgstr "Write it as a list, even for one entry: %(example)s."
 
-#: checks.py:84
+#: checks.py:91
 #, python-format
 msgid "%(setting)s is not a number."
 msgstr "%(setting)s is not a number."
 
-#: checks.py:86
+#: checks.py:93
 #, python-format
 msgid "Give it as a number of seconds, such as %(example)s."
 msgstr "Give it as a number of seconds, such as %(example)s."
+
+#: checks.py:125
+#, fuzzy, python-format
+#| msgid "%(setting)s is not a number."
+msgid "%(setting)s is not a list."
+msgstr "%(setting)s is not a number."
+
+#: checks.py:127
+#, fuzzy, python-format
+#| msgid "Write it as a list, even for one entry: %(example)s."
+msgid "Write it as a list of dotted paths, even for one kind: %(example)s."
+msgstr "Write it as a list, even for one entry: %(example)s."
+
+#: checks.py:140
+#, python-format
+msgid "%(path)s does not name a PersonalData subclass."
+msgstr ""
+
+#: checks.py:142
+#, python-format
+msgid "Name a class that subclasses %(base)s."
+msgstr ""
+
+#: checks.py:152
+#, python-format
+msgid "%(first)s and %(second)s have the same key, %(key)s."
+msgstr ""
+
+#: checks.py:154
+msgid "Set a different key on one of them."
+msgstr ""
+
+#: checks.py:168
+#, python-format
+msgid "%(path)s lists %(field)s, which %(model)s does not have."
+msgstr ""
+
+#: checks.py:170
+msgid "Remove it from fields, or correct its spelling."
+msgstr ""
+
+#: checks.py:188
+#, fuzzy
+#| msgid "The page that asks a person to agree has no address."
+msgid "The page that gives a person a copy of their data needs allauth."
+msgstr "The page that asks a person to agree has no address."
+
+#: checks.py:189
+#, python-format
+msgid "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
+msgstr ""
+
+#: checks.py:201
+#, fuzzy
+#| msgid "The page that asks a person to agree has no address."
+msgid ""
+"The page that gives a person a copy of their data needs allauth's middleware."
+msgstr "The page that asks a person to agree has no address."
+
+#: checks.py:203
+#, python-format
+msgid "Add %(middleware)s to MIDDLEWARE."
+msgstr ""
 
 #: forms.py:36
 msgid "Person"
@@ -154,6 +217,10 @@ msgstr ""
 #: menus.py:15
 msgid "Agreements"
 msgstr "Agreements"
+
+#: menus.py:23 views.py:433
+msgid "Your data"
+msgstr ""
 
 #: models.py:41
 msgid "Use lowercase letters, digits and single hyphens only."
@@ -491,6 +558,39 @@ msgstr "everything held about a person"
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
+#: personal_data.py:210 views.py:147
+msgid "Documents you agreed to"
+msgstr "Documents you agreed to"
+
+#: personal_data.py:212
+msgid ""
+"Each version of this site's documents you agreed to, when you agreed, and "
+"the wording you were shown."
+msgstr ""
+
+#: personal_data.py:236
+#, fuzzy
+#| msgid "Documents"
+msgid "Document"
+msgstr "Documents"
+
+#: personal_data.py:237 templates/mvp_compliance/agreed_documents.html:20
+#: templates/mvp_compliance/agreed_documents.html:37
+msgid "Version"
+msgstr "Version"
+
+#: personal_data.py:238
+#, fuzzy
+#| msgid "Agreed to"
+msgid "Agreed on"
+msgstr "Agreed to"
+
+#: personal_data.py:239 templates/mvp_compliance/copy/index.html:50
+#, fuzzy
+#| msgid "Documents you agreed to"
+msgid "The wording you agreed to"
+msgstr "Documents you agreed to"
+
 #: records.py:77
 msgid ""
 "This covers what this package holds about this person. The project may hold "
@@ -520,7 +620,7 @@ msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
 #: templates/admin/mvp_compliance/document/change_form.html:10
-#: templates/mvp_compliance/document_detail.html:45
+#: templates/mvp_compliance/document_detail.html:37
 msgid "View current version"
 msgstr "View current version"
 
@@ -555,6 +655,10 @@ msgstr ""
 #: templates/admin/mvp_compliance/version/publish_confirmation.html:20
 msgid "Back"
 msgstr "Back"
+
+#: templates/cotton/compliance/copy_value.html:5
+msgid "No value"
+msgstr ""
 
 #: templates/cotton/compliance/outstanding.html:15
 msgid "Optional"
@@ -612,11 +716,6 @@ msgstr "Read v%(number)s"
 msgid "Versions of %(name)s you agreed to"
 msgstr "Versions of %(name)s you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:20
-#: templates/mvp_compliance/agreed_documents.html:37
-msgid "Version"
-msgstr "Version"
-
 #: templates/mvp_compliance/agreed_documents.html:21
 #: templates/mvp_compliance/agreed_documents.html:38
 msgid "You agreed on"
@@ -667,20 +766,63 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: templates/mvp_compliance/document_detail.html:11
+#: templates/mvp_compliance/copy/index.html:7
+#, python-format
+msgid "A copy of your data from %(site_name)s"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:14
+msgid "A copy of your data"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:16
+#, python-format
+msgid "Made on %(when)s for %(person)s."
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:19
+msgid ""
+"It holds the kinds of record listed below. The same records are in "
+"data.json, for use in other software, and the files you uploaded are in the "
+"files folder beside this page."
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:24
+msgid "Contents"
+msgstr ""
+
+#: templates/mvp_compliance/copy/index.html:38
+#, fuzzy
+#| msgid "Nothing is held about this person."
+msgid "Nothing of this kind is held about you."
+msgstr "Nothing is held about this person."
+
+#: templates/mvp_compliance/copy/index.html:46
+#, fuzzy, python-format
+#| msgid "Read v%(number)s"
+msgid "%(document)s, v%(number)s"
+msgstr "Read v%(number)s"
+
+#: templates/mvp_compliance/copy/index.html:47
+#, python-format
+msgid "Agreed on %(when)s"
+msgstr ""
+
+#: templates/mvp_compliance/document_detail.html:4
+#: templates/mvp_compliance/document_detail.html:31
 msgid "Documents"
 msgstr "Documents"
 
-#: templates/mvp_compliance/document_detail.html:12
+#: templates/mvp_compliance/document_detail.html:5
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: templates/mvp_compliance/document_detail.html:35 views.py:42
+#: templates/mvp_compliance/document_detail.html:26 views.py:61
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
 
-#: templates/mvp_compliance/document_detail.html:44
+#: templates/mvp_compliance/document_detail.html:36
 #, python-format
 msgid ""
 "This version has been replaced. It was in force from %(published)s to "
@@ -716,20 +858,37 @@ msgstr "See it in the admin"
 msgid "%(name)s: version %(number)s is now in force"
 msgstr "%(name)s: version %(number)s is now in force"
 
-#: views.py:57
+#: templates/mvp_compliance/personal_data.html:7
+msgid ""
+"Your copy could not be made, and nothing was downloaded. Try again later."
+msgstr ""
+
+#: templates/mvp_compliance/personal_data.html:12
+msgid "What the copy holds"
+msgstr ""
+
+#: templates/mvp_compliance/personal_data.html:24
+#: templates/mvp_compliance/personal_data.html:31
+msgid "Download a copy"
+msgstr ""
+
+#: templates/mvp_compliance/personal_data.html:26
+msgid ""
+"The copy is a single .zip file. Inside it is a page you can open in any web "
+"browser, the same records in a JSON file for use in other software, and the "
+"files you uploaded."
+msgstr ""
+
+#: views.py:76
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: views.py:102
+#: views.py:121
 msgid "No version found"
 msgstr "No version found"
 
-#: views.py:128
-msgid "Documents you agreed to"
-msgstr "Documents you agreed to"
-
-#: views.py:130
+#: views.py:149
 msgid ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
@@ -737,28 +896,36 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:146
+#: views.py:165 views.py:454
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:151
+#: views.py:170 views.py:461
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:211
+#: views.py:230
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "Documents to agree to"
 msgstr "Documents you agreed to"
 
-#: views.py:223
+#: views.py:242
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
 
-#: views.py:226
+#: views.py:245
 msgid "Agreeing is optional."
+msgstr ""
+
+#: views.py:435
+msgid "Download a copy of what this site holds about you, as a single file."
+msgstr ""
+
+#: views.py:456
+msgid "No confirmation page"
 msgstr ""
 
 #: widgets.py:21

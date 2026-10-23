@@ -9,6 +9,18 @@ class DeclaredDocumentError(Exception):
     """Raised for an attempt to change the slug of a declared document."""
 
 
+class PersonalDataError(Exception):
+    """Raised when one kind of record cannot be put into a person's copy.
+
+    Attributes:
+        kind: The dotted path of the kind that failed.
+    """
+
+    def __init__(self, kind: str) -> None:
+        super().__init__(f"{kind} could not be put into the copy.")
+        self.kind = kind
+
+
 class PublishedVersionError(Exception):
     """Raised for an attempt to change or delete a published version."""
 

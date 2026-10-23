@@ -60,9 +60,9 @@ The package checks for the account area on each request, by looking for django-m
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
-The addresses of the list and of the page that asks are checked ahead of the slug route, so no
-document is served at the slugs `agreed` and `agree`. The admin and `full_clean()` refuse both
-slugs; see [Documents](models.md#document). A document published under `agree` before the slug
+The addresses of the list, of the page that asks and of the page a person downloads their data
+from are checked ahead of the slug route, so no document is served at the slugs `agreed`, `agree`
+and `data`. The admin and `full_clean()` refuse all three; see [Documents](models.md#document). A document published under `agree` before the slug
 was reserved is not reachable at its page any more, and the address shows the page that asks.
 Creating a document under either slug through the ORM is not stopped, as for any slug rule.
 

@@ -1,20 +1,78 @@
 """Shared fixtures for the test suite."""
 
+import importlib
+
 import pytest
 from django.contrib.auth.models import Permission
+from django.test import override_settings
+from django.urls import clear_url_caches
 
 from mvp_compliance.signals import version_published
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
+    NoteFactory,
+    TopicFactory,
     UserFactory,
     VersionFactory,
 )
+
+#: The routes that follow the personal-data setting, the package's first.
+URLCONF_MODULES = (
+    "mvp_compliance.urls",
+    "tests.urls",
+    "tests.urls_package_only",
+    "tests.urls_own_agree_page",
+)
+
+
+def reload_urlconf():
+    """Import the routes again, so they follow the settings as they stand."""
+    for name in URLCONF_MODULES:
+        importlib.reload(importlib.import_module(name))
+    clear_url_caches()
+
+
+@pytest.fixture
+def declare():
+    """Declare kinds of personal data by dotted path, with the routes following.
+
+    Called with no path it declares nothing held, which is a declaration.
+    """
+    overrides = []
+
+    def declare_kinds(*paths):
+        override = override_settings(MVP_COMPLIANCE_PERSONAL_DATA=list(paths))
+        override.enable()
+        overrides.append(override)
+        reload_urlconf()
+
+    yield declare_kinds
+    for override in reversed(overrides):
+        override.disable()
+    reload_urlconf()
+
+
+@pytest.fixture
+def stored_files(settings, tmp_path):
+    """An empty folder for the files the tests store, and where they are read from."""
+    settings.MEDIA_ROOT = tmp_path
+    return tmp_path
 
 
 @pytest.fixture
 def user(db):
     return UserFactory()
+
+
+@pytest.fixture
+def topic(db):
+    return TopicFactory()
+
+
+@pytest.fixture
+def note(db):
+    return NoteFactory()
 
 
 @pytest.fixture
