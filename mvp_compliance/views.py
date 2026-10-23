@@ -24,7 +24,13 @@ from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
 from mvp_compliance.exceptions import PersonalDataError
-from mvp_compliance.models import Acceptance, Document, RecordError, Version
+from mvp_compliance.models import (
+    Acceptance,
+    Document,
+    RecordError,
+    Version,
+    acceptances_survive_account_removal,
+)
 from mvp_compliance.personal_data import (
     AgreementsPersonalData,
     PersonalData,
@@ -560,8 +566,11 @@ class DeleteAccountForm(forms.Form):
 class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
     """The signed-in person's own page for deleting their account.
 
-    SKETCH: lists what will be deleted and asks for confirmation. Submitting
-    deletes nothing and signs nobody out.
+    Lists what will be deleted and what is kept, and asks the person to type
+    their email address, or their username without one. Takes the person's
+    identity through django-allauth's own confirmation page first. Takes nothing
+    from the address that could name another person. Not found in a project
+    that mounts no account area or does not install ``allauth.account``.
     """
 
     template_name = "mvp_compliance/delete_account.html"
@@ -571,6 +580,15 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
     )
 
     def dispatch(self, request, *args, **kwargs):
+        """Answer "not found" without the account area or allauth's account app.
+
+        Runs before the sign-in check, so an anonymous visitor to such a project
+        is told there is no page rather than sent to sign in for one.
+
+        Raises:
+            Http404: When ``account-center`` does not reverse, or
+                ``allauth.account`` is not installed.
+        """
         try:
             reverse("account-center")
         except NoReverseMatch:
@@ -586,9 +604,18 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
         ]
 
     def get_context_data(self, **kwargs):
+        """Add what is deleted, what is kept and the form.
+
+        The agreements are kept while acceptances survive the removal of an
+        account, and are listed as deleted when they do not.
+        """
         context = super().get_context_data(**kwargs)
-        context["sections"] = list(get_personal_data() or [])
-        context["kept"] = AgreementsPersonalData()
+        sections = list(get_personal_data() or [])
+        if acceptances_survive_account_removal():
+            context["kept"] = AgreementsPersonalData()
+        else:
+            sections.append(AgreementsPersonalData())
+        context["sections"] = sections
         context["form"] = kwargs.get("form") or self.get_form()
         context["account_center_url"] = reverse("account-center")
         try:
