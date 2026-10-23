@@ -104,3 +104,11 @@ are amended to say so.
 pages, such as adding a second factor, and does not lock a person out of their own data.
 
 **ADR:** none — follows allauth, recorded in the spec and the how-to page.
+
+## D12 — A section records the kind that produced it
+
+**Decision:** `PersonalDataSection` has a `kind` field, the dotted path of the declared kind, filled in by `PersonalDataCopy.collect`. The copy uses it to name the kind when a file cannot be opened or the kind's own template raises while the copy is written.
+
+**Why:** the plan names the kind's path in every failure, but a section alone does not say which kind made it. Carrying the path with the section avoids a second mapping beside it.
+
+**Revisit if:** sections are built anywhere other than `collect`, in which case the field is empty and the failure names no kind.
