@@ -129,3 +129,10 @@ class NeitherConstant(Notes):
     """A kind whose erasure is neither constant."""
 
     erasure = "wipe"
+
+
+class Refuses(Notes):
+    """A kind whose own erasing fails."""
+
+    def erase(self, user):
+        raise RuntimeError("the records cannot be erased")
