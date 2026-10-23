@@ -16,6 +16,8 @@ from django.core.management.base import BaseCommand
 from django.http import HttpRequest
 
 from demo.models import Upload
+from demo.personal_data import Uploads
+from mvp_compliance.deletion import delete_account
 from mvp_compliance.models import Acceptance, Document, Version
 
 PASSWORD = "password"
@@ -198,6 +200,10 @@ UPLOADS = {
         ),
     ],
 }
+
+#: The account to delete on the page for deleting an account, so the walkthrough
+#: never costs the standard ones. Recreated on every run.
+LEAVING = "leaving.user@example.com"
 
 #: Someone whose account is closed and whose records outlived it, which is the
 #: ordinary case for a request and the one that cannot be asked for by an
@@ -430,6 +436,7 @@ class Command(BaseCommand):
         self.make_acceptances()
         self.make_asked()
         self.make_uploads()
+        self.make_leaving()
         # After the acceptances: one of a notice is refused, so it has to be
         # recorded while the document is still one people agree to.
         Document.objects.filter(name="Delivery information").update(
@@ -525,6 +532,26 @@ class Command(BaseCommand):
                         upload.file.save(name, ContentFile(text.encode()), save=False)
                     upload.save()
             self.stdout.write(f"  {username}: {len(uploads)} uploads")
+
+    def make_leaving(self):
+        """Create ``leaving.user`` with an upload and an acceptance, afresh.
+
+        An account left over from an earlier run is deleted the way the page
+        deletes one, so its file goes too. Its acceptance outlives it, as any
+        acceptance does, and the new account gets its own.
+        """
+        model = get_user_model()
+        leftover = model.objects.filter(username=LEAVING.split("@")[0]).first()
+        if leftover:
+            delete_account(leftover, [Uploads()])
+        person = self.make_account(LEAVING, False, False, [])
+        upload = Upload(owner=person, title="Leaving note", licence="private")
+        upload.file.save("note.txt", ContentFile(b"Delete me.\n"), save=False)
+        upload.save()
+        version = Version.objects.get(document__name="Terms of use", number="2025.1")
+        with on(2026, 9, 20):
+            Acceptance.objects.record(person, version)
+        self.stdout.write(f"  {LEAVING}: an upload and an acceptance")
 
     def request(self):
         """A request carrying an address, so the optional evidence is reachable.

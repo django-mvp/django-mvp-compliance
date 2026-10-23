@@ -29,6 +29,14 @@ one with no version and leaves an existing one alone. Its kind and enforcement a
 declared.
 _Avoid_: registered document, configured document, built-in document.
 
+**Account deletion**:
+A signed-in person removing their own account from the account area: every declared kind's
+records are deleted by the project's own declaration, then the account itself, in one transaction
+that either completes or leaves everything in place. Acceptances are left to the setting that
+decides whether they outlive the account. It is the one thing the package deletes that the project
+did not name.
+_Avoid_: erasure, closing, deactivation.
+
 **Declared kind**:
 A kind of record the host project holds about a person, named by a dotted path in the setting
 `MVP_COMPLIANCE_PERSONAL_DATA` and written as a subclass of `PersonalData`. It names a model, its

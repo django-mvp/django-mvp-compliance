@@ -112,3 +112,41 @@ if deletion_offered():
 
 `kind_path(kind)` returns the dotted path of a kind's class, the name the package uses for it
 in errors and logs.
+
+## What a person sees
+
+Once deletion is offered, the account area has a **Delete account** page at `delete/` under
+wherever the package's URLs are mounted (`mvp_compliance:delete-account`), served by
+`mvp_compliance.views.DeleteAccountView`. Like the **Your data** page it needs `allauth.account`
+and an account area, and sends a person who has not confirmed who they are recently to
+django-allauth's own confirmation page first. A submission made before confirming is replayed
+once they have, so they do not type their address twice.
+
+The page lists the account and, in the order you declared them, each kind, as what will be
+deleted. If acceptances survive the removal of an account, which is the default, the documents the
+person agreed to are listed apart as what is kept: the record of each version, and when, stays as
+evidence and no longer names the account. With
+`MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL = False` they are listed as deleted. Where the
+**Your data** page exists, the page links to it, so a person can keep a copy first.
+
+To confirm, the person types their email address, or their username when the account has none,
+into `DeleteAccountForm`. Case and surrounding spaces do not matter. An empty or different entry
+shows an error and deletes nothing.
+
+A correct entry runs `mvp_compliance.deletion.delete_account(user, kinds)`: each kind's `erase` in
+the order declared, then the account itself, in one transaction. The browser is signed out, and
+so is every other browser signed in as the account, because the account no longer exists. The
+person is sent to `mvp_compliance:account-deleted`, a page served by
+`mvp_compliance.views.AccountDeletedView` that needs nobody signed in.
+
+If any step fails, including a row of your own that refuses the deletion of the account, nothing
+in the database is deleted and `delete_account` raises `AccountDeletionError`, whose `kind`
+is the failing kind's dotted path, or `"account"` for the account itself, with the original
+error as its cause. The page is shown again with an alert, the status is 500, the person stays
+signed in, and the failure is logged at ERROR naming the kind. Files removed in
+`transaction.on_commit`, as in step 2 above, go only after a deletion has committed.
+
+The slugs `delete` and `deleted` are reserved, so no document can take either address.
+
+Deleting an account removes the user's own row, which is a row of your project's user model. It
+is the one thing the package deletes outside what a kind names.

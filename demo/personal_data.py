@@ -1,6 +1,7 @@
 """The kinds of record the demo declares it holds about a person."""
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from demo.models import Upload
@@ -15,6 +16,7 @@ class Profile(PersonalData):
     model = get_user_model()
     fields = ["username", "email", "date_joined"]
     single = True
+    erasure = PersonalData.WITH_ACCOUNT
 
     def get_queryset(self, user):
         return get_user_model().objects.filter(pk=user.pk)
@@ -30,3 +32,14 @@ class Uploads(PersonalData):
 
     def get_queryset(self, user):
         return Upload.objects.filter(owner=user)
+
+    def erase(self, user):
+        """Delete the person's rows, and their files once the deletion commits."""
+        uploads = self.get_queryset(user)
+        stored = [
+            (upload.file.storage, upload.file.name) for upload in uploads if upload.file
+        ]
+        uploads.delete()
+        transaction.on_commit(
+            lambda: [storage.delete(name) for storage, name in stored]
+        )
