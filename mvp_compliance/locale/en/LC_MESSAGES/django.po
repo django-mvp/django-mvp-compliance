@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 11:45+0200\n"
+"POT-Creation-Date: 2026-10-24 00:06+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -129,53 +129,53 @@ msgstr "%(setting)s is not a number."
 msgid "Write it as a list of dotted paths, even for one kind: %(example)s."
 msgstr "Write it as a list, even for one entry: %(example)s."
 
-#: checks.py:140
+#: checks.py:143
 #, python-format
 msgid "%(path)s does not name a PersonalData subclass."
 msgstr ""
 
-#: checks.py:142
+#: checks.py:145
 #, python-format
 msgid "Name a class that subclasses %(base)s."
 msgstr ""
 
-#: checks.py:152
+#: checks.py:155
 #, python-format
 msgid "%(first)s and %(second)s have the same key, %(key)s."
 msgstr ""
 
-#: checks.py:154
+#: checks.py:157
 msgid "Set a different key on one of them."
 msgstr ""
 
-#: checks.py:168
+#: checks.py:171
 #, python-format
 msgid "%(path)s lists %(field)s, which %(model)s does not have."
 msgstr ""
 
-#: checks.py:170
+#: checks.py:173
 msgid "Remove it from fields, or correct its spelling."
 msgstr ""
 
-#: checks.py:188
+#: checks.py:191
 #, fuzzy
 #| msgid "The page that asks a person to agree has no address."
 msgid "The page that gives a person a copy of their data needs allauth."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:189
+#: checks.py:192
 #, python-format
 msgid "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
 msgstr ""
 
-#: checks.py:201
+#: checks.py:204
 #, fuzzy
 #| msgid "The page that asks a person to agree has no address."
 msgid ""
 "The page that gives a person a copy of their data needs allauth's middleware."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:203
+#: checks.py:206
 #, python-format
 msgid "Add %(middleware)s to MIDDLEWARE."
 msgstr ""
@@ -218,8 +218,12 @@ msgstr ""
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:433
+#: menus.py:23 views.py:435
 msgid "Your data"
+msgstr ""
+
+#: menus.py:31
+msgid "Delete account"
 msgstr ""
 
 #: models.py:41
@@ -558,34 +562,34 @@ msgstr "everything held about a person"
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
-#: personal_data.py:210 views.py:147
+#: personal_data.py:231 views.py:149
 msgid "Documents you agreed to"
 msgstr "Documents you agreed to"
 
-#: personal_data.py:212
+#: personal_data.py:233
 msgid ""
 "Each version of this site's documents you agreed to, when you agreed, and "
 "the wording you were shown."
 msgstr ""
 
-#: personal_data.py:236
+#: personal_data.py:257
 #, fuzzy
 #| msgid "Documents"
 msgid "Document"
 msgstr "Documents"
 
-#: personal_data.py:237 templates/mvp_compliance/agreed_documents.html:20
+#: personal_data.py:258 templates/mvp_compliance/agreed_documents.html:20
 #: templates/mvp_compliance/agreed_documents.html:37
 msgid "Version"
 msgstr "Version"
 
-#: personal_data.py:238
+#: personal_data.py:259
 #, fuzzy
 #| msgid "Agreed to"
 msgid "Agreed on"
 msgstr "Agreed to"
 
-#: personal_data.py:239 templates/mvp_compliance/copy/index.html:50
+#: personal_data.py:260 templates/mvp_compliance/copy/index.html:50
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "The wording you agreed to"
@@ -696,6 +700,16 @@ msgstr "In force"
 #: templates/mvp_compliance/_agreed_version_rows.html:10
 msgid "Replaced"
 msgstr "Replaced"
+
+#: templates/mvp_compliance/account_deleted.html:9
+msgid ""
+"Your account and the records listed before you confirmed have been deleted, "
+"and you have been signed out."
+msgstr ""
+
+#: templates/mvp_compliance/account_deleted.html:12
+msgid "Go to the home page"
+msgstr ""
 
 #: templates/mvp_compliance/agreed_documents.html:11
 #, python-format
@@ -808,6 +822,62 @@ msgstr "Read v%(number)s"
 msgid "Agreed on %(when)s"
 msgstr ""
 
+#: templates/mvp_compliance/delete_account.html:7
+msgid ""
+"Your account could not be deleted, and nothing was removed. Try again later."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:12
+msgid "What will be deleted"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:16
+#, fuzzy
+#| msgid "No account area"
+msgid "Your account"
+msgstr "No account area"
+
+#: templates/mvp_compliance/delete_account.html:18
+msgid "Your sign-in details. You will be signed out and cannot sign in again."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:33
+msgid "What is kept"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:39
+msgid ""
+"The record of each version you agreed to, and when, is kept as evidence of "
+"what you agreed to. It no longer names your account."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:46 views.py:568
+msgid "Delete your account"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:51
+#: templates/mvp_compliance/delete_account.html:57
+msgid "Deleting cannot be undone."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:52
+msgid "Download a copy of your data"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:53
+msgid "first if you want to keep it."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:61
+msgid "Delete my account"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:62
+#, fuzzy
+#| msgid "Compliance"
+msgid "Cancel"
+msgstr "Compliance"
+
 #: templates/mvp_compliance/document_detail.html:4
 #: templates/mvp_compliance/document_detail.html:31
 msgid "Documents"
@@ -817,7 +887,7 @@ msgstr "Documents"
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: templates/mvp_compliance/document_detail.html:26 views.py:61
+#: templates/mvp_compliance/document_detail.html:26 views.py:63
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
@@ -879,16 +949,16 @@ msgid ""
 "files you uploaded."
 msgstr ""
 
-#: views.py:76
+#: views.py:78
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: views.py:121
+#: views.py:123
 msgid "No version found"
 msgstr "No version found"
 
-#: views.py:149
+#: views.py:151
 msgid ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
@@ -896,36 +966,57 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:165 views.py:454
+#: views.py:167 views.py:456 views.py:577
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:170 views.py:461
+#: views.py:172 views.py:463 views.py:584
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:230
+#: views.py:232
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "Documents to agree to"
 msgstr "Documents you agreed to"
 
-#: views.py:242
+#: views.py:244
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
 
-#: views.py:245
+#: views.py:247
 msgid "Agreeing is optional."
 msgstr ""
 
-#: views.py:435
+#: views.py:437
 msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
-#: views.py:456
+#: views.py:458 views.py:579
 msgid "No confirmation page"
+msgstr ""
+
+#: views.py:538
+msgid "Type your email address to confirm."
+msgstr ""
+
+#: views.py:546
+#, python-format
+msgid "To confirm, type your email address, %(expected)s"
+msgstr ""
+
+#: views.py:553
+msgid "That is not your email address. Type it exactly as shown."
+msgstr ""
+
+#: views.py:570
+msgid "Remove your account and what this site holds about you."
+msgstr ""
+
+#: views.py:617
+msgid "Your account has been deleted"
 msgstr ""
 
 #: widgets.py:21

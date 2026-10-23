@@ -918,9 +918,11 @@ class TestPageStrings:
     def test_the_page_template_is_the_document_page(self):
         assert [path.name for path in PAGE_TEMPLATES] == [
             "_agreed_version_rows.html",
+            "account_deleted.html",
             "agreed_documents.html",
             "agreement.html",
             "copy_value.html",
+            "delete_account.html",
             "document_detail.html",
             "index.html",
             "outstanding.html",

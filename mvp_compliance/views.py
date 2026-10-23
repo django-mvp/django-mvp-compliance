@@ -587,15 +587,9 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        state = self.request.GET.get("state")
-        kept = state != "removed"
-        kinds = list(get_personal_data() or [])
-        if not kept:
-            kinds.append(AgreementsPersonalData())
-        context["sections"] = kinds
-        context["kept"] = AgreementsPersonalData() if kept else None
+        context["sections"] = list(get_personal_data() or [])
+        context["kept"] = AgreementsPersonalData()
         context["form"] = kwargs.get("form") or self.get_form()
-        context["failed"] = state == "failed"
         context["account_center_url"] = reverse("account-center")
         try:
             context["copy_url"] = reverse("mvp_compliance:personal-data")
