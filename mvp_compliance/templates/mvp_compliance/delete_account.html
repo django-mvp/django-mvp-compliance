@@ -1,10 +1,18 @@
 {% extends "mvp/account/base.html" %}
-{% load i18n %}
+{% load i18n static %}
+{% block extra_js %}
+  {{ block.super }}
+  <script defer src="{% static 'mvp_compliance/delete_account.js' %}"></script>
+{% endblock extra_js %}
 {% block account.content %}
   <c-mvp.page>
     {% if failed %}
       <c-alert variant="error" icon="error" data-deletion-failed>
         <span>{% translate "Your account could not be deleted, and nothing was removed. Try again later." %}</span>
+      </c-alert>
+    {% elif form.errors %}
+      <c-alert variant="error" icon="error" data-not-deleted>
+        <span>{% translate "Your account was not deleted. What you typed did not match. Check it below and try again." %}</span>
       </c-alert>
     {% endif %}
     <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
@@ -56,7 +64,7 @@
           {% else %}
             <p class="max-w-prose">{% translate "Deleting cannot be undone." %}</p>
           {% endif %}
-          <c-mvp.form method="post" :form-obj="form" class="flex flex-col gap-4" novalidate>
+          <c-mvp.form method="post" :form-obj="form" id="delete-account-form" class="flex flex-col gap-4" novalidate>
             <div class="flex flex-wrap items-center gap-4">
               <c-button type="submit" variant="error" icon="delete" text="{% translate "Delete my account" %}" />
               <a class="link" href="{{ account_center_url }}">{% translate "Cancel" %}</a>

@@ -3327,7 +3327,17 @@ class TestDeleteAccountSubmit:
 
         assert response.status_code == 200
         assert error_codes(response) == [code]
+        assert "data-not-deleted" in response.content.decode()
         assert type(leaving).objects.filter(pk=leaving.pk).exists()
+
+    def test_the_button_waits_for_the_expected_text(self, client, leaving):
+        response = client.get(delete_address())
+
+        page = controls(response)
+        (field,) = [f for f in page.inputs if f.get("name") == "confirmation"]
+        assert field["data-expected"] == leaving.email
+        assert static("mvp_compliance/delete_account.js") in response.content.decode()
+        assert "data-not-deleted" not in response.content.decode()
         assert Note.objects.filter(owner=leaving).count() == 1
 
     def test_an_account_with_no_email_is_asked_for_its_username(

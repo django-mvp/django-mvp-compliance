@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-24 00:43+0200\n"
+"POT-Creation-Date: 2026-10-24 16:47+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -838,57 +838,63 @@ msgstr "Read v%(number)s"
 msgid "Agreed on %(when)s"
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:7
+#: templates/mvp_compliance/delete_account.html:11
 msgid ""
 "Your account could not be deleted, and nothing was removed. Try again later."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:12
+#: templates/mvp_compliance/delete_account.html:15
+msgid ""
+"Your account was not deleted. What you typed did not match. Check it below "
+"and try again."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:20
 msgid "What will be deleted"
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:16
+#: templates/mvp_compliance/delete_account.html:24
 #, fuzzy
 #| msgid "No account area"
 msgid "Your account"
 msgstr "No account area"
 
-#: templates/mvp_compliance/delete_account.html:18
+#: templates/mvp_compliance/delete_account.html:26
 msgid "Your sign-in details. You will be signed out and cannot sign in again."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:33
+#: templates/mvp_compliance/delete_account.html:41
 msgid "What is kept"
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:39
+#: templates/mvp_compliance/delete_account.html:47
 msgid ""
 "The record of each version you agreed to, and when, is kept as evidence of "
 "what you agreed to. It no longer names your account."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:46 views.py:596
+#: templates/mvp_compliance/delete_account.html:54 views.py:598
 msgid "Delete your account"
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:51
-#: templates/mvp_compliance/delete_account.html:57
+#: templates/mvp_compliance/delete_account.html:59
+#: templates/mvp_compliance/delete_account.html:65
 msgid "Deleting cannot be undone."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:52
+#: templates/mvp_compliance/delete_account.html:60
 msgid "Download a copy of your data"
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:53
+#: templates/mvp_compliance/delete_account.html:61
 msgid "first if you want to keep it."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:61
+#: templates/mvp_compliance/delete_account.html:69
 msgid "Delete my account"
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:62
+#: templates/mvp_compliance/delete_account.html:70
 #, fuzzy
 #| msgid "Compliance"
 msgid "Cancel"
@@ -982,11 +988,11 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:175 views.py:464 views.py:614
+#: views.py:175 views.py:464 views.py:616
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:180 views.py:471 views.py:621
+#: views.py:180 views.py:471 views.py:623
 msgid "Account Center"
 msgstr "Account Center"
 
@@ -1010,7 +1016,7 @@ msgstr ""
 msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
-#: views.py:466 views.py:616
+#: views.py:466 views.py:618
 msgid "No confirmation page"
 msgstr ""
 
@@ -1028,23 +1034,23 @@ msgstr ""
 msgid "To confirm, type your email address, %(expected)s"
 msgstr ""
 
-#: views.py:562
+#: views.py:564
 msgid "Type your username to confirm."
 msgstr ""
 
-#: views.py:574
+#: views.py:576
 msgid "That is not your username. Type it exactly as shown."
 msgstr ""
 
-#: views.py:576
+#: views.py:578
 msgid "That is not your email address. Type it exactly as shown."
 msgstr ""
 
-#: views.py:598
+#: views.py:600
 msgid "Remove your account and what this site holds about you."
 msgstr ""
 
-#: views.py:707
+#: views.py:709
 msgid "Your account has been deleted"
 msgstr ""
 

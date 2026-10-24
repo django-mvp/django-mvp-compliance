@@ -91,3 +91,7 @@ Written before the build. Class: **convention** (a source settles it) or **taste
   account area, the list of what will be deleted with the account first, the "what is kept" card,
   the link to a copy of one's data before the confirmation, the red **Delete my account** button
   with **Cancel** beside it, the failure alert above the title, and the page shown afterwards.
+- **The delete button waits for the typed text, and a refused attempt says so** (Sam, 2026-10-24, at
+  the walkthrough). **Delete my account** stays disabled until the field matches what it asks for,
+  ignoring case and surrounding spaces. A submission the server still refuses shows an alert above
+  the title saying the account was not deleted, beside the field's own error.

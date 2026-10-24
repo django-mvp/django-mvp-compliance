@@ -557,6 +557,8 @@ class DeleteAccountForm(forms.Form):
             else _("To confirm, type your email address, %(expected)s")
         )
         self.fields["confirmation"].label = label % {"expected": expected}
+        # Read by delete_account.js to enable the button once it matches.
+        self.fields["confirmation"].widget.attrs["data-expected"] = expected
         if asks_username:
             self.fields["confirmation"].error_messages["required"] = _(
                 "Type your username to confirm."
