@@ -517,6 +517,16 @@ extra: install `django-mvp-compliance[personal-data]`, add `allauth` and `allaut
 holding a readable page, the same records as `data.json` and their files. See
 [docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md).
 
+### A person deletes their account
+
+When every declared kind says how its records are deleted, with `erasure = PersonalData.DELETE`,
+`erasure = PersonalData.WITH_ACCOUNT` or its own `erase(user)`, the account area also has a
+**Delete account** page. The person confirms who they are, lists what will be deleted and what is
+kept, types their email address, and the package runs each kind's deletion and then removes the
+account, in one transaction. If any step fails nothing is deleted. While any kind says nothing,
+the page and its menu entry do not exist. See
+[docs/how-to/delete-an-account.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/delete-an-account.md).
+
 ## Documentation
 
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
@@ -536,6 +546,8 @@ holding a readable page, the same records as `data.json` and their files. See
 - [docs/how-to/declare-what-the-project-holds-about-a-person.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/declare-what-the-project-holds-about-a-person.md) — declaring the kinds of record the project holds
   about a person: writing a kind, what a value becomes, a kind with one record, data that is
   not one queryset, the allauth requirement and the system checks.
+- [docs/how-to/delete-an-account.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/delete-an-account.md) — letting a person delete their account: saying how each
+  kind is deleted, files, what the person sees, what is kept and what happens when a deletion fails.
 - [docs/adr](https://github.com/django-mvp/django-mvp-compliance/tree/main/docs/adr) — the decisions behind the design, and why the alternatives were not
   taken.
 

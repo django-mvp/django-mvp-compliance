@@ -270,6 +270,11 @@ in order, ending with `"agreements"`. A receiver that raises is logged and does 
 person getting their copy. Whatever your receiver keeps about the person is your project's own
 record, kept under your project's rules.
 
+## Letting a person delete their account
+
+Each kind can also say how its records are deleted, with `erasure` or `erase()`. See [How to
+say how your project deletes what it holds about a person](delete-an-account.md).
+
 ## Reading the declared kinds in code
 
 `get_personal_data()` returns an instance of each declared kind, in the order declared. It
@@ -294,5 +299,6 @@ if kinds is not None:
 | `mvp_compliance.E006` | A path cannot be imported, does not name a `PersonalData` subclass, or gives a key an earlier kind already has, or `agreements`, the key of the package's own section. One error for each, naming the path. |
 | `mvp_compliance.E007` | A kind with a `model` lists a field in `fields` that the model does not have. |
 | `mvp_compliance.E008` | `allauth.account` is not installed, or its `AccountMiddleware` is not in `MIDDLEWARE`. |
+| `mvp_compliance.E009` | One kind says how its records are deleted and another does not, or an `erasure` is neither constant. One error for each, naming the path. See [How to say how your project deletes what it holds about a person](delete-an-account.md). |
 
 Nothing is reported while the setting is absent.

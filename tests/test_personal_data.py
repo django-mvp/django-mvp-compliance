@@ -7,6 +7,7 @@ from html.parser import HTMLParser
 
 import pytest
 from django.core.files.base import ContentFile
+from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.functional import Promise
 from django.utils.module_loading import import_string
@@ -18,7 +19,9 @@ from mvp_compliance.personal_data import (
     PersonalDataCopy,
     PersonalDataSection,
     Shown,
+    deletion_offered,
     get_personal_data,
+    kind_path,
 )
 from tests.factories import (
     AcceptanceFactory,
@@ -27,7 +30,16 @@ from tests.factories import (
     UserFactory,
     VersionFactory,
 )
-from tests.kinds import Bare, Custom, Notes
+from tests.kinds import (
+    Bare,
+    Custom,
+    DeletesNotes,
+    Erases,
+    ErasesAgain,
+    Notes,
+    StillSilent,
+    WithAccount,
+)
 from tests.models import Note
 
 
@@ -184,6 +196,109 @@ class TestGetPersonalData:
         kinds = get_personal_data()
 
         assert [type(kind) for kind in kinds] == [Custom, Notes]
+
+
+@pytest.mark.django_db
+class TestErase:
+    def test_delete_deletes_that_users_rows_and_nobody_elses(self, user):
+        NoteFactory(owner=user)
+        NoteFactory(owner=user)
+        other = NoteFactory(owner=UserFactory())
+
+        DeletesNotes().erase(user)
+
+        assert list(Note.objects.all()) == [other]
+
+    def test_with_account_deletes_nothing(self, user):
+        NoteFactory(owner=user)
+
+        WithAccount().erase(user)
+
+        assert Note.objects.filter(owner=user).count() == 1
+
+    def test_an_overridden_erase_is_the_one_called(self, user):
+        Erases.erased.clear()
+
+        Erases().erase(user)
+
+        assert Erases.erased == [user.pk]
+
+    def test_a_kind_saying_nothing_is_refused_naming_the_class(self, user):
+        with pytest.raises(NotImplementedError, match="Notes"):
+            Notes().erase(user)
+
+    @pytest.mark.parametrize(
+        ("kind", "says"),
+        [
+            (DeletesNotes, True),
+            (WithAccount, True),
+            (Erases, True),
+            (ErasesAgain, True),
+            (Notes, False),
+            (StillSilent, False),
+        ],
+    )
+    def test_a_kind_says_how_it_is_erased_when_it_sets_erasure_or_overrides_erase(
+        self, kind, says
+    ):
+        assert kind().says_how_erased is says
+
+
+class TestKindPath:
+    def test_it_is_the_module_and_qualified_name(self):
+        assert kind_path(Notes()) == "tests.kinds.Notes"
+
+
+class TestDeletionOffered:
+    def test_it_is_false_while_the_project_declares_nothing(self):
+        assert deletion_offered() is False
+
+    def test_it_is_false_for_an_empty_declaration(self, settings):
+        settings.MVP_COMPLIANCE_PERSONAL_DATA = []
+
+        assert deletion_offered() is False
+
+    @pytest.mark.parametrize(
+        "paths",
+        [
+            ["tests.kinds.Notes"],
+            ["tests.kinds.Notes", "tests.kinds.StillSilent"],
+            ["tests.kinds.DeletesNotes", "tests.kinds.Custom"],
+            ["tests.kinds.DeletesNotes", "tests.kinds.Nothing"],
+            ["tests.kinds.DeletesNotes", "tests.nowhere.Notes"],
+            ["tests.kinds.DeletesNotes", "tests.broken_kinds.Notes"],
+        ],
+        ids=[
+            "silent",
+            "all silent",
+            "mixed",
+            "unknown class",
+            "unimportable module",
+            "module raising ImproperlyConfigured",
+        ],
+    )
+    def test_it_is_false_unless_every_kind_can_be_imported_and_says_how(
+        self, settings, paths
+    ):
+        settings.MVP_COMPLIANCE_PERSONAL_DATA = paths
+
+        assert deletion_offered() is False
+
+    def test_it_is_true_when_every_kind_says_how(self, settings):
+        settings.MVP_COMPLIANCE_PERSONAL_DATA = [
+            "tests.kinds.DeletesNotes",
+            "tests.kinds.WithAccount",
+            "tests.kinds.Erases",
+        ]
+
+        assert deletion_offered() is True
+
+    def test_a_kind_module_that_cannot_be_imported_does_not_break_the_routes(
+        self, declare
+    ):
+        declare("tests.broken_kinds.Notes")
+
+        assert reverse("mvp_compliance:agree")
 
 
 class CopyReader(HTMLParser):

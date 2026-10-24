@@ -127,6 +127,10 @@ settings and templates are named for the mechanism (*recorded*, *published*, *en
 
 Code in this package never gathers, exports or deletes data held in another application's
 models. Anything the project holds is reached through a documented hook the project implements.
+Two deletions are named as the exception (ADR 0029): the signed-in person's own account, at their
+request, once every declared kind has run its deletion; and the rows a declared kind's own
+`get_queryset(user)` returns, when that kind sets `erasure = PersonalData.DELETE`. Nothing else the
+project holds is touched except by the project's own `erase`.
 
 ### Article XIV — Personal data is declared
 

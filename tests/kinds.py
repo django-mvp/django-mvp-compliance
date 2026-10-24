@@ -1,5 +1,7 @@
 """Kinds of record the tests declare, by dotted path, in the setting."""
 
+from django.db import transaction
+
 from mvp_compliance.personal_data import PersonalData, PersonalDataSection
 from tests.models import Note
 
@@ -94,3 +96,55 @@ class Agreements(Custom):
 
 class NotAKind:
     """A class a project could name by mistake."""
+
+
+class DeletesNotes(Notes):
+    """A kind that says its rows are deleted with the queryset."""
+
+    erasure = PersonalData.DELETE
+
+
+class WithAccount(Notes):
+    """A kind whose rows go with the account itself."""
+
+    erasure = PersonalData.WITH_ACCOUNT
+
+
+class Erases(Notes):
+    """A kind that does its own erasing and records that it did."""
+
+    erased: list = []
+
+    def erase(self, user):
+        self.erased.append(user.pk)
+
+
+class ErasesAgain(Erases):
+    """A subclass of a kind that overrides ``erase``, which inherits it."""
+
+
+class StillSilent(Notes):
+    """A subclass of a silent kind, which still says nothing."""
+
+
+class NeitherConstant(Notes):
+    """A kind whose erasure is neither constant."""
+
+    erasure = "wipe"
+
+
+class Refuses(Notes):
+    """A kind whose own erasing fails."""
+
+    def erase(self, user):
+        raise RuntimeError("the records cannot be erased")
+
+
+class FailsAfterCommit(Notes):
+    """A kind whose own after-commit step fails, once the deletion is done."""
+
+    def erase(self, user):
+        def fail():
+            raise OSError("the file could not be removed")
+
+        transaction.on_commit(fail)

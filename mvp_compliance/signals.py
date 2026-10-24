@@ -13,3 +13,11 @@ version_published = Signal()
 #: about) and ``kinds`` (the key of each kind of record the copy holds, in order,
 #: ending with ``"agreements"``). Not sent when the copy could not be made.
 personal_data_copied = Signal()
+
+#: Sent once a person has deleted their own account and the deletion has committed.
+#: Sender: the ``DeleteAccountView`` class. Arguments: ``user`` (the deleted account,
+#: its ``pk`` now ``None`` and its other fields as they were), ``subject`` (its
+#: primary key as text, the value its surviving acceptances carry) and ``kinds`` (the
+#: key of each declared kind that was deleted, in order). Not sent when the deletion
+#: could not be done.
+account_deleted = Signal()

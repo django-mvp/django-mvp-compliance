@@ -29,11 +29,21 @@ one with no version and leaves an existing one alone. Its kind and enforcement a
 declared.
 _Avoid_: registered document, configured document, built-in document.
 
+**Account deletion**:
+A signed-in person removing their own account from the account area: every declared kind's
+records are deleted by the project's own declaration, then the account itself, in one transaction
+that either completes or leaves everything in place. Acceptances are left to the setting that
+decides whether they outlive the account. It is the one thing the package deletes that the project
+did not name.
+_Avoid_: erasure, closing, deactivation.
+
 **Declared kind**:
 A kind of record the host project holds about a person, named by a dotted path in the setting
 `MVP_COMPLIANCE_PERSONAL_DATA` and written as a subclass of `PersonalData`. It names a model, its
 fields and whose rows belong to a person, and reading it for one user gives a section. The package
-holds none of this data and never reads a model the project has not declared.
+holds none of this data and never reads a model the project has not declared. A kind also says how
+its records are deleted: `erasure = PersonalData.DELETE`, `erasure = PersonalData.WITH_ACCOUNT`, or
+its own `erase(user)`. Deletion is offered only when every declared kind says how.
 _Avoid_: data source, collector, exporter, registered model.
 
 **Copy**:

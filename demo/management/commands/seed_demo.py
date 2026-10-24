@@ -16,6 +16,8 @@ from django.core.management.base import BaseCommand
 from django.http import HttpRequest
 
 from demo.models import Upload
+from demo.personal_data import Uploads
+from mvp_compliance.deletion import delete_account
 from mvp_compliance.models import Acceptance, Document, Version
 
 PASSWORD = "password"
@@ -198,6 +200,14 @@ UPLOADS = {
         ),
     ],
 }
+
+#: The account to delete on the page for deleting an account, so the walkthrough
+#: never costs the standard ones. Recreated on every run.
+LEAVING = "leaving.user@example.com"
+#: Deleted the same way, with no email address, so it types its username.
+LEAVING_NAMELESS = "leaving.nameless@example.com"
+#: An account the demo refuses to delete, so the failure can be looked at.
+UNDELETED = "undeleted.user@example.com"
 
 #: Someone whose account is closed and whose records outlived it, which is the
 #: ordinary case for a request and the one that cannot be asked for by an
@@ -430,6 +440,7 @@ class Command(BaseCommand):
         self.make_acceptances()
         self.make_asked()
         self.make_uploads()
+        self.make_leaving()
         # After the acceptances: one of a notice is refused, so it has to be
         # recorded while the document is still one people agree to.
         Document.objects.filter(name="Delivery information").update(
@@ -525,6 +536,36 @@ class Command(BaseCommand):
                         upload.file.save(name, ContentFile(text.encode()), save=False)
                     upload.save()
             self.stdout.write(f"  {username}: {len(uploads)} uploads")
+
+    def make_leaving(self):
+        """Create the accounts the page for deleting an account is tried with, afresh.
+
+        ``leaving.user`` is deleted for real. ``leaving.nameless`` has no email
+        address, so it is asked for its username and signs in with it.
+        ``undeleted.user`` is one the demo refuses to delete, so the failure can
+        be looked at. An account left over from an earlier run is deleted the
+        way the page deletes one, so its file goes too, and its acceptances
+        outlive it, as any acceptance does.
+        """
+        model = get_user_model()
+        for email in (LEAVING, LEAVING_NAMELESS, UNDELETED):
+            username = email.split("@")[0]
+            leftover = model.objects.filter(username=username).first()
+            if leftover and email != UNDELETED:
+                delete_account(leftover, [Uploads()])
+            person = self.make_account(email, False, False, [])
+            if email == LEAVING_NAMELESS:
+                person.email = ""
+                person.save()
+            Upload.objects.filter(owner=person).delete()
+            upload = Upload(owner=person, title="Leaving note", licence="private")
+            upload.file.save("note.txt", ContentFile(b"Delete me.\n"), save=False)
+            upload.save()
+            # Everything in force is accepted, so the site-wide check never
+            # stops the account on its way to the page that deletes it.
+            for document in Document.objects.outstanding_for(person):
+                Acceptance.objects.record(person, document.current)
+            self.stdout.write(f"  {username}: an upload and every document accepted")
 
     def request(self):
         """A request carrying an address, so the optional evidence is reachable.

@@ -112,7 +112,16 @@ class PersonalData:
         single: Whether a person has one record of the kind, not a list.
         template_name: A template that draws the kind in the readable copy in
             place of the standard table.
+        erasure: How a person's records of the kind are deleted: ``DELETE``
+            to delete what ``get_queryset`` returns, ``WITH_ACCOUNT`` when the
+            account's own deletion removes them. ``None`` leaves it to an
+            override of ``erase``.
     """
+
+    #: Delete the rows ``get_queryset`` returns for the person.
+    DELETE = "delete"
+    #: The account's own deletion removes the rows, so nothing more is done.
+    WITH_ACCOUNT = "with-account"
 
     heading: str | Promise = ""
     description: str | Promise = ""
@@ -120,6 +129,7 @@ class PersonalData:
     fields: list[str] = []
     single: bool = False
     template_name: str | None = None
+    erasure: str | None = None
 
     @property
     def key(self) -> str:
@@ -142,6 +152,29 @@ class PersonalData:
         raise NotImplementedError(
             f"{type(self).__name__} must say whose rows are whose in get_queryset()."
         )
+
+    @property
+    def says_how_erased(self) -> bool:
+        """Whether the kind sets ``erasure`` or overrides ``erase``."""
+        return self.erasure is not None or type(self).erase is not PersonalData.erase
+
+    def erase(self, user: AbstractBaseUser) -> None:
+        """Delete the records the kind holds about ``user``.
+
+        Args:
+            user: The person whose records are to go.
+
+        Raises:
+            NotImplementedError: When the kind neither sets ``erasure`` to a
+                constant nor overrides this method.
+        """
+        if self.erasure == self.DELETE:
+            self.get_queryset(user).delete()
+        elif self.erasure != self.WITH_ACCOUNT:
+            raise NotImplementedError(
+                f"{type(self).__name__} must say how it is erased: set erasure "
+                "or override erase()."
+            )
 
     def collect(self, user: AbstractBaseUser) -> PersonalDataSection:
         """Read the kind's rows about ``user`` into a section.
@@ -280,6 +313,36 @@ def get_personal_data() -> list[PersonalData] | None:
     return [import_string(path)() for path in paths]
 
 
+def kind_path(kind: PersonalData) -> str:
+    """Name a kind by its dotted path.
+
+    Args:
+        kind: A declared kind.
+
+    Returns:
+        The module and qualified name of its class.
+    """
+    return f"{type(kind).__module__}.{type(kind).__qualname__}"
+
+
+def deletion_offered() -> bool:
+    """Say whether the project has declared how every kind it holds is deleted.
+
+    Returns:
+        ``True`` when ``MVP_COMPLIANCE_PERSONAL_DATA`` lists at least one kind
+        and every kind says how it is erased. ``False`` otherwise, including
+        when a kind cannot be imported: the system check reports that.
+    """
+    try:
+        kinds = get_personal_data()
+        return bool(kinds) and all(
+            isinstance(kind, PersonalData) and kind.says_how_erased
+            for kind in kinds  # type: ignore[union-attr]
+        )
+    except Exception:
+        return False
+
+
 class PersonalDataCopy:
     """A person's copy: a readable page, the same records as data, and their files.
 
@@ -323,7 +386,7 @@ class PersonalDataCopy:
         """
         sections = []
         for kind in kinds:
-            path = f"{type(kind).__module__}.{type(kind).__qualname__}"
+            path = kind_path(kind)
             with PersonalDataCopy.guard(path):
                 sections.append(replace(kind.collect(user), kind=path))
         return sections

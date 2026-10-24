@@ -4,8 +4,10 @@ import logging
 import tempfile
 from urllib.parse import unquote, urljoin, urlsplit
 
+from django import forms
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import DatabaseError, transaction
 from django.http import FileResponse, Http404, HttpResponseRedirect
@@ -22,15 +24,22 @@ from mvp.config import MVP_CONFIG
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
-from mvp_compliance.exceptions import PersonalDataError
-from mvp_compliance.models import Acceptance, Document, RecordError, Version
+from mvp_compliance.deletion import delete_account
+from mvp_compliance.exceptions import AccountDeletionError, PersonalDataError
+from mvp_compliance.models import (
+    Acceptance,
+    Document,
+    RecordError,
+    Version,
+    acceptances_survive_account_removal,
+)
 from mvp_compliance.personal_data import (
     AgreementsPersonalData,
     PersonalData,
     PersonalDataCopy,
     get_personal_data,
 )
-from mvp_compliance.signals import personal_data_copied
+from mvp_compliance.signals import account_deleted, personal_data_copied
 
 try:
     from allauth.account.decorators import reauthentication_required
@@ -525,3 +534,176 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
                     exc_info=result,
                 )
         return response
+
+
+class DeleteAccountForm(forms.Form):
+    """The person typing their own email address to say they mean it."""
+
+    confirmation = forms.CharField(
+        strip=True,
+        widget=forms.TextInput(attrs={"autocomplete": "off", "spellcheck": "false"}),
+        error_messages={
+            "required": gettext_lazy("Type your email address to confirm."),
+        },
+    )
+
+    def __init__(self, *args, expected: str, asks_username: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.expected = expected
+        self.asks_username = asks_username
+        label = (
+            _("To confirm, type your username, %(expected)s")
+            if asks_username
+            else _("To confirm, type your email address, %(expected)s")
+        )
+        self.fields["confirmation"].label = label % {"expected": expected}
+        # Read by delete_account.js to enable the button once it matches.
+        self.fields["confirmation"].widget.attrs["data-expected"] = expected
+        if asks_username:
+            self.fields["confirmation"].error_messages["required"] = _(
+                "Type your username to confirm."
+            )
+
+    def clean_confirmation(self):
+        """Refuse anything but the expected text, ignoring case.
+
+        Raises:
+            ValidationError: With the code ``mismatch``.
+        """
+        value = self.cleaned_data["confirmation"]
+        if value.casefold() != self.expected.casefold():
+            message = (
+                _("That is not your username. Type it exactly as shown.")
+                if self.asks_username
+                else _("That is not your email address. Type it exactly as shown.")
+            )
+            raise forms.ValidationError(message, code="mismatch")
+        return value
+
+
+@method_decorator(csrf_protect, name="dispatch")
+@method_decorator(reauthentication_required, name="get")
+@method_decorator(reauthentication_required, name="post")
+class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
+    """The signed-in person's own page for deleting their account.
+
+    Lists what will be deleted and what is kept, and asks the person to type
+    their email address, or their username without one. Takes the person's
+    identity through django-allauth's own confirmation page first. Takes nothing
+    from the address that could name another person. Not found in a project
+    that mounts no account area or does not install ``allauth.account``.
+    """
+
+    template_name = "mvp_compliance/delete_account.html"
+    page_title = gettext_lazy("Delete your account")
+    page_subtitle = gettext_lazy(
+        "Remove your account and what this site holds about you."
+    )
+
+    def dispatch(self, request, *args, **kwargs):
+        """Answer "not found" without the account area or allauth's account app.
+
+        Runs before the sign-in check, so an anonymous visitor to such a project
+        is told there is no page rather than sent to sign in for one.
+
+        Raises:
+            Http404: When ``account-center`` does not reverse, or
+                ``allauth.account`` is not installed.
+        """
+        try:
+            reverse("account-center")
+        except NoReverseMatch:
+            raise Http404(_("No account area")) from None
+        if not apps.is_installed("allauth.account"):
+            raise Http404(_("No confirmation page"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_breadcrumbs(self):
+        return [
+            {"text": _("Account Center"), "href": reverse("account-center")},
+            {"text": self.page_title},
+        ]
+
+    def get_context_data(self, **kwargs):
+        """Add what is deleted, what is kept and the form.
+
+        The agreements are kept while acceptances survive the removal of an
+        account, and are listed as deleted when they do not.
+        """
+        context = super().get_context_data(**kwargs)
+        sections = list(get_personal_data() or [])
+        if acceptances_survive_account_removal():
+            context["kept"] = AgreementsPersonalData()
+        else:
+            sections.append(AgreementsPersonalData())
+        context["sections"] = sections
+        context["form"] = kwargs.get("form") or self.get_form()
+        context["account_center_url"] = reverse("account-center")
+        try:
+            context["copy_url"] = reverse("mvp_compliance:personal-data")
+        except NoReverseMatch:
+            context["copy_url"] = None
+        return context
+
+    def get_form(self, data=None):
+        """Ask for the account's email address, or its username without one."""
+        user = self.request.user
+        email = getattr(user, user.get_email_field_name(), "")
+        return DeleteAccountForm(
+            data, expected=email or user.get_username(), asks_username=not email
+        )
+
+    def post(self, request, *args, **kwargs):
+        """Delete the account once the person has typed their address.
+
+        Nothing is deleted unless every kind and the account itself go, in one
+        transaction. A failure is logged with the kind that failed, and the
+        page is shown again with an alert while the person stays signed in.
+        """
+        form = self.get_form(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+        user = request.user
+        kinds = get_personal_data() or []
+        subject = Acceptance.subject_of(user)
+        try:
+            delete_account(user, kinds)
+        except AccountDeletionError as error:
+            logger.exception(
+                "The account of user %s could not be deleted: %s failed",
+                user.pk,
+                error.kind,
+            )
+            return self.render_to_response(
+                self.get_context_data(failed=True), status=500
+            )
+        logout(request)
+        # After the commit, so a project's receiver never hears of a deletion
+        # that an outer transaction later rolls back.
+        transaction.on_commit(
+            lambda: self.announce(user, subject, [kind.key for kind in kinds])
+        )
+        return HttpResponseRedirect(reverse("mvp_compliance:account-deleted"))
+
+    def announce(self, user, subject: str, kinds: list[str]) -> None:
+        """Tell the project the account is gone, logging any receiver that fails.
+
+        A receiver that fails is the project's own fault and never undoes the
+        deletion or changes what the person is shown.
+        """
+        for receiver, result in account_deleted.send_robust(
+            sender=DeleteAccountView, user=user, subject=subject, kinds=kinds
+        ):
+            if isinstance(result, Exception):
+                logger.error(
+                    "A receiver of account_deleted failed: %r",
+                    receiver,
+                    exc_info=result,
+                )
+
+
+class AccountDeletedView(MVPTemplateView):
+    """The page a person sees once their account has been deleted."""
+
+    template_name = "mvp_compliance/account_deleted.html"
+    page_title = gettext_lazy("Your account has been deleted")

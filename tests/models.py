@@ -36,3 +36,9 @@ class Note(models.Model):
     summary = models.TextField(_("Summary"), blank=True)
     attachment = models.FileField(_("Attachment"), upload_to="notes/", blank=True)
     cover = models.FileField(_("Cover"), upload_to="covers/", blank=True)
+
+
+class Pin(models.Model):
+    """A row that refuses the deletion of the account it points at."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)

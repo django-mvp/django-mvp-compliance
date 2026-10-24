@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-23 11:45+0200\n"
+"POT-Creation-Date: 2026-10-24 16:47+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -49,11 +49,11 @@ msgstr "Published by"
 msgid "Published versions"
 msgstr "Published versions"
 
-#: admin.py:179 models.py:423
+#: admin.py:179 models.py:424
 msgid "number"
 msgstr "number"
 
-#: admin.py:189 models.py:448
+#: admin.py:189 models.py:449
 msgid "Draft"
 msgstr "Draft"
 
@@ -117,65 +117,81 @@ msgstr "%(setting)s is not a number."
 msgid "Give it as a number of seconds, such as %(example)s."
 msgstr "Give it as a number of seconds, such as %(example)s."
 
-#: checks.py:125
+#: checks.py:128
 #, fuzzy, python-format
 #| msgid "%(setting)s is not a number."
 msgid "%(setting)s is not a list."
 msgstr "%(setting)s is not a number."
 
-#: checks.py:127
+#: checks.py:130
 #, fuzzy, python-format
 #| msgid "Write it as a list, even for one entry: %(example)s."
 msgid "Write it as a list of dotted paths, even for one kind: %(example)s."
 msgstr "Write it as a list, even for one entry: %(example)s."
 
-#: checks.py:140
+#: checks.py:147
 #, python-format
 msgid "%(path)s does not name a PersonalData subclass."
 msgstr ""
 
-#: checks.py:142
+#: checks.py:149
 #, python-format
 msgid "Name a class that subclasses %(base)s."
 msgstr ""
 
-#: checks.py:152
+#: checks.py:161
 #, python-format
 msgid "%(first)s and %(second)s have the same key, %(key)s."
 msgstr ""
 
-#: checks.py:154
+#: checks.py:163
 msgid "Set a different key on one of them."
 msgstr ""
 
-#: checks.py:168
+#: checks.py:177
 #, python-format
 msgid "%(path)s lists %(field)s, which %(model)s does not have."
 msgstr ""
 
-#: checks.py:170
+#: checks.py:179
 msgid "Remove it from fields, or correct its spelling."
 msgstr ""
 
-#: checks.py:188
+#: checks.py:204
+#, python-format
+msgid "%(path)s sets erasure to something other than %(constants)s."
+msgstr ""
+
+#: checks.py:206
+#, python-format
+msgid "%(path)s does not say how its records are deleted."
+msgstr ""
+
+#: checks.py:214
+msgid ""
+"Set erasure to PersonalData.DELETE or PersonalData.WITH_ACCOUNT, or override "
+"erase()."
+msgstr ""
+
+#: checks.py:234
 #, fuzzy
 #| msgid "The page that asks a person to agree has no address."
 msgid "The page that gives a person a copy of their data needs allauth."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:189
+#: checks.py:235
 #, python-format
 msgid "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
 msgstr ""
 
-#: checks.py:201
+#: checks.py:247
 #, fuzzy
 #| msgid "The page that asks a person to agree has no address."
 msgid ""
 "The page that gives a person a copy of their data needs allauth's middleware."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:203
+#: checks.py:249
 #, python-format
 msgid "Add %(middleware)s to MIDDLEWARE."
 msgstr ""
@@ -218,8 +234,12 @@ msgstr ""
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:433
+#: menus.py:23 views.py:443
 msgid "Your data"
+msgstr ""
+
+#: menus.py:31
+msgid "Delete account"
 msgstr ""
 
 #: models.py:41
@@ -282,41 +302,41 @@ msgstr ""
 "that is published and offered but never required, such as a cookie policy. "
 "It never applies to a notice."
 
-#: models.py:228
+#: models.py:229
 msgid ""
 "A document's slug cannot be changed once a version of it has been published."
 msgstr ""
 "A document's slug cannot be changed once a version of it has been published."
 
-#: models.py:232
+#: models.py:233
 msgid "The slug of a document the project declares cannot be changed."
 msgstr "The slug of a document the project declares cannot be changed."
 
-#: models.py:238 models.py:415
+#: models.py:239 models.py:416
 msgid "document"
 msgstr "document"
 
-#: models.py:239
+#: models.py:240
 msgid "documents"
 msgstr "documents"
 
-#: models.py:243
+#: models.py:244
 msgid "Can continue without accepting enforced documents"
 msgstr "Can continue without accepting enforced documents"
 
-#: models.py:311 models.py:754
+#: models.py:312 models.py:755
 msgid "A published version's wording and publisher cannot be changed."
 msgstr "A published version's wording and publisher cannot be changed."
 
-#: models.py:318 models.py:760
+#: models.py:319 models.py:761
 msgid "A published version cannot be deleted."
 msgstr "A published version cannot be deleted."
 
-#: models.py:416
+#: models.py:417
 msgid "The document this version belongs to."
 msgstr "The document this version belongs to."
 
-#: models.py:429
+#: models.py:430
 msgid ""
 "The year this version was published and its place among the document's "
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
@@ -326,19 +346,19 @@ msgstr ""
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
 "for a draft."
 
-#: models.py:435
+#: models.py:436
 msgid "markdown"
 msgstr "markdown"
 
-#: models.py:436
+#: models.py:437
 msgid "The wording of this version, written in Markdown."
 msgstr "The wording of this version, written in Markdown."
 
-#: models.py:439
+#: models.py:440
 msgid "html"
 msgstr "html"
 
-#: models.py:442
+#: models.py:443
 msgid ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
@@ -346,19 +366,19 @@ msgstr ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
 
-#: models.py:449
+#: models.py:450
 msgid "Current"
 msgstr "Current"
 
-#: models.py:450
+#: models.py:451
 msgid "Superseded"
 msgstr "Superseded"
 
-#: models.py:453
+#: models.py:454
 msgid "status"
 msgstr "status"
 
-#: models.py:459
+#: models.py:460
 msgid ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
@@ -366,11 +386,11 @@ msgstr ""
 "Whether this version is a draft, the version currently in force, or "
 "superseded by a later one."
 
-#: models.py:464
+#: models.py:465
 msgid "published at"
 msgstr "published at"
 
-#: models.py:469
+#: models.py:470
 msgid ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
@@ -378,11 +398,11 @@ msgstr ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
 
-#: models.py:478
+#: models.py:479
 msgid "publisher"
 msgstr "publisher"
 
-#: models.py:480
+#: models.py:481
 msgid ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
@@ -390,11 +410,11 @@ msgstr ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
 
-#: models.py:491
+#: models.py:492
 msgid "publisher subject"
 msgstr "publisher subject"
 
-#: models.py:498
+#: models.py:499
 msgid ""
 "The publisher's primary key as text, written once at publication. It lets "
 "the version say an account was since removed after the link to it is "
@@ -404,65 +424,65 @@ msgstr ""
 "the version say an account was since removed after the link to it is "
 "cleared. Empty when nobody was recorded."
 
-#: models.py:507 models.py:1085
+#: models.py:508 models.py:1086
 #: templates/admin/mvp_compliance/disclosure/acceptances.html:6
 msgid "version"
 msgstr "version"
 
-#: models.py:508
+#: models.py:509
 msgid "versions"
 msgstr "versions"
 
-#: models.py:516
+#: models.py:517
 msgid "Can publish a version"
 msgstr "Can publish a version"
 
-#: models.py:554
+#: models.py:555
 msgid "draft"
 msgstr "draft"
 
-#: models.py:578
+#: models.py:579
 msgid "Account removed"
 msgstr "Account removed"
 
-#: models.py:579
+#: models.py:580
 msgid "Unknown publisher"
 msgstr "Unknown publisher"
 
-#: models.py:641
+#: models.py:642
 msgid "This version has already been published."
 msgstr "This version has already been published."
 
-#: models.py:645
+#: models.py:646
 msgid "Publishing this would produce no output."
 msgstr "Publishing this would produce no output."
 
-#: models.py:661
+#: models.py:662
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
 
-#: models.py:669
+#: models.py:670
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: models.py:834 models.py:1187
+#: models.py:835 models.py:1188
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: models.py:839 models.py:1194
+#: models.py:840 models.py:1195
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: models.py:987 models.py:1030
+#: models.py:988 models.py:1031
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: models.py:1061
+#: models.py:1062
 msgid "user"
 msgstr "user"
 
-#: models.py:1063
+#: models.py:1064
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -472,11 +492,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: models.py:1073
+#: models.py:1074
 msgid "subject"
 msgstr "subject"
 
-#: models.py:1077
+#: models.py:1078
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -488,7 +508,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: models.py:1087
+#: models.py:1088
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -496,11 +516,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: models.py:1094
+#: models.py:1095
 msgid "accepted at"
 msgstr "accepted at"
 
-#: models.py:1098
+#: models.py:1099
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -508,11 +528,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: models.py:1103
+#: models.py:1104
 msgid "IP address"
 msgstr "IP address"
 
-#: models.py:1107
+#: models.py:1108
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -524,21 +544,21 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: models.py:1117
+#: models.py:1118
 msgid "acceptance"
 msgstr "acceptance"
 
-#: models.py:1118
+#: models.py:1119
 msgid "acceptances"
 msgstr "acceptances"
 
-#: models.py:1153
+#: models.py:1154
 msgid ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 msgstr ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 
-#: models.py:1178
+#: models.py:1179
 msgid ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
@@ -546,46 +566,46 @@ msgstr ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
 
-#: models.py:1212
+#: models.py:1213
 msgid "disclosure"
 msgstr "disclosure"
 
-#: models.py:1213
+#: models.py:1214
 msgid "everything held about a person"
 msgstr "everything held about a person"
 
-#: models.py:1215
+#: models.py:1216
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
-#: personal_data.py:210 views.py:147
+#: personal_data.py:264 views.py:157
 msgid "Documents you agreed to"
 msgstr "Documents you agreed to"
 
-#: personal_data.py:212
+#: personal_data.py:266
 msgid ""
 "Each version of this site's documents you agreed to, when you agreed, and "
 "the wording you were shown."
 msgstr ""
 
-#: personal_data.py:236
+#: personal_data.py:290
 #, fuzzy
 #| msgid "Documents"
 msgid "Document"
 msgstr "Documents"
 
-#: personal_data.py:237 templates/mvp_compliance/agreed_documents.html:20
+#: personal_data.py:291 templates/mvp_compliance/agreed_documents.html:20
 #: templates/mvp_compliance/agreed_documents.html:37
 msgid "Version"
 msgstr "Version"
 
-#: personal_data.py:238
+#: personal_data.py:292
 #, fuzzy
 #| msgid "Agreed to"
 msgid "Agreed on"
 msgstr "Agreed to"
 
-#: personal_data.py:239 templates/mvp_compliance/copy/index.html:50
+#: personal_data.py:293 templates/mvp_compliance/copy/index.html:50
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "The wording you agreed to"
@@ -696,6 +716,16 @@ msgstr "In force"
 #: templates/mvp_compliance/_agreed_version_rows.html:10
 msgid "Replaced"
 msgstr "Replaced"
+
+#: templates/mvp_compliance/account_deleted.html:9
+msgid ""
+"Your account and the records listed before you confirmed have been deleted, "
+"and you have been signed out."
+msgstr ""
+
+#: templates/mvp_compliance/account_deleted.html:12
+msgid "Go to the home page"
+msgstr ""
 
 #: templates/mvp_compliance/agreed_documents.html:11
 #, python-format
@@ -808,6 +838,68 @@ msgstr "Read v%(number)s"
 msgid "Agreed on %(when)s"
 msgstr ""
 
+#: templates/mvp_compliance/delete_account.html:11
+msgid ""
+"Your account could not be deleted, and nothing was removed. Try again later."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:15
+msgid ""
+"Your account was not deleted. What you typed did not match. Check it below "
+"and try again."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:20
+msgid "What will be deleted"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:24
+#, fuzzy
+#| msgid "No account area"
+msgid "Your account"
+msgstr "No account area"
+
+#: templates/mvp_compliance/delete_account.html:26
+msgid "Your sign-in details. You will be signed out and cannot sign in again."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:41
+msgid "What is kept"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:47
+msgid ""
+"The record of each version you agreed to, and when, is kept as evidence of "
+"what you agreed to. It no longer names your account."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:54 views.py:598
+msgid "Delete your account"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:59
+#: templates/mvp_compliance/delete_account.html:65
+msgid "Deleting cannot be undone."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:60
+msgid "Download a copy of your data"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:61
+msgid "first if you want to keep it."
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:69
+msgid "Delete my account"
+msgstr ""
+
+#: templates/mvp_compliance/delete_account.html:70
+#, fuzzy
+#| msgid "Compliance"
+msgid "Cancel"
+msgstr "Compliance"
+
 #: templates/mvp_compliance/document_detail.html:4
 #: templates/mvp_compliance/document_detail.html:31
 msgid "Documents"
@@ -817,7 +909,7 @@ msgstr "Documents"
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: templates/mvp_compliance/document_detail.html:26 views.py:61
+#: templates/mvp_compliance/document_detail.html:26 views.py:71
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
@@ -879,16 +971,16 @@ msgid ""
 "files you uploaded."
 msgstr ""
 
-#: views.py:76
+#: views.py:86
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: views.py:121
+#: views.py:131
 msgid "No version found"
 msgstr "No version found"
 
-#: views.py:149
+#: views.py:159
 msgid ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
@@ -896,36 +988,70 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:165 views.py:454
+#: views.py:175 views.py:464 views.py:616
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:170 views.py:461
+#: views.py:180 views.py:471 views.py:623
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:230
+#: views.py:240
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "Documents to agree to"
 msgstr "Documents you agreed to"
 
-#: views.py:242
+#: views.py:252
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
 
-#: views.py:245
+#: views.py:255
 msgid "Agreeing is optional."
 msgstr ""
 
-#: views.py:435
+#: views.py:445
 msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
-#: views.py:456
+#: views.py:466 views.py:618
 msgid "No confirmation page"
+msgstr ""
+
+#: views.py:546
+msgid "Type your email address to confirm."
+msgstr ""
+
+#: views.py:555
+#, python-format
+msgid "To confirm, type your username, %(expected)s"
+msgstr ""
+
+#: views.py:557
+#, python-format
+msgid "To confirm, type your email address, %(expected)s"
+msgstr ""
+
+#: views.py:564
+msgid "Type your username to confirm."
+msgstr ""
+
+#: views.py:576
+msgid "That is not your username. Type it exactly as shown."
+msgstr ""
+
+#: views.py:578
+msgid "That is not your email address. Type it exactly as shown."
+msgstr ""
+
+#: views.py:600
+msgid "Remove your account and what this site holds about you."
+msgstr ""
+
+#: views.py:709
+msgid "Your account has been deleted"
 msgstr ""
 
 #: widgets.py:21

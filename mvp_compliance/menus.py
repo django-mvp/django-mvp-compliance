@@ -23,3 +23,11 @@ AccountCenterMenu.append(
         extra_context={"label": _("Your data"), "icon": "download"},
     )
 )
+
+AccountCenterMenu.append(
+    MenuItem(
+        name="delete-account",
+        view_name="mvp_compliance:delete-account",
+        extra_context={"label": _("Delete account"), "icon": "delete"},
+    )
+)
