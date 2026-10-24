@@ -131,8 +131,9 @@ evidence and no longer names the account. With
 **Your data** page exists, the page links to it, so a person can keep a copy first.
 
 To confirm, the person types their email address, or their username when the account has none,
-into `DeleteAccountForm`. Case and surrounding spaces do not matter. An empty or different entry
-shows an error and deletes nothing.
+into `DeleteAccountForm`. Case and surrounding spaces do not matter. The delete button stays
+disabled until the entry matches. An empty or different entry that reaches the server anyway
+shows an alert above the title and an error at the field, and deletes nothing.
 
 A correct entry runs `mvp_compliance.deletion.delete_account(user, kinds)`: each kind's `erase` in
 the order declared, then the account itself, in one transaction. The browser is signed out, and
