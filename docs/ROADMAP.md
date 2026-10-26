@@ -127,12 +127,16 @@ What a complete and dependable version is expected to carry.
 
 ### R6 — Telling people what changed
 
-*resolve · advances G3*
+*feature · advances G3*
 
 A new version put in front of somebody who already agreed to the last one raises an obvious
 question, and answering it is the difference between informed agreement and a click. Every
 comparable package carries some form of this. A short summary, written by whoever prepared the
 version, shown alongside it when agreement is asked for again.
+
+A summary says what its author chose to say, and covers one step. A reader can also compare any
+two published versions of a document, with what was added and what was removed marked in the
+text, so a person who last agreed several versions ago can see everything that changed since.
 
 Serves G3.
 
