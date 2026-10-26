@@ -24,6 +24,7 @@ from mvp.config import MVP_CONFIG
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
+from mvp_compliance.comparison import Comparison
 from mvp_compliance.deletion import delete_account
 from mvp_compliance.exceptions import AccountDeletionError, PersonalDataError
 from mvp_compliance.models import (
@@ -110,6 +111,7 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["version"] = self.get_version()
+        context["current"] = self.object.versions.current().first()
         context["documents"] = Document.objects.in_force().order_by("name")
         context["versions"] = self.object.versions.published().order_by("-published_at")
         return context
@@ -137,6 +139,74 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
     def get_breadcrumbs(self):
         # mvp's default builds its own trail and never reads ``breadcrumbs``.
         return [{"text": self.get_page_title()}]
+
+
+class ComparisonView(MVPDetailView):
+    """Two published versions of one document, compared word by word (FS-014).
+
+    ``?from=`` and ``?to=`` name the two by number, in either order. Without
+    them, the version in force is compared with the one before it. Readable by
+    anyone, like the document's page, and "not found" for anything that is
+    not a published version of this document.
+    """
+
+    model = Document
+    template_name = "mvp_compliance/comparison.html"
+
+    def get_queryset(self):
+        return Document.objects.in_force()
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.versions = list(
+            self.object.versions.published()
+            .with_replaced_at()
+            .order_by("-published_at")
+        )
+        if len(self.versions) < 2:
+            return HttpResponseRedirect(
+                reverse("mvp_compliance:document", args=[self.object.slug])
+            )
+        self.comparison = Comparison.of(
+            self.pick("from", default=self.versions[1]),
+            self.pick("to", default=self.versions[0]),
+        )
+        return self.render_to_response(self.get_context_data(object=self.object))
+
+    def pick(self, name: str, default: Version) -> Version:
+        """The version a parameter names, or ``default`` when it names none."""
+        number = self.request.GET.get(name)
+        if number is None:
+            return default
+        for version in self.versions:
+            if version.number == number:
+                return version
+        raise Http404(_("No version found"))
+
+    def get_page_title(self):
+        return self.object.name
+
+    def get_page_subtitle(self):
+        return _("Changes from v%(older)s to v%(newer)s") % {
+            "older": self.comparison.older.number,
+            "newer": self.comparison.newer.number,
+        }
+
+    def get_breadcrumbs(self):
+        return [
+            {
+                "text": self.object.name,
+                "href": reverse("mvp_compliance:document", args=[self.object.slug]),
+            },
+            {"text": _("Compare versions")},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comparison"] = self.comparison
+        context["documents"] = Document.objects.in_force().order_by("name")
+        context["versions"] = self.versions
+        return context
 
 
 class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
@@ -218,6 +288,8 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
                 acceptance.version_id != current.pk for acceptance in accepted
             ):
                 entry["newer"] = current
+                # Newest first, so the first is the last wording they agreed to.
+                entry["since"] = accepted[0].version
             fold = len(accepted) > self.shown_first + 1
             entry["shown"] = accepted[: self.shown_first] if fold else accepted
             entry["earlier"] = accepted[self.shown_first :] if fold else []
@@ -420,7 +492,18 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         """Add the entries, each with its toggle's attributes, and the destination."""
         context = super().get_context_data(**kwargs)
         kept = set(self.request.POST.getlist("agree")) if context.get("failed") else ()
+        # The newest version of each document this person accepted, for the
+        # comparison with the one they are asked about (FS-014). One query.
+        since: dict[int, Version] = {}
+        for acceptance in (
+            Acceptance.objects.for_person(self.request.user)
+            .filter(version__document__in=[e["document"] for e in self.entries])
+            .select_related("version")
+            .order_by("-version__published_at")
+        ):
+            since.setdefault(acceptance.version.document_id, acceptance.version)
         for entry in self.entries:
+            entry["since"] = since.get(entry["document"].pk)
             slug = entry["document"].slug
             entry["field"] = {
                 "name": "agree",

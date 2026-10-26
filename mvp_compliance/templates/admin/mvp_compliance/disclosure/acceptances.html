@@ -10,6 +10,10 @@
         {# Only where the site had turned address recording on for this acceptance. #}
         <p>{% translate "Recorded from" %} {{ entry.ip_address }}</p>
       {% endif %}
+      {% if entry.compare_url %}
+        {# Only where the version agreed to is no longer the one in force (FS-014). #}
+        <p><a href="{{ entry.compare_url }}">{% blocktranslate with agreed=entry.version current=entry.in_force %}Compare version {{ agreed }} with version {{ current }}, in force today{% endblocktranslate %}</a></p>
+      {% endif %}
       <div>{{ entry.wording|safe }}</div>
     </li>
   {% endfor %}

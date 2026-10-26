@@ -435,6 +435,42 @@ class DisclosureAdmin(admin.ModelAdmin):
             )
         ]
 
+    @staticmethod
+    def with_comparisons(record):
+        """Add, to each acceptance of a replaced version, its comparison with the
+        version in force (FS-014). Sketch: one query for the versions in force.
+        """
+        from dataclasses import asdict, replace
+        from types import SimpleNamespace
+
+        from django.urls import reverse
+
+        in_force = {
+            version.document.name: version
+            for version in Version.objects.current().select_related("document")
+        }
+        sections = []
+        for section in record.sections:
+            entries = []
+            for entry in section.entries:
+                current = in_force.get(entry.document)
+                compare_url = None
+                if current is not None and current.number != entry.version:
+                    compare_url = "{}?from={}&to={}".format(
+                        reverse("mvp_compliance:comparison", args=[current.document.slug]),
+                        entry.version,
+                        current.number,
+                    )
+                entries.append(
+                    SimpleNamespace(
+                        **asdict(entry),
+                        compare_url=compare_url,
+                        in_force=current.number if current else None,
+                    )
+                )
+            sections.append(replace(section, entries=tuple(entries)))
+        return replace(record, sections=tuple(sections))
+
     def changelist_view(self, request, extra_context=None):
         """Produce the answer for the person the form names."""
         # No ChangeList and no queryset over acceptances, and the refusal comes
@@ -446,6 +482,7 @@ class DisclosureAdmin(admin.ModelAdmin):
         record = None
         if form.is_bound and form.is_valid() and form.cleaned_data["subject"]:
             record = produce(resolve_subject(form.cleaned_data["subject"]))
+            record = self.with_comparisons(record)
 
         context = {
             **self.admin_site.each_context(request),

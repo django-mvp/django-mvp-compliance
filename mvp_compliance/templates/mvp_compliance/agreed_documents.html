@@ -9,7 +9,10 @@
           {% if entry.newer %}
             <c-alert variant="warning" icon="warning" soft class="alert-horizontal">
               <span>{% blocktranslate with number=entry.newer.number date=entry.newer.published_at|date %}A newer version, v{{ number }}, has been in force since {{ date }}. You have not agreed to it.{% endblocktranslate %}</span>
-              <a class="btn btn-sm" href="{% url 'mvp_compliance:document' entry.document.slug %}">{% blocktranslate with number=entry.newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
+              <div class="flex flex-wrap gap-2">
+                <a class="btn btn-sm" href="{% url 'mvp_compliance:comparison' entry.document.slug %}?from={{ entry.since.number }}&amp;to={{ entry.newer.number }}">{% blocktranslate with number=entry.since.number %}See what changed since v{{ number }}{% endblocktranslate %}</a>
+                <a class="btn btn-sm" href="{% url 'mvp_compliance:document' entry.document.slug %}">{% blocktranslate with number=entry.newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
+              </div>
             </c-alert>
           {% endif %}
           <div class="overflow-x-auto">
