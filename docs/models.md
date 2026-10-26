@@ -262,6 +262,19 @@ the document's versions published that year, so `"2026.1"`, `"2026.2"`, then
 `None`, so drafts that are never published leave no gaps, and the database refuses
 a second version with a number its document already has.
 
+`Version.summary` is an optional plain-text note of what changed since the version
+before, written by whoever prepares the version. It is empty unless somebody writes
+one, and the page that asks a person to agree shows it to a person who agreed to an
+earlier version (see [pages.md](pages.md#asking-a-person-to-agree)):
+
+```python
+Version.objects.create(
+    document=privacy,
+    markdown="# Privacy policy\n\n...",
+    summary="We now say how long we keep your address.",
+)
+```
+
 ### Publishing
 
 A version starts as a **draft**: no legal standing, invisible to readers, freely
@@ -358,8 +371,8 @@ MVP_COMPLIANCE_RENDERER = "myproject.rendering.MyRenderer"
 ### Immutability
 
 Once a version is published — current or superseded, `version.is_published` — its
-`document`, `number`, `markdown`, `html`, `published_at`, `publisher` and `publisher_subject`
-can never change again. The one exception is removing the publisher's account, which clears
+`document`, `number`, `markdown`, `summary`, `html`, `published_at`, `publisher` and
+`publisher_subject` can never change again. The one exception is removing the publisher's account, which clears
 `publisher` and keeps `publisher_subject`.
 Only `status` can, because moving from current to superseded is the one change a
 published version ever undergoes:
@@ -425,6 +438,16 @@ many versions are read:
 ```python
 for version in document.versions.published().with_replaced_at():
     print(version.number, version.published_at, version.replaced_at)
+```
+
+`VersionQuerySet.since_last_accepted_by(user)` narrows to the versions published
+after the latest version of the same document `user` accepted. A document `user`
+has never accepted contributes nothing. It is one query however many documents are
+read:
+
+```python
+changed = Version.objects.published().since_last_accepted_by(user)
+changed.exclude(summary="").order_by("-published_at")  # what to tell them, newest first
 ```
 
 `VersionQuerySet` also carries `.drafts()`, the complement — every version that has

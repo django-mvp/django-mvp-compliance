@@ -46,7 +46,6 @@ Some things stay out of this feature:
   outstanding and never appears on the page.
 - The acceptance itself is FS-003, and is unchanged: what it holds, that it is never edited, and
   that accepting the same version twice leaves one record.
-- A summary of what changed since the version a person last accepted is R6.
 - The document pages (FS-006) and the account area's list (FS-008) are unchanged. Neither gains a
   link to this page here.
 - Refusing is not recorded. A person who does not agree leaves no record of any kind.
@@ -243,6 +242,38 @@ that agreeing still records an acceptance and returns the person.
 
 ---
 
+### User Story 6 - Seeing what changed since agreeing last (Priority: P2)
+
+A person agreed to a site's privacy policy last year. Two versions have been published since. On
+the page that asks, the privacy policy's row shows what changed in each of them, newest first, in
+the words whoever prepared them wrote (FS-002). They can tell what they are agreeing to without
+reading the whole policy again, and the link to the full wording is still there.
+
+**Why this priority**: The page works without it, because the wording is always one link away. It
+is what spares a person who has agreed before from rereading a long document to find one changed
+clause.
+
+**Independent Test**: Accept one version of a document, publish two more with summaries and one
+without, and check the page shows the two summaries, newest first, and not the third. Sign in as a
+person who never accepted the document and check no summary is shown.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user who accepted an earlier version of a document, and versions published since
+   that carry summaries, **When** they open the page, **Then** the document's row shows the
+   summary of every version published since the one they accepted, newest first.
+2. **Given** one of those versions was published without a summary, **When** the user opens the
+   page, **Then** that version is left out and the others are shown.
+3. **Given** a user who accepted several versions of a document, **When** they open the page,
+   **Then** the summaries shown are those of the versions published after the latest one they
+   accepted.
+4. **Given** a user who has never accepted any version of a document, **When** they open the page,
+   **Then** no summary is shown for that document.
+5. **Given** a summary containing markup, **When** it is shown, **Then** it reads as written and
+   none of it is interpreted.
+
+---
+
 ### Edge Cases
 
 - A person opens the page in two windows and agrees in both. The second submission finds nothing
@@ -332,7 +363,8 @@ that agreeing still records an acceptance and returns the person.
 - **FR-022**: No document may take a slug that gives it the address of the page, and the page's
   address MUST never answer with a document. *(US-5)*
 - **FR-023**: Showing the page and processing a submission MUST each cost a number of database
-  queries that does not grow with the number of documents outstanding. *(US-3)*
+  queries that does not grow with the number of documents outstanding, or with the number of
+  summaries shown. *(US-3, US-6)*
 - **FR-024**: The feature MUST stop nobody from leaving the page, and MUST record nothing about a
   user who does not agree. *(US-1)*
 - **FR-025**: Every user-facing string this feature adds MUST be translatable, and none may state
@@ -341,6 +373,13 @@ that agreeing still records an acceptance and returns the person.
   them returned, what a person with nothing outstanding experiences, what happens when an
   acceptance cannot be stored, how the default destination is set, and how the page's template is
   replaced. *(US-4, US-5)*
+- **FR-027**: For each document listed, the page MUST show the summary (FS-002) of every version
+  of it published after the latest version the user accepted, newest first. *(US-6)*
+- **FR-028**: A version published without a summary MUST be left out of what is shown. *(US-6)*
+- **FR-029**: For a document the user has never accepted any version of, the page MUST show no
+  summary. *(US-6)*
+- **FR-030**: A summary MUST be shown as written, with nothing in it interpreted as markup.
+  *(US-6)*
 
 ### Key Entities
 
@@ -348,6 +387,7 @@ that agreeing still records an acceptance and returns the person.
   one on a person's own action. It records through FS-003 and adds no field.
 - **Version** (FS-001, FS-006): unchanged, and read only. The page links to the current
   version's own page, and an acceptance recorded here points at the version that link led to.
+  Its summary (FS-002) is shown to a person who accepted an earlier version.
 - **Document** (FS-001, FS-007): unchanged, apart from one more slug that cannot be taken. Whether
   a document is outstanding for a user is answered as FS-003 answers it.
 - **Destination**: the address a user is returned to once no enforced document is outstanding. It
@@ -375,6 +415,8 @@ that agreeing still records an acceptance and returns the person.
   no template written and no setting changed.
 - **SC-009**: The number of database queries to show the page is the same for a user with one
   outstanding document as for a user with ten.
+- **SC-010**: Every summary on the page belongs to a version published after the latest version of
+  its document the user accepted, and a user who has never accepted a document sees none for it.
 
 ## Clarifications
 
@@ -405,6 +447,15 @@ that agreeing still records an acceptance and returns the person.
   **A**: To a default the project can set, with one supplied by the package that works when
   nothing is set (FR-016, FR-017). A destination on another site is never followed, because the
   address could be written by anybody who builds a link to the page.
+
+### Session 2026-10-26
+
+- **Q**: Whose summaries does a person see? → **A**: Those of every version published since the
+  version of the document they last accepted, newest first, so a person two versions behind
+  learns both changes (FR-027). Versions with no summary are skipped (FR-028).
+- **Q**: Does a person agreeing to a document for the first time see a summary? → **A**: No
+  (FR-029). A summary says what is different from a version they agreed to, and they have agreed
+  to none.
 
 ## Assumptions
 

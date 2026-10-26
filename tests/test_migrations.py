@@ -117,7 +117,7 @@ class TestEnforcedColumn:
         }
 
         executor = MigrationExecutor(connection)
-        targets = executor.loader.graph.leaf_nodes()
+        targets = [("mvp_compliance", "0002_document_enforced")]
         executor.migrate(targets)
 
         after = executor.loader.project_state(targets).apps
@@ -126,3 +126,61 @@ class TestEnforcedColumn:
             assert (
                 list(after.get_model("mvp_compliance", name).objects.values()) == rows
             )
+
+
+@pytest.mark.django_db(transaction=True)
+class TestSummaryColumn:
+    """A published version that existed before the summary column has none, and
+    nothing else about it or its acceptance moves (Article XV).
+
+    Runs outside a transaction for the reason ``TestEnforcedColumn`` gives.
+    """
+
+    before_summary = [("mvp_compliance", "0002_document_enforced")]
+
+    @pytest.fixture
+    def executor(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.before_summary)
+        yield executor
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
+    def test_a_published_version_gains_an_empty_summary_and_is_otherwise_unchanged(
+        self, executor
+    ):
+        before = executor.loader.project_state(self.before_summary).apps
+        document = before.get_model("mvp_compliance", "Document").objects.create(
+            name="Terms", slug="terms"
+        )
+        version = before.get_model("mvp_compliance", "Version").objects.create(
+            document=document,
+            number="2026.1",
+            markdown="Wording",
+            html="<p>Wording</p>",
+            status="current",
+            published_at=timezone.now(),
+        )
+        person = UserFactory()
+        before.get_model("mvp_compliance", "Acceptance").objects.create(
+            user_id=person.pk,
+            subject=str(person.pk),
+            version=version,
+            accepted_at=timezone.now(),
+        )
+        held = {
+            name: list(before.get_model("mvp_compliance", name).objects.values())
+            for name in ("Version", "Acceptance")
+        }
+
+        executor = MigrationExecutor(connection)
+        targets = [("mvp_compliance", "0003_version_summary")]
+        executor.migrate(targets)
+
+        after = executor.loader.project_state(targets).apps
+        (migrated,) = after.get_model("mvp_compliance", "Version").objects.values()
+        assert migrated == {**held["Version"][0], "summary": ""}
+        assert (
+            list(after.get_model("mvp_compliance", "Acceptance").objects.values())
+            == held["Acceptance"]
+        )

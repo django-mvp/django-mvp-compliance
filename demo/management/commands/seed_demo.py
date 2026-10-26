@@ -158,6 +158,16 @@ ASKED = {
         (COMMUNITY, "2026.2"),
         (MEMBERSHIP, "2026.1"),
     ],
+    # Accepted the first version of the community guidelines and every other
+    # document in force: their one row shows what changed in each version since,
+    # newest first, with the version published without a summary left out.
+    "behind.user@example.com": [
+        ("Privacy policy", "2026.1"),
+        ("Terms of use", "2025.1"),
+        ("House rules", "2025.1"),
+        (COMMUNITY, "2024.1"),
+        (MEMBERSHIP, "2026.1"),
+    ],
     # Two outstanding, and the write always fails: the demo's own view refuses
     # to store an acceptance for this account, so the failure can be looked at.
     "unrecorded.user@example.com": [
@@ -268,6 +278,11 @@ held.
 Write to us and we will remove what we hold. There is no form to fill in.
 """
 
+PRIVACY_NEXT_SUMMARY = (
+    "We now record the pages you visit while signed in, and say how long we keep "
+    "what we hold."
+)
+
 TERMS = """\
 ## Using this site
 
@@ -332,6 +347,14 @@ Be accurate, be civil, and say who you are posting for.
 This is the wording as revised for the {revision} time.
 """
 
+#: What changed in the second, fourth and fifth community guidelines. The first
+#: and third were published without a summary. The fourth runs over two lines.
+COMMUNITY_SUMMARIES = [
+    "Organisations posting for members now say who they post for.",
+    "Guests are covered for the first time.\nThe section on accuracy is shorter.",
+    "We now ask you to say who you are posting for in every post, not only the first.",
+]
+
 MEMBERSHIP_WORDING = """\
 ## Joining
 
@@ -375,7 +398,10 @@ class Command(BaseCommand):
         self.make_document(
             "Privacy policy",
             drafts=[],
-            published=[(PRIVACY, (2025, 3, 10)), (PRIVACY_NEXT, (2026, 6, 2))],
+            published=[
+                (PRIVACY, (2025, 3, 10)),
+                (PRIVACY_NEXT, (2026, 6, 2), PRIVACY_NEXT_SUMMARY),
+            ],
             note="two published versions: one in force, one superseded",
             publisher=publisher,
         )
@@ -410,16 +436,16 @@ class Command(BaseCommand):
             COMMUNITY,
             drafts=[],
             published=[
-                (COMMUNITY_WORDING.format(revision=revision), day)
-                for revision, day in [
-                    ("first", (2024, 2, 5)),
-                    ("second", (2024, 11, 18)),
-                    ("third", (2025, 7, 1)),
-                    ("fourth", (2026, 2, 9)),
-                    ("fifth", (2026, 9, 14)),
+                (COMMUNITY_WORDING.format(revision=revision), day, summary)
+                for revision, day, summary in [
+                    ("first", (2024, 2, 5), ""),
+                    ("second", (2024, 11, 18), COMMUNITY_SUMMARIES[0]),
+                    ("third", (2025, 7, 1), ""),
+                    ("fourth", (2026, 2, 9), COMMUNITY_SUMMARIES[1]),
+                    ("fifth", (2026, 9, 14), COMMUNITY_SUMMARIES[2]),
                 ]
             ],
-            note="five published versions over three years, and a long name",
+            note="five published versions over three years, three with a summary",
         )
         self.make_document(
             MEMBERSHIP,
@@ -622,8 +648,12 @@ class Command(BaseCommand):
             document.kind = kind
             document.save(update_fields=["kind"])
 
-        for markdown, day in published:
-            version = Version.objects.create(document=document, markdown=markdown)
+        for markdown, day, *summary in published:
+            version = Version.objects.create(
+                document=document,
+                markdown=markdown,
+                summary=summary[0] if summary else "",
+            )
             with on(*day):
                 version.publish(publisher=publisher)
         for markdown in drafts:

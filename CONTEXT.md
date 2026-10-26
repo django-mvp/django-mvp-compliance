@@ -81,6 +81,13 @@ still say "Account removed" once the account is gone, without naming anyone. A v
 published from code with nobody named has no publisher, and says so.
 _Avoid_: author (the person who wrote the wording may be someone else), approver, owner.
 
+**Summary**:
+What changed in a version since the version before, in a sentence or two of plain text, written
+by whoever prepares the version. It is optional and part of the version: written while it is a
+draft and never changed once it is published. A person asked to agree to a document they agreed
+to before is shown the summary of every version published since the one they last accepted.
+_Avoid_: changelog, release notes, change note, diff.
+
 **Draft**:
 A version that has never been published. It can be edited and previewed freely, and it is invisible
 to everyone but the people who manage documents. A draft has no legal meaning at all.

@@ -10,6 +10,9 @@
 <p>
   {% translate "This will make it the version in force. Once published, the wording cannot be changed — a correction is published as another version." %}
 </p>
+{% if original.summary %}
+<p><strong>{% translate "Summary" %}:</strong> {{ original.summary|linebreaksbr }}</p>
+{% endif %}
 <div id="mvp-compliance-publish-preview">{{ html|safe }}</div>
 <form method="post">
   {% csrf_token %}

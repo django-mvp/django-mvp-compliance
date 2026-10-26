@@ -26,8 +26,7 @@ legal documents. Often not a developer, sometimes not an employee, and not assum
 or anything else about how the site is built. Everything here is designed for them.
 
 This feature calls into the rules FS-001 specified and never re-implements or softens them. The
-public pages a visitor reads are R2. The summary of what changed between versions is R6. Telling
-anybody that a publish happened is #12.
+public pages a visitor reads are R2. Telling anybody that a publish happened is #12.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -185,6 +184,39 @@ untouched.
 
 ---
 
+### User Story 6 - Say what changed alongside the wording (Priority: P2)
+
+A compliance editor preparing a new version of a document people have already agreed to writes a
+sentence or two saying what is different, beside the wording. It goes live with the version and,
+like the wording, can never be changed once it has. A person asked to agree to the new version is
+shown it (FS-009), so they can tell what they are agreeing to without reading the whole document
+again.
+
+**Why this priority**: The document is usable without it, and a person can always read the
+wording in full. It is also the only way somebody who has agreed before learns what moved, short
+of comparing two versions line by line.
+
+**Independent Test**: Write a summary on a draft, publish it, and confirm the published version
+carries the summary and that every route which refuses a change to its wording refuses a change
+to its summary. Publish another draft with no summary and confirm it carries none.
+
+**Acceptance Scenarios**:
+
+1. **Given** a draft, **When** a compliance editor writes a summary beside the wording, **Then**
+   it is kept with the version and can be rewritten for as long as the version is a draft.
+2. **Given** a draft with a summary, **When** it is published, **Then** the published version
+   carries that summary.
+3. **Given** a draft with no summary, **When** it is published, **Then** the published version
+   carries none.
+4. **Given** a published version, **When** anybody attempts to change its summary, by any route
+   that refuses a change to its wording, **Then** the change is refused in the same way.
+5. **Given** a published version, **When** a compliance editor opens it, **Then** its summary is
+   readable in full and there is no editable form.
+6. **Given** a document with a version in force, **When** a compliance editor begins the next
+   version, **Then** it opens with the current wording and an empty summary.
+
+---
+
 ### Edge Cases
 
 - An author writes Markdown by hand that the allow list strips. The preview shows the loss, so it
@@ -240,11 +272,20 @@ untouched.
   explanation they can act on rather than as an unhandled error. *(US-4)*
 - **FR-019**: No text this feature shows a person may state or imply that publishing makes a site
   compliant with any regulation. *(US-4)*
-- **FR-020**: Every string this feature shows a person MUST be translatable. *(US-1..US-5)*
+- **FR-020**: Every string this feature shows a person MUST be translatable. *(US-1..US-6)*
 - **FR-021**: Beginning a new version of a document that has one in force MUST offer the current
   wording as the starting point. *(US-5)*
 - **FR-022**: Editing a version started from the current wording MUST leave the published version it
   was copied from unchanged. *(US-5)*
+- **FR-023**: A version MUST be able to carry a summary of what changed, written beside the wording
+  while the version is a draft. A summary is optional, and a version published without one
+  carries none. *(US-6)*
+- **FR-024**: A published version's summary MUST NOT change. Every route that refuses a change to
+  a published version's wording MUST refuse a change to its summary. *(US-6)*
+- **FR-025**: A summary MUST be plain text, shown as it was written and never interpreted as
+  Markdown or markup. *(US-6)*
+- **FR-026**: A new version started from the current wording MUST start with an empty summary.
+  *(US-6)*
 
 ### Key Entities
 
@@ -253,7 +294,9 @@ untouched.
   on documents, and separately may hold the permission to publish. This term is new and joins
   `CONTEXT.md` when the feature is built.
 - **Draft** and **Version**: as defined in `CONTEXT.md` and specified in FS-001. This feature adds
-  no state to either.
+  one thing to a version, its summary (US-6), and no state to either.
+- **Summary**: what changed in a version since the version before, as defined in `CONTEXT.md`.
+  Part of the version, and frozen with it at publication.
 
 ## Success Criteria *(mandatory)*
 
@@ -272,6 +315,8 @@ untouched.
 - **SC-006**: A published version offers no editable form anywhere in the admin.
 - **SC-007**: Both refusals FS-001 raises at publication reach the author as readable explanations.
 - **SC-008**: No string in the feature claims compliance, and every string is translatable.
+- **SC-009**: No route that refuses a change to a published version's wording accepts a change to
+  its summary.
 
 ## Clarifications
 
@@ -293,6 +338,17 @@ untouched.
 - **Q**: Are writing a draft and publishing one permission or two? → **A**: Two. Writing wording and
   making it legally binding are different levels of trust, and a site that wants one person to do
   both grants both (FR-014).
+
+### Session 2026-10-26
+
+- **Q**: Does every version need a summary? → **A**: No. It is optional, and a version published
+  without one shows none (FR-023).
+- **Q**: Can a summary be formatted? → **A**: No. It is a sentence or two of plain text, with line
+  breaks kept (FR-025). Nothing has to be rendered at publication, and nothing in it can be read
+  as markup.
+- **Q**: Can a summary be corrected after publication? → **A**: No. It is part of the version and
+  frozen with the wording (FR-024). A wrong summary is corrected the way wrong wording is, by
+  publishing another version.
 
 ## Assumptions
 

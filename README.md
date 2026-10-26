@@ -388,6 +388,14 @@ ordinary Markdown.
 The controls agree with what publication keeps: nothing the toolbar can
 produce is stripped when the version is published.
 
+Beside the wording, a version has an optional **Summary**: a sentence or two
+of plain text saying what changed since the version before. It is published
+with the version and never changes afterwards. A person who agreed to an
+earlier version and is asked to agree again sees the summary of every version
+published since, so they can tell what is different without reading the whole
+document again. See
+[docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md#saying-what-changed).
+
 The toolbar is drawn by [EasyMDE](https://github.com/Ionaru/easy-markdown-editor),
 vendored into the package rather than fetched, with its own icons in place
 of the icon font it expects and does not ship.

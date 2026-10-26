@@ -36,7 +36,8 @@
             <c-compliance.outstanding :document="entry.document"
                                       :version="entry.version"
                                       :field="entry.field"
-                                      :optional="entry.optional" />
+                                      :optional="entry.optional"
+                                      :changes="entry.changes" />
           {% endfor %}
         </ul>
       </c-mvp.card>
