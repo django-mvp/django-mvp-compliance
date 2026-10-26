@@ -140,7 +140,10 @@ A notice is never listed, and neither is a document with only drafts.
 document's name, the number of the version in force, a link that opens that exact version's page
 (`?version=`) in a new tab, and a toggle. The page itself carries none of the wording: the link is
 how it is read in full. A person who accepted an earlier version is asked about the version in
-force. A row is marked required when its document is [enforced](models.md#enforcement) and
+force, and the row also shows the [summary](authoring.md#saying-what-changed) of every version
+published since the one they last accepted, newest first, each under its number. A version
+published without a summary is left out of that list. A person agreeing to a document for the
+first time sees no summaries. A row is marked required when its document is [enforced](models.md#enforcement) and
 optional when it is not, and the required rows come first.
 
 **What a submission records.** One acceptance for each row whose toggle was on, written in one

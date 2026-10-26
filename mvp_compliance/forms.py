@@ -18,7 +18,7 @@ class VersionForm(forms.ModelForm):
 
     class Meta:
         model = Version
-        fields = ["document", "markdown"]
+        fields = ["document", "markdown", "summary"]
         widgets = {"markdown": MarkdownEditorWidget}
 
 

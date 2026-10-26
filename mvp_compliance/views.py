@@ -276,20 +276,34 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
 
         Returns:
             One dict per outstanding document, in the order the document pages
-            list them, holding its ``document``, the ``version`` in force and
-            whether agreeing is ``optional``. Two queries whatever the number
-            of documents.
+            list them, holding its ``document``, the ``version`` in force,
+            whether agreeing is ``optional``, and the ``changes``: the versions
+            published since the one the person last accepted that carry a
+            summary, newest first. Three queries whatever the number of
+            documents.
         """
-        documents = (
+        documents = list(
             Document.objects.outstanding_for(self.request.user)
             .in_force()
             .order_by("name")
         )
+        changes: dict[int, list[Version]] = {}
+        if documents:
+            summarised = (
+                Version.objects.published()
+                .since_last_accepted_by(self.request.user)
+                .filter(document__in=documents)
+                .exclude(summary="")
+                .order_by("-published_at")
+            )
+            for version in summarised:
+                changes.setdefault(version.document_id, []).append(version)
         entries = [
             {
                 "document": document,
                 "version": document.current_versions[0],
                 "optional": self.is_optional(document),
+                "changes": changes.get(document.pk, []),
             }
             for document in documents
         ]

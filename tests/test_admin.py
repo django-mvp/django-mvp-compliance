@@ -1509,6 +1509,55 @@ class TestUserFacingStrings:
 
 @pytest.mark.django_db
 @pytest.mark.urls(__name__)
+class TestSummaryInTheAdmin:
+    def test_a_drafts_summary_is_saved_from_its_page(
+        self, client, editor, draft
+    ) -> None:
+        client.force_login(editor)
+        change_url = reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+
+        response = client.post(
+            change_url,
+            data={
+                "document": draft.document_id,
+                "markdown": draft.markdown,
+                "summary": "We now say how long we keep your address.",
+            },
+        )
+
+        draft.refresh_from_db()
+        assert response.status_code == 302
+        assert draft.summary == "We now say how long we keep your address."
+
+    def test_the_next_version_starts_without_the_summary_in_force(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        current = VersionFactory(document=document, summary="The change in force")
+        current.publish()
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_add"), {"document": document.pk}
+        )
+
+        assert response.status_code == 200
+        assert "summary" not in response.context["adminform"].form.initial
+        assert current.summary not in response.content.decode()
+
+    def test_a_published_versions_page_shows_its_summary(self, client, editor) -> None:
+        version = VersionFactory(summary="We now say how long we keep your address.")
+        version.publish()
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[version.pk])
+        )
+
+        assert version.summary in response.content.decode()
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
 class TestPublisherInTheAdmin:
     def test_publishing_through_the_admin_records_the_signed_in_user(
         self, client, publisher, draft

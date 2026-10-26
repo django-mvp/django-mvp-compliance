@@ -14,7 +14,7 @@ class TestVersionForm:
     def test_it_exposes_only_what_an_author_supplies(self) -> None:
         from mvp_compliance.forms import VersionForm
 
-        assert list(VersionForm().fields) == ["document", "markdown"]
+        assert list(VersionForm().fields) == ["document", "markdown", "summary"]
 
     @pytest.mark.django_db
     def test_markdown_typed_by_hand_round_trips_unchanged(self, document) -> None:
