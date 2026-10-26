@@ -98,7 +98,7 @@ page offers a **Publish** link once it is a draft, to whoever holds it. There is
 — no changelist action, no field, no checkbox saves and publishes at once.
 
 The link leads to a confirmation page before anything happens. It names the document and
-version, shows the rendering about to go live, and says plainly that the wording cannot be
+version, shows the rendering about to go live and the summary when there is one, and says plainly that the wording cannot be
 changed afterwards and that a correction is published as another version. Publishing happens
 only when that page is posted. Following its **Back** link instead leaves the draft untouched.
 

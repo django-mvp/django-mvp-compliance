@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 16:59+0100\n"
+"POT-Creation-Date: 2026-10-26 17:05+0100\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -68,7 +68,7 @@ msgid "Version %(number)s of %(document)s is now published."
 msgstr "Version %(number)s of %(document)s is now published."
 
 #: admin.py:393 templates/admin/mvp_compliance/version/change_form.html:14
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:16
+#: templates/admin/mvp_compliance/version/publish_confirmation.html:19
 msgid "Publish"
 msgstr "Publish"
 
@@ -683,7 +683,11 @@ msgstr ""
 "This will make it the version in force. Once published, the wording cannot "
 "be changed — a correction is published as another version."
 
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:20
+#: templates/admin/mvp_compliance/version/publish_confirmation.html:14
+msgid "Summary"
+msgstr ""
+
+#: templates/admin/mvp_compliance/version/publish_confirmation.html:23
 msgid "Back"
 msgstr "Back"
 
