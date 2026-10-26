@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Version.summary`, an optional plain-text note of what changed since the version before.
+  Whoever prepares a version writes it in the admin beside the wording. It is published with the
+  version and refused by every route that refuses a change to a published version. Migration
+  `0003_version_summary` adds the column, empty for every existing version. See
+  [docs/authoring.md](docs/authoring.md#saying-what-changed).
+- The page that asks a person to agree shows a person who agreed to an earlier version of a
+  document the summary of every version published since the one they last accepted, newest
+  first. A version with no summary is left out, and a person agreeing for the first time sees
+  none. See [docs/pages.md](docs/pages.md#asking-a-person-to-agree).
+- `VersionQuerySet.since_last_accepted_by(user)`, the versions of each document published after
+  the latest one `user` accepted. See [docs/models.md](docs/models.md#retrieval).
+
 ## [v0.4.0] - 2026-10-24
 
 ### Added

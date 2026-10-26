@@ -26,6 +26,7 @@ PUBLISHED_FROZEN_FIELDS = (
     "document",
     "number",
     "markdown",
+    "summary",
     "html",
     "published_at",
     "publisher",
@@ -362,6 +363,32 @@ class VersionQuerySet(models.QuerySet):
             replaced_at=models.Subquery(later.values("published_at")[:1])
         )
 
+    def since_last_accepted_by(self, user) -> "VersionQuerySet":
+        """Narrow to the versions published after the last one ``user`` accepted.
+
+        Counted per document, from the latest of its versions ``user`` accepted.
+        A document ``user`` has never accepted has no such versions. One query
+        however many documents are read.
+
+        Args:
+            user: The account to ask about.
+
+        Returns:
+            The versions of each document ``user`` accepted that were published
+            after the latest one they accepted.
+        """
+        last_accepted = (
+            Acceptance.objects.for_person(user)
+            .filter(version__document=models.OuterRef("document"))
+            .order_by("-version__published_at")
+        )
+        # Never accepted leaves the annotation null, and nothing is later than null.
+        return self.annotate(
+            last_accepted_at=models.Subquery(
+                last_accepted.values("version__published_at")[:1]
+            )
+        ).filter(published_at__gt=models.F("last_accepted_at"))
+
 
 class VersionManager(models.Manager):
     """Gives a historical model in a migration the same guards.
@@ -435,6 +462,14 @@ class Version(models.Model):
     markdown = models.TextField(
         _("markdown"),
         help_text=_("The wording of this version, written in Markdown."),
+    )
+    summary = models.TextField(
+        _("summary"),
+        blank=True,
+        help_text=_(
+            "What changed since the version before, for a person who agreed to an "
+            "earlier version and is asked to agree again. Plain text. Optional."
+        ),
     )
     html = models.TextField(
         _("html"),

@@ -48,12 +48,28 @@ produces wording that vanishes at publication.
 
 ## The form
 
-`VersionForm` is what the admin posts. It exposes exactly two fields, `document` and
-`markdown`, because those are the only two an author supplies.
+`VersionForm` is what the admin posts. It exposes exactly three fields, `document`, `markdown`
+and `summary`, because those are the only ones an author supplies.
 
 The `html` a reader is served is produced once by `Version.publish()` and is the record of what
 somebody was shown, so it is never something a form can write. `number`, `status`,
 `published_at` and the publisher belong to the package for the same reason.
+
+## Saying what changed
+
+A version's **Summary** says, in a sentence or two, what is different from the version before.
+It is for the person who agreed to an earlier version and is now asked to agree again, so they
+can tell what they are agreeing to without reading the whole document a second time. It is
+optional: a version published without one shows none.
+
+The summary is plain text. Line breaks are kept and nothing else is formatted, so it is shown as
+written and needs no rendering at publication. It is part of the version: written while the
+version is a draft, published with it, and never changed afterwards, exactly like the wording.
+A summary that turns out to be wrong is corrected the same way as the wording, by publishing
+another version.
+
+Where a person sees it is described under
+[Asking a person to agree](pages.md#asking-a-person-to-agree).
 
 ## Reading it back before publishing
 
@@ -100,8 +116,8 @@ receiver that fails changes nothing the person publishing sees.
 empty once whitespace is stripped. Both refusals reach the person publishing as a message on
 the page they return to, not as a traceback.
 
-Once a version is published, its change page in the admin offers nothing to edit. Its wording
-and its publisher never change, and both are readable in full. Django serves its own read-only
+Once a version is published, its change page in the admin offers nothing to edit. Its wording,
+its summary and its publisher never change, and all three are readable in full. Django serves its own read-only
 page — not a form with disabled fields, and not one whose save is silently refused.
 
 ## Starting the next version from the one in force
@@ -114,7 +130,8 @@ page, next to Preview. It opens the version add form with that document already 
 when it has a version in force, hands that version's Markdown to the form as an initial value,
 so the new draft opens with the current wording already in the box, ready to be edited. A
 document with nothing published yet opens the box empty, which is the ordinary case for a new
-document.
+document. The summary always starts empty, because it describes the change the new version
+makes and not the one before it.
 
 The version the wording came from is never opened for writing. The initial value populates a
 new, unsaved form; nothing on the server writes to the version it was read from, and

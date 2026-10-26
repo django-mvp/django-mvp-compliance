@@ -2120,6 +2120,102 @@ class TestSeveralOutstanding:
 
 
 @pytest.mark.django_db
+class TestWhatChanged:
+    """US-6: a person asked to agree again sees what changed since they last agreed
+    (FR-023, FR-027 to FR-030)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def summarised(document, summary, markdown=None):
+        """Publish a new version of ``document`` carrying ``summary``."""
+        version = VersionFactory(
+            document=document,
+            summary=summary,
+            **({"markdown": markdown} if markdown else {}),
+        )
+        version.publish()
+        return version
+
+    def test_every_summary_since_the_version_accepted_is_listed_newest_first(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = self.summarised(document, "Not shown: accepted already")
+        Acceptance.objects.record(user, accepted)
+        second = self.summarised(document, "Second change")
+        third = self.summarised(document, "Third change")
+
+        response = signed_in.get(agreement_address())
+
+        (entry,) = response.context["entries"]
+        assert entry["changes"] == [third, second]
+
+    def test_a_version_with_no_summary_is_passed_over(self, signed_in, user):
+        document = DocumentFactory()
+        Acceptance.objects.record(user, published(document, "First"))
+        summarised = self.summarised(document, "What changed", "Second")
+        published(document, "Third")
+
+        response = signed_in.get(agreement_address())
+
+        (entry,) = response.context["entries"]
+        assert entry["changes"] == [summarised]
+
+    def test_a_person_agreeing_for_the_first_time_sees_no_summary(self, signed_in):
+        document = DocumentFactory()
+        self.summarised(document, "First change", "First")
+        self.summarised(document, "Second change", "Second")
+
+        response = signed_in.get(agreement_address())
+
+        (entry,) = response.context["entries"]
+        assert entry["changes"] == []
+        assert "Second change" not in response.content.decode()
+
+    def test_the_summaries_are_on_the_page(self, signed_in, user):
+        document = DocumentFactory()
+        Acceptance.objects.record(user, published(document, "First"))
+        self.summarised(document, "We now say how long we keep your address.")
+
+        response = signed_in.get(agreement_address())
+
+        assert "We now say how long we keep your address." in response.content.decode()
+
+    def test_markup_in_a_summary_is_escaped(self, signed_in, user):
+        document = DocumentFactory()
+        Acceptance.objects.record(user, published(document, "First"))
+        self.summarised(document, "<script>alert(1)</script>")
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert "<script>alert(1)</script>" not in content
+        assert "&lt;script&gt;alert(1)&lt;/script&gt;" in content
+
+    def test_the_query_count_does_not_grow_with_the_summaries(self, signed_in, user):
+        def changed_since_accepted():
+            document = DocumentFactory()
+            Acceptance.objects.record(user, published(document, "First"))
+            self.summarised(document, "Second change", "Second")
+            self.summarised(document, "Third change", "Third")
+
+        changed_since_accepted()
+        signed_in.get(agreement_address())  # warm caches
+        with CaptureQueriesContext(connection) as small:
+            signed_in.get(agreement_address())
+        for _ in range(9):
+            changed_since_accepted()
+
+        with CaptureQueriesContext(connection) as large:
+            signed_in.get(agreement_address())
+
+        assert len(large) == len(small)
+
+
+@pytest.mark.django_db
 class TestAgreementDestination:
     """US-4: where a person is sent on to, and the person with nothing outstanding
     (FR-015 to FR-018, FR-026, SC-006)."""

@@ -1,10 +1,11 @@
-{# @description One outstanding document as a row of the list on the page that asks: its name, whether it is required, its version in force with a link to it, and the toggle that agrees to it. #}
+{# @description One outstanding document as a row of the list on the page that asks: its name, whether it is required, its version in force with a link to it, what changed since the reader last agreed to it, and the toggle that agrees to it. #}
 {# @prop document:object | description:"The outstanding document." #}
 {# @prop version:object | description:"Its version in force, the one the toggle agrees to and the link opens." #}
 {# @prop field:object | description:"The attributes of the toggle: name, value, id, and checked when it was on." #}
 {# @prop optional:boolean | description:"The reader may continue without agreeing to this document." #}
+{# @prop changes:list | description:"The versions published since the one the reader last agreed to that carry a summary, newest first. Empty for a reader who never agreed to the document." #}
 {% load i18n %}
-<c-vars document version field optional />
+<c-vars document version field optional changes />
 <li class="list-row items-center">
   {# The growing column has to be the row's first child: the list sizes its columns by position, and that is what holds every toggle at the end of its row. #}
   <div class="list-col-grow min-w-0 flex flex-col gap-1">
@@ -23,6 +24,19 @@
        target="_blank"
        rel="noopener"
        aria-describedby="document-{{ document.slug }}">{% translate "View document in full" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+    {% if changes %}
+      <div class="flex flex-col gap-1 text-sm">
+        <div class="font-medium">{% translate "What changed since you last agreed" %}</div>
+        <dl class="flex flex-col gap-2">
+          {% for change in changes %}
+            <div>
+              <dt class="opacity-70">{% blocktranslate with number=change.number %}Version {{ number }}{% endblocktranslate %}</dt>
+              <dd>{{ change.summary|linebreaksbr }}</dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </div>
+    {% endif %}
   </div>
   <c-form.label class="gap-2" text="{% translate "I agree" %}">
     <c-form.toggle variant="primary" :attrs="field" />

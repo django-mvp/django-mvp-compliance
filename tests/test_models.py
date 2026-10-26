@@ -477,6 +477,129 @@ class TestWithReplacedAt:
 
 
 @pytest.mark.django_db
+class TestSinceLastAcceptedBy:
+    """The versions of a document published after the last one a person accepted."""
+
+    def test_names_the_versions_published_after_the_one_accepted(self, user):
+        document = DocumentFactory()
+        first, second, third = (VersionFactory(document=document) for _ in range(3))
+        first.publish()
+        Acceptance.objects.record(user, first)
+        second.publish()
+        third.publish()
+
+        found = Version.objects.published().since_last_accepted_by(user)
+
+        assert set(found) == {second, third}
+
+    def test_counts_from_the_latest_version_accepted(self, user):
+        document = DocumentFactory()
+        first, second, third = (VersionFactory(document=document) for _ in range(3))
+        first.publish()
+        Acceptance.objects.record(user, first)
+        second.publish()
+        Acceptance.objects.record(user, second)
+        third.publish()
+
+        found = Version.objects.published().since_last_accepted_by(user)
+
+        assert list(found) == [third]
+
+    def test_names_nothing_of_a_document_never_accepted(self, user):
+        document = DocumentFactory()
+        for _ in range(2):
+            VersionFactory(document=document).publish()
+
+        found = Version.objects.published().since_last_accepted_by(user)
+
+        assert list(found) == []
+
+    def test_another_persons_acceptance_does_not_count(self, user):
+        document = DocumentFactory()
+        first, second = (VersionFactory(document=document) for _ in range(2))
+        first.publish()
+        Acceptance.objects.record(UserFactory(), first)
+        second.publish()
+
+        found = Version.objects.published().since_last_accepted_by(user)
+
+        assert list(found) == []
+
+    def test_each_document_counts_from_its_own_acceptance(self, user):
+        accepted_late = DocumentFactory()
+        accepted_early = DocumentFactory()
+        early = VersionFactory(document=accepted_early)
+        early.publish()
+        Acceptance.objects.record(user, early)
+        late = VersionFactory(document=accepted_late)
+        late.publish()
+        Acceptance.objects.record(user, late)
+        after_early = VersionFactory(document=accepted_early)
+        after_early.publish()
+
+        found = Version.objects.published().since_last_accepted_by(user)
+
+        assert list(found) == [after_early]
+
+
+@pytest.mark.django_db
+class TestSummary:
+    """A version's summary of what changed is part of it, and frozen at publication."""
+
+    def test_a_drafts_summary_can_be_written_and_rewritten(self, draft):
+        draft.summary = "First attempt"
+        draft.save()
+        Version.objects.filter(pk=draft.pk).update(summary="Second attempt")
+
+        draft.refresh_from_db()
+        assert draft.summary == "Second attempt"
+
+    def test_the_summary_written_as_a_draft_is_published_with_it(self):
+        version = VersionFactory(summary="We now keep the address you sign in with.")
+
+        version.publish()
+
+        version.refresh_from_db()
+        assert version.summary == "We now keep the address you sign in with."
+
+    def test_a_version_is_published_with_no_summary(self, published_version):
+        assert published_version.summary == ""
+
+    def test_saving_a_published_version_with_a_changed_summary_is_refused(
+        self, published_version
+    ):
+        published_version.summary = "Written afterwards"
+
+        with pytest.raises(PublishedVersionError):
+            published_version.save()
+
+        published_version.refresh_from_db()
+        assert published_version.summary == ""
+
+    def test_updating_a_published_summary_through_the_queryset_is_refused(
+        self, published_version
+    ):
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=published_version.pk).update(
+                summary="Written afterwards"
+            )
+
+        published_version.refresh_from_db()
+        assert published_version.summary == ""
+
+    def test_bulk_updating_a_published_summary_is_refused(self, published_version):
+        published_version.summary = "Written afterwards"
+
+        # bulk_update() wraps its internal update() in transaction.atomic(
+        # savepoint=False), so the test supplies the savepoint.
+        with pytest.raises(PublishedVersionError), transaction.atomic():
+            Version.objects.bulk_update([published_version], ["summary"])
+
+        published_version.refresh_from_db()
+        assert published_version.summary == ""
+
+
+@pytest.mark.django_db
 class TestVersion:
     def test_a_draft_has_no_number(self, document):
         draft = Version.objects.create(document=document, markdown="Wording")
