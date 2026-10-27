@@ -537,7 +537,7 @@ the page and its menu entry do not exist. See
 
 ## Documentation
 
-- [docs/demo.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/demo.md) — running the demo project, which serves
+- [docs/how-to/use-the-demo.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/how-to/use-the-demo.md) — running the demo project, which serves
   these pages, and the accounts and documents it is seeded with.
 - [docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md) — documents, versions, publishing, and what a published
   version guarantees.

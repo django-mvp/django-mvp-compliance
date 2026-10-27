@@ -1,4 +1,4 @@
-# Using the demo
+# How to use the demo
 
 The repository holds a demonstration project, `demo/`, for looking at the package in a browser
 while it is being built. Its pages are this documentation, and every state the package can be

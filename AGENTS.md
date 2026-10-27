@@ -28,7 +28,7 @@ person what it holds and expose hooks. It never gathers or erases data belonging
 - **Build:** `uv build`
 - **Demo project:** `uv run python manage.py build_docs`, then
   `uv run python manage.py runserver 0.0.0.0:8021`. The demo's pages are `docs/`, built by
-  `build_docs`; run it again after editing a page. See `docs/demo.md`.
+  `build_docs`; run it again after editing a page. See `docs/how-to/use-the-demo.md`.
 
 Lint is the pre-commit run, not a bare `ruff check .`: the hook config excludes `docs/` and
 migrations, and a raw invocation reports findings in paths the gate does not cover.

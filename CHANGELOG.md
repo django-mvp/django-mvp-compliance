@@ -30,8 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The demo's pages are this documentation, served in django-mvp's shell by django-mvp-sphinx with
   its contents as the sidebar. Build them with `python manage.py build_docs`. The landing page is
-  gone, and a new page, [Using the demo](docs/demo.md), lists its accounts and seeded documents.
-  Pages about developing the package (the roadmap, decision records, brainstorm and contributing
+  gone, and a new page, [How to use the demo](docs/how-to/use-the-demo.md), lists its accounts
+  and seeded documents. Pages about developing the package (the roadmap, decision records, brainstorm and contributing
   standards) stay in the repository and out of the built pages. The demo's sign-in page and
   allauth's account pages are drawn in the shell by django-mvp-accounts. django-mvp-sphinx,
   Sphinx, myst-parser and django-mvp-accounts are development dependencies only.

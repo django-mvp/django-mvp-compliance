@@ -12,8 +12,8 @@ and the record of an agreement points at the exact version a person saw.
 
 ## Where to look
 
-- [Using the demo](demo.md) is where to start in the demo project: who to sign in as, and what
-  each account shows.
+- [How to use the demo](how-to/use-the-demo.md) is where to start in the demo project: who to
+  sign in as, and what each account shows.
 - [Writing and publishing a document](authoring.md) and [Data model](models.md) cover the
   documents themselves, in the admin and in code.
 - [Pages](pages.md) and [Enforcement](enforcement.md) cover what a visitor and a signed-in
@@ -27,7 +27,7 @@ and the record of an agreement points at the exact version a person saw.
 ```{toctree}
 :hidden:
 
-demo
+how-to/use-the-demo
 ```
 
 ```{toctree}
