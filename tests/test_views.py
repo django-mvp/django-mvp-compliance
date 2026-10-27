@@ -604,6 +604,231 @@ class TestVersionSwitcher:
         assert f"<span>v{first.number}</span>" in content
 
 
+def comparison_address(document, older, newer):
+    """The comparison of two versions of ``document``, by number."""
+    query = urlencode({"from": older.number, "to": newer.number})
+    return f"{reverse('mvp_compliance:comparison', args=[document.slug])}?{query}"
+
+
+def marked_text(response):
+    """The marked-up text of a comparison page, between its wrapping tags."""
+    found = re.search(
+        r'class="[^"]*compliance-comparison[^"]*"[^>]*>(.*?)</div>',
+        response.content.decode(),
+        re.DOTALL,
+    )
+    assert found, "the page holds no comparison"
+    return found.group(1)
+
+
+@pytest.fixture
+def staff_client():
+    client = Client()
+    client.force_login(UserFactory(is_staff=True, is_superuser=True))
+    return client
+
+
+@pytest.mark.django_db
+class TestComparisonPage:
+    """FR-001, FR-005, FR-007 to FR-011, FR-020, SC-006: two published versions of a
+    document compared on a page anyone can read, at an address that names them."""
+
+    def test_anonymous_visitor_reads_it_and_both_versions_are_linked(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, second))
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert f'href="{version_address(document, first.number)}"' in content
+        assert f'href="{version_address(document, second.number)}"' in content
+
+    def test_the_reversed_order_gives_the_same_page(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        forward = client.get(comparison_address(document, first, second))
+        backward = client.get(comparison_address(document, second, first))
+
+        assert backward.status_code == 200
+        assert marked_text(backward) == marked_text(forward)
+        assert backward.context["comparison"].older == first
+        assert backward.context["comparison"].newer == second
+
+    def test_the_same_address_gives_the_same_output_after_a_newer_publication(
+        self, client
+    ):
+        document = DocumentFactory()
+        first = published(document, "One wording of this clause")
+        second = published(document, "Another wording of this clause")
+        address = comparison_address(document, first, second)
+        before = marked_text(client.get(address))
+
+        published(document, "A third wording of the whole page")
+
+        assert marked_text(client.get(address)) == before
+
+    def test_the_page_renders_in_the_shell_with_no_project_template(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, second))
+
+        assert "mvp_compliance/comparison.html" in [t.name for t in response.templates]
+        assert 'id="document-list"' in response.content.decode()
+
+    def test_from_equal_to_shows_the_no_differences_alert(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, first))
+
+        assert response.status_code == 200
+        assert "data-comparison-same" in response.content.decode()
+
+    def test_two_versions_that_differ_show_no_such_alert(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, second))
+
+        assert "data-comparison-same" not in response.content.decode()
+
+    def test_a_failing_renderer_does_not_stop_the_page(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        with (
+            patch.object(MarkdownRenderer, "render", side_effect=RuntimeError),
+            patch("markdown.markdown", side_effect=RuntimeError),
+        ):
+            response = client.get(comparison_address(document, first, second))
+
+        assert response.status_code == 200
+
+    @pytest.fixture(params=["anonymous", "staff"])
+    def visitor(self, request, client, staff_client):
+        return client if request.param == "anonymous" else staff_client
+
+    def test_a_drafts_number_answers_404(self, visitor):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        draft = VersionFactory(document=document, markdown="Unpublished wording")
+        draft.refresh_from_db()
+        query = urlencode({"from": first.number, "to": draft.number})
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}?{query}"
+        )
+
+        assert response.status_code == 404
+
+    def test_a_number_of_another_document_answers_404(self, visitor):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        other = DocumentFactory()
+        for wording in ("One", "Two", "Three"):
+            elsewhere = published(other, wording)
+
+        response = visitor.get(comparison_address(document, first, elsewhere))
+
+        assert response.status_code == 404
+
+    def test_an_unknown_number_answers_404(self, visitor):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        query = urlencode({"from": first.number, "to": "1999.1"})
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}?{query}"
+        )
+
+        assert response.status_code == 404
+
+    @pytest.mark.parametrize("missing", ["from", "to"])
+    def test_a_missing_number_answers_404(self, visitor, missing):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        query = {"from": first.number, "to": second.number}
+        del query[missing]
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}?"
+            f"{urlencode(query)}"
+        )
+
+        assert response.status_code == 404
+
+    def test_no_numbers_at_all_answers_404(self, visitor):
+        document = DocumentFactory()
+        published(document, "First wording")
+        published(document, "Second wording")
+
+        response = visitor.get(
+            reverse("mvp_compliance:comparison", args=[document.slug])
+        )
+
+        assert response.status_code == 404
+
+    def test_an_unknown_slug_answers_404(self, visitor):
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=['no-such-document'])}"
+            "?from=2026.1&to=2026.2"
+        )
+
+        assert response.status_code == 404
+
+    def test_a_document_with_only_drafts_answers_404(self, visitor):
+        document = DocumentFactory()
+        VersionFactory(document=document, markdown="One draft")
+        VersionFactory(document=document, markdown="Another draft")
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}"
+            "?from=2026.1&to=2026.2"
+        )
+
+        assert response.status_code == 404
+
+    def test_any_pair_on_a_document_with_one_published_version_answers_404(
+        self, visitor
+    ):
+        document = DocumentFactory()
+        only = published(document, "Only wording")
+
+        response = visitor.get(comparison_address(document, only, only))
+
+        assert response.status_code == 404
+
+    def test_the_query_count_does_not_grow_with_the_versions(self, client):
+        small = DocumentFactory()
+        small_first = published(small, "Wording one")
+        small_second = published(small, "Wording two")
+        large = DocumentFactory()
+        large_versions = [published(large, f"Wording {n}") for n in range(40)]
+
+        def queries(document, older, newer):
+            with CaptureQueriesContext(connection) as captured:
+                response = client.get(comparison_address(document, older, newer))
+            assert response.status_code == 200
+            return len(captured)
+
+        assert queries(large, large_versions[0], large_versions[-1]) == queries(
+            small, small_first, small_second
+        )
+
+
 @pytest.mark.django_db
 class TestDocumentList:
     """FR-004, FR-007: every document page, with or without ``?version=``, lists

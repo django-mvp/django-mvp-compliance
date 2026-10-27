@@ -83,7 +83,7 @@
       </ul>
     </c-mvp.card>
     {% if comparison.same %}
-      <c-alert variant="info" icon="info">
+      <c-alert variant="info" icon="info" data-comparison-same>
         <span>{% if older.pk == newer.pk %}{% translate "You are comparing a version with itself, so there is nothing to mark." %}{% else %}{% blocktranslate with older=older.number newer=newer.number %}v{{ older }} and v{{ newer }} have the same wording.{% endblocktranslate %}{% endif %}</span>
       </c-alert>
       <div class="prose max-w-none">{{ newer.html|safe }}</div>
