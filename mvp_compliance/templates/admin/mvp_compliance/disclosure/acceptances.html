@@ -16,7 +16,11 @@
         {# Only where the site had turned address recording on for this acceptance. #}
         <p>{% translate "Recorded from" %} {{ entry.ip_address }}</p>
       {% endif %}
-      <div>{{ entry.wording|safe }}</div>
+      {# Folded, so the page reads as the list of acceptances. The wording is still all here. #}
+      <details>
+        <summary>{% translate "The wording accepted" %}</summary>
+        <div>{{ entry.wording|safe }}</div>
+      </details>
     </li>
   {% endfor %}
 </ul>

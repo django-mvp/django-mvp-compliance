@@ -40,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   holding only the permission to produce the answer sees plain text. `AcceptanceEntry` gains
   `version_id`, the version's primary key, taken from the version `produce()` already loads.
   See [docs/disclosure.md](docs/disclosure.md#what-the-answer-contains).
+- On the same page, the wording of each version a person accepted is folded away under its
+  acceptance and opens in place, so the page reads as the list of acceptances. The wording is
+  still on the page in full.
 
 ## [v0.4.0] - 2026-10-24
 
