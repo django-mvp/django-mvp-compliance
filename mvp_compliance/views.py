@@ -157,6 +157,12 @@ class ComparisonView(MVPDetailView):
         return Document.objects.in_force()
 
     def get(self, request, *args, **kwargs):
+        """Read the document's published versions once and compare the two named.
+
+        Raises:
+            Http404: When the document has fewer than two published versions,
+                or ``from`` or ``to`` names none of them.
+        """
         self.object = self.get_object()
         self.versions: list[Version] = list(
             self.object.versions.published()
@@ -169,7 +175,17 @@ class ComparisonView(MVPDetailView):
         return self.render_to_response(self.get_context_data(object=self.object))
 
     def pick(self, name: str) -> Version:
-        """The published version a parameter names, or 404."""
+        """The published version a parameter names.
+
+        Args:
+            name: The query parameter, ``from`` or ``to``.
+
+        Returns:
+            The version of this document published under that number.
+
+        Raises:
+            Http404: When the parameter is missing or names no published version.
+        """
         number = self.request.GET.get(name)
         for version in self.versions:
             if version.number == number:
