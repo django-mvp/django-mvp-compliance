@@ -80,6 +80,12 @@ produced again at this point, so an answer never shows something the person was
 never actually served. A person the package holds nothing about gets a page
 saying so, which is a normal result rather than an error.
 
+On the page, each acceptance's version number links to that version's change page in the
+admin. Only a reader who may also view versions (`mvp_compliance.view_version`) sees the
+link. A reader holding `produce_disclosure` alone sees the number as plain text. Each entry
+carries the version's primary key as `AcceptanceEntry.version_id` for this, and the
+downloaded copy of a person's data does not change.
+
 Every answer, whichever of those two it is, carries a plain statement next to it:
 that it covers what this package holds, and not data the project holds elsewhere.
 "Nothing is held" is an answer about this package, not about the project as a

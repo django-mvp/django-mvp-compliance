@@ -6,9 +6,6 @@
 
 **Status**: Refined
 
-**Refined**: 2026-10-01. After the prototype was reviewed on screen: the document page's layout
-changes with this feature, and a long history is folded (FR-019).
-
 **Serves**: G8 · **Roadmap**: R9 · **Issue**: #66
 
 **Input**: A signed-in person should be able to see, in the account area django-mvp provides, every
@@ -24,8 +21,9 @@ account. Notices do not appear in it.
 The package adds one page to the account area. It lists the documents the signed-in person has
 agreed to. Under each document are the versions of it they accepted, each with its version number
 and the date of the acceptance, and each linking to that version's own page. Where a newer version
-of a document is in force and the person has not accepted it, the document's entry says so and
-links to the version in force.
+of a document is in force and the person has not accepted it, the document's entry says so, links
+to the version in force, and links to the comparison (FS-014) of the newest version the person
+accepted with the version in force.
 
 The page is read-only and is always about the person reading it. It has an entry in the account
 area's menu, so a person finds it without knowing its address.
@@ -41,10 +39,9 @@ Some things stay out of this feature:
 - The page staff use to produce everything held about one person (FS-004) is unchanged. This page
   shows the document, the version and the date. Anything else kept on an acceptance is shown only
   there.
-- ~~The design of the document page is issue #71. This feature links to that page and changes
-  nothing on it.~~ Changed in review of the prototype: the document page's layout changes with this
-  feature. Its list of documents moves into a column of its own beside the document. What the page
-  shows, who can read it and its addresses do not change. The rest of #71 stays open.
+- The design of the document page is issue #71, and most of it stays open. This feature changes
+  one thing on that page: its list of documents moves into a column of its own beside the
+  document. What the page shows, who can read it and its addresses do not change.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -198,8 +195,9 @@ area and check the entry and the page appear without further configuration.
 - **FR-008**: A user with nothing to list MUST get the page, with a statement that there is
   nothing to show yet. *(US-1)*
 - **FR-009**: A listed document whose current version the user has not accepted MUST state that a
-  newer version is in force that they have not accepted, and MUST link to the version in force. A
-  listed document whose current version the user has accepted MUST NOT. *(US-2)*
+  newer version is in force that they have not accepted, and MUST link to the version in force and
+  to the comparison (FS-014) of the newest version they accepted with it. A listed document whose
+  current version the user has accepted MUST NOT. *(US-2)*
 - **FR-010**: The page MUST offer no way to accept a version, and no way to edit, withdraw or
   delete an acceptance. *(US-2)*
 - **FR-011**: The account area's menu MUST carry an entry for the page for a signed-in user, and
@@ -223,7 +221,7 @@ area and check the entry and the page appear without further configuration.
 
 - **FR-019**: A listed document with more than four accepted versions MUST show the three most
   recently published and hold the others, still on the page, in a part the user opens in place,
-  stating how many it holds. With four or fewer, all are shown. *(US-1; added 2026-10-01)*
+  stating how many it holds. With four or fewer, all are shown. *(US-1)*
 
 ### Key Entities
 

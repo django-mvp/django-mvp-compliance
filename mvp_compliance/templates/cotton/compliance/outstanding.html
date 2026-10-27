@@ -2,10 +2,11 @@
 {# @prop document:object | description:"The outstanding document." #}
 {# @prop version:object | description:"Its version in force, the one the toggle agrees to and the link opens." #}
 {# @prop field:object | description:"The attributes of the toggle: name, value, id, and checked when it was on." #}
+{# @prop since:object | description:"The newest version of this document the reader accepted, offered for comparison with the one asked about; empty when they never accepted one." #}
 {# @prop optional:boolean | description:"The reader may continue without agreeing to this document." #}
 {# @prop changes:list | description:"The versions published since the one the reader last agreed to that carry a summary, newest first. Empty for a reader who never agreed to the document." #}
 {% load i18n %}
-<c-vars document version field optional changes />
+<c-vars document version field optional changes since />
 <li class="list-row items-center">
   {# The growing column has to be the row's first child: the list sizes its columns by position, and that is what holds every toggle at the end of its row. #}
   <div class="list-col-grow min-w-0 flex flex-col gap-1">
@@ -24,6 +25,13 @@
        target="_blank"
        rel="noopener"
        aria-describedby="document-{{ document.slug }}">{% translate "View document in full" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+    {% if since %}
+      <a class="link text-sm w-fit"
+         href="{% url 'mvp_compliance:comparison' document.slug %}?from={{ since.number }}&amp;to={{ version.number }}"
+         target="_blank"
+         rel="noopener"
+         aria-describedby="document-{{ document.slug }}">{% translate "See what's changed" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+    {% endif %}
     {% if changes %}
       <div class="flex flex-col gap-1 text-sm">
         <div class="font-medium">{% translate "What changed since you last agreed" %}</div>

@@ -1,0 +1,22 @@
+/* What was added and removed between two versions (FS-014). Colour is never the
+   only signal: an addition is underlined and a removal struck through, and each
+   run starts with words a screen reader announces (WCAG 1.4.1). Colours come
+   from the theme, so the marks follow a light or dark theme. */
+.compliance-comparison ins,
+.compliance-key ins {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--color-success);
+  background-color: color-mix(in oklab, var(--color-success) 18%, transparent);
+  border-radius: 0.2em;
+}
+
+.compliance-comparison del,
+.compliance-key del {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-error);
+  background-color: color-mix(in oklab, var(--color-error) 14%, transparent);
+  border-radius: 0.2em;
+}

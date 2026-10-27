@@ -24,6 +24,7 @@ from mvp_compliance.models import Acceptance, Document, Version
 from mvp_compliance.records import PersonalRecord
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
+from tests.conftest import grant
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
@@ -1297,6 +1298,52 @@ class TestDisclosurePage:
         )
         assert expected_moment in content
         assert version.html in content
+
+    def test_a_reader_who_may_view_versions_sees_each_version_as_a_link(
+        self, client, disclosure_producer
+    ) -> None:
+        grant(disclosure_producer, "view_version")
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+        change = reverse("admin:mvp_compliance_version_change", args=[version.pk])
+
+        content = client.get(url, {"subject": someone.username}).content.decode()
+
+        assert f'href="{change}"' in content
+
+    def test_a_superuser_sees_each_version_as_a_link(self, client) -> None:
+        client.force_login(UserFactory(is_staff=True, is_superuser=True))
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+        change = reverse("admin:mvp_compliance_version_change", args=[version.pk])
+
+        content = client.get(url, {"subject": someone.username}).content.decode()
+
+        assert f'href="{change}"' in content
+
+    def test_a_reader_holding_produce_disclosure_alone_sees_plain_text(
+        self, client, disclosure_producer
+    ) -> None:
+        client.force_login(disclosure_producer)
+        someone = UserFactory()
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=someone, version=version)
+        url = reverse("admin:mvp_compliance_disclosure_changelist")
+        change = reverse("admin:mvp_compliance_version_change", args=[version.pk])
+
+        response = client.get(url, {"subject": someone.username})
+
+        assert response.status_code == 200
+        assert change not in response.content.decode()
+        assert str(version.number) in response.content.decode()
 
     def test_a_person_with_no_records_gets_a_page_saying_so(
         self, client, disclosure_producer

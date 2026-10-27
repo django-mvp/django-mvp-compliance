@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 17:05+0100\n"
+"POT-Creation-Date: 2026-10-27 10:23+0100\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -31,8 +31,8 @@ msgstr "Current version"
 msgid "No version in force"
 msgstr "No version in force"
 
-#: admin.py:105 templates/cotton/compliance/outstanding.html:20
-#: templates/cotton/compliance/outstanding.html:33
+#: admin.py:105 templates/cotton/compliance/outstanding.html:21
+#: templates/cotton/compliance/outstanding.html:41
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
@@ -197,6 +197,14 @@ msgstr "The page that asks a person to agree has no address."
 msgid "Add %(middleware)s to MIDDLEWARE."
 msgstr ""
 
+#: comparison.py:330
+msgid "Added:"
+msgstr "Added:"
+
+#: comparison.py:330
+msgid "Removed:"
+msgstr "Removed:"
+
 #: forms.py:36
 msgid "Person"
 msgstr "Person"
@@ -235,7 +243,7 @@ msgstr ""
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:457
+#: menus.py:23 views.py:550
 msgid "Your data"
 msgstr ""
 
@@ -436,7 +444,8 @@ msgstr ""
 "cleared. Empty when nobody was recorded."
 
 #: models.py:543 models.py:1121
-#: templates/admin/mvp_compliance/disclosure/acceptances.html:6
+#: templates/admin/mvp_compliance/disclosure/acceptances.html:8
+#: templates/admin/mvp_compliance/disclosure/acceptances.html:10
 msgid "version"
 msgstr "version"
 
@@ -589,7 +598,7 @@ msgstr "everything held about a person"
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
-#: personal_data.py:264 views.py:157
+#: personal_data.py:264 views.py:235
 msgid "Documents you agreed to"
 msgstr "Documents you agreed to"
 
@@ -605,8 +614,8 @@ msgstr ""
 msgid "Document"
 msgstr "Documents"
 
-#: personal_data.py:291 templates/mvp_compliance/agreed_documents.html:20
-#: templates/mvp_compliance/agreed_documents.html:37
+#: personal_data.py:291 templates/mvp_compliance/agreed_documents.html:26
+#: templates/mvp_compliance/agreed_documents.html:43
 msgid "Version"
 msgstr "Version"
 
@@ -622,7 +631,7 @@ msgstr "Agreed to"
 msgid "The wording you agreed to"
 msgstr "Documents you agreed to"
 
-#: records.py:77
+#: records.py:80
 msgid ""
 "This covers what this package holds about this person. The project may hold "
 "further records about them elsewhere that are not included here."
@@ -630,11 +639,11 @@ msgstr ""
 "This covers what this package holds about this person. The project may hold "
 "further records about them elsewhere that are not included here."
 
-#: records.py:143
+#: records.py:147
 msgid "Acceptances"
 msgstr "Acceptances"
 
-#: templates/admin/mvp_compliance/disclosure/acceptances.html:11
+#: templates/admin/mvp_compliance/disclosure/acceptances.html:17
 msgid "Recorded from"
 msgstr "Recorded from"
 
@@ -651,7 +660,7 @@ msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
 #: templates/admin/mvp_compliance/document/change_form.html:10
-#: templates/mvp_compliance/document_detail.html:37
+#: templates/mvp_compliance/document_detail.html:58
 msgid "View current version"
 msgstr "View current version"
 
@@ -695,29 +704,37 @@ msgstr "Back"
 msgid "No value"
 msgstr ""
 
-#: templates/cotton/compliance/outstanding.html:16
+#: templates/cotton/compliance/outstanding.html:17
 msgid "Optional"
 msgstr ""
 
-#: templates/cotton/compliance/outstanding.html:18
+#: templates/cotton/compliance/outstanding.html:19
 msgid "Required"
 msgstr ""
 
-#: templates/cotton/compliance/outstanding.html:26
+#: templates/cotton/compliance/outstanding.html:27
 #, fuzzy
 #| msgid "View current version"
 msgid "View document in full"
 msgstr "View current version"
 
-#: templates/cotton/compliance/outstanding.html:26
+#: templates/cotton/compliance/outstanding.html:27
+#: templates/cotton/compliance/outstanding.html:33
 msgid "(opens in a new tab)"
 msgstr ""
 
-#: templates/cotton/compliance/outstanding.html:29
+#: templates/cotton/compliance/outstanding.html:33
+#: templates/mvp_compliance/agreed_documents.html:15
+#: templates/mvp_compliance/document_detail.html:34
+#: templates/mvp_compliance/document_detail.html:57
+msgid "See what's changed"
+msgstr ""
+
+#: templates/cotton/compliance/outstanding.html:37
 msgid "What changed since you last agreed"
 msgstr ""
 
-#: templates/cotton/compliance/outstanding.html:41
+#: templates/cotton/compliance/outstanding.html:49
 #, fuzzy
 #| msgid "You agreed on"
 msgid "I agree"
@@ -746,7 +763,7 @@ msgstr ""
 msgid "Go to the home page"
 msgstr ""
 
-#: templates/mvp_compliance/agreed_documents.html:11
+#: templates/mvp_compliance/agreed_documents.html:13
 #, python-format
 msgid ""
 "A newer version, v%(number)s, has been in force since %(date)s. You have not "
@@ -755,38 +772,40 @@ msgstr ""
 "A newer version, v%(number)s, has been in force since %(date)s. You have not "
 "agreed to it."
 
-#: templates/mvp_compliance/agreed_documents.html:12
+#: templates/mvp_compliance/agreed_documents.html:16
+#: templates/mvp_compliance/comparison.html:68
+#: templates/mvp_compliance/comparison.html:81
 #, python-format
 msgid "Read v%(number)s"
 msgstr "Read v%(number)s"
 
-#: templates/mvp_compliance/agreed_documents.html:17
+#: templates/mvp_compliance/agreed_documents.html:23
 #, python-format
 msgid "Versions of %(name)s you agreed to"
 msgstr "Versions of %(name)s you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:21
-#: templates/mvp_compliance/agreed_documents.html:38
+#: templates/mvp_compliance/agreed_documents.html:27
+#: templates/mvp_compliance/agreed_documents.html:44
 msgid "You agreed on"
 msgstr "You agreed on"
 
-#: templates/mvp_compliance/agreed_documents.html:31
+#: templates/mvp_compliance/agreed_documents.html:37
 #, python-format
 msgid "%(counter)s earlier version you agreed to"
 msgid_plural "%(counter)s earlier versions you agreed to"
 msgstr[0] "%(counter)s earlier version you agreed to"
 msgstr[1] "%(counter)s earlier versions you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:34
+#: templates/mvp_compliance/agreed_documents.html:40
 #, python-format
 msgid "Earlier versions of %(name)s you agreed to"
 msgstr "Earlier versions of %(name)s you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:51
+#: templates/mvp_compliance/agreed_documents.html:57
 msgid "Nothing to show yet"
 msgstr "Nothing to show yet"
 
-#: templates/mvp_compliance/agreed_documents.html:52
+#: templates/mvp_compliance/agreed_documents.html:58
 msgid ""
 "When you agree to a document on this site, it appears here with the version "
 "and the date."
@@ -807,13 +826,108 @@ msgid ""
 "A document changed while you were reading. Check the list and submit again."
 msgstr ""
 
-#: templates/mvp_compliance/agreement.html:46
+#: templates/mvp_compliance/agreement.html:47
 msgid "Agree and continue"
 msgstr ""
 
-#: templates/mvp_compliance/agreement.html:48
+#: templates/mvp_compliance/agreement.html:49
 msgid "Continue"
 msgstr ""
+
+#: templates/mvp_compliance/comparison.html:8
+#: templates/mvp_compliance/comparison.html:51
+#: templates/mvp_compliance/document_detail.html:4
+#: templates/mvp_compliance/document_detail.html:50
+msgid "Documents"
+msgstr "Documents"
+
+#: templates/mvp_compliance/comparison.html:9
+#: templates/mvp_compliance/document_detail.html:5
+msgid "Legal documents"
+msgstr "Legal documents"
+
+#: templates/mvp_compliance/comparison.html:24
+#, fuzzy, python-format
+#| msgid "v%(number)s"
+msgid "From v%(number)s"
+msgstr "v%(number)s"
+
+#: templates/mvp_compliance/comparison.html:31
+#: templates/mvp_compliance/comparison.html:45
+#: templates/mvp_compliance/document_detail.html:26
+#: templates/mvp_compliance/document_detail.html:43 views.py:72
+#, python-format
+msgid "v%(number)s - %(date)s"
+msgstr "v%(number)s - %(date)s"
+
+#: templates/mvp_compliance/comparison.html:38
+#, fuzzy, python-format
+#| msgid "v%(number)s"
+msgid "To v%(number)s"
+msgstr "v%(number)s"
+
+#: templates/mvp_compliance/comparison.html:59
+#, fuzzy, python-format
+#| msgid "Read v%(number)s"
+msgid "Older: v%(number)s"
+msgstr "Read v%(number)s"
+
+#: templates/mvp_compliance/comparison.html:62
+#: templates/mvp_compliance/comparison.html:75
+#, fuzzy, python-format
+#| msgid ""
+#| "This version has been replaced. It was in force from %(published)s to "
+#| "%(replaced)s."
+msgid "In force from %(published)s to %(replaced)s"
+msgstr ""
+"This version has been replaced. It was in force from %(published)s to "
+"%(replaced)s."
+
+#: templates/mvp_compliance/comparison.html:64
+#: templates/mvp_compliance/comparison.html:77
+#, fuzzy, python-format
+#| msgid "In force since"
+msgid "In force since %(published)s"
+msgstr "In force since"
+
+#: templates/mvp_compliance/comparison.html:72
+#, fuzzy, python-format
+#| msgid "Read v%(number)s"
+msgid "Newer: v%(number)s"
+msgstr "Read v%(number)s"
+
+#: templates/mvp_compliance/comparison.html:87
+msgid "You are comparing a version with itself, so there is nothing to mark."
+msgstr ""
+
+#: templates/mvp_compliance/comparison.html:87
+#, python-format
+msgid "v%(older)s and v%(newer)s have the same wording."
+msgstr ""
+
+#: templates/mvp_compliance/comparison.html:92
+#, fuzzy
+#| msgid "Added:"
+msgid "Added text"
+msgstr "Added:"
+
+#: templates/mvp_compliance/comparison.html:92
+#, fuzzy, python-format
+#| msgid "Version %(number)s"
+msgid "is in v%(number)s only."
+msgstr "Version %(number)s"
+
+#: templates/mvp_compliance/comparison.html:93
+#, fuzzy
+#| msgid "Removed:"
+msgid "Removed text"
+msgstr "Removed:"
+
+#: templates/mvp_compliance/comparison.html:93
+#, fuzzy, python-format
+#| msgid "Version %(number)s"
+msgid "was in v%(number)s only."
+msgstr "Version %(number)s"
 
 #: templates/mvp_compliance/copy/index.html:7
 #, python-format
@@ -892,7 +1006,7 @@ msgid ""
 "what you agreed to. It no longer names your account."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:54 views.py:612
+#: templates/mvp_compliance/delete_account.html:54 views.py:705
 msgid "Delete your account"
 msgstr ""
 
@@ -919,21 +1033,13 @@ msgstr ""
 msgid "Cancel"
 msgstr "Compliance"
 
-#: templates/mvp_compliance/document_detail.html:4
-#: templates/mvp_compliance/document_detail.html:31
-msgid "Documents"
-msgstr "Documents"
+#: templates/mvp_compliance/document_detail.html:39
+#, fuzzy, python-format
+#| msgid "Read v%(number)s"
+msgid "Compare v%(number)s with"
+msgstr "Read v%(number)s"
 
-#: templates/mvp_compliance/document_detail.html:5
-msgid "Legal documents"
-msgstr "Legal documents"
-
-#: templates/mvp_compliance/document_detail.html:26 views.py:71
-#, python-format
-msgid "v%(number)s - %(date)s"
-msgstr "v%(number)s - %(date)s"
-
-#: templates/mvp_compliance/document_detail.html:36
+#: templates/mvp_compliance/document_detail.html:55
 #, python-format
 msgid ""
 "This version has been replaced. It was in force from %(published)s to "
@@ -990,16 +1096,27 @@ msgid ""
 "files you uploaded."
 msgstr ""
 
-#: views.py:86
+#: views.py:87
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: views.py:131
+#: views.py:132 views.py:172 views.py:192
 msgid "No version found"
 msgstr "No version found"
 
-#: views.py:159
+#: views.py:198
+#, python-format
+msgid "Changes from v%(older)s to v%(newer)s"
+msgstr ""
+
+#: views.py:209
+#, fuzzy
+#| msgid "Current version"
+msgid "Compare versions"
+msgstr "Current version"
+
+#: views.py:237
 msgid ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
@@ -1007,69 +1124,69 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:175 views.py:478 views.py:630
+#: views.py:253 views.py:571 views.py:723
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:180 views.py:485 views.py:637
+#: views.py:258 views.py:578 views.py:730
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:240
+#: views.py:322
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "Documents to agree to"
 msgstr "Documents you agreed to"
 
-#: views.py:252
+#: views.py:334
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
 
-#: views.py:255
+#: views.py:337
 msgid "Agreeing is optional."
 msgstr ""
 
-#: views.py:459
+#: views.py:552
 msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
-#: views.py:480 views.py:632
+#: views.py:573 views.py:725
 msgid "No confirmation page"
 msgstr ""
 
-#: views.py:560
+#: views.py:653
 msgid "Type your email address to confirm."
 msgstr ""
 
-#: views.py:569
+#: views.py:662
 #, python-format
 msgid "To confirm, type your username, %(expected)s"
 msgstr ""
 
-#: views.py:571
+#: views.py:664
 #, python-format
 msgid "To confirm, type your email address, %(expected)s"
 msgstr ""
 
-#: views.py:578
+#: views.py:671
 msgid "Type your username to confirm."
 msgstr ""
 
-#: views.py:590
+#: views.py:683
 msgid "That is not your username. Type it exactly as shown."
 msgstr ""
 
-#: views.py:592
+#: views.py:685
 msgid "That is not your email address. Type it exactly as shown."
 msgstr ""
 
-#: views.py:614
+#: views.py:707
 msgid "Remove your account and what this site holds about you."
 msgstr ""
 
-#: views.py:723
+#: views.py:816
 msgid "Your account has been deleted"
 msgstr ""
 

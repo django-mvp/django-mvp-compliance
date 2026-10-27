@@ -12,6 +12,7 @@ from mvp_compliance.views import (
     AccountDeletedView,
     AgreedDocumentsView,
     AgreementView,
+    ComparisonView,
     DeleteAccountView,
     DocumentView,
     PersonalDataView,
@@ -39,4 +40,7 @@ if deletion_offered():
         path("delete/", DeleteAccountView.as_view(), name="delete-account")
     )
 
+urlpatterns.append(
+    path("<slug:slug>/compare/", ComparisonView.as_view(), name="comparison")
+)
 urlpatterns.append(path("<slug:slug>/", DocumentView.as_view(), name="document"))

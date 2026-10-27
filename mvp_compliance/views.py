@@ -24,6 +24,7 @@ from mvp.config import MVP_CONFIG
 from mvp.views.detail import MVPDetailView
 from mvp.views.extra import MVPTemplateView
 
+from mvp_compliance.comparison import Comparison
 from mvp_compliance.deletion import delete_account
 from mvp_compliance.exceptions import AccountDeletionError, PersonalDataError
 from mvp_compliance.models import (
@@ -139,6 +140,83 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
         return [{"text": self.get_page_title()}]
 
 
+class ComparisonView(MVPDetailView):
+    """Two published versions of one document, compared word by word (FS-014).
+
+    ``?from=`` and ``?to=`` name the two by number, in either order. Readable
+    by anyone, like the document's page, and "not found" for anything that is
+    not a published version of this document, for a missing number, and for a
+    document with only one published version.
+    """
+
+    model = Document
+    template_name = "mvp_compliance/comparison.html"
+
+    def get_queryset(self):
+        return Document.objects.in_force()
+
+    def get(self, request, *args, **kwargs):
+        """Read the document's published versions once and compare the two named.
+
+        Raises:
+            Http404: When the document has fewer than two published versions,
+                or ``from`` or ``to`` names none of them.
+        """
+        self.object = self.get_object()
+        self.versions: list[Version] = list(
+            self.object.versions.published()
+            .with_replaced_at()
+            .order_by("-published_at")
+        )
+        if len(self.versions) < 2:
+            raise Http404(_("No version found"))
+        self.comparison = Comparison.of(self.pick("from"), self.pick("to"))
+        return self.render_to_response(self.get_context_data(object=self.object))
+
+    def pick(self, name: str) -> Version:
+        """The published version a parameter names.
+
+        Args:
+            name: The query parameter, ``from`` or ``to``.
+
+        Returns:
+            The version of this document published under that number.
+
+        Raises:
+            Http404: When the parameter is missing or names no published version.
+        """
+        number = self.request.GET.get(name)
+        for version in self.versions:
+            if version.number == number:
+                return version
+        raise Http404(_("No version found"))
+
+    def get_page_title(self):
+        return self.object.name
+
+    def get_page_subtitle(self):
+        return _("Changes from v%(older)s to v%(newer)s") % {
+            "older": self.comparison.older.number,
+            "newer": self.comparison.newer.number,
+        }
+
+    def get_breadcrumbs(self):
+        return [
+            {
+                "text": self.object.name,
+                "href": reverse("mvp_compliance:document", args=[self.object.slug]),
+            },
+            {"text": _("Compare versions")},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comparison"] = self.comparison
+        context["documents"] = Document.objects.in_force().order_by("name")
+        context["versions"] = self.versions
+        return context
+
+
 class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
     """The signed-in person's own list of what they agreed to, in the account area.
 
@@ -193,9 +271,11 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
             One dict per document, in the document's name order, with the
             ``document``, the acceptances ``shown`` and the ``earlier`` ones
             folded away, and ``newer``: the version in force when none of the
-            person's acceptances of the document is of it, otherwise ``None``.
-            It is read on each request, in one query for the whole page, and
-            a person with no acceptances costs no such query.
+            person's acceptances of the document is of it, otherwise ``None``,
+            and ``since``: the newest version they accepted, to compare with
+            ``newer``, set whenever ``newer`` is. It is read on each request, in
+            one query for the whole page, and a person with no acceptances costs
+            no such query.
         """
         acceptances = Acceptance.objects.for_person(
             self.request.user
@@ -204,7 +284,8 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
         for acceptance in acceptances:
             document = acceptance.version.document
             entry = entries.setdefault(
-                document.pk, {"document": document, "accepted": [], "newer": None}
+                document.pk,
+                {"document": document, "accepted": [], "newer": None, "since": None},
             )
             entry["accepted"].append(acceptance)
         in_force = {
@@ -218,6 +299,8 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
                 acceptance.version_id != current.pk for acceptance in accepted
             ):
                 entry["newer"] = current
+                # Newest first, so the first is the last wording they agreed to.
+                entry["since"] = accepted[0].version
             fold = len(accepted) > self.shown_first + 1
             entry["shown"] = accepted[: self.shown_first] if fold else accepted
             entry["earlier"] = accepted[self.shown_first :] if fold else []
@@ -279,8 +362,9 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             list them, holding its ``document``, the ``version`` in force,
             whether agreeing is ``optional``, and the ``changes``: the versions
             published since the one the person last accepted that carry a
-            summary, newest first. Three queries whatever the number of
-            documents.
+            summary, newest first, and the ``since`` version: the newest the
+            person accepted, to compare with ``version``, ``None`` when they
+            never accepted one. Four queries whatever the number of documents.
         """
         documents = list(
             Document.objects.outstanding_for(self.request.user)
@@ -288,7 +372,16 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             .order_by("name")
         )
         changes: dict[int, list[Version]] = {}
+        since: dict[int, Version] = {}
         if documents:
+            accepted = (
+                Acceptance.objects.for_person(self.request.user)
+                .filter(version__document__in=documents)
+                .select_related("version")
+                .order_by("-version__published_at")
+            )
+            for acceptance in accepted:
+                since.setdefault(acceptance.version.document_id, acceptance.version)
             summarised = (
                 Version.objects.published()
                 .since_last_accepted_by(self.request.user)
@@ -304,6 +397,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
                 "version": document.current_versions[0],
                 "optional": self.is_optional(document),
                 "changes": changes.get(document.pk, []),
+                "since": since.get(document.pk),
             }
             for document in documents
         ]

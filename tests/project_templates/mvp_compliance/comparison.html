@@ -1,0 +1,7 @@
+{% extends "page_view.html" %}
+{% block page.content %}
+  <p id="project-comparison-page">{{ document.name }}: {{ comparison.older.number }} to {{ comparison.newer.number }}</p>
+  <ul id="project-comparison-versions">
+    {% for each in versions %}<li>{{ each.number }}</li>{% endfor %}
+  </ul>
+{% endblock page.content %}

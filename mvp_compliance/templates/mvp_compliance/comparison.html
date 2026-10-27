@@ -1,0 +1,98 @@
+{% extends "page_view.html" %}
+{% load i18n static %}
+{% block styles %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'mvp_compliance/comparison.css' %}" />
+{% endblock styles %}
+{% block page.side %}
+  <c-mvp.page.side label="{% translate "Documents" %}" id="documents" position="start" breakpoint="lg">
+    <nav id="document-list" aria-label="{% translate "Legal documents" %}">
+      <ul class="menu w-full p-0">
+        {% for item in documents %}
+          <li>
+            <a href="{% url 'mvp_compliance:document' item.slug %}"{% if item.pk == document.pk %} class="menu-active" aria-current="page"{% endif %}>{{ item.name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </c-mvp.page.side>
+{% endblock page.side %}
+{% block page.actions %}
+  {% with older=comparison.older newer=comparison.newer %}
+    <c-mvp.dropdown halign="end">
+      <c-slot name="button">
+        <c-button tabindex="0" role="button" text="{% blocktranslate with number=older.number %}From v{{ number }}{% endblocktranslate %}">
+          <c-icon name="chevron-down" />
+        </c-button>
+      </c-slot>
+      <ul class="menu menu-sm w-full">
+        {% for item in versions %}
+          <li>
+            <a href="{% url 'mvp_compliance:comparison' document.slug %}?from={{ item.number }}&amp;to={{ newer.number }}"{% if item.number == older.number %} class="menu-active" aria-current="page"{% endif %}>{% blocktranslate with number=item.number date=item.published_at|date %}v{{ number }} - {{ date }}{% endblocktranslate %}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </c-mvp.dropdown>
+    <c-mvp.dropdown halign="end">
+      <c-slot name="button">
+        <c-button tabindex="0" role="button" variant="primary" text="{% blocktranslate with number=newer.number %}To v{{ number }}{% endblocktranslate %}">
+          <c-icon name="chevron-down" />
+        </c-button>
+      </c-slot>
+      <ul class="menu menu-sm w-full">
+        {% for item in versions %}
+          <li>
+            <a href="{% url 'mvp_compliance:comparison' document.slug %}?from={{ older.number }}&amp;to={{ item.number }}"{% if item.number == newer.number %} class="menu-active" aria-current="page"{% endif %}>{% blocktranslate with number=item.number date=item.published_at|date %}v{{ number }} - {{ date }}{% endblocktranslate %}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </c-mvp.dropdown>
+  {% endwith %}
+  <c-mvp.page.side.toggle for="documents" text="{% translate "Documents" %}" />
+{% endblock page.actions %}
+{% block page.content %}
+  {% with older=comparison.older newer=comparison.newer %}
+    <c-mvp.card tight>
+      <ul class="list">
+        <li class="list-row items-center">
+          <div class="list-col-grow min-w-0">
+            <div class="font-semibold">{% blocktranslate with number=older.number %}Older: v{{ number }}{% endblocktranslate %}</div>
+            <div class="text-sm opacity-70">
+              {% if older.replaced_at %}
+                {% blocktranslate with published=older.published_at|date replaced=older.replaced_at|date %}In force from {{ published }} to {{ replaced }}{% endblocktranslate %}
+              {% else %}
+                {% blocktranslate with published=older.published_at|date %}In force since {{ published }}{% endblocktranslate %}
+              {% endif %}
+            </div>
+          </div>
+          <a class="link text-sm" href="{% url 'mvp_compliance:document' document.slug %}?version={{ older.number }}">{% blocktranslate with number=older.number %}Read v{{ number }}{% endblocktranslate %}</a>
+        </li>
+        <li class="list-row items-center">
+          <div class="list-col-grow min-w-0">
+            <div class="font-semibold">{% blocktranslate with number=newer.number %}Newer: v{{ number }}{% endblocktranslate %}</div>
+            <div class="text-sm opacity-70">
+              {% if newer.replaced_at %}
+                {% blocktranslate with published=newer.published_at|date replaced=newer.replaced_at|date %}In force from {{ published }} to {{ replaced }}{% endblocktranslate %}
+              {% else %}
+                {% blocktranslate with published=newer.published_at|date %}In force since {{ published }}{% endblocktranslate %}
+              {% endif %}
+            </div>
+          </div>
+          <a class="link text-sm" href="{% url 'mvp_compliance:document' document.slug %}?version={{ newer.number }}">{% blocktranslate with number=newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
+        </li>
+      </ul>
+    </c-mvp.card>
+    {% if comparison.same %}
+      <c-alert variant="info" icon="info" data-comparison-same>
+        <span>{% if older.pk == newer.pk %}{% translate "You are comparing a version with itself, so there is nothing to mark." %}{% else %}{% blocktranslate with older=older.number newer=newer.number %}v{{ older }} and v{{ newer }} have the same wording.{% endblocktranslate %}{% endif %}</span>
+      </c-alert>
+      <div class="prose max-w-none">{{ newer.html|safe }}</div>
+    {% else %}
+      <p class="compliance-key text-sm flex flex-wrap gap-x-4 gap-y-1" id="comparison-key">
+        <span><ins>{% translate "Added text" %}</ins> {% blocktranslate with number=newer.number %}is in v{{ number }} only.{% endblocktranslate %}</span>
+        <span><del>{% translate "Removed text" %}</del> {% blocktranslate with number=older.number %}was in v{{ number }} only.{% endblocktranslate %}</span>
+      </p>
+      <div class="prose max-w-none compliance-comparison" aria-describedby="comparison-key">{{ comparison.html }}</div>
+    {% endif %}
+  {% endwith %}
+{% endblock page.content %}
