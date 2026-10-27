@@ -23,7 +23,11 @@ ALLOWED_HOSTS = ["*"]
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
+# django-mvp-accounts comes ahead of allauth and mvp: it replaces templates
+# both of them ship, so the sign-in page and allauth's account pages are drawn
+# in the shell. Listed after either, its versions are never reached.
 INSTALLED_APPS = [
+    "mvp_accounts",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -31,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "mvp",
+    "mvp_sphinx",
     "daisy_cotton",
     "easy_icons",
     "crispy_forms",
@@ -133,6 +138,10 @@ MVP_CONFIG = {"layout": {"sidebar": {"title": "django-mvp-compliance"}}}
 # django-mvp's sign-in page. Django's own default address is one nothing here
 # registers, so a visitor sent to sign in would land on a page that is not there.
 LOGIN_URL = "account_login"
+
+# Django's default lands a person who just signed in on /accounts/profile/,
+# which nothing here serves.
+LOGIN_REDIRECT_URL = "/"
 
 # The demo's accounts are signed in to with their email address or their username.
 ACCOUNT_LOGIN_METHODS = {"email", "username"}

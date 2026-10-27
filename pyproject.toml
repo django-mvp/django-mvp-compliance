@@ -66,7 +66,17 @@ include = ["/mvp_compliance", "/README.md", "/LICENSE"]
 # Shared toolchain bundle from django-mvp/shared, pinned to a release tag so
 # every package in this organisation runs one version of each tool. Ships ruff,
 # mypy, deptry, pre-commit, pytest, pytest-django, coverage and django-stubs.
-dev = ["mvp-shared[dev,test]", "django-allauth>=65.19,<66"]
+dev = [
+    "mvp-shared[dev,test]",
+    "django-allauth>=65.19,<66",
+    # Draws allauth's sign-in and account pages in the shell, for the demo only.
+    "django-mvp-accounts>=0.4.0",
+    # Serves docs/ as the demo's pages. Sphinx and myst-parser build them from
+    # Markdown with `python manage.py build_docs`.
+    "django-mvp-sphinx>=0.4.0",
+    "sphinx>=8.1",
+    "myst-parser>=4.0",
+]
 
 [tool.uv.sources]
 mvp-shared = { git = "https://github.com/django-mvp/shared.git", tag = "v0.6.0" }

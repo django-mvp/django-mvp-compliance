@@ -1,13 +1,6 @@
 from django.db import DatabaseError
-from django.views.generic import TemplateView
 
 from mvp_compliance.views import AgreementView
-
-
-class LandingView(TemplateView):
-    """The page the components are built for, as far as it exists yet."""
-
-    template_name = "demo/landing.html"
 
 
 class DemoAgreementView(AgreementView):

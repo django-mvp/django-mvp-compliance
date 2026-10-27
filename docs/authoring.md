@@ -236,5 +236,5 @@ request that names none, so the versions list offers no add control and a bare r
 add form is refused regardless of `add_version`. Reaching the add form from a document, the way
 both change pages above do, still works.
 
-See [Permissions](../README.md#permissions) in the README for `publish_version`, which is
+See [Permissions](https://github.com/django-mvp/django-mvp-compliance/blob/main/README.md#permissions) in the README for `publish_version`, which is
 deliberately separate from the permissions above.
