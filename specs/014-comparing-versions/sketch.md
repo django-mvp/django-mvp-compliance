@@ -87,3 +87,6 @@ Ruled in review (round 2):
 - The account area's alert puts its buttons on their own line under the text.
 - The staff page offers no comparison. Each acceptance's "version …" text links to that version's
   admin page instead. Showing the whole document there is left to a separate issue.
+
+Approved by the maintainer on 2026-10-27 at round 2, with the screens as they stand. The round 1
+taste calls above that round 2 did not change are approved with them.
