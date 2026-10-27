@@ -273,8 +273,9 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
             folded away, and ``newer``: the version in force when none of the
             person's acceptances of the document is of it, otherwise ``None``,
             and ``since``: the newest version they accepted, to compare with
-            ``newer``, set whenever ``newer`` is. It is read on each request, in one query for the whole page, and
-            a person with no acceptances costs no such query.
+            ``newer``, set whenever ``newer`` is. It is read on each request, in
+            one query for the whole page, and a person with no acceptances costs
+            no such query.
         """
         acceptances = Acceptance.objects.for_person(
             self.request.user

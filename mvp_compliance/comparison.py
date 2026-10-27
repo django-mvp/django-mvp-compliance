@@ -13,9 +13,6 @@ from django.utils.translation import gettext as _
 
 from mvp_compliance.models import Version
 
-_Block = list[str]
-_Opcode = tuple[str, int, int, int, int]
-
 
 @dataclass(frozen=True)
 class Comparison:
@@ -124,11 +121,11 @@ class Comparison:
             return 0
         return 1
 
-    def words_of(self, block: _Block) -> list[str]:
+    def words_of(self, block: list[str]) -> list[str]:
         """The words of a block: its tokens without tags or whitespace."""
         return [t for t in block if not self.is_tag(t) and not t.isspace()]
 
-    def blocks(self, html: str) -> list[_Block]:
+    def blocks(self, html: str) -> list[list[str]]:
         """Split stored HTML into its top-level elements, each a list of tokens.
 
         A list is opened into its own tags and its items, so one changed item
@@ -141,8 +138,8 @@ class Comparison:
         Returns:
             The elements in order.
         """
-        found: list[_Block] = []
-        current: _Block = []
+        found: list[list[str]] = []
+        current: list[str] = []
         depth = 0
         for token in self.tokens(html):
             if depth == 0 and token.isspace() and not current:
@@ -156,7 +153,7 @@ class Comparison:
             found.append(current)
         return [part for block in found for part in self.open_list(block)]
 
-    def open_list(self, block: _Block) -> list[_Block]:
+    def open_list(self, block: list[str]) -> list[list[str]]:
         """A list as its opening tag, its items and its closing tag."""
         name = self.tag_name(block[0])
         if (
@@ -167,7 +164,7 @@ class Comparison:
             return [block]
         return [[block[0]], *self.blocks("".join(block[1:-1])), [block[-1]]]
 
-    def signature(self, blocks: list[_Block]) -> list[str]:
+    def signature(self, blocks: list[list[str]]) -> list[str]:
         """What each block is compared as: its words, joined by single spaces."""
         return [" ".join(self.words_of(block)) for block in blocks]
 
@@ -175,13 +172,13 @@ class Comparison:
         """What a text says: the words of each element that has any."""
         return [s for s in self.signature(self.blocks(html)) if s]
 
-    def alike(self, old: _Block, new: _Block) -> float:
+    def alike(self, old: list[str], new: list[str]) -> float:
         """How alike two elements read, from 0 to 1, by their words."""
         return SequenceMatcher(
             None, self.words_of(old), self.words_of(new), autojunk=False
         ).ratio()
 
-    def copied(self, blocks: list[_Block]) -> list[str]:
+    def copied(self, blocks: list[list[str]]) -> list[str]:
         """Elements the newer version shares with the older, as the newer has them."""
         out: list[str] = []
         for block in blocks:
@@ -189,7 +186,7 @@ class Comparison:
             out.append("\n")
         return out
 
-    def added(self, blocks: list[_Block]) -> list[str]:
+    def added(self, blocks: list[list[str]]) -> list[str]:
         """Elements only the newer version has, their words marked."""
         out: list[str] = []
         for block in blocks:
@@ -197,7 +194,7 @@ class Comparison:
             out.append("\n")
         return out
 
-    def removed(self, blocks: list[_Block]) -> list[str]:
+    def removed(self, blocks: list[list[str]]) -> list[str]:
         """Elements only the older version has, each with its own element.
 
         An element with no words emits no tags. A list's wrapper is kept only
@@ -231,7 +228,7 @@ class Comparison:
                 out.append("\n")
         return out
 
-    def pair(self, old: list[_Block], new: list[_Block]) -> list[str]:
+    def pair(self, old: list[list[str]], new: list[list[str]]) -> list[str]:
         """Match the changed elements of one range to each other, in order.
 
         An element that reads mostly like one of the next few on the other side
@@ -259,7 +256,7 @@ class Comparison:
         out.extend(self.removed(old[i:]))
         return out
 
-    def words(self, old: _Block, new: _Block) -> list[str]:
+    def words(self, old: list[str], new: list[str]) -> list[str]:
         """Mark the words that differ between two elements.
 
         The newer element's markup is kept, so removed words sit inside it and
@@ -290,13 +287,15 @@ class Comparison:
         return " " if token.isspace() else token
 
     @staticmethod
-    def merged(opcodes: Sequence[_Opcode], new: _Block) -> list[_Opcode]:
+    def merged(
+        opcodes: Sequence[tuple[str, int, int, int, int]], new: list[str]
+    ) -> list[tuple[str, int, int, int, int]]:
         """Fold a space left unchanged between two changes into them.
 
         A rewritten phrase then reads as one removal and one addition, not
         word by word.
         """
-        out: list[_Opcode] = []
+        out: list[tuple[str, int, int, int, int]] = []
         for op, i1, i2, j1, j2 in opcodes:
             only_space = op == "equal" and not "".join(new[j1:j2]).strip()
             if out and out[-1][0] != "equal" and (only_space or op != "equal"):
@@ -305,7 +304,7 @@ class Comparison:
                 out.append((op, i1, i2, j1, j2))
         return out
 
-    def mark_run(self, tag: str, tokens: _Block) -> list[str]:
+    def mark_run(self, tag: str, tokens: list[str]) -> list[str]:
         """Mark the words of a run, leaving its tags outside the marks."""
         out: list[str] = []
         text: list[str] = []

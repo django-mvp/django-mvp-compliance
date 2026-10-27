@@ -19,7 +19,7 @@ people, and no existing spec describes any of them.
 **Why defensible**: the roadmap item (R6) was widened on 2026-10-26 to name the comparison as its
 own part, and the request names all three readers.
 
-**ADR:** none
+**ADR:** none — a ruling on how this work was run, not on the code
 
 ## D2 — The summary of what changed is a sibling, and nothing here depends on it
 
@@ -35,7 +35,7 @@ reopen the first.
 **Revisit if**: both are in place and the page asking to agree needs one arrangement for the two.
 That is a question for the later of the two to settle on its prototype.
 
-**ADR:** none
+**ADR:** none — a scope boundary between two pieces of work; nothing in the code depends on it
 
 ## D3 — Only published versions are compared, and drafts never
 
@@ -50,7 +50,7 @@ and FS-006 already rules that no public page shows one, even to staff. Comparing
 admin preview is a real but separate need of the compliance editor. It can be raised as its own
 request, and it would reuse whatever this feature builds.
 
-**ADR:** none
+**ADR:** docs/adr/0030-a-comparison-is-computed-from-the-stored-html-and-never-stored.md
 
 ## D4 — What is compared is the stored HTML
 
@@ -66,7 +66,7 @@ Markdown and then rendering the result would show readers a text that was never 
 the marked-up result from two sanitised texts is not rendering Markdown, but it does create new
 markup, so FR-006 makes the safety of the output a requirement rather than an assumption.
 
-**ADR:** none — follows from Article XII
+**ADR:** docs/adr/0030-a-comparison-is-computed-from-the-stored-html-and-never-stored.md
 
 ## D5 — Changes are marked word by word
 
@@ -80,7 +80,7 @@ reader to hunt for it. Character-level marks split words and are hard to read. D
 is a refinement the request does not ask for, and it can be added later without changing any
 address.
 
-**ADR:** none
+**ADR:** docs/adr/0030-a-comparison-is-computed-from-the-stored-html-and-never-stored.md
 
 ## D6 — The person's comparison starts from the newest version they accepted
 
@@ -92,7 +92,7 @@ address.
 force is exactly what they have not agreed to. Comparing from their first acceptance would mark
 changes they already agreed to.
 
-**ADR:** none
+**ADR:** none — a rule of two pages, stated in the spec (FR-015, FR-016); nothing else inherits it
 
 ## D7 — "Anyone looking at a person's record" is the person themselves
 
@@ -109,7 +109,7 @@ site would date it.
 **Why defensible**: a person's own record is where the question "what changed since I agreed" is
 asked. Staff can open any comparison from the document's page if they need one.
 
-**ADR:** none
+**ADR:** none — which pages offer a comparison is the spec's scope, not an architectural rule
 
 ## D8 — Comparisons are public, and the same for every reader
 
@@ -122,7 +122,7 @@ asked. Staff can open any comparison from the document's page if they need one.
 nothing new. A comparison address that answered differently for different readers could not be
 shared or linked from an email.
 
-**ADR:** none
+**ADR:** none — follows from versions already being public on their own pages; local to the comparison page
 
 ## D9 — The standard library is preferred to a new dependency
 
@@ -137,7 +137,7 @@ FR-002 to FR-006 and SC-004, with the reason recorded under Complexity Tracking.
 dependency. The package makes no outbound request and has few dependencies, and a comparison of two
 already-sanitised texts is a well-understood problem the standard library covers.
 
-**ADR:** none at specification. One is due if planning adds a dependency.
+**ADR:** docs/adr/0030-a-comparison-is-computed-from-the-stored-html-and-never-stored.md
 
 ## D10 — The specs of the pages that gain an offer are edited when this is built
 
@@ -149,14 +149,14 @@ lines of FS-004, FS-006, FS-008 and FS-009 that describe what their pages show a
 date in the same pull request, so each still reads as current. #132 is editing FS-002 and FS-009 at
 the same time, and the later of the two to merge reconciles FS-009.
 
-**ADR:** none
+**ADR:** none — a documentation task carried out in this pull request
 
 ## D11 — A sketch comes first
 
 **Chosen**: the sketch gate is shut. How marked-up text reads, how a reader chooses the version to
 compare with, and how the offer sits on four existing pages are judgements a test cannot settle.
 
-**ADR:** none
+**ADR:** none — a ruling on how this work was run
 
 ## D12 — Links to a comparison are worded the same everywhere
 
@@ -166,7 +166,7 @@ numbers in it. Ruled by the maintainer on reviewing the prototype ("far too deta
 **Why defensible**: the comparison itself names both versions, so the link needs to say only where
 it leads.
 
-**ADR:** none
+**ADR:** none — a wording ruling local to four templates
 
 ## D13 — The staff page links a version only for someone who may view it
 
@@ -179,7 +179,7 @@ it was.
 
 **Why defensible**: a link that answers "forbidden" is a broken link.
 
-**ADR:** none — local to the staff page
+**ADR:** none — local to the staff page's template
 
 ## D14 — A comparison's address always names both versions
 
@@ -190,7 +190,7 @@ The sketch's default for a bare address is removed.
 showing the same comparison. A bare address would change meaning with every publication, and
 nothing in the package links to one.
 
-**ADR:** none
+**ADR:** none — the address shape is documented in docs/pages.md and pinned by tests; it constrains nothing beyond the page
 
 ## D15 — The staff page learns a version's key from the answer itself
 
@@ -201,7 +201,7 @@ columns and is unchanged.
 **Why defensible**: looking the version up again in the admin by document name and number costs a
 query and repeats what the answer already knew.
 
-**ADR:** none
+**ADR:** none — one field on one dataclass, recorded in the CHANGELOG
 
 ## D16 — Two versions that differ only in markup have no differences to show
 
@@ -215,7 +215,7 @@ there are no differences.
 unmarked text without saying why leaves the reader hunting. Marking a changed address is a
 different requirement, and would go back through the specification.
 
-**ADR:** none
+**ADR:** none — a behaviour of the comparison stated in the spec (FR-010) and pinned by tests
 
 ## D17 — The design review's findings
 
@@ -224,4 +224,4 @@ wrappers as the only wrappers with a balance test, a quote-aware tag pattern, `s
 words (D16), and two more checks on the comparison page. The review also found that the sketch's
 document page reads the version in force with a query of its own, which is deleted.
 
-**ADR:** none
+**ADR:** none — a record of plan edits; the lasting ones are in ADR 0030
