@@ -168,6 +168,16 @@ ASKED = {
         (COMMUNITY, "2024.1"),
         (MEMBERSHIP, "2026.1"),
     ],
+    # The account that may only produce what is held about a person, with
+    # everything in force agreed so the site-wide check lets it reach the
+    # admin: its staff page shows each version as plain text, not a link.
+    "disclosure.user@example.com": [
+        ("Privacy policy", "2026.1"),
+        ("Terms of use", "2025.1"),
+        ("House rules", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
     # Agreed to early versions of two documents and nothing since, so the page
     # that asks offers a comparison for those two and none for the rest.
     "lapsed.user@example.com": [
@@ -654,7 +664,10 @@ class Command(BaseCommand):
     def make_asked(self):
         """Leave each account in ``ASKED`` with the documents it is asked about."""
         for email, accepted in ASKED.items():
-            person = self.make_account(email, False, False, [])
+            # An account already made with its own permissions keeps them.
+            person = get_user_model().objects.filter(email=email).first()
+            if email not in ACCOUNTS or person is None:
+                person = self.make_account(email, False, False, [])
             for name, number in accepted:
                 version = Version.objects.get(document__name=name, number=number)
                 with on(2026, 9, 20):
