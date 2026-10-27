@@ -58,3 +58,9 @@ Order: Foundational, US-1, US-2, US-3, then the staff page.
 |---|---|---|
 | T017 | `tests/test_records.py` — each entry carries its version's `version_id`, with no extra query. `tests/test_admin.py` — on the staff page, a reader who may view versions sees each version as a link to its admin change page, and one holding `produce_disclosure` alone sees plain text | Fails before T018 |
 | T018 | `AcceptanceEntry.version_id`, its docstring saying the key is there for the staff page's link; the partial's link under `perms.mvp_compliance.view_version`; `docs/disclosure.md`; FS-004's spec brought up to date; `CHANGELOG.md` *Changed* | T017 passes; full suite and pre-commit green |
+
+## Review fixes
+
+| Id | Task | Done when |
+|---|---|---|
+| T019 | An element over `Comparison.longest` (2,000) words is removed and added whole; a word-less element is compared by its element names and never paired; the limit and the table-cell case documented | A 15,000-word paragraph of repeated words compares in under a second and fails without the cap; a removed list beside a new rule keeps its wrapper |
