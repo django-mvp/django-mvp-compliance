@@ -2635,6 +2635,151 @@ class TestWhatChanged:
 
 
 @pytest.mark.django_db
+class TestAgreementPageComparison:
+    """FR-016, FR-017, FR-019: a document accepted at an earlier version links to the
+    comparison with the version asked about, and #132's summaries stay beside it."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def link(content, document, older, newer):
+        """The comparison anchor as written into the page, or ``None``."""
+        href = comparison_href(document, older, newer)
+        return re.search(rf"<a [^>]*{re.escape(href)}[^>]*>", content)
+
+    def test_a_document_accepted_at_an_earlier_version_links_to_the_comparison(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(document, "Second")
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert self.link(content, document, accepted, asked)
+
+    def test_a_document_never_accepted_has_no_link(self, signed_in):
+        document = DocumentFactory()
+        published(document, "First")
+        published(document, "Second")
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_the_link_starts_from_the_newest_version_accepted(self, signed_in, user):
+        document = DocumentFactory()
+        first, second = (published(document, f"Wording {n}") for n in "12")
+        asked = published(document, "Wording 3")
+        Acceptance.objects.record(user, second)
+        Acceptance.objects.record(user, first)
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert self.link(content, document, second, asked)
+        assert not self.link(content, document, first, asked)
+
+    def test_each_document_is_linked_or_not_as_it_was_agreed_before(
+        self, signed_in, user
+    ):
+        before = DocumentFactory(name="A before")
+        fresh = DocumentFactory(name="B fresh")
+        accepted = published(before, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(before, "Second")
+        published(fresh)
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert self.link(content, before, accepted, asked)
+        assert reverse("mvp_compliance:comparison", args=[fresh.slug]) not in content
+
+    def test_get_entries_sets_since_itself(self, user, rf):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        published(document, "Second")
+        fresh = DocumentFactory(name="Zed fresh")
+        published(fresh)
+        request = rf.get(agreement_address())
+        request.user = user
+        view = AgreementView()
+        view.setup(request)
+
+        entries = {e["document"]: e["since"] for e in view.get_entries()}
+
+        assert entries == {document: accepted, fresh: None}
+
+    def test_the_link_opens_in_a_new_tab_and_leaves_the_destination_alone(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(document, "Second")
+        before = signed_in.get(agreement_address("/dashboard/")).context["destination"]
+
+        response = signed_in.get(agreement_address("/dashboard/"))
+
+        anchor = self.link(response.content.decode(), document, accepted, asked)
+        assert 'target="_blank"' in anchor.group(0)
+        assert response.context["destination"] == before == "/dashboard/"
+        hidden = [
+            field for field in controls(response).inputs if field.get("name") == "next"
+        ]
+        assert [field["value"] for field in hidden] == ["/dashboard/"]
+
+    def test_opening_the_comparison_records_nothing(self, signed_in, user):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(document, "Second")
+        before = Acceptance.objects.count()
+
+        response = signed_in.get(
+            reverse("mvp_compliance:comparison", args=[document.slug]),
+            {"from": accepted.number, "to": asked.number},
+        )
+
+        assert response.status_code == 200
+        assert Acceptance.objects.count() == before
+
+    def test_the_summaries_still_render_beside_the_link(self, signed_in, user):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = VersionFactory(document=document, summary="We keep less now.")
+        asked.publish()
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert "We keep less now." in content
+        assert self.link(content, document, accepted, asked)
+
+    def test_the_query_count_does_not_grow_with_the_documents(
+        self, signed_in, user, django_assert_num_queries
+    ):
+        def agreed_before():
+            document = DocumentFactory()
+            Acceptance.objects.record(user, published(document, "First"))
+            published(document, "Second")
+
+        agreed_before()
+        signed_in.get(agreement_address())  # warm caches
+        with CaptureQueriesContext(connection) as small:
+            signed_in.get(agreement_address())
+        for _ in range(4):
+            agreed_before()
+
+        with django_assert_num_queries(len(small)):
+            signed_in.get(agreement_address())
+
+
+@pytest.mark.django_db
 class TestAgreementDestination:
     """US-4: where a person is sent on to, and the person with nothing outstanding
     (FR-015 to FR-018, FR-026, SC-006)."""
