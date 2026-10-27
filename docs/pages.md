@@ -440,6 +440,13 @@ comparison with the version in force. To link to a comparison from your own temp
 <a href="{% url 'mvp_compliance:comparison' 'privacy-policy' %}?from=2026.1&amp;to=2026.3">What changed</a>
 ```
 
+In an email, where the link must carry the site's address, build it in code with `reverse`
+as above and put the site's address in front of it:
+
+```python
+link = f"https://example.com{address}?from=2026.1&to=2026.3"
+```
+
 The page answers 404, to every visitor, when the slug names no document in force, the document
 has only one published version, `from` or `to` is missing, or either names anything but a
 published version of this document: a draft (it has no number), another document's number, or
@@ -489,6 +496,7 @@ package needs no other change, and you do not fork it.
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
 | `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
 | `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
+| `mvp_compliance/comparison.html` | `mvp_compliance:comparison` | `comparison`, a `Comparison` of the two versions named by `from` and `to`, with `older` and `newer`; `versions`, every published version of the document newest first; `document`; and `documents`, every document that has a version in force in name order |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
 
