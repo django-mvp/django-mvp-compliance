@@ -361,8 +361,9 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             list them, holding its ``document``, the ``version`` in force,
             whether agreeing is ``optional``, and the ``changes``: the versions
             published since the one the person last accepted that carry a
-            summary, newest first. Three queries whatever the number of
-            documents.
+            summary, newest first, and the ``since`` version: the newest the
+            person accepted, to compare with ``version``, ``None`` when they
+            never accepted one. Four queries whatever the number of documents.
         """
         documents = list(
             Document.objects.outstanding_for(self.request.user)
@@ -370,7 +371,16 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
             .order_by("name")
         )
         changes: dict[int, list[Version]] = {}
+        since: dict[int, Version] = {}
         if documents:
+            accepted = (
+                Acceptance.objects.for_person(self.request.user)
+                .filter(version__document__in=documents)
+                .select_related("version")
+                .order_by("-version__published_at")
+            )
+            for acceptance in accepted:
+                since.setdefault(acceptance.version.document_id, acceptance.version)
             summarised = (
                 Version.objects.published()
                 .since_last_accepted_by(self.request.user)
@@ -386,6 +396,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
                 "version": document.current_versions[0],
                 "optional": self.is_optional(document),
                 "changes": changes.get(document.pk, []),
+                "since": since.get(document.pk),
             }
             for document in documents
         ]
@@ -502,18 +513,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         """Add the entries, each with its toggle's attributes, and the destination."""
         context = super().get_context_data(**kwargs)
         kept = set(self.request.POST.getlist("agree")) if context.get("failed") else ()
-        # The newest version of each document this person accepted, for the
-        # comparison with the one they are asked about (FS-014). One query.
-        since: dict[int, Version] = {}
-        for acceptance in (
-            Acceptance.objects.for_person(self.request.user)
-            .filter(version__document__in=[e["document"] for e in self.entries])
-            .select_related("version")
-            .order_by("-version__published_at")
-        ):
-            since.setdefault(acceptance.version.document_id, acceptance.version)
         for entry in self.entries:
-            entry["since"] = since.get(entry["document"].pk)
             slug = entry["document"].slug
             entry["field"] = {
                 "name": "agree",
