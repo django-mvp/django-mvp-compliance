@@ -1173,6 +1173,45 @@ class TestTemplateOverride:
 
 
 @pytest.mark.django_db
+class TestComparisonTemplate:
+    """FR-020, FR-021: a project links to a comparison by its named route and restyles
+    the page by placing a template at the same path."""
+
+    @pytest.fixture
+    def project_templates(self, settings):
+        """Point the template loaders at a directory of project templates first."""
+        templates = [dict(engine) for engine in settings.TEMPLATES]
+        templates[0]["DIRS"] = [PROJECT_TEMPLATES]
+        settings.TEMPLATES = templates
+
+    def test_the_named_route_with_from_and_to_opens_the_comparison(self, client):
+        document = DocumentFactory()
+        older = published(document, "First wording")
+        newer = published(document, "Second wording")
+        address = reverse("mvp_compliance:comparison", args=[document.slug])
+
+        response = client.get(address, {"from": older.number, "to": newer.number})
+
+        assert response.status_code == 200
+        assert response.context["comparison"].older == older
+        assert response.context["comparison"].newer == newer
+
+    def test_the_project_template_is_used_and_is_given_what_the_package_documents(
+        self, client, project_templates
+    ):
+        document = DocumentFactory()
+        older = published(document, "First wording")
+        newer = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, older, newer))
+
+        assert "project-comparison-page" in controls(response).ids
+        assert response.context["document"] == document
+        assert response.context["comparison"].newer == newer
+        assert list(response.context["versions"]) == [newer, older]
+
+
+@pytest.mark.django_db
 class TestNoMenuEntry:
     """FR-014: the package adds nothing to a project's menus."""
 
