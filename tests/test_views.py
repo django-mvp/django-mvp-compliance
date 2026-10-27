@@ -829,6 +829,105 @@ class TestComparisonPage:
         )
 
 
+def comparison_href(document, older, newer):
+    """A comparison link as the document's page writes it into its markup."""
+    base = reverse("mvp_compliance:comparison", args=[document.slug])
+    return f'href="{base}?from={older.number}&amp;to={newer.number}"'
+
+
+@pytest.mark.django_db
+class TestDocumentPageComparisons:
+    """FR-012, FR-013: the document's page offers a comparison of the version shown
+    with each other published version, and a replaced version's alert offers one
+    with the version in force."""
+
+    def test_every_other_version_is_offered_from_the_one_shown(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        third = published(document, "Third wording")
+
+        content = client.get(version_address(document, second.number)).content.decode()
+
+        assert comparison_href(document, second, first) in content
+        assert comparison_href(document, second, third) in content
+        assert comparison_href(document, second, second) not in content
+
+    def test_the_page_of_the_version_in_force_offers_the_earlier_ones(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert comparison_href(document, second, first) in content
+
+    def test_a_document_with_one_version_offers_no_comparison(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_a_draft_is_not_offered(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        VersionFactory(document=document, markdown="Unpublished wording")
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_a_replaced_versions_alert_links_to_the_version_in_force(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        current = published(document, "Third wording")
+
+        content = client.get(version_address(document, first.number)).content.decode()
+
+        alert = content[content.index('role="alert"') : content.index('class="prose')]
+        assert comparison_href(document, first, current) in alert
+
+    def test_the_version_in_force_has_no_alert_to_carry_the_link(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        published(document, "Second wording")
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert 'role="alert"' not in content
+
+    def test_the_query_count_is_what_it_was_before_the_links(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        with CaptureQueriesContext(connection) as captured:
+            client.get(version_address(document, first.number))
+
+        # The document, its versions, the version shown, the list of documents
+        # and the shell's own reads, as the page cost before it linked anywhere.
+        assert len(captured) == 7
+
+    def test_the_query_count_does_not_grow_with_the_versions(self, client):
+        small = DocumentFactory()
+        small_first = published(small, "Wording one")
+        published(small, "Wording two")
+        large = DocumentFactory()
+        large_first = published(large, "Wording zero")
+        for number in range(1, 20):
+            published(large, f"Wording {number}")
+
+        def queries(document, first):
+            with CaptureQueriesContext(connection) as captured:
+                client.get(version_address(document, first.number))
+            return len(captured)
+
+        assert queries(large, large_first) == queries(small, small_first)
+
+
 @pytest.mark.django_db
 class TestDocumentList:
     """FR-004, FR-007: every document page, with or without ``?version=``, lists
