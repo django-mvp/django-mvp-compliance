@@ -921,6 +921,7 @@ class TestPageStrings:
             "account_deleted.html",
             "agreed_documents.html",
             "agreement.html",
+            "comparison.html",
             "copy_value.html",
             "delete_account.html",
             "document_detail.html",

@@ -197,6 +197,14 @@ msgstr "The page that asks a person to agree has no address."
 msgid "Add %(middleware)s to MIDDLEWARE."
 msgstr ""
 
+#: comparison.py:330
+msgid "Added:"
+msgstr "Added:"
+
+#: comparison.py:330
+msgid "Removed:"
+msgstr "Removed:"
+
 #: forms.py:36
 msgid "Person"
 msgstr "Person"
