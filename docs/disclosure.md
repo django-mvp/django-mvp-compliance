@@ -119,7 +119,7 @@ question that would reach them.
 
 The answer is about what a person agreed to. It does not list the versions a member of staff
 published: each version records who published it, but that is a record of their work, not their
-consent. See [ADR 0017](adr/0017-the-answer-about-a-person-covers-their-consent.md).
+consent. See [ADR 0017](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/adr/0017-the-answer-about-a-person-covers-their-consent.md).
 
 Nothing here is recorded. Producing an answer leaves no trace of having been
 asked, and the page carries no add, change or delete control — it is read-only in

@@ -1,35 +1,15 @@
-"""The demo's navigation: its own pages, and the pages a visitor reads, as a host project would add them."""
+"""The demo's navigation: the pages a visitor reads, as a host project would add them.
+
+The documentation is the demo's main app, so its contents are the sidebar on every
+page and the entry goes on the documentation's menu rather than on ``AppMenu``.
+"""
 
 from django.urls import reverse_lazy
 from flex_menu import MenuItem
-from mvp.menus import AppMenu
 
-AppMenu.extend(
-    [
-        MenuItem(
-            name="overview",
-            view_name="overview",
-            extra_context={"label": "Overview", "icon": "overview"},
-        ),
-        MenuItem(
-            name="documents",
-            view_name="documents",
-            extra_context={"label": "Documents", "icon": "document"},
-        ),
-        MenuItem(
-            name="agreeing",
-            view_name="agreeing",
-            extra_context={"label": "Agreeing", "icon": "check"},
-        ),
-        MenuItem(
-            name="sign-in-accounts",
-            view_name="sign_in_accounts",
-            extra_context={"label": "Sign-in accounts", "icon": "people"},
-        ),
-    ]
-)
+from demo.mounted import docs
 
-AppMenu.append(
+docs.menu.append(
     MenuItem(
         name="legal-documents",
         url=reverse_lazy("mvp_compliance:document", args=["privacy-policy"]),

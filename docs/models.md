@@ -714,7 +714,7 @@ setting `MVP_COMPLIANCE_ACCEPTANCES_SURVIVE_ACCOUNT_REMOVAL` to `False` and lett
 acceptances go with the account.
 
 The reasoning, and the configurable alternative that was rejected, are in
-[ADR 0014](adr/0014-the-project-links-a-surviving-acceptance-to-a-person.md).
+[ADR 0014](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/adr/0014-the-project-links-a-surviving-acceptance-to-a-person.md).
 
 ### Recording several at once
 
@@ -742,7 +742,7 @@ Two differences from `record()` to know about:
   accepted is passed over. SQLite, PostgreSQL, MySQL and MariaDB can. Oracle cannot, and
   `record_many()` raises `NotSupportedError` there.
 
-See [ADR 0022](adr/0022-a-submissions-acceptances-are-written-in-one-batch.md).
+See [ADR 0022](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/adr/0022-a-submissions-acceptances-are-written-in-one-batch.md).
 
 It returns nothing. Read the person's acceptances back with `Acceptance.objects.for_person(user)`
 when you need them.

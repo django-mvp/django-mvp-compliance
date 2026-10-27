@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "mvp",
+    "mvp_sphinx",
     "daisy_cotton",
     "easy_icons",
     "crispy_forms",

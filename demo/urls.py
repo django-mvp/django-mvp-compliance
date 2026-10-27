@@ -1,19 +1,11 @@
 from django.contrib import admin
 from django.urls import include, path
+from mvp.mounted import mount
 
-from demo.views import (
-    AgreeingView,
-    DemoAgreementView,
-    DocumentsView,
-    OverviewView,
-    SignInAccountsView,
-)
+from demo.mounted import docs
+from demo.views import DemoAgreementView
 
 urlpatterns = [
-    path("", OverviewView.as_view(), name="overview"),
-    path("documents/", DocumentsView.as_view(), name="documents"),
-    path("agreeing/", AgreeingView.as_view(), name="agreeing"),
-    path("sign-in-accounts/", SignInAccountsView.as_view(), name="sign_in_accounts"),
     # The authoring surface this package ships lives entirely in the admin, so
     # the demo mounts it. The pages a visitor reads are the package's own.
     path("admin/", admin.site.urls),
@@ -27,4 +19,9 @@ urlpatterns = [
     # django-mvp's account area, where this package's own pages for a signed-in
     # person appear. It puts its pages under account/ itself.
     path("", include("mvp.urls")),
+    # The demo's pages are the package's documentation, under docs/. They are
+    # the site's main app, so their contents are the sidebar on every page that
+    # belongs to no other app. Mounted last: the app answers every address
+    # nothing above it claims.
+    mount("", docs, main=True),
 ]

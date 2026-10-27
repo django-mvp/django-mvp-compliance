@@ -28,10 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The demo's pages are drawn in django-mvp's shell. The single landing page is now four pages in
-  the sidebar: Overview, Documents, Agreeing and Sign-in accounts. Its sign-in page and allauth's
-  account pages are drawn in the shell by django-mvp-accounts, which the development dependencies
-  now install, and signing in lands on the Overview.
+- The demo's pages are this documentation, served in django-mvp's shell by django-mvp-sphinx with
+  its contents as the sidebar. Build them with `python manage.py build_docs`. The landing page is
+  gone, and a new page, [Using the demo](docs/demo.md), lists its accounts and seeded documents.
+  Pages about developing the package (the roadmap, decision records, brainstorm and contributing
+  standards) stay in the repository and out of the built pages. The demo's sign-in page and
+  allauth's account pages are drawn in the shell by django-mvp-accounts. django-mvp-sphinx,
+  Sphinx, myst-parser and django-mvp-accounts are development dependencies only.
 - On the staff page that produces everything held about a person, each acceptance's version
   number links to that version's admin change page for a reader who may view versions. A reader
   holding only the permission to produce the answer sees plain text. `AcceptanceEntry` gains
