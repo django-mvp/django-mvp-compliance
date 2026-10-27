@@ -438,6 +438,21 @@ published version of this document: a draft (it has no number), another document
 an unknown one. The page is `mvp_compliance/comparison.html`; place a template at that path to
 replace it. It is given `comparison`, `versions` and `document`.
 
+`comparison` is a `mvp_compliance.comparison.Comparison`, which you can also build yourself from
+two published versions of one document, given in either order:
+
+```python
+from mvp_compliance.comparison import Comparison
+
+comparison = Comparison.of(first, second)
+comparison.older, comparison.newer  # ordered by when each was published
+comparison.same  # True when the two read the same, tags and spacing aside
+comparison.html()  # the newer text, with <ins> and <del> around the differences
+```
+
+`html()` is safe to place in a template as it is. Each mark starts with a hidden label, so a
+screen reader announces what was added or removed.
+
 ## When the page is "not found"
 
 The page answers 404, to every visitor whether signed in, staff or anonymous, when:
