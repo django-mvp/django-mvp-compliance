@@ -604,6 +604,330 @@ class TestVersionSwitcher:
         assert f"<span>v{first.number}</span>" in content
 
 
+def comparison_address(document, older, newer):
+    """The comparison of two versions of ``document``, by number."""
+    query = urlencode({"from": older.number, "to": newer.number})
+    return f"{reverse('mvp_compliance:comparison', args=[document.slug])}?{query}"
+
+
+def marked_text(response):
+    """The marked-up text of a comparison page, between its wrapping tags."""
+    found = re.search(
+        r'class="[^"]*compliance-comparison[^"]*"[^>]*>(.*?)</div>',
+        response.content.decode(),
+        re.DOTALL,
+    )
+    assert found, "the page holds no comparison"
+    return found.group(1)
+
+
+@pytest.fixture
+def staff_client():
+    client = Client()
+    client.force_login(UserFactory(is_staff=True, is_superuser=True))
+    return client
+
+
+@pytest.mark.django_db
+class TestComparisonPage:
+    """FR-001, FR-005, FR-007 to FR-011, FR-020, SC-006: two published versions of a
+    document compared on a page anyone can read, at an address that names them."""
+
+    def test_anonymous_visitor_reads_it_and_both_versions_are_linked(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, second))
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert f'href="{version_address(document, first.number)}"' in content
+        assert f'href="{version_address(document, second.number)}"' in content
+
+    def test_the_reversed_order_gives_the_same_page(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        forward = client.get(comparison_address(document, first, second))
+        backward = client.get(comparison_address(document, second, first))
+
+        assert backward.status_code == 200
+        assert marked_text(backward) == marked_text(forward)
+        assert backward.context["comparison"].older == first
+        assert backward.context["comparison"].newer == second
+
+    def test_the_same_address_gives_the_same_output_after_a_newer_publication(
+        self, client
+    ):
+        document = DocumentFactory()
+        first = published(document, "One wording of this clause")
+        second = published(document, "Another wording of this clause")
+        address = comparison_address(document, first, second)
+        before = marked_text(client.get(address))
+
+        published(document, "A third wording of the whole page")
+
+        assert marked_text(client.get(address)) == before
+
+    def test_the_page_renders_in_the_shell_with_no_project_template(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, second))
+
+        assert "mvp_compliance/comparison.html" in [t.name for t in response.templates]
+        assert 'id="document-list"' in response.content.decode()
+
+    def test_from_equal_to_shows_the_no_differences_alert(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, first))
+
+        assert response.status_code == 200
+        assert "data-comparison-same" in response.content.decode()
+
+    def test_two_versions_that_differ_show_no_such_alert(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, first, second))
+
+        assert "data-comparison-same" not in response.content.decode()
+
+    def test_a_failing_renderer_does_not_stop_the_page(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        with (
+            patch.object(MarkdownRenderer, "render", side_effect=RuntimeError),
+            patch("markdown.markdown", side_effect=RuntimeError),
+        ):
+            response = client.get(comparison_address(document, first, second))
+
+        assert response.status_code == 200
+
+    @pytest.fixture(params=["anonymous", "staff"])
+    def visitor(self, request, client, staff_client):
+        return client if request.param == "anonymous" else staff_client
+
+    def test_a_drafts_number_answers_404(self, visitor):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        draft = VersionFactory(document=document, markdown="Unpublished wording")
+        draft.refresh_from_db()
+        query = urlencode({"from": first.number, "to": draft.number})
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}?{query}"
+        )
+
+        assert response.status_code == 404
+
+    def test_a_number_of_another_document_answers_404(self, visitor):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        other = DocumentFactory()
+        for wording in ("One", "Two", "Three"):
+            elsewhere = published(other, wording)
+
+        response = visitor.get(comparison_address(document, first, elsewhere))
+
+        assert response.status_code == 404
+
+    def test_an_unknown_number_answers_404(self, visitor):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        query = urlencode({"from": first.number, "to": "1999.1"})
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}?{query}"
+        )
+
+        assert response.status_code == 404
+
+    @pytest.mark.parametrize("missing", ["from", "to"])
+    def test_a_missing_number_answers_404(self, visitor, missing):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        query = {"from": first.number, "to": second.number}
+        del query[missing]
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}?"
+            f"{urlencode(query)}"
+        )
+
+        assert response.status_code == 404
+
+    def test_no_numbers_at_all_answers_404(self, visitor):
+        document = DocumentFactory()
+        published(document, "First wording")
+        published(document, "Second wording")
+
+        response = visitor.get(
+            reverse("mvp_compliance:comparison", args=[document.slug])
+        )
+
+        assert response.status_code == 404
+
+    def test_an_unknown_slug_answers_404(self, visitor):
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=['no-such-document'])}"
+            "?from=2026.1&to=2026.2"
+        )
+
+        assert response.status_code == 404
+
+    def test_a_document_with_only_drafts_answers_404(self, visitor):
+        document = DocumentFactory()
+        VersionFactory(document=document, markdown="One draft")
+        VersionFactory(document=document, markdown="Another draft")
+
+        response = visitor.get(
+            f"{reverse('mvp_compliance:comparison', args=[document.slug])}"
+            "?from=2026.1&to=2026.2"
+        )
+
+        assert response.status_code == 404
+
+    def test_any_pair_on_a_document_with_one_published_version_answers_404(
+        self, visitor
+    ):
+        document = DocumentFactory()
+        only = published(document, "Only wording")
+
+        response = visitor.get(comparison_address(document, only, only))
+
+        assert response.status_code == 404
+
+    def test_the_query_count_does_not_grow_with_the_versions(self, client):
+        small = DocumentFactory()
+        small_first = published(small, "Wording one")
+        small_second = published(small, "Wording two")
+        large = DocumentFactory()
+        large_versions = [published(large, f"Wording {n}") for n in range(40)]
+
+        def queries(document, older, newer):
+            with CaptureQueriesContext(connection) as captured:
+                response = client.get(comparison_address(document, older, newer))
+            assert response.status_code == 200
+            return len(captured)
+
+        assert queries(large, large_versions[0], large_versions[-1]) == queries(
+            small, small_first, small_second
+        )
+
+
+def comparison_href(document, older, newer):
+    """A comparison link as the document's page writes it into its markup."""
+    base = reverse("mvp_compliance:comparison", args=[document.slug])
+    return f'href="{base}?from={older.number}&amp;to={newer.number}"'
+
+
+@pytest.mark.django_db
+class TestDocumentPageComparisons:
+    """FR-012, FR-013: the document's page offers a comparison of the version shown
+    with each other published version, and a replaced version's alert offers one
+    with the version in force."""
+
+    def test_every_other_version_is_offered_from_the_one_shown(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+        third = published(document, "Third wording")
+
+        content = client.get(version_address(document, second.number)).content.decode()
+
+        assert comparison_href(document, second, first) in content
+        assert comparison_href(document, second, third) in content
+        assert comparison_href(document, second, second) not in content
+
+    def test_the_page_of_the_version_in_force_offers_the_earlier_ones(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert comparison_href(document, second, first) in content
+
+    def test_a_document_with_one_version_offers_no_comparison(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_a_draft_is_not_offered(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        VersionFactory(document=document, markdown="Unpublished wording")
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_a_replaced_versions_alert_links_to_the_version_in_force(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+        current = published(document, "Third wording")
+
+        content = client.get(version_address(document, first.number)).content.decode()
+
+        alert = content[content.index('role="alert"') : content.index('class="prose')]
+        assert comparison_href(document, first, current) in alert
+
+    def test_the_version_in_force_has_no_alert_to_carry_the_link(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        published(document, "Second wording")
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert 'role="alert"' not in content
+
+    def test_the_query_count_is_what_it_was_before_the_links(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        published(document, "Second wording")
+
+        with CaptureQueriesContext(connection) as captured:
+            client.get(version_address(document, first.number))
+
+        # The document, its versions, the version shown, the list of documents
+        # and the shell's own reads, as the page cost before it linked anywhere.
+        assert len(captured) == 7
+
+    def test_the_query_count_does_not_grow_with_the_versions(self, client):
+        small = DocumentFactory()
+        small_first = published(small, "Wording one")
+        published(small, "Wording two")
+        large = DocumentFactory()
+        large_first = published(large, "Wording zero")
+        for number in range(1, 20):
+            published(large, f"Wording {number}")
+
+        def queries(document, first):
+            with CaptureQueriesContext(connection) as captured:
+                client.get(version_address(document, first.number))
+            return len(captured)
+
+        assert queries(large, large_first) == queries(small, small_first)
+
+
 @pytest.mark.django_db
 class TestDocumentList:
     """FR-004, FR-007: every document page, with or without ``?version=``, lists
@@ -849,6 +1173,45 @@ class TestTemplateOverride:
 
 
 @pytest.mark.django_db
+class TestComparisonTemplate:
+    """FR-020, FR-021: a project links to a comparison by its named route and restyles
+    the page by placing a template at the same path."""
+
+    @pytest.fixture
+    def project_templates(self, settings):
+        """Point the template loaders at a directory of project templates first."""
+        templates = [dict(engine) for engine in settings.TEMPLATES]
+        templates[0]["DIRS"] = [PROJECT_TEMPLATES]
+        settings.TEMPLATES = templates
+
+    def test_the_named_route_with_from_and_to_opens_the_comparison(self, client):
+        document = DocumentFactory()
+        older = published(document, "First wording")
+        newer = published(document, "Second wording")
+        address = reverse("mvp_compliance:comparison", args=[document.slug])
+
+        response = client.get(address, {"from": older.number, "to": newer.number})
+
+        assert response.status_code == 200
+        assert response.context["comparison"].older == older
+        assert response.context["comparison"].newer == newer
+
+    def test_the_project_template_is_used_and_is_given_what_the_package_documents(
+        self, client, project_templates
+    ):
+        document = DocumentFactory()
+        older = published(document, "First wording")
+        newer = published(document, "Second wording")
+
+        response = client.get(comparison_address(document, older, newer))
+
+        assert "project-comparison-page" in controls(response).ids
+        assert response.context["document"] == document
+        assert response.context["comparison"].newer == newer
+        assert list(response.context["versions"]) == [newer, older]
+
+
+@pytest.mark.django_db
 class TestNoMenuEntry:
     """FR-014: the package adds nothing to a project's menus."""
 
@@ -921,6 +1284,7 @@ class TestPageStrings:
             "account_deleted.html",
             "agreed_documents.html",
             "agreement.html",
+            "comparison.html",
             "copy_value.html",
             "delete_account.html",
             "document_detail.html",
@@ -1387,6 +1751,100 @@ class TestNewerVersionInForce:
             client.get(agreed_address())
         client.force_login(many)
         with django_assert_num_queries(len(single)):
+            client.get(agreed_address())
+
+
+@pytest.mark.django_db
+class TestAgreedDocumentsComparison:
+    """FR-015, FR-018, FR-019: a document whose newest accepted version is not in force
+    links to the comparison of that version with the one in force."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    def test_a_document_behind_the_version_in_force_links_to_the_comparison(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        (accepted,) = accept(user, document)
+        in_force = published(document, "Newer wording")
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(document, accepted.version, in_force) in content
+
+    def test_a_document_accepted_at_the_version_in_force_has_no_link(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document, 2)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_the_link_compares_the_newest_accepted_version_with_the_one_in_force(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        first, second = (acceptance.version for acceptance in accept(user, document, 2))
+        published(document, "Third wording")
+        in_force = published(document, "Fourth wording")
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(document, second, in_force) in content
+        assert comparison_href(document, first, in_force) not in content
+
+    def test_the_newest_accepted_is_the_latest_published_not_the_latest_agreed_to(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        first, second, third = (published(document, f"Wording {n}") for n in "123")
+        in_force = published(document, "Wording 4")
+        Acceptance.objects.record(user, third)
+        Acceptance.objects.record(user, first)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(document, third, in_force) in content
+        assert comparison_href(document, first, in_force) not in content
+        assert comparison_href(document, second, in_force) not in content
+
+    def test_each_document_is_linked_from_its_own_newest_accepted_version(
+        self, signed_in, user
+    ):
+        behind = DocumentFactory(name="Behind terms")
+        level = DocumentFactory(name="Level terms")
+        (accepted,) = accept(user, behind)
+        accept(user, level)
+        in_force = published(behind)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(behind, accepted.version, in_force) in content
+        assert reverse("mvp_compliance:comparison", args=[level.slug]) not in content
+
+    def test_the_query_count_is_the_same_for_one_document_and_for_five(
+        self, client, django_assert_num_queries
+    ):
+        one, five = UserFactory(), UserFactory()
+        single = DocumentFactory()
+        accept(one, single)
+        published(single)
+        for _ in range(5):
+            document = DocumentFactory()
+            accept(five, document, 2)
+            published(document)
+        client.force_login(one)
+        client.get(agreed_address())  # warm caches
+
+        with CaptureQueriesContext(connection) as counted:
+            client.get(agreed_address())
+        client.force_login(five)
+        with django_assert_num_queries(len(counted)):
             client.get(agreed_address())
 
 
@@ -2213,6 +2671,151 @@ class TestWhatChanged:
             signed_in.get(agreement_address())
 
         assert len(large) == len(small)
+
+
+@pytest.mark.django_db
+class TestAgreementPageComparison:
+    """FR-016, FR-017, FR-019: a document accepted at an earlier version links to the
+    comparison with the version asked about, and #132's summaries stay beside it."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    @staticmethod
+    def link(content, document, older, newer):
+        """The comparison anchor as written into the page, or ``None``."""
+        href = comparison_href(document, older, newer)
+        return re.search(rf"<a [^>]*{re.escape(href)}[^>]*>", content)
+
+    def test_a_document_accepted_at_an_earlier_version_links_to_the_comparison(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(document, "Second")
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert self.link(content, document, accepted, asked)
+
+    def test_a_document_never_accepted_has_no_link(self, signed_in):
+        document = DocumentFactory()
+        published(document, "First")
+        published(document, "Second")
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_the_link_starts_from_the_newest_version_accepted(self, signed_in, user):
+        document = DocumentFactory()
+        first, second = (published(document, f"Wording {n}") for n in "12")
+        asked = published(document, "Wording 3")
+        Acceptance.objects.record(user, second)
+        Acceptance.objects.record(user, first)
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert self.link(content, document, second, asked)
+        assert not self.link(content, document, first, asked)
+
+    def test_each_document_is_linked_or_not_as_it_was_agreed_before(
+        self, signed_in, user
+    ):
+        before = DocumentFactory(name="A before")
+        fresh = DocumentFactory(name="B fresh")
+        accepted = published(before, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(before, "Second")
+        published(fresh)
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert self.link(content, before, accepted, asked)
+        assert reverse("mvp_compliance:comparison", args=[fresh.slug]) not in content
+
+    def test_get_entries_sets_since_itself(self, user, rf):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        published(document, "Second")
+        fresh = DocumentFactory(name="Zed fresh")
+        published(fresh)
+        request = rf.get(agreement_address())
+        request.user = user
+        view = AgreementView()
+        view.setup(request)
+
+        entries = {e["document"]: e["since"] for e in view.get_entries()}
+
+        assert entries == {document: accepted, fresh: None}
+
+    def test_the_link_opens_in_a_new_tab_and_leaves_the_destination_alone(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(document, "Second")
+        before = signed_in.get(agreement_address("/dashboard/")).context["destination"]
+
+        response = signed_in.get(agreement_address("/dashboard/"))
+
+        anchor = self.link(response.content.decode(), document, accepted, asked)
+        assert 'target="_blank"' in anchor.group(0)
+        assert response.context["destination"] == before == "/dashboard/"
+        hidden = [
+            field for field in controls(response).inputs if field.get("name") == "next"
+        ]
+        assert [field["value"] for field in hidden] == ["/dashboard/"]
+
+    def test_opening_the_comparison_records_nothing(self, signed_in, user):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = published(document, "Second")
+        before = Acceptance.objects.count()
+
+        response = signed_in.get(
+            reverse("mvp_compliance:comparison", args=[document.slug]),
+            {"from": accepted.number, "to": asked.number},
+        )
+
+        assert response.status_code == 200
+        assert Acceptance.objects.count() == before
+
+    def test_the_summaries_still_render_beside_the_link(self, signed_in, user):
+        document = DocumentFactory()
+        accepted = published(document, "First")
+        Acceptance.objects.record(user, accepted)
+        asked = VersionFactory(document=document, summary="We keep less now.")
+        asked.publish()
+
+        content = signed_in.get(agreement_address()).content.decode()
+
+        assert "We keep less now." in content
+        assert self.link(content, document, accepted, asked)
+
+    def test_the_query_count_does_not_grow_with_the_documents(
+        self, signed_in, user, django_assert_num_queries
+    ):
+        def agreed_before():
+            document = DocumentFactory()
+            Acceptance.objects.record(user, published(document, "First"))
+            published(document, "Second")
+
+        agreed_before()
+        signed_in.get(agreement_address())  # warm caches
+        with CaptureQueriesContext(connection) as small:
+            signed_in.get(agreement_address())
+        for _ in range(4):
+            agreed_before()
+
+        with django_assert_num_queries(len(small)):
+            signed_in.get(agreement_address())
 
 
 @pytest.mark.django_db

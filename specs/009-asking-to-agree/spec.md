@@ -48,6 +48,8 @@ Some things stay out of this feature:
   that accepting the same version twice leaves one record.
 - The document pages (FS-006) and the account area's list (FS-008) are unchanged. Neither gains a
   link to this page here.
+- A summary covers one step. What changed across every step since the version a person last
+  agreed to is the comparison (FS-014), which each row links to for a person who agreed before.
 - Refusing is not recorded. A person who does not agree leaves no record of any kind.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -271,6 +273,9 @@ person who never accepted the document and check no summary is shown.
    **Then** no summary is shown for that document.
 5. **Given** a summary containing markup, **When** it is shown, **Then** it reads as written and
    none of it is interpreted.
+6. **Given** a user who accepted an earlier version of a document, **When** they open the page,
+   **Then** the document's row links to the comparison (FS-014) of the newest version they
+   accepted with the version asked about, and the link opens in a new tab.
 
 ---
 
@@ -380,6 +385,10 @@ person who never accepted the document and check no summary is shown.
   summary. *(US-6)*
 - **FR-030**: A summary MUST be shown as written, with nothing in it interpreted as markup.
   *(US-6)*
+- **FR-031**: For a document the user accepted an earlier version of, the row MUST link to the
+  comparison (FS-014) of the newest version they accepted with the version asked about, opening
+  in a new tab and leaving the submission's destination as it was. A document they never accepted
+  has no such link. *(US-6)*
 
 ### Key Entities
 

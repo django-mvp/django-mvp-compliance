@@ -3,7 +3,13 @@
   {% for entry in entries %}
     <li>
       <p>
-      {{ entry.document }} — {% translate "version" %} {{ entry.version }} —
+      {{ entry.document }} —
+      {% if perms.mvp_compliance.view_version %}
+        <a href="{% url 'admin:mvp_compliance_version_change' entry.version_id %}">{% translate "version" %} {{ entry.version }}</a>
+      {% else %}
+        {% translate "version" %} {{ entry.version }}
+      {% endif %}
+      —
       {{ entry.accepted_at|date:"DATETIME_FORMAT" }}
       </p>
       {% if entry.ip_address %}

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A page comparing two published versions of a document, at `<slug>/compare/?from=<number>&to=<number>`
+  (`mvp_compliance:comparison`), readable by anyone. Added words are marked as added and removed
+  words as removed. A document's page lists a comparison with each other version in a
+  "See what's changed" dropdown, and a replaced version's notice links to its comparison with the
+  version in force. See [docs/pages.md](docs/pages.md#comparing-two-versions).
 - `Version.summary`, an optional plain-text note of what changed since the version before.
   Whoever prepares a version writes it in the admin beside the wording. It is published with the
   version and refused by every route that refuses a change to a published version. Migration
@@ -20,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   none. See [docs/pages.md](docs/pages.md#asking-a-person-to-agree).
 - `VersionQuerySet.since_last_accepted_by(user)`, the versions of each document published after
   the latest one `user` accepted. See [docs/models.md](docs/models.md#retrieval).
+
+### Changed
+
+- On the staff page that produces everything held about a person, each acceptance's version
+  number links to that version's admin change page for a reader who may view versions. A reader
+  holding only the permission to produce the answer sees plain text. `AcceptanceEntry` gains
+  `version_id`, the version's primary key, taken from the version `produce()` already loads.
+  See [docs/disclosure.md](docs/disclosure.md#what-the-answer-contains).
 
 ## [v0.4.0] - 2026-10-24
 

@@ -18,10 +18,13 @@ class AcceptanceEntry:
     Names the document by its current name, the document's own lasting
     identity rather than something versioned, and the version by the number
     the package assigned it at publication, such as ``"2026.2"``.
+    ``version_id`` is the version's primary key, carried so the staff page
+    can link to the version's change page without another query.
     """
 
     document: str
     version: str
+    version_id: int
     accepted_at: datetime
     ip_address: str | None
     #: The HTML stored on the version at publication (``Version.html``), never
@@ -133,6 +136,7 @@ def produce(subject: str) -> PersonalRecord:
         AcceptanceEntry(
             document=acceptance.version.document.name,
             version=acceptance.version.number,
+            version_id=acceptance.version.pk,
             accepted_at=acceptance.accepted_at,
             ip_address=acceptance.ip_address,
             wording=acceptance.version.html,

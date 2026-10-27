@@ -168,6 +168,22 @@ ASKED = {
         (COMMUNITY, "2024.1"),
         (MEMBERSHIP, "2026.1"),
     ],
+    # The account that may only produce what is held about a person, with
+    # everything in force agreed so the site-wide check lets it reach the
+    # admin: its staff page shows each version as plain text, not a link.
+    "disclosure.user@example.com": [
+        ("Privacy policy", "2026.1"),
+        ("Terms of use", "2025.1"),
+        ("House rules", "2025.1"),
+        (COMMUNITY, "2026.2"),
+        (MEMBERSHIP, "2026.1"),
+    ],
+    # Agreed to early versions of two documents and nothing since, so the page
+    # that asks offers a comparison for those two and none for the rest.
+    "lapsed.user@example.com": [
+        (COMMUNITY, "2024.1"),
+        (MEMBERSHIP, "2014.1"),
+    ],
     # Two outstanding, and the write always fails: the demo's own view refuses
     # to store an acceptance for this account, so the failure can be looked at.
     "unrecorded.user@example.com": [
@@ -239,6 +255,8 @@ SLUGS = {
     COMMUNITY: "community-guidelines",
     MEMBERSHIP: "membership-terms",
     "Delivery information": "delivery-information",
+    "Accessibility statement": "accessibility-statement",
+    "Open source licences": "open-source-licences",
 }
 
 PRIVACY = """\
@@ -372,6 +390,98 @@ Anywhere in Germany, within three working days.
 """
 
 
+#: Three versions of a notice, for comparing: a word changed in a long
+#: paragraph, a list item added, a link changed, a paragraph removed and one
+#: moved (FS-014).
+ACCESSIBILITY = """\
+## How accessible this site is
+
+We want as many people as possible to be able to use this site. You should be
+able to change colours, contrast levels and fonts, zoom in up to 300% without
+the text spilling off the screen, and navigate most of the site using just a
+keyboard. We have also made the text as simple as we can to understand.
+
+## What is not yet accessible
+
+- some older documents are scanned and cannot be read by a screen reader
+- the map on the contact page cannot be used with a keyboard
+
+## Reporting a problem
+
+Email [access@example.com](mailto:access@example.com) and we will reply within
+ten working days.
+
+## Our testing
+
+We last tested the site in March 2025.
+"""
+
+ACCESSIBILITY_NEXT = """\
+## How accessible this site is
+
+We want as many people as possible to be able to use this site. You should be
+able to change colours, contrast levels and fonts, zoom in up to 400% without
+the text spilling off the screen, and navigate the whole site using just a
+keyboard. We have also made the text as simple as we can to understand.
+
+## What is not yet accessible
+
+- some older documents are scanned and cannot be read by a screen reader
+- the map on the contact page cannot be used with a keyboard
+- videos published before 2024 have no captions
+
+## Reporting a problem
+
+Use the [accessibility form](https://example.com/access) and we will reply within
+five working days.
+
+## Our testing
+
+We last tested the site in January 2026.
+"""
+
+ACCESSIBILITY_LATEST = """\
+## Our testing
+
+We last tested the site in September 2026, with people who use screen readers.
+
+## How accessible this site is
+
+We want as many people as possible to be able to use this site. You should be
+able to change colours, contrast levels and fonts, zoom in up to 400% without
+the text spilling off the screen, and navigate the whole site using just a
+keyboard. We have also made the text as simple as we can to understand.
+
+## What is not yet accessible
+
+- videos published before 2024 have no captions
+
+## Reporting a problem
+
+Use the [accessibility form](https://example.com/access) and we will reply within
+five working days.
+"""
+
+
+def licences(edition):
+    """A long notice, about 15,000 words, changed throughout between editions."""
+    names = ["Apache", "BSD", "MIT", "MPL", "LGPL", "ISC", "Zlib", "Artistic"]
+    parts = []
+    for n in range(1, 301):
+        name = names[n % len(names)]
+        verb = "may" if edition == 1 or n % 7 else "must"
+        year = 2024 + edition if n % 5 == 0 else 2024
+        parts.append(
+            f"## Component {n}\n\nThis component is distributed under the {name} "
+            f"licence, copyright {year} its contributors. You {verb} copy, modify "
+            "and distribute it, provided that the copyright notice and this "
+            "permission notice appear in every copy, and that the name of the "
+            "copyright holder is not used to promote products derived from it "
+            "without prior written permission from the holder.\n"
+        )
+    return "\n".join(parts)
+
+
 @contextmanager
 def on(year, month, day):
     """Run what is inside as though it were that day.
@@ -463,6 +573,25 @@ class Command(BaseCommand):
             note="agreed to once, and made a notice afterwards",
         )
 
+        self.make_document(
+            "Accessibility statement",
+            drafts=[],
+            published=[
+                (ACCESSIBILITY, (2025, 3, 10)),
+                (ACCESSIBILITY_NEXT, (2026, 1, 20)),
+                (ACCESSIBILITY_LATEST, (2026, 9, 30)),
+            ],
+            note="a notice reworded twice, for comparing versions",
+            kind=Document.Kind.NOTICE,
+        )
+        self.make_document(
+            "Open source licences",
+            drafts=[],
+            published=[(licences(1), (2025, 3, 10)), (licences(2), (2026, 5, 4))],
+            note="a long notice, two versions changed throughout",
+            kind=Document.Kind.NOTICE,
+        )
+
         self.make_acceptances()
         self.make_asked()
         self.make_uploads()
@@ -535,7 +664,10 @@ class Command(BaseCommand):
     def make_asked(self):
         """Leave each account in ``ASKED`` with the documents it is asked about."""
         for email, accepted in ASKED.items():
-            person = self.make_account(email, False, False, [])
+            # An account already made with its own permissions keeps them.
+            person = get_user_model().objects.filter(email=email).first()
+            if email not in ACCOUNTS or person is None:
+                person = self.make_account(email, False, False, [])
             for name, number in accepted:
                 version = Version.objects.get(document__name=name, number=number)
                 with on(2026, 9, 20):

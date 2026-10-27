@@ -58,6 +58,7 @@ The package checks for the account area on each request, by looking for django-m
 |---|---|---|---|
 | `mvp_compliance:agree` | none | `<prefix>/agree/` | `mvp_compliance.views.AgreementView` |
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
+| `mvp_compliance:comparison` | `slug` | `<prefix>/<slug>/compare/?from=<number>&to=<number>` | `mvp_compliance.views.ComparisonView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
 The addresses of the list, of the page that asks, of the page a person downloads their data from,
@@ -143,7 +144,14 @@ how it is read in full. A person who accepted an earlier version is asked about 
 force, and the row also shows the [summary](authoring.md#saying-what-changed) of every version
 published since the one they last accepted, newest first, each under its number. A version
 published without a summary is left out of that list. A person agreeing to a document for the
-first time sees no summaries. A row is marked required when its document is [enforced](models.md#enforcement) and
+first time sees no summaries.
+
+A person who accepted an earlier version also gets a "See what's changed" link under the row. It
+opens the [comparison](#comparing-two-versions) of the newest version they accepted with the
+version they are asked about, in a new tab, so the form and the address they are heading for
+stay as they were. A summary covers one step, and the comparison covers every step between the
+two. A document the person never accepted has no such link, and opening the comparison records
+nothing. A row is marked required when its document is [enforced](models.md#enforcement) and
 optional when it is not, and the required rows come first.
 
 **What a submission records.** One acceptance for each row whose toggle was on, written in one
@@ -333,8 +341,9 @@ three.
 
 When a document's version in force is one the person has not accepted, its card opens with a
 statement of that: the version's number, the day it came into force, and that the person has not
-agreed to it. A link beside it leads to the document's own page, which shows the version in
-force. The statement is there only when none of the person's acceptances of the document is of
+agreed to it. Two links sit beside it. One leads to the document's own page, which shows the
+version in force. The other, "See what's changed", opens the [comparison](#comparing-two-versions)
+of the newest version the person accepted with the version in force. The statement is there only when none of the person's acceptances of the document is of
 the version in force, so a person who accepted the version in force, with or without earlier
 ones, sees none. The page is read each time it is opened, so a version published after the
 person's last visit appears with nothing else done. The page has no button to accept the
@@ -390,10 +399,78 @@ even when the document has only one published version, and drafts are never list
 
 When `?version=` shows a version that is no longer in force, the page carries one alert
 row above the wording: a notice that the version was replaced, the date it came into
-force and the date it was replaced, and a "View current version" button leading to the
-document's plain address, which always shows the version now in force. The version in
+force and the date it was replaced, a "See what's changed" button leading to the
+[comparison](#comparing-two-versions) of that version with the version in force, and a
+"View current version" button leading to the document's plain address, which always shows
+the version now in force. The version in
 force shows no such alert, whether it is reached with no parameter or with its own number
 as `?version=`.
+
+## Comparing two versions
+
+The comparison page shows the wording of two published versions of one document as a single
+text: words the newer version added are marked as added, and words it removed are marked as
+removed. Everything else reads as it does on the document's page. Above the text, both
+versions are named with the dates they were in force and a link to each one's page, and two
+dropdowns choose the older and the newer version. When the two read the same, a notice says so
+and the text is shown unmarked.
+
+Anyone can read it, signed in or not. The address names the two versions by number, in either
+order:
+
+```python
+from django.urls import reverse
+
+address = reverse("mvp_compliance:comparison", args=["privacy-policy"])
+# "/legal/privacy-policy/compare/" - add the two numbers as the query string
+link = f"{address}?from=2026.1&to=2026.3"
+```
+
+`from` and `to` are the numbers of two published versions of the document. The older is always
+shown first, so `?from=2026.3&to=2026.1` shows the same page. The marks are worked out from the
+text each version stored when it was published, so a published address keeps showing the same
+comparison after a newer version is published.
+
+The document's page offers it. When a document has more than one published version, a
+"See what's changed" dropdown beside the version switcher lists every other published version,
+each linking to its comparison with the version shown. A replaced version's notice links to the
+comparison with the version in force. To link to a comparison from your own templates:
+
+```html
+<a href="{% url 'mvp_compliance:comparison' 'privacy-policy' %}?from=2026.1&amp;to=2026.3">What changed</a>
+```
+
+In an email, where the link must carry the site's address, build it in code with `reverse`
+as above and put the site's address in front of it:
+
+```python
+link = f"https://example.com{address}?from=2026.1&to=2026.3"
+```
+
+The page answers 404, to every visitor, when the slug names no document in force, the document
+has only one published version, `from` or `to` is missing, or either names anything but a
+published version of this document: a draft (it has no number), another document's number, or
+an unknown one. The page is `mvp_compliance/comparison.html`; place a template at that path to
+replace it. It is given `comparison`, `versions` and `document`.
+
+`comparison` is a `mvp_compliance.comparison.Comparison`, which you can also build yourself from
+two published versions of one document, given in either order:
+
+```python
+from mvp_compliance.comparison import Comparison
+
+comparison = Comparison.of(first, second)
+comparison.older, comparison.newer  # ordered by when each was published
+comparison.same  # True when the two read the same, tags and spacing aside
+comparison.html()  # the newer text, with <ins> and <del> around the differences
+```
+
+`html()` is safe to place in a template as it is. Each mark starts with a hidden label, so a
+screen reader announces what was added or removed.
+
+Changes are marked word by word within a paragraph, a heading or a list item. One that holds more
+than 2,000 words (`Comparison.longest`) is marked as removed and added whole, which keeps a
+comparison quick. A removed table cell's words are shown beside the table rather than in it.
 
 ## When the page is "not found"
 
@@ -421,8 +498,9 @@ package needs no other change, and you do not fork it.
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
-| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
-| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
+| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional`, `field`, the attributes of its toggle, `changes`, the summaries of what changed, and `since`, the newest version the person accepted, for the link to the comparison, or `None`; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
+| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, `newer`, the version in force when the person has not accepted it, otherwise `None`, and `since`, the newest version they accepted, for the link to the comparison whenever `newer` is set. Each acceptance carries its `version` and `accepted_at` |
+| `mvp_compliance/comparison.html` | `mvp_compliance:comparison` | `comparison`, a `Comparison` of the two versions named by `from` and `to`, with `older` and `newer`; `versions`, every published version of the document newest first; `document`; and `documents`, every document that has a version in force in name order |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
 
