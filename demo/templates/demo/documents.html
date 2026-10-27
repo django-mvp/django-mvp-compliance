@@ -1,0 +1,83 @@
+{% extends "page_view.html" %}
+{% block page.content %}
+  <c-mvp.section title="Writing and publishing a document" icon="edit">
+    <c-mvp.text>
+      The authoring surface is the Django admin. Documents and their versions are under
+      <a class="link" href="/admin/mvp_compliance/">Compliance</a>. Who can write, preview,
+      discard and publish depends on who you sign in as: see
+      <a class="link" href="{% url 'sign_in_accounts' %}">Sign-in accounts</a>.
+    </c-mvp.text>
+    <div>
+      <a class="btn btn-primary" href="/admin/">Open the admin</a>
+    </div>
+  </c-mvp.section>
+  <c-mvp.section title="Reading a document" icon="view">
+    <c-mvp.text>
+      A visitor reads the version in force at <code>/legal/&lt;slug&gt;/</code>. A document with
+      nothing published is invisible to a visitor. The accessibility statement is declared in the
+      demo's settings and has no version yet, so its link leads to a page that is not found until
+      one is published.
+    </c-mvp.text>
+    <ul class="list-disc pl-6">
+      <li>
+        <a class="link" href="{% url 'mvp_compliance:document' 'privacy-policy' %}">Privacy policy</a>
+      </li>
+      <li>
+        <a class="link" href="{% url 'mvp_compliance:document' 'terms-of-use' %}">Terms of use</a>
+      </li>
+      <li>
+        <a class="link" href="{% url 'mvp_compliance:document' 'impressum' %}">Impressum</a>
+      </li>
+      <li>
+        <a class="link"
+           href="{% url 'mvp_compliance:document' 'accessibility-statement' %}">Accessibility statement</a>
+      </li>
+    </ul>
+  </c-mvp.section>
+  <c-mvp.section title="Seeded documents" icon="archive">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>What it holds</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Privacy policy</td>
+            <td>Two published versions, one in force and one superseded.</td>
+          </tr>
+          <tr>
+            <td>Terms of use</td>
+            <td>One version, in force.</td>
+          </tr>
+          <tr>
+            <td>Impressum</td>
+            <td>A notice with one version in force. People read it and are never asked to agree to it.</td>
+          </tr>
+          <tr>
+            <td>Community guidelines</td>
+            <td>Five published versions over three years, under a long name.</td>
+          </tr>
+          <tr>
+            <td>Membership terms</td>
+            <td>Forty published versions since 2013.</td>
+          </tr>
+          <tr>
+            <td>Delivery information</td>
+            <td>Agreed to once, then made a notice.</td>
+          </tr>
+          <tr>
+            <td>Cookie policy</td>
+            <td>A draft and nothing published.</td>
+          </tr>
+          <tr>
+            <td>Acceptable use</td>
+            <td>No versions at all.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </c-mvp.section>
+{% endblock page.content %}

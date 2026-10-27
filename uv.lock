@@ -635,6 +635,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-mvp-accounts"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "django-mvp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f4/ba/8bf8a2322f284b258c89901bcefa3588fbd66fb9aeafea3fdaf4778bcbdd/django_mvp_accounts-0.4.0.tar.gz", hash = "sha256:ca9736fea89a4038e8074f39ec8795958d77931c1f95ef06fc8f313353d465ca", size = 37584, upload-time = "2026-10-21T20:31:37.992Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/67/27/ad7b97941824a5656f14f35fc364354e416f2bc0e8c43385f8ab3d9d27ca/django_mvp_accounts-0.4.0-py3-none-any.whl", hash = "sha256:014781318620fd1a5e636c75489c1b7fcb28f1a1edcacf94d60e8cf6d10afa18", size = 46096, upload-time = "2026-10-21T20:31:36.595Z" },
+]
+
+[[package]]
 name = "django-mvp-compliance"
 version = "0.4.0"
 source = { editable = "." }
@@ -654,6 +667,7 @@ personal-data = [
 [package.dev-dependencies]
 dev = [
     { name = "django-allauth" },
+    { name = "django-mvp-accounts" },
     { name = "mvp-shared", extra = ["dev", "test"] },
 ]
 
@@ -671,6 +685,7 @@ provides-extras = ["personal-data"]
 [package.metadata.requires-dev]
 dev = [
     { name = "django-allauth", specifier = ">=65.19,<66" },
+    { name = "django-mvp-accounts", specifier = ">=0.4.0" },
     { name = "mvp-shared", extras = ["dev", "test"], git = "https://github.com/django-mvp/shared.git?tag=v0.6.0" },
 ]
 
