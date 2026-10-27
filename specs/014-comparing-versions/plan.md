@@ -46,6 +46,7 @@ class Comparison:
     older: Version
     newer: Version
     similarity = 0.5          # how alike two elements must be to be compared word by word
+    window = 8                # how many unpaired older elements a newer one is tried against
 
     @classmethod
     def of(cls, first, second) -> "Comparison"   # orders by published_at (FR-008)
@@ -55,21 +56,31 @@ class Comparison:
 ```
 
 Splitting into top-level elements, opening lists into items, pairing, word marking and the
-whitespace folding are methods of the class, as in the sketch. Pairing checks
-`real_quick_ratio()` and `quick_ratio()` before `ratio()` (research, "Pathological input").
+whitespace folding are methods of the class, as in the sketch. Pairing tries each newer element
+only against the next `window` unpaired older elements, which bounds the pass at elements × window
+(research, "Pathological input").
+
+- **Tags are matched quote-aware**: `<(?:[^>"']|"[^"]*"|'[^']*')*>`, so a `>` inside an attribute
+  value never ends a tag, whatever the sanitiser's serialisation.
+- **The newer version's wrappers are the only wrappers.** A removed element that carries no words
+  (a bare list wrapper) emits no tags. A wholly removed list keeps its wrapper with its items inside.
+  Every element in the output closes in order.
+- **`same` compares words, tags removed** (D16): two versions differing only in markup, such as a
+  link's address, are "the same", because `html()` would mark nothing between them.
 
 ### `ComparisonView`
 
 An `MVPDetailView` on `Document.objects.in_force()` at `<slug:slug>/compare/`, before the document
 route. One query reads the document's published versions with their replacement dates. `from` and
-`to` must both name one of them, or the answer is 404 (FR-011). The context holds the comparison,
+`to` must both name one of them, or the answer is 404 (FR-011). A document with one published
+version answers 404 for any pair, never a redirect. The context holds the comparison,
 the versions for the pickers and the documents for the side list, as the sketch has it.
 
 ### The links
 
 - **Document's page**: the dropdown is drawn when the document has more than one published
-  version. The replaced-version alert's comparison button uses the version in force, taken from
-  the versions already read, with no new query.
+  version. The replaced-version alert's comparison button uses the version in force, the newest of
+  the versions the page already reads. The sketch's extra query for it is deleted.
 - **Account area**: `get_entries` sets `since`, the first (newest) acceptance's version, on entries
   with a newer version in force.
 - **Page asking to agree**: `get_entries` reads the person's acceptances of the listed documents

@@ -62,10 +62,17 @@ passes answer in about 0.2 seconds:
    added or removed whole, with its own markup.
 
 **Pathological input.** Two entirely different texts give one range that differs, and pairing
-then compares every element with every other. `SequenceMatcher.real_quick_ratio()` and
-`quick_ratio()` are upper bounds of `ratio()` that cost almost nothing, so they are checked first
-and the full ratio is computed only when they reach the threshold. The test for SC-004 uses two
-texts that share nothing as well as two that differ throughout.
+then compares every element with every other. Cheap upper bounds on the ratio do not help: the
+design review measured 7.7 seconds on two 15,000-word texts of 15-word list items that share
+nothing. Each newer element is therefore tried only against the next `window` (8) unpaired older
+elements, which bounds the pass at elements × 8. A paragraph moved further than that shows as
+removed in one place and added in the other, which is what D5 already says of a moved paragraph.
+The test for SC-004 counts the pairing comparisons, which is deterministic, as well as timing two
+texts that share nothing and two that differ throughout.
+
+**Tokens.** Tags are matched quote-aware, `<(?:[^>"']|"[^"]*"|'[^']*')*>`. The installed nh3
+(0.3.7) escapes `<` and `>` in attribute values, but `pyproject.toml` allows nh3 0.2, whose output
+the review could not check, and a project can supply its own renderer.
 
 **Output safety (FR-006, Article V).** The output is made only of tokens taken from the two stored
 texts, which passed the sanitiser at publication, plus `<ins>`, `<del>` and a hidden `<span>`

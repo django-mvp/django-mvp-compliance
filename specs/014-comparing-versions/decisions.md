@@ -202,3 +202,26 @@ columns and is unchanged.
 query and repeats what the answer already knew.
 
 **ADR:** none
+
+## D16 — Two versions that differ only in markup have no differences to show
+
+**Ambiguous**: a link's address can change while every word stays the same. The comparison marks
+words, so it would show such a text with nothing marked.
+
+**Chosen**: two versions are "the same" when their words are, with tags removed, and the page says
+there are no differences.
+
+**Why defensible**: FR-010 asks the page to say so whenever it would mark nothing. Showing an
+unmarked text without saying why leaves the reader hunting. Marking a changed address is a
+different requirement, and would go back through the specification.
+
+**ADR:** none
+
+## D17 — The design review's findings
+
+All five were taken as plan edits: a window bounding the pairing pass (high), the newer version's
+wrappers as the only wrappers with a balance test, a quote-aware tag pattern, `same` comparing
+words (D16), and two more checks on the comparison page. The review also found that the sketch's
+document page reads the version in force with a query of its own, which is deleted.
+
+**ADR:** none
