@@ -1716,6 +1716,100 @@ class TestNewerVersionInForce:
 
 
 @pytest.mark.django_db
+class TestAgreedDocumentsComparison:
+    """FR-015, FR-018, FR-019: a document whose newest accepted version is not in force
+    links to the comparison of that version with the one in force."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    def test_a_document_behind_the_version_in_force_links_to_the_comparison(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        (accepted,) = accept(user, document)
+        in_force = published(document, "Newer wording")
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(document, accepted.version, in_force) in content
+
+    def test_a_document_accepted_at_the_version_in_force_has_no_link(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        accept(user, document, 2)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_the_link_compares_the_newest_accepted_version_with_the_one_in_force(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        first, second = (acceptance.version for acceptance in accept(user, document, 2))
+        published(document, "Third wording")
+        in_force = published(document, "Fourth wording")
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(document, second, in_force) in content
+        assert comparison_href(document, first, in_force) not in content
+
+    def test_the_newest_accepted_is_the_latest_published_not_the_latest_agreed_to(
+        self, signed_in, user
+    ):
+        document = DocumentFactory()
+        first, second, third = (published(document, f"Wording {n}") for n in "123")
+        in_force = published(document, "Wording 4")
+        Acceptance.objects.record(user, third)
+        Acceptance.objects.record(user, first)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(document, third, in_force) in content
+        assert comparison_href(document, first, in_force) not in content
+        assert comparison_href(document, second, in_force) not in content
+
+    def test_each_document_is_linked_from_its_own_newest_accepted_version(
+        self, signed_in, user
+    ):
+        behind = DocumentFactory(name="Behind terms")
+        level = DocumentFactory(name="Level terms")
+        (accepted,) = accept(user, behind)
+        accept(user, level)
+        in_force = published(behind)
+
+        content = signed_in.get(agreed_address()).content.decode()
+
+        assert comparison_href(behind, accepted.version, in_force) in content
+        assert reverse("mvp_compliance:comparison", args=[level.slug]) not in content
+
+    def test_the_query_count_is_the_same_for_one_document_and_for_five(
+        self, client, django_assert_num_queries
+    ):
+        one, five = UserFactory(), UserFactory()
+        single = DocumentFactory()
+        accept(one, single)
+        published(single)
+        for _ in range(5):
+            document = DocumentFactory()
+            accept(five, document, 2)
+            published(document)
+        client.force_login(one)
+        client.get(agreed_address())  # warm caches
+
+        with CaptureQueriesContext(connection) as counted:
+            client.get(agreed_address())
+        client.force_login(five)
+        with django_assert_num_queries(len(counted)):
+            client.get(agreed_address())
+
+
+@pytest.mark.django_db
 @pytest.mark.urls("tests.urls_package_only")
 class TestWithoutTheAccountArea:
     """US-3 scenario 2, FR-013, SC-007: a project that mounts only the package's pages
