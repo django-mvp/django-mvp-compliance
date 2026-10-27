@@ -225,3 +225,15 @@ words (D16), and two more checks on the comparison page. The review also found t
 document page reads the version in force with a query of its own, which is deleted.
 
 **ADR:** none — a record of plan edits; the lasting ones are in ADR 0030
+
+## D18 — The code review's findings
+
+- A single paragraph of 15,000 repeated words took several seconds (SC-004). An element of more than
+  2,000 words is now marked whole, removed and added, instead of word by word. No real paragraph of a
+  legal document comes near that length.
+- A word-less element, such as a rule, could pair with a list's wrapper and leave the removed items
+  outside any list. Word-less elements are now compared by their element names and never paired.
+- A removed table cell's words are shown beside the table. Accepted and documented: tables are rare in
+  these documents, nothing is lost, and the output stays balanced.
+
+**ADR:** docs/adr/0030-a-comparison-is-computed-from-the-stored-html-and-never-stored.md

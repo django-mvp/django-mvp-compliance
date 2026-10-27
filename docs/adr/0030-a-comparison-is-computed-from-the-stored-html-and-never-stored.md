@@ -12,7 +12,9 @@ versions of the same document are compared. Drafts never are.
 The result keeps the newer version's markup and adds only `<ins>` and `<del>` marks, each starting
 with a hidden, escaped label. Changes are marked word by word, with a removed paragraph or list item
 marked whole. Each newer element is matched only against the next few unmatched older ones
-(`Comparison.window`), which keeps the cost proportional to the length of the text.
+(`Comparison.window`), which keeps the cost proportional to the length of the text. An element of more than 2,000 words
+(`Comparison.longest`) is marked whole instead of word by word, because matching the words of text
+that repeats itself costs far more than linear time.
 
 ## Why
 

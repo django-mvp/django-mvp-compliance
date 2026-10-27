@@ -440,3 +440,52 @@ class TestSpeed:
         comparison.html()
 
         assert time.perf_counter() - started < 1
+
+    @staticmethod
+    def repeated(count: int, seed: int) -> str:
+        """One paragraph of ``count`` words drawn from ten, the case word matching is slowest on."""
+        words = [f"word{(n * 7 + seed * (n % 3)) % 10}" for n in range(count)]
+        return "<p>" + " ".join(words) + "</p>"
+
+    def test_one_paragraph_of_fifteen_thousand_repeated_words_compares_in_under_a_second(
+        self, document
+    ):
+        older = stored(document, self.repeated(15000, 0))
+        newer = stored(document, self.repeated(15000, 1), minutes=1)
+        comparison = Comparison.of(older, newer)
+
+        started = time.perf_counter()
+        comparison.html()
+
+        assert time.perf_counter() - started < 1
+
+
+@pytest.mark.django_db
+class TestLongElements:
+    def test_an_element_longer_than_the_limit_is_removed_and_added_whole(
+        self, document
+    ):
+        words = Comparison.longest + 1
+        older = stored(document, "<p>" + " ".join(["old"] * words) + "</p>")
+        newer = stored(
+            document,
+            "<p>" + " ".join(["old"] * (words - 1) + ["new"]) + "</p>",
+            minutes=1,
+        )
+
+        html = Comparison.of(older, newer).html()
+
+        assert html.count("<del>") == 1
+        assert html.count("<ins>") == 1
+
+
+@pytest.mark.django_db
+class TestWordlessElements:
+    def test_a_removed_list_keeps_its_wrapper_beside_a_new_rule(self, document):
+        older = stored(document, "<ul>\n<li>a</li>\n</ul>")
+        newer = stored(document, "<hr>", minutes=1)
+
+        html = Comparison.of(older, newer).html()
+
+        assert "<ul>" in html
+        assert html.index("<ul>") < html.index("<li>") < html.index("</ul>")

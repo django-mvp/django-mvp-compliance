@@ -31,6 +31,9 @@ class Comparison:
             compared word by word.
         window: How many unpaired older elements a newer one is tried against,
             which bounds the pairing pass at elements times this number.
+        longest: The most words an element may hold and still be compared word
+            by word. A longer one is removed and added whole, because matching
+            words costs more than linear time on text that repeats itself.
     """
 
     older: Version
@@ -38,6 +41,7 @@ class Comparison:
 
     similarity: ClassVar[float] = 0.5
     window: ClassVar[int] = 8
+    longest: ClassVar[int] = 2000
 
     #: A tag, a run of whitespace, or a word with its punctuation. A tag is
     #: matched quote-aware, so a ``>`` inside an attribute value never ends it.
@@ -165,18 +169,34 @@ class Comparison:
         return [[block[0]], *self.blocks("".join(block[1:-1])), [block[-1]]]
 
     def signature(self, blocks: list[list[str]]) -> list[str]:
-        """What each block is compared as: its words, joined by single spaces."""
-        return [" ".join(self.words_of(block)) for block in blocks]
+        """What each block is compared as: its words, joined by single spaces.
+
+        A block with no words, such as a list's own tags or a rule, is compared
+        as its element names, so a list's wrapper never matches a rule.
+        """
+        return [
+            " ".join(self.words_of(block))
+            or "<" + " ".join(self.tag_name(t) for t in block if self.is_tag(t)) + ">"
+            for block in blocks
+        ]
 
     def reading(self, html: str) -> list[str]:
         """What a text says: the words of each element that has any."""
-        return [s for s in self.signature(self.blocks(html)) if s]
+        found = (" ".join(self.words_of(block)) for block in self.blocks(html))
+        return [words for words in found if words]
 
     def alike(self, old: list[str], new: list[str]) -> float:
-        """How alike two elements read, from 0 to 1, by their words."""
-        return SequenceMatcher(
-            None, self.words_of(old), self.words_of(new), autojunk=False
-        ).ratio()
+        """How alike two elements read, from 0 to 1, by their words.
+
+        An element with no words, or with more than ``longest``, is alike
+        nothing, so it is never paired.
+        """
+        old_words, new_words = self.words_of(old), self.words_of(new)
+        if not old_words or not new_words:
+            return 0.0
+        if max(len(old_words), len(new_words)) > self.longest:
+            return 0.0
+        return SequenceMatcher(None, old_words, new_words, autojunk=False).ratio()
 
     def copied(self, blocks: list[list[str]]) -> list[str]:
         """Elements the newer version shares with the older, as the newer has them."""

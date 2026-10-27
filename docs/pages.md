@@ -468,6 +468,10 @@ comparison.html()  # the newer text, with <ins> and <del> around the differences
 `html()` is safe to place in a template as it is. Each mark starts with a hidden label, so a
 screen reader announces what was added or removed.
 
+Changes are marked word by word within a paragraph, a heading or a list item. One that holds more
+than 2,000 words (`Comparison.longest`) is marked as removed and added whole, which keeps a
+comparison quick. A removed table cell's words are shown beside the table rather than in it.
+
 ## When the page is "not found"
 
 The page answers 404, to every visitor whether signed in, staff or anonymous, when:
@@ -494,8 +498,8 @@ package needs no other change, and you do not fork it.
 | Template path | Page | Receives |
 |---|---|---|
 | `mvp_compliance/document_detail.html` | `mvp_compliance:document` | `document`, `version`, the version shown, carrying `replaced_at`: the date the next version was published, or `None` for the version in force, and `versions`, every published version of the document newest first, and `documents`, every document that has a version in force in name order |
-| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional` and `field`, the attributes of its toggle; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
-| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, and `newer`, the version in force when the person has not accepted it, otherwise `None`. Each acceptance carries its `version` and `accepted_at` |
+| `mvp_compliance/agreement.html` | `mvp_compliance:agree` | `entries`, one per outstanding document, required first, each with `document`, `version`, `optional`, `field`, the attributes of its toggle, `changes`, the summaries of what changed, and `since`, the newest version the person accepted, for the link to the comparison, or `None`; `required_count`, the number of entries that are not optional; `destination`, the address to go on to; `redirect_field_name`, the name to send it under; `failed` after a submission whose acceptances could not be stored; `missing` after one that leaves something required; and `changed` after one made from a list in which a version was replaced or a document published |
+| `mvp_compliance/agreed_documents.html` | `mvp_compliance:agreed` | `entries`, one per document in name order. Each has `document`, `shown`, the person's acceptances drawn in the table, `earlier`, the acceptances folded under the count, `newer`, the version in force when the person has not accepted it, otherwise `None`, and `since`, the newest version they accepted, for the link to the comparison whenever `newer` is set. Each acceptance carries its `version` and `accepted_at` |
 | `mvp_compliance/comparison.html` | `mvp_compliance:comparison` | `comparison`, a `Comparison` of the two versions named by `from` and `to`, with `older` and `newer`; `versions`, every published version of the document newest first; `document`; and `documents`, every document that has a version in force in name order |
 
 Every page also receives django-mvp's `page` context: its title and breadcrumbs.
