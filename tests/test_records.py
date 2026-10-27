@@ -86,6 +86,19 @@ class TestProduce:
             v3.number,
         }
 
+    def test_each_entry_carries_its_versions_id(self):
+        someone = UserFactory()
+        versions = []
+        for _ in range(2):
+            version = VersionFactory()
+            version.publish()
+            AcceptanceFactory(user=someone, version=version)
+            versions.append(version)
+
+        entries = produce(str(someone.pk)).sections[0].entries
+
+        assert {entry.version_id for entry in entries} == {v.pk for v in versions}
+
     def test_a_person_with_no_records_gets_an_answer(self):
         record = produce("nobody-the-package-has-ever-heard-of")
 
