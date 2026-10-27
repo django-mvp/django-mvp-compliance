@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 10:10+0100\n"
+"POT-Creation-Date: 2026-10-27 10:17+0100\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -243,7 +243,7 @@ msgstr ""
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:548
+#: menus.py:23 views.py:550
 msgid "Your data"
 msgstr ""
 
@@ -1005,7 +1005,7 @@ msgid ""
 "what you agreed to. It no longer names your account."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:54 views.py:703
+#: templates/mvp_compliance/delete_account.html:54 views.py:705
 msgid "Delete your account"
 msgstr ""
 
@@ -1123,69 +1123,69 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:253 views.py:569 views.py:721
+#: views.py:253 views.py:571 views.py:723
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:258 views.py:576 views.py:728
+#: views.py:258 views.py:578 views.py:730
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:320
+#: views.py:322
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "Documents to agree to"
 msgstr "Documents you agreed to"
 
-#: views.py:332
+#: views.py:334
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
 
-#: views.py:335
+#: views.py:337
 msgid "Agreeing is optional."
 msgstr ""
 
-#: views.py:550
+#: views.py:552
 msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
-#: views.py:571 views.py:723
+#: views.py:573 views.py:725
 msgid "No confirmation page"
 msgstr ""
 
-#: views.py:651
+#: views.py:653
 msgid "Type your email address to confirm."
-msgstr ""
-
-#: views.py:660
-#, python-format
-msgid "To confirm, type your username, %(expected)s"
 msgstr ""
 
 #: views.py:662
 #, python-format
+msgid "To confirm, type your username, %(expected)s"
+msgstr ""
+
+#: views.py:664
+#, python-format
 msgid "To confirm, type your email address, %(expected)s"
 msgstr ""
 
-#: views.py:669
+#: views.py:671
 msgid "Type your username to confirm."
 msgstr ""
 
-#: views.py:681
+#: views.py:683
 msgid "That is not your username. Type it exactly as shown."
 msgstr ""
 
-#: views.py:683
+#: views.py:685
 msgid "That is not your email address. Type it exactly as shown."
 msgstr ""
 
-#: views.py:705
+#: views.py:707
 msgid "Remove your account and what this site holds about you."
 msgstr ""
 
-#: views.py:814
+#: views.py:816
 msgid "Your account has been deleted"
 msgstr ""
 

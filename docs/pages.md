@@ -144,7 +144,14 @@ how it is read in full. A person who accepted an earlier version is asked about 
 force, and the row also shows the [summary](authoring.md#saying-what-changed) of every version
 published since the one they last accepted, newest first, each under its number. A version
 published without a summary is left out of that list. A person agreeing to a document for the
-first time sees no summaries. A row is marked required when its document is [enforced](models.md#enforcement) and
+first time sees no summaries.
+
+A person who accepted an earlier version also gets a "See what's changed" link under the row. It
+opens the [comparison](#comparing-two-versions) of the newest version they accepted with the
+version they are asked about, in a new tab, so the form and the address they are heading for
+stay as they were. A summary covers one step, and the comparison covers every step between the
+two. A document the person never accepted has no such link, and opening the comparison records
+nothing. A row is marked required when its document is [enforced](models.md#enforcement) and
 optional when it is not, and the required rows come first.
 
 **What a submission records.** One acceptance for each row whose toggle was on, written in one
@@ -334,8 +341,9 @@ three.
 
 When a document's version in force is one the person has not accepted, its card opens with a
 statement of that: the version's number, the day it came into force, and that the person has not
-agreed to it. A link beside it leads to the document's own page, which shows the version in
-force. The statement is there only when none of the person's acceptances of the document is of
+agreed to it. Two links sit beside it. One leads to the document's own page, which shows the
+version in force. The other, "See what's changed", opens the [comparison](#comparing-two-versions)
+of the newest version the person accepted with the version in force. The statement is there only when none of the person's acceptances of the document is of
 the version in force, so a person who accepted the version in force, with or without earlier
 ones, sees none. The page is read each time it is opened, so a version published after the
 person's last visit appears with nothing else done. The page has no button to accept the
