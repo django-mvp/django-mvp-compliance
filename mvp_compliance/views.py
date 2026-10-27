@@ -111,7 +111,6 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["version"] = self.get_version()
-        context["current"] = self.object.versions.current().first()
         context["documents"] = Document.objects.in_force().order_by("name")
         context["versions"] = self.object.versions.published().order_by("-published_at")
         return context

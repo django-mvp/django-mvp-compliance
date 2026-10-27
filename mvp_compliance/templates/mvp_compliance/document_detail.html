@@ -54,7 +54,7 @@
     <c-alert variant="warning" icon="warning" class="alert-horizontal">
       <span>{% blocktranslate with published=version.published_at|date replaced=version.replaced_at|date %}This version has been replaced. It was in force from {{ published }} to {{ replaced }}.{% endblocktranslate %}</span>
       <div class="flex flex-wrap gap-2">
-        <a class="btn btn-sm" href="{% url 'mvp_compliance:comparison' document.slug %}?from={{ version.number }}&amp;to={{ current.number }}">{% translate "See what's changed" %}</a>
+        <a class="btn btn-sm" href="{% url 'mvp_compliance:comparison' document.slug %}?from={{ version.number }}&amp;to={{ versions.0.number }}">{% translate "See what's changed" %}</a>
         <a class="btn btn-sm" href="{% url 'mvp_compliance:document' document.slug %}">{% translate "View current version" %}</a>
       </div>
     </c-alert>
