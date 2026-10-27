@@ -7,11 +7,14 @@
       {% for entry in entries %}
         <c-mvp.card title="{{ entry.document.name }}">
           {% if entry.newer %}
-            <c-alert variant="warning" icon="warning" soft class="alert-horizontal">
+            <c-alert variant="warning" icon="warning" soft>
+              {# The actions sit on their own line under the text (round 2). #}
+              <div class="flex flex-col gap-2">
               <span>{% blocktranslate with number=entry.newer.number date=entry.newer.published_at|date %}A newer version, v{{ number }}, has been in force since {{ date }}. You have not agreed to it.{% endblocktranslate %}</span>
               <div class="flex flex-wrap gap-2">
-                <a class="btn btn-sm" href="{% url 'mvp_compliance:comparison' entry.document.slug %}?from={{ entry.since.number }}&amp;to={{ entry.newer.number }}">{% blocktranslate with number=entry.since.number %}See what changed since v{{ number }}{% endblocktranslate %}</a>
+                <a class="btn btn-sm" href="{% url 'mvp_compliance:comparison' entry.document.slug %}?from={{ entry.since.number }}&amp;to={{ entry.newer.number }}">{% translate "See what's changed" %}</a>
                 <a class="btn btn-sm" href="{% url 'mvp_compliance:document' entry.document.slug %}">{% blocktranslate with number=entry.newer.number %}Read v{{ number }}{% endblocktranslate %}</a>
+              </div>
               </div>
             </c-alert>
           {% endif %}

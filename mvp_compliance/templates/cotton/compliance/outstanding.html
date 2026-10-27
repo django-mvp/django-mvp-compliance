@@ -30,7 +30,7 @@
          href="{% url 'mvp_compliance:comparison' document.slug %}?from={{ since.number }}&amp;to={{ version.number }}"
          target="_blank"
          rel="noopener"
-         aria-describedby="document-{{ document.slug }}">{% blocktranslate with number=since.number %}See what changed since v{{ number }}, the version you agreed to{% endblocktranslate %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
+         aria-describedby="document-{{ document.slug }}">{% translate "See what's changed" %}<span class="sr-only"> {% translate "(opens in a new tab)" %}</span></a>
     {% endif %}
     {% if changes %}
       <div class="flex flex-col gap-1 text-sm">

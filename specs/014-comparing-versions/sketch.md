@@ -39,7 +39,7 @@ the code behind them test-first.
   version the person accepted.
 - The page asking to agree needs, for each outstanding document, the newest version of it the
   person accepted, in one query for the whole page.
-- The staff page needs, for each acceptance, the document's slug and its version in force.
+- The staff page needs, for each acceptance, the primary key of the version accepted, to link to its admin page.
 
 ## What the sketch faked
 
@@ -47,9 +47,10 @@ the code behind them test-first.
   matches top-level elements, opens lists item by item, pairs changed elements by how alike their
   words are (half or more), and folds a space left unchanged between two changes into them.
   The thresholds are guesses tuned on the demo.
-- The staff page's comparison link is added by wrapping each `AcceptanceEntry` in a plain object in
-  `DisclosureAdmin.with_comparisons`, with one extra query for every version in force. The answer
-  produced (`records.produce`) is unchanged, and so is the copy a person downloads.
+- The staff page's link from each version number to its admin page is added by wrapping each
+  `AcceptanceEntry` in a plain object in `DisclosureAdmin.with_version_links`, with one extra query
+  for the versions named. The answer produced (`records.produce`) is unchanged, and so is the copy a
+  person downloads.
 - The page asking to agree reads the newest acceptance per document with a separate query in
   `get_context_data`, outside `get_entries`.
 - The comparison stylesheet (`static/mvp_compliance/comparison.css`) is linked from the comparison
@@ -72,11 +73,17 @@ Taste calls made for round 1, each open to change:
   link to read each in full. A one-line key under it shows what an addition and a removal look like.
 - An addition is underlined on a green tint and a removal struck through on a red tint, in the
   theme's success and error colours.
-- The document's page has a "Compare" dropdown beside the version switcher, listing the other
-  versions. A replaced version's alert gains "See what changed" before "View current version".
-- The account area's alert about a newer version gains "See what changed since v…" before
-  "Read v…".
-- On the page asking to agree, a second link under "View document in full" reads "See what changed
-  since v…, the version you agreed to", and opens in a new tab like the first.
-- The staff page has a plain link above the stored wording: "Compare version … with version …, in
-  force today".
+- The document's page has a comparison dropdown beside the version switcher, listing the other
+  versions. A replaced version's alert gains a comparison button before "View current version".
+- The account area's alert about a newer version gains a comparison button before "Read v…".
+- On the page asking to agree, a second link under "View document in full" opens the comparison in
+  a new tab like the first.
+
+Ruled in review (round 2):
+
+- Every link to a comparison reads "See what's changed", with no version numbers: the document
+  page's menu button, the replaced-version alert, the account area's alert and the page asking to
+  agree.
+- The account area's alert puts its buttons on their own line under the text.
+- The staff page offers no comparison. Each acceptance's "version …" text links to that version's
+  admin page instead. Showing the whole document there is left to a separate issue.

@@ -436,38 +436,28 @@ class DisclosureAdmin(admin.ModelAdmin):
         ]
 
     @staticmethod
-    def with_comparisons(record):
-        """Add, to each acceptance of a replaced version, its comparison with the
-        version in force (FS-014). Sketch: one query for the versions in force.
+    def with_version_links(record):
+        """Add, to each acceptance, the address of its version's admin page.
+
+        Sketch: one query for the published versions named in the answer.
         """
         from dataclasses import asdict, replace
         from types import SimpleNamespace
 
-        from django.urls import reverse
-
-        in_force = {
-            version.document.name: version
-            for version in Version.objects.current().select_related("document")
+        names = {(e.document, e.version) for sec in record.sections for e in sec.entries}
+        pks = {
+            (version.document.name, version.number): version.pk
+            for version in Version.objects.published()
+            .filter(number__in={number for _name, number in names})
+            .select_related("document")
         }
         sections = []
         for section in record.sections:
             entries = []
             for entry in section.entries:
-                current = in_force.get(entry.document)
-                compare_url = None
-                if current is not None and current.number != entry.version:
-                    compare_url = "{}?from={}&to={}".format(
-                        reverse("mvp_compliance:comparison", args=[current.document.slug]),
-                        entry.version,
-                        current.number,
-                    )
-                entries.append(
-                    SimpleNamespace(
-                        **asdict(entry),
-                        compare_url=compare_url,
-                        in_force=current.number if current else None,
-                    )
-                )
+                pk = pks.get((entry.document, entry.version))
+                url = reverse("admin:mvp_compliance_version_change", args=[pk]) if pk else None
+                entries.append(SimpleNamespace(**asdict(entry), version_url=url))
             sections.append(replace(section, entries=tuple(entries)))
         return replace(record, sections=tuple(sections))
 
@@ -482,7 +472,7 @@ class DisclosureAdmin(admin.ModelAdmin):
         record = None
         if form.is_bound and form.is_valid() and form.cleaned_data["subject"]:
             record = produce(resolve_subject(form.cleaned_data["subject"]))
-            record = self.with_comparisons(record)
+            record = self.with_version_links(record)
 
         context = {
             **self.admin_site.each_context(request),

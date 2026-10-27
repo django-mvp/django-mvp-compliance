@@ -94,19 +94,20 @@ changes they already agreed to.
 
 **ADR:** none
 
-## D7 — "Anyone looking at a person's record" is the person and the staff who produce it
+## D7 — "Anyone looking at a person's record" is the person themselves
 
 **Ambiguous**: the request does not name the pages.
 
-**Chosen**: the account area's list (FS-008), read by the person, and the page staff use to produce
-everything held about a person (FS-004). The page asking to agree (FS-009) is added because it is
-where a person who last agreed several versions ago is asked again, which is the case the request
-leads with. The copy a person downloads (FS-012) is left alone: it is a file read away from the site,
-and a link from it into the site would date it.
+**Chosen**: the account area's list (FS-008), read by the person, and the page asking to agree
+(FS-009), where a person who last agreed several versions ago is asked again, which is the case the
+request leads with. The page staff use to produce everything held about a person (FS-004) offers no
+comparison: the maintainer ruled it out on reviewing the prototype, and asked instead for each
+acceptance's version number there to link to that version's page in the admin. The copy a person
+downloads (FS-012) is left alone: it is a file read away from the site, and a link from it into the
+site would date it.
 
-**Why defensible**: those are the only places in the package where a person's acceptances are
-shown, and the request says a person who agreed two versions ago "has nothing that shows everything
-that changed since".
+**Why defensible**: a person's own record is where the question "what changed since I agreed" is
+asked. Staff can open any comparison from the document's page if they need one.
 
 **ADR:** none
 
@@ -154,5 +155,15 @@ the same time, and the later of the two to merge reconciles FS-009.
 
 **Chosen**: the sketch gate is shut. How marked-up text reads, how a reader chooses the version to
 compare with, and how the offer sits on four existing pages are judgements a test cannot settle.
+
+**ADR:** none
+
+## D12 — Links to a comparison are worded the same everywhere
+
+**Chosen**: every link that opens a comparison uses one short, generic wording, with no version
+numbers in it. Ruled by the maintainer on reviewing the prototype ("far too detailed").
+
+**Why defensible**: the comparison itself names both versions, so the link needs to say only where
+it leads.
 
 **ADR:** none

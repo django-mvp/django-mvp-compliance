@@ -34,12 +34,12 @@ A reader reaches a comparison without typing an address:
 - **From the page asking a person to agree** (FS-009), for a document the person agreed to an
   earlier version of. It offers the same comparison. A person agreeing to a document for the first
   time is offered none.
-- **From the page staff use to produce everything held about a person** (FS-004), for each
-  acceptance of a version that is no longer in force. It offers the comparison between that version
-  and the version in force.
-
 A developer can link to a comparison from the project's own templates and messages by the page's
 name, and can replace its template as for every other page the package serves.
+
+The page staff use to produce everything held about a person (FS-004) offers no comparison. Each
+acceptance's version number there becomes a link to that version's page in the admin, so staff can
+open the version a person agreed to.
 
 Some things stay out of this feature:
 
@@ -163,38 +163,7 @@ page asking to agree and check no comparison is offered.
 
 ---
 
-### User Story 3 - Seeing how what a person agreed to differs from what is in force today (Priority: P2)
-
-Somebody fielding a request about a named person produces everything the package holds about them.
-One of the person's acceptances is of a version of the terms that has since been replaced. Beside
-that acceptance they can open the comparison between the version the person agreed to and the
-version in force, to see exactly what the person has and has not agreed to.
-
-**Why this priority**: It answers the question a dispute about an old acceptance usually turns on.
-It is less common than a person asking about their own record, and the comparison it opens is the
-one from US-1.
-
-**Independent Test**: Record an acceptance of the first of two published versions for a user. As
-staff, produce everything held about that user and check the acceptance offers the comparison
-between the first version and the second. Record an acceptance of the second version and check
-that acceptance offers none.
-
-**Acceptance Scenarios**:
-
-1. **Given** an acceptance of a version that is no longer in force, **When** staff produce
-   everything held about that person, **Then** that acceptance offers the comparison between the
-   version accepted and the version in force.
-2. **Given** an acceptance of the version in force, **When** the same is produced, **Then** it
-   offers no comparison.
-3. **Given** a document whose version in force has been replaced since the acceptance was recorded,
-   **When** the comparison is offered, **Then** it compares with whatever is in force when it is
-   produced.
-4. **Given** what is produced, **When** it is read, **Then** the wording served at the time of each
-   acceptance is shown as before, unchanged by this feature.
-
----
-
-### User Story 4 - Linking to a comparison from the project's own pages (Priority: P3)
+### User Story 3 - Linking to a comparison from the project's own pages (Priority: P3)
 
 A developer is writing the email their site sends when the terms change. They link from it to the
 comparison between the previous version and the new one, by the page's name and the two version
@@ -202,7 +171,7 @@ numbers, without building the address by hand. A developer whose design needs th
 different replaces its template in the usual Django way, and the comparison is still produced the
 same.
 
-**Why this priority**: The pages in US-1 to US-3 already link to comparisons. This is for projects
+**Why this priority**: The pages in US-1 and US-2 already link to comparisons. This is for projects
 that want to link from somewhere the package does not reach, which most will not need on day one.
 
 **Independent Test**: In a template in the demo, link to a comparison by the page's name with a
@@ -270,7 +239,7 @@ the same name in the demo's templates and check it is used.
 - **FR-008**: A comparison MUST always treat the earlier-published version as the older, whichever
   order the two are given in. *(US-1)*
 - **FR-009**: Each comparison MUST have a permanent address built from the document and the two
-  versions, and MUST keep showing the same comparison at it for ever. *(US-1, US-4)*
+  versions, and MUST keep showing the same comparison at it for ever. *(US-1, US-3)*
 - **FR-010**: A comparison of a version with itself, or of two versions with identical wording,
   MUST say that the two have no differences and mark nothing. *(US-1)*
 - **FR-011**: A comparison address naming a draft, a version of another document, a version or a
@@ -290,27 +259,24 @@ the same name in the demo's templates and check it is used.
   they are asked about. A document they have never accepted MUST offer none. *(US-2)*
 - **FR-017**: Opening a comparison from the page asking to agree MUST record nothing and MUST NOT
   lose the destination the person was heading for. *(US-2)*
-- **FR-018**: Where staff produce everything held about a person, each acceptance of a version that
-  is not the version in force MUST offer the comparison between that version and the version in
-  force. Acceptances of the version in force MUST offer none. *(US-3)*
-- **FR-019**: The newest version a person accepted MUST be read from their stored acceptances, and
+- **FR-018**: The newest version a person accepted MUST be read from their stored acceptances, and
   the version in force MUST be the one in force when the page offering the comparison is shown.
-  *(US-2, US-3)*
-- **FR-020**: Offering comparisons MUST NOT make the number of database queries on the account
-  area's list, the page asking to agree or the page staff produce grow with the number of documents
-  or acceptances shown. *(US-2, US-3)*
-- **FR-021**: A comparison MUST render inside the host project's django-mvp shell without the
+  *(US-2)*
+- **FR-019**: Offering comparisons MUST NOT make the number of database queries on the account
+  area's list or the page asking to agree grow with the number of documents or acceptances shown.
+  *(US-2)*
+- **FR-020**: A comparison MUST render inside the host project's django-mvp shell without the
   project writing a template, and the project MUST be able to replace its template with its own.
-  *(US-4)*
-- **FR-022**: The comparison MUST be reachable by name so a project can link to it from its own
+  *(US-3)*
+- **FR-021**: The comparison MUST be reachable by name so a project can link to it from its own
   templates and messages, and MUST be served with the package's other pages. No document may take a
-  slug that gives it the comparison's address. *(US-4)*
-- **FR-023**: Every user-facing string this feature adds MUST be translatable, and none may state or
+  slug that gives it the comparison's address. *(US-3)*
+- **FR-022**: Every user-facing string this feature adds MUST be translatable, and none may state or
   imply that a site or a person is compliant. *(US-1, US-2)*
-- **FR-024**: A comparison MUST NOT be presented as the wording anybody agreed to. The version's own
-  page remains the record of what was served. *(US-1, US-3)*
-- **FR-025**: The documentation MUST explain what a comparison shows, where the package offers one,
-  how to link to one, what its address is built from and how its template is replaced. *(US-4)*
+- **FR-023**: A comparison MUST NOT be presented as the wording anybody agreed to. The version's own
+  page remains the record of what was served. *(US-1)*
+- **FR-024**: The documentation MUST explain what a comparison shows, where the package offers one,
+  how to link to one, what its address is built from and how its template is replaced. *(US-3)*
 
 ### Key Entities
 
@@ -367,12 +333,19 @@ the same name in the demo's templates and check it is used.
 - **Q**: Is a comparison stored? → **A**: No. Both versions are immutable, so it can always be
   produced again with the same result, and nothing about it is evidence of anything.
 
+### Session 2026-10-27 (review of the prototype)
+
+- **Q**: Does the page staff use to produce everything held about a person offer a comparison? →
+  **A**: No. The maintainer saw no reason for one there. The version number on each acceptance links
+  to that version's page in the admin instead.
+- **Q**: How detailed is the wording of a link to a comparison? → **A**: Generic, the same wherever
+  it appears. The versions it compares are shown on the comparison itself.
+
 ## Assumptions
 
 - FS-001 to FS-013 are delivered, and this spec is written against them as they stand on main:
   every published version has a page at the document's address with `?version=`, the account area
-  lists what a person has agreed to, the page asking to agree lists what is outstanding, and staff
-  can produce everything held about a person.
+  lists what a person has agreed to, and the page asking to agree lists what is outstanding.
 - The comparison of two versions is the same for every reader. Who is reading changes only which
   comparison is offered, never what it shows.
 - The package ships an English catalog only, as for every other string.
