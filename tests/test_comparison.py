@@ -1,7 +1,9 @@
 """Tests for mvp_compliance.comparison."""
 
+import time
 from datetime import timedelta
 from html.parser import HTMLParser
+from unittest import mock
 
 import pytest
 from django.utils import timezone
@@ -368,3 +370,73 @@ class TestSame:
         newer = published(document, "One two four")
 
         assert not Comparison.of(older, newer).same
+
+
+@pytest.mark.django_db
+class TestSpeed:
+    @staticmethod
+    def items(count: int, prefix: str) -> str:
+        """A list of ``count`` items of fifteen words each, every word unique."""
+        return (
+            "<ul>\n"
+            + "\n".join(
+                "<li>" + " ".join(f"{prefix}{n}x{w}" for w in range(15)) + "</li>"
+                for n in range(count)
+            )
+            + "\n</ul>"
+        )
+
+    @staticmethod
+    def paragraphs(count: int, shift: int) -> str:
+        """``count`` paragraphs of fifteen words, every other word offset by ``shift``."""
+        return "\n".join(
+            "<p>"
+            + " ".join(
+                f"w{n}x{w}" if (w + shift) % 2 else f"v{n}x{w}y{shift}"
+                for w in range(15)
+            )
+            + "</p>"
+            for n in range(count)
+        )
+
+    def test_the_pairing_comparisons_are_bounded_by_elements_times_the_window(
+        self, document
+    ):
+        older = stored(document, self.items(1000, "a"))
+        newer = stored(document, self.items(1000, "b"), minutes=1)
+        comparison = Comparison.of(older, newer)
+        original = Comparison.alike
+        calls = []
+
+        def counting(self, old, new):
+            calls.append(1)
+            return original(self, old, new)
+
+        with mock.patch.object(Comparison, "alike", counting):
+            comparison.html()
+
+        assert 0 < len(calls) <= 1000 * Comparison.window
+
+    def test_fifteen_thousand_words_that_share_nothing_compare_in_under_a_second(
+        self, document
+    ):
+        older = stored(document, self.items(1000, "a"))
+        newer = stored(document, self.items(1000, "b"), minutes=1)
+        comparison = Comparison.of(older, newer)
+
+        started = time.perf_counter()
+        comparison.html()
+
+        assert time.perf_counter() - started < 1
+
+    def test_fifteen_thousand_words_changed_throughout_compare_in_under_a_second(
+        self, document
+    ):
+        older = stored(document, self.paragraphs(1000, 0))
+        newer = stored(document, self.paragraphs(1000, 1), minutes=1)
+        comparison = Comparison.of(older, newer)
+
+        started = time.perf_counter()
+        comparison.html()
+
+        assert time.perf_counter() - started < 1
