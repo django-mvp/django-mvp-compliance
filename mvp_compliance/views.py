@@ -144,10 +144,10 @@ class DocumentView(VersionSubtitleMixin, MVPDetailView):
 class ComparisonView(MVPDetailView):
     """Two published versions of one document, compared word by word (FS-014).
 
-    ``?from=`` and ``?to=`` name the two by number, in either order. Without
-    them, the version in force is compared with the one before it. Readable by
-    anyone, like the document's page, and "not found" for anything that is
-    not a published version of this document.
+    ``?from=`` and ``?to=`` name the two by number, in either order. Readable
+    by anyone, like the document's page, and "not found" for anything that is
+    not a published version of this document, for a missing number, and for a
+    document with only one published version.
     """
 
     model = Document
@@ -158,26 +158,19 @@ class ComparisonView(MVPDetailView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        self.versions = list(
+        self.versions: list[Version] = list(
             self.object.versions.published()
             .with_replaced_at()
             .order_by("-published_at")
         )
         if len(self.versions) < 2:
-            return HttpResponseRedirect(
-                reverse("mvp_compliance:document", args=[self.object.slug])
-            )
-        self.comparison = Comparison.of(
-            self.pick("from", default=self.versions[1]),
-            self.pick("to", default=self.versions[0]),
-        )
+            raise Http404(_("No version found"))
+        self.comparison = Comparison.of(self.pick("from"), self.pick("to"))
         return self.render_to_response(self.get_context_data(object=self.object))
 
-    def pick(self, name: str, default: Version) -> Version:
-        """The version a parameter names, or ``default`` when it names none."""
+    def pick(self, name: str) -> Version:
+        """The published version a parameter names, or 404."""
         number = self.request.GET.get(name)
-        if number is None:
-            return default
         for version in self.versions:
             if version.number == number:
                 return version

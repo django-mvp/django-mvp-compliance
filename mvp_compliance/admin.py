@@ -435,32 +435,6 @@ class DisclosureAdmin(admin.ModelAdmin):
             )
         ]
 
-    @staticmethod
-    def with_version_links(record):
-        """Add, to each acceptance, the address of its version's admin page.
-
-        Sketch: one query for the published versions named in the answer.
-        """
-        from dataclasses import asdict, replace
-        from types import SimpleNamespace
-
-        names = {(e.document, e.version) for sec in record.sections for e in sec.entries}
-        pks = {
-            (version.document.name, version.number): version.pk
-            for version in Version.objects.published()
-            .filter(number__in={number for _name, number in names})
-            .select_related("document")
-        }
-        sections = []
-        for section in record.sections:
-            entries = []
-            for entry in section.entries:
-                pk = pks.get((entry.document, entry.version))
-                url = reverse("admin:mvp_compliance_version_change", args=[pk]) if pk else None
-                entries.append(SimpleNamespace(**asdict(entry), version_url=url))
-            sections.append(replace(section, entries=tuple(entries)))
-        return replace(record, sections=tuple(sections))
-
     def changelist_view(self, request, extra_context=None):
         """Produce the answer for the person the form names."""
         # No ChangeList and no queryset over acceptances, and the refusal comes
@@ -472,7 +446,6 @@ class DisclosureAdmin(admin.ModelAdmin):
         record = None
         if form.is_bound and form.is_valid() and form.cleaned_data["subject"]:
             record = produce(resolve_subject(form.cleaned_data["subject"]))
-            record = self.with_version_links(record)
 
         context = {
             **self.admin_site.each_context(request),

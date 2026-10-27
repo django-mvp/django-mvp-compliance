@@ -3,7 +3,7 @@
   {% for entry in entries %}
     <li>
       <p>
-      {{ entry.document }} — {% if entry.version_url %}<a href="{{ entry.version_url }}">{% translate "version" %} {{ entry.version }}</a>{% else %}{% translate "version" %} {{ entry.version }}{% endif %} —
+      {{ entry.document }} — {% translate "version" %} {{ entry.version }} —
       {{ entry.accepted_at|date:"DATETIME_FORMAT" }}
       </p>
       {% if entry.ip_address %}
