@@ -543,8 +543,9 @@ the page and its menu entry do not exist. See
   middleware goes, what stays reachable and how to add to it, form submissions and requests
   for part of a page, the delay, and the system checks.
 - [docs/pages.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/pages.md) — serving a document as a page of your site: mounting the
-  addresses, linking to a document, what a visitor sees, the page that asks a
-  person to agree, and the page where a signed-in person sees what they agreed to.
+  addresses, linking to a document, what a visitor sees, comparing two versions of
+  a document, the page that asks a person to agree, and the page where a signed-in person sees
+  what they agreed to.
 - [docs/announcing.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/announcing.md) — the signal sent when a version is published, what it
   carries, and what happens when a receiver fails.
 - [docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md) — the admin surface: the editor and what it offers,

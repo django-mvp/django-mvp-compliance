@@ -58,6 +58,7 @@ The package checks for the account area on each request, by looking for django-m
 |---|---|---|---|
 | `mvp_compliance:agree` | none | `<prefix>/agree/` | `mvp_compliance.views.AgreementView` |
 | `mvp_compliance:agreed` | none | `<prefix>/agreed/` | `mvp_compliance.views.AgreedDocumentsView` |
+| `mvp_compliance:comparison` | `slug` | `<prefix>/<slug>/compare/?from=<number>&to=<number>` | `mvp_compliance.views.ComparisonView` |
 | `mvp_compliance:document` | `slug` | `<prefix>/<slug>/` | `mvp_compliance.views.DocumentView` |
 
 The addresses of the list, of the page that asks, of the page a person downloads their data from,
@@ -390,10 +391,52 @@ even when the document has only one published version, and drafts are never list
 
 When `?version=` shows a version that is no longer in force, the page carries one alert
 row above the wording: a notice that the version was replaced, the date it came into
-force and the date it was replaced, and a "View current version" button leading to the
-document's plain address, which always shows the version now in force. The version in
+force and the date it was replaced, a "See what's changed" button leading to the
+[comparison](#comparing-two-versions) of that version with the version in force, and a
+"View current version" button leading to the document's plain address, which always shows
+the version now in force. The version in
 force shows no such alert, whether it is reached with no parameter or with its own number
 as `?version=`.
+
+## Comparing two versions
+
+The comparison page shows the wording of two published versions of one document as a single
+text: words the newer version added are marked as added, and words it removed are marked as
+removed. Everything else reads as it does on the document's page. Above the text, both
+versions are named with the dates they were in force and a link to each one's page, and two
+dropdowns choose the older and the newer version. When the two read the same, a notice says so
+and the text is shown unmarked.
+
+Anyone can read it, signed in or not. The address names the two versions by number, in either
+order:
+
+```python
+from django.urls import reverse
+
+address = reverse("mvp_compliance:comparison", args=["privacy-policy"])
+# "/legal/privacy-policy/compare/" - add the two numbers as the query string
+link = f"{address}?from=2026.1&to=2026.3"
+```
+
+`from` and `to` are the numbers of two published versions of the document. The older is always
+shown first, so `?from=2026.3&to=2026.1` shows the same page. The marks are worked out from the
+text each version stored when it was published, so a published address keeps showing the same
+comparison after a newer version is published.
+
+The document's page offers it. When a document has more than one published version, a
+"See what's changed" dropdown beside the version switcher lists every other published version,
+each linking to its comparison with the version shown. A replaced version's notice links to the
+comparison with the version in force. To link to a comparison from your own templates:
+
+```html
+<a href="{% url 'mvp_compliance:comparison' 'privacy-policy' %}?from=2026.1&amp;to=2026.3">What changed</a>
+```
+
+The page answers 404, to every visitor, when the slug names no document in force, the document
+has only one published version, `from` or `to` is missing, or either names anything but a
+published version of this document: a draft (it has no number), another document's number, or
+an unknown one. The page is `mvp_compliance/comparison.html`; place a template at that path to
+replace it. It is given `comparison`, `versions` and `document`.
 
 ## When the page is "not found"
 

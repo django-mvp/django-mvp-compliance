@@ -26,7 +26,9 @@ host site, on one kind of page:
   in force, and is the address a footer links to. The same address with `?version=<number>` shows
   that published version, current or superseded, and keeps doing so for ever.
 - **A version switcher** on every document page lists each published version, so a reader can reach
-  earlier wording without already having its address.
+  earlier wording without already having its address. Beside it, when the document has more than one
+  published version, a "See what's changed" dropdown links to the comparison of the version shown
+  with each other published version (see FS-014).
 - **A document list** beside the wording on every document page lists every document that has a
   version in force, marking the one being read, so a reader moves between a site's documents
   without leaving the page.
@@ -110,8 +112,9 @@ second wording with no such notice.
    opens the document's page with `?version=` and its number, **Then** the page shows that
    version's stored HTML.
 2. **Given** a superseded version shown that way, **When** it is read, **Then** one alert row carries
-   an icon, a message that the version has been replaced with the dates it was in force, and a
-   "View current version" button at the end of the row leading to the document's page.
+   an icon, a message that the version has been replaced with the dates it was in force, and, at
+   the end of the row, a "See what's changed" button leading to the comparison of that version with
+   the version in force, and a "View current version" button leading to the document's page.
 3. **Given** the version in force, **When** it is opened with `?version=`, **Then** the page shows the
    same wording as the document's page, with no replaced notice.
 4. **Given** a version that is later superseded, **When** its `?version=` address is opened
@@ -247,11 +250,14 @@ document page's template in the demo's templates and confirm it is used.
   accepted that version, the line continues `· Agreed on <date>` with the date of their
   acceptance. *(US-1, US-2)*
 - **FR-010**: When the version shown is superseded, the page MUST show one alert row: an icon, a
-  message that it has been replaced with the dates it was in force, and a "View current version"
-  button aligned to the end of the row, leading to the document's page. *(US-2)*
+  message that it has been replaced with the dates it was in force, and, aligned to the end of the
+  row, a "See what's changed" button leading to the comparison of that version with the version in
+  force, and a "View current version" button leading to the document's page. *(US-2)*
 - **FR-011**: That list MUST be a version switcher dropdown among the page's actions on every
   document page, drawn as a primary button with a dropdown caret, including when the document has a
-  single published version. There is no separate page listing a document's versions. *(US-3)*
+  single published version. When the document has more than one published version the page also
+  carries a "See what's changed" dropdown listing the other published versions, each linking to its
+  comparison with the version shown. There is no separate page listing a document's versions. *(US-3)*
 - **FR-012**: Every page this feature adds MUST render within the django-mvp shell, taking its
   layout, navigation and theme from the host project, with no template written by the project.
   *(US-1, US-2, US-3)*
