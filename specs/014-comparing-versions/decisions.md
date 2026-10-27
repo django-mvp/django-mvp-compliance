@@ -167,3 +167,38 @@ numbers in it. Ruled by the maintainer on reviewing the prototype ("far too deta
 it leads.
 
 **ADR:** none
+
+## D13 — The staff page links a version only for someone who may view it
+
+**Ambiguous**: the maintainer asked for each acceptance's version on the staff page to link to the
+version in the admin. That page is open to anyone holding the permission to produce what is held,
+which on its own does not let them view versions (ADR 0011).
+
+**Chosen**: the link is drawn only when the reader may view versions. Otherwise the text stays as
+it was.
+
+**Why defensible**: a link that answers "forbidden" is a broken link.
+
+**ADR:** none — local to the staff page
+
+## D14 — A comparison's address always names both versions
+
+**Chosen**: `from` and `to` are both required, and an address missing either answers "not found".
+The sketch's default for a bare address is removed.
+
+**Why defensible**: FR-009 asks for an address built from the two versions, so that it keeps
+showing the same comparison. A bare address would change meaning with every publication, and
+nothing in the package links to one.
+
+**ADR:** none
+
+## D15 — The staff page learns a version's key from the answer itself
+
+**Chosen**: each entry in the produced answer gains the version's key, `version_id`. The produced
+answer already loads the version, so no query is added, and the copy a person downloads names its
+columns and is unchanged.
+
+**Why defensible**: looking the version up again in the admin by document name and number costs a
+query and repeats what the answer already knew.
+
+**ADR:** none
