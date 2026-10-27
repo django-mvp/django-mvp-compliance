@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `VersionQuerySet.since_last_accepted_by(user)`, the versions of each document published after
   the latest one `user` accepted. See [docs/models.md](docs/models.md#retrieval).
 
+### Changed
+
+- On the staff page that produces everything held about a person, each acceptance's version
+  number links to that version's admin change page for a reader who may view versions. A reader
+  holding only the permission to produce the answer sees plain text. `AcceptanceEntry` gains
+  `version_id`, the version's primary key, taken from the version `produce()` already loads.
+  See [docs/disclosure.md](docs/disclosure.md#what-the-answer-contains).
+
 ## [v0.4.0] - 2026-10-24
 
 ### Added

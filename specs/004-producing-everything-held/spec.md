@@ -201,6 +201,9 @@ regulation.
   acceptances of the same document. *(US-1)*
 - **FR-003**: Each entry MUST name the document, the version accepted, and the moment it happened.
   *(US-1)*
+- **FR-003a**: Each entry MUST carry the version's identifier. On the staff page, a reader who
+  may view versions sees the version number as a link to that version's admin change page, and a
+  reader holding the permission to produce the answer alone sees plain text. *(US-1)*
 - **FR-004**: The answer MUST contain nothing belonging to any other person. *(US-1, US-4)*
 - **FR-005**: An answer for a person the package holds nothing about MUST state that nothing is
   held, and MUST NOT be an error. *(US-1)*
