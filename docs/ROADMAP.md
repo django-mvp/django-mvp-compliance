@@ -59,7 +59,7 @@ Serves G1 and G5. Does not cover asking anybody to agree to anything.
 
 ### R3 — The record of who agreed to what
 
-*delivered in [#20](https://github.com/django-mvp/django-mvp-compliance/issues/20), [#21](https://github.com/django-mvp/django-mvp-compliance/issues/21) · advances G2*
+*delivered in [#20](https://github.com/django-mvp/django-mvp-compliance/issues/20), [#21](https://github.com/django-mvp/django-mvp-compliance/issues/21), [#141](https://github.com/django-mvp/django-mvp-compliance/issues/141) · advances G2*
 
 Agreement to a published version is recorded with the person, the version and the time, and a
 record is never edited or deleted by anything the package offers. Agreeing to a later version adds

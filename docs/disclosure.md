@@ -80,7 +80,11 @@ produced again at this point, so an answer never shows something the person was
 never actually served. A person the package holds nothing about gets a page
 saying so, which is a normal result rather than an error.
 
-On the page, each acceptance's version number links to that version's change page in the
+On the page, each acceptance reads as one line: the document, the version and the time. Its
+wording sits folded away under that line and opens in place, so a person with many acceptances
+gets a list of them rather than a run of legal text, and the wording is still all on the page.
+
+Each acceptance's version number links to that version's change page in the
 admin. Only a reader who may also view versions (`mvp_compliance.view_version`) sees the
 link. A reader holding `produce_disclosure` alone sees the number as plain text. Each entry
 carries the version's primary key as `AcceptanceEntry.version_id` for this, and the

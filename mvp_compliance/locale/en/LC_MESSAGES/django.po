@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 10:23+0100\n"
+"POT-Creation-Date: 2026-10-27 16:55+0100\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -197,11 +197,11 @@ msgstr "The page that asks a person to agree has no address."
 msgid "Add %(middleware)s to MIDDLEWARE."
 msgstr ""
 
-#: comparison.py:330
+#: comparison.py:349
 msgid "Added:"
 msgstr "Added:"
 
-#: comparison.py:330
+#: comparison.py:349
 msgid "Removed:"
 msgstr "Removed:"
 
@@ -243,7 +243,7 @@ msgstr ""
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:550
+#: menus.py:23 views.py:551
 msgid "Your data"
 msgstr ""
 
@@ -647,6 +647,10 @@ msgstr "Acceptances"
 msgid "Recorded from"
 msgstr "Recorded from"
 
+#: templates/admin/mvp_compliance/disclosure/acceptances.html:21
+msgid "The wording accepted"
+msgstr "The wording accepted"
+
 #: templates/admin/mvp_compliance/disclosure/produce.html:11
 msgid "Produce"
 msgstr "Produce"
@@ -1006,7 +1010,7 @@ msgid ""
 "what you agreed to. It no longer names your account."
 msgstr ""
 
-#: templates/mvp_compliance/delete_account.html:54 views.py:705
+#: templates/mvp_compliance/delete_account.html:54 views.py:706
 msgid "Delete your account"
 msgstr ""
 
@@ -1124,69 +1128,69 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:253 views.py:571 views.py:723
+#: views.py:253 views.py:572 views.py:724
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:258 views.py:578 views.py:730
+#: views.py:258 views.py:579 views.py:731
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:322
+#: views.py:323
 #, fuzzy
 #| msgid "Documents you agreed to"
 msgid "Documents to agree to"
 msgstr "Documents you agreed to"
 
-#: views.py:334
+#: views.py:335
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
 
-#: views.py:337
+#: views.py:338
 msgid "Agreeing is optional."
 msgstr ""
 
-#: views.py:552
+#: views.py:553
 msgid "Download a copy of what this site holds about you, as a single file."
 msgstr ""
 
-#: views.py:573 views.py:725
+#: views.py:574 views.py:726
 msgid "No confirmation page"
 msgstr ""
 
-#: views.py:653
+#: views.py:654
 msgid "Type your email address to confirm."
 msgstr ""
 
-#: views.py:662
+#: views.py:663
 #, python-format
 msgid "To confirm, type your username, %(expected)s"
 msgstr ""
 
-#: views.py:664
+#: views.py:665
 #, python-format
 msgid "To confirm, type your email address, %(expected)s"
 msgstr ""
 
-#: views.py:671
+#: views.py:672
 msgid "Type your username to confirm."
 msgstr ""
 
-#: views.py:683
+#: views.py:684
 msgid "That is not your username. Type it exactly as shown."
 msgstr ""
 
-#: views.py:685
+#: views.py:686
 msgid "That is not your email address. Type it exactly as shown."
 msgstr ""
 
-#: views.py:707
+#: views.py:708
 msgid "Remove your account and what this site holds about you."
 msgstr ""
 
-#: views.py:816
+#: views.py:817
 msgid "Your account has been deleted"
 msgstr ""
 
