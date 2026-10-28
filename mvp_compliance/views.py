@@ -704,9 +704,7 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
 
     template_name = "mvp_compliance/delete_account.html"
     page_title = gettext_lazy("Delete your account")
-    page_lead = gettext_lazy(
-        "Remove your account and what this site holds about you."
-    )
+    page_lead = gettext_lazy("Remove your account and what this site holds about you.")
 
     def dispatch(self, request, *args, **kwargs):
         """Answer "not found" without the account area or allauth's account app.
