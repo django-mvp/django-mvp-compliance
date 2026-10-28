@@ -2,7 +2,7 @@
 {% load i18n %}
 {% block account.content %}
   <c-mvp.page>
-    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <c-mvp.page.title :title="page.title_args.title" :lead="page.title_args.lead" />
     <div id="agreed-documents" class="flex flex-col gap-4 max-w-3xl">
       {% for entry in entries %}
         <c-mvp.card title="{{ entry.document.name }}">

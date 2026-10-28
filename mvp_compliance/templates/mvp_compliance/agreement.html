@@ -27,7 +27,7 @@
 {% endblock page.header %}
 {% block page.content-wrapper %}
   <c-mvp.page.content gap=4 class="py-4 max-w-3xl mx-auto w-full">
-    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <c-mvp.page.title :title="page.title_args.title" :lead="page.title_args.lead" />
     <c-mvp.form method="post" id="agreement" class="flex flex-col gap-4">
       <input type="hidden" name="{{ redirect_field_name }}" value="{{ destination }}" />
       <c-mvp.card tight>

@@ -15,7 +15,7 @@
         <span>{% translate "Your account was not deleted. What you typed did not match. Check it below and try again." %}</span>
       </c-alert>
     {% endif %}
-    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <c-mvp.page.title :title="page.title_args.title" :lead="page.title_args.lead" />
     <div id="delete-account" class="flex flex-col gap-4 max-w-3xl">
       <c-mvp.card title="{% translate "What will be deleted" %}">
         <ul class="list">

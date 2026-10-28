@@ -54,7 +54,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class VersionSubtitleMixin:
+class VersionLeadMixin:
     """The line under a page's name: ``v2026.1 - <date>``.
 
     Continues with ``· Agreed on <date>`` when the signed-in visitor accepted
@@ -67,7 +67,7 @@ class VersionSubtitleMixin:
         """The version the line describes."""
         raise NotImplementedError
 
-    def get_page_subtitle(self):
+    def get_page_lead(self):
         version = self.get_version()
         line = _("v%(number)s - %(date)s") % {
             "number": version.number,
@@ -90,7 +90,7 @@ class VersionSubtitleMixin:
         }
 
 
-class DocumentView(VersionSubtitleMixin, MVPDetailView):
+class DocumentView(VersionLeadMixin, MVPDetailView):
     """The document's one canonical page: the version in force by default, or any
     published version shown with ``?version=<number>``.
 
@@ -194,7 +194,7 @@ class ComparisonView(MVPDetailView):
     def get_page_title(self):
         return self.object.name
 
-    def get_page_subtitle(self):
+    def get_page_lead(self):
         return _("Changes from v%(older)s to v%(newer)s") % {
             "older": self.comparison.older.number,
             "newer": self.comparison.newer.number,
@@ -233,7 +233,7 @@ class AgreedDocumentsView(LoginRequiredMixin, MVPTemplateView):
     #: version is never folded on its own.
     shown_first = 3
     page_title = gettext_lazy("Documents you agreed to")
-    page_subtitle = gettext_lazy(
+    page_lead = gettext_lazy(
         "Each version you accepted on this site, and the date you accepted it. "
         "Open a version to read it exactly as it was."
     )
@@ -328,7 +328,7 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
         """Show the page's own title as the whole trail."""
         return [{"text": self.page_title}]
 
-    def get_page_subtitle(self):
+    def get_page_lead(self):
         """Say what agreeing is for, according to whether anything is required."""
         if any(not entry["optional"] for entry in self.entries):
             return _(
@@ -549,7 +549,7 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
 
     template_name = "mvp_compliance/personal_data.html"
     page_title = gettext_lazy("Your data")
-    page_subtitle = gettext_lazy(
+    page_lead = gettext_lazy(
         "Download a copy of what this site holds about you, as a single file."
     )
 
@@ -704,7 +704,7 @@ class DeleteAccountView(LoginRequiredMixin, MVPTemplateView):
 
     template_name = "mvp_compliance/delete_account.html"
     page_title = gettext_lazy("Delete your account")
-    page_subtitle = gettext_lazy(
+    page_lead = gettext_lazy(
         "Remove your account and what this site holds about you."
     )
 

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- django-mvp 0.32.0 or later is required. Every page sets the line under its title with
+  `page_lead` or `get_page_lead()`, the names django-mvp 0.32 reads, and the pages that draw
+  their own title read it from `page.title_args.lead`.
+- `VersionSubtitleMixin` is renamed `VersionLeadMixin`, and it supplies `get_page_lead()`.
+  See [docs/pages.md](docs/pages.md#what-a-visitor-sees).
+
+### Fixed
+
+- On django-mvp 0.32, the line under a page's title is drawn again. It had disappeared from
+  the document page, the comparison page, the page asking a person to agree, and the agreed
+  documents, personal data and delete account pages.
+
 ## [v0.5.0] - 2026-10-28
 
 ### Added

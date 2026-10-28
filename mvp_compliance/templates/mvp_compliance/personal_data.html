@@ -7,7 +7,7 @@
         <span>{% translate "Your copy could not be made, and nothing was downloaded. Try again later." %}</span>
       </c-alert>
     {% endif %}
-    <c-mvp.page.title :title="page.title" :subtitle="page.subtitle" />
+    <c-mvp.page.title :title="page.title_args.title" :lead="page.title_args.lead" />
     <div id="personal-data" class="flex flex-col gap-4 max-w-3xl">
       <c-mvp.card title="{% translate "What the copy holds" %}">
         <ul class="list">

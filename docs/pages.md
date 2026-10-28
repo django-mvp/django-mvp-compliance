@@ -121,7 +121,7 @@ before it became a notice, and on an earlier `?version=` address as on the plain
 rest of the page is the same as any document's, and the list beside the wording names it
 along with the documents people agree to.
 
-The page builds this line with `mvp_compliance.views.VersionSubtitleMixin`. A project
+The page builds this line with `mvp_compliance.views.VersionLeadMixin`. A project
 view that shows a version and wants the same line mixes it in ahead of the django-mvp
 detail view and defines `get_version()`.
 
