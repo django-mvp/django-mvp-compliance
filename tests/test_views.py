@@ -66,7 +66,7 @@ def version_address(document, number):
     return f"{document_address(document)}?version={number}"
 
 
-def subtitle_addresses(document, first, second):
+def lead_addresses(document, first, second):
     """The document page and the page showing each version of ``document``."""
     return [
         document_address(document),
@@ -76,7 +76,7 @@ def subtitle_addresses(document, first, second):
 
 
 @pytest.mark.django_db
-class TestPageSubtitle:
+class TestVersionLead:
     """FR-009: the line under a page's name is ``v<number> - <date>``,
     continued with ``· Agreed on <date>`` for a visitor who accepted that version."""
 
@@ -92,7 +92,7 @@ class TestPageSubtitle:
         second = published(document, "Second wording")
 
         for address, version in zip(
-            subtitle_addresses(document, first, second),
+            lead_addresses(document, first, second),
             [second, first, second],
             strict=True,
         ):
@@ -109,7 +109,7 @@ class TestPageSubtitle:
         second = published(document, "Second wording")
         client.force_login(UserFactory())
 
-        for address in subtitle_addresses(document, first, second):
+        for address in lead_addresses(document, first, second):
             assert "Agreed on" not in client.get(address).content.decode()
 
     def test_a_user_who_accepted_the_version_sees_the_date_they_agreed(self, client):
@@ -1008,7 +1008,8 @@ class TestDocumentList:
         content = client.get(document_address(privacy)).content.decode()
 
         toggle = re.search(
-            r'class="btn mvp-page-side-toggle[^"]*"\s+aria-controls="([^"]+)"', content
+            r'class="[^"]*\bmvp-page-side-toggle\b[^"]*"\s+aria-controls="([^"]+)"',
+            content,
         )
         assert toggle is not None
         panel = content.index(f'id="{toggle.group(1)}"')
@@ -1087,7 +1088,7 @@ class TestNotice:
         second = published(document, "Second wording")
         client.force_login(user)
 
-        for address in subtitle_addresses(document, first, second):
+        for address in lead_addresses(document, first, second):
             assert "Agreed on" not in client.get(address).content.decode()
 
     def test_an_earlier_version_shows_its_own_html(self, client, notice):
@@ -4227,3 +4228,88 @@ class TestAccountDeletedSignal:
         assert response["Location"] == reverse("mvp_compliance:account-deleted")
         assert not type(leaving).objects.filter(pk=leaving.pk).exists()
         assert any(record.exc_info for record in caplog.records)
+
+
+class PageTitle(HTMLParser):
+    """Collects the text inside the page's ``page-title`` element."""
+
+    void = {"area", "br", "col", "hr", "img", "input", "link", "meta", "source", "wbr"}
+
+    def __init__(self):
+        super().__init__()
+        self.depth = 0
+        self.text = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.void:
+            return
+        if self.depth:
+            self.depth += 1
+        elif "page-title" in (dict(attrs).get("class") or "").split():
+            self.depth = 1
+
+    def handle_endtag(self, tag):
+        if self.depth and tag not in self.void:
+            self.depth -= 1
+
+    def handle_data(self, data):
+        if self.depth:
+            self.text.append(data)
+
+
+def title_text(response):
+    """The text of the page's title, its lead included, with spaces collapsed."""
+    parser = PageTitle()
+    parser.feed(response.content.decode())
+    return " ".join("".join(parser.text).split())
+
+
+@pytest.mark.django_db
+class TestPageLead:
+    """The line a view gives as its lead is drawn in the page's title, on every page."""
+
+    @staticmethod
+    def assert_lead_drawn(response):
+        assert response.status_code == 200
+        lead = " ".join(str(response.context["page"]["title_args"]["lead"]).split())
+        assert lead
+        assert lead in title_text(response)
+
+    def test_the_document_page(self, client):
+        document = DocumentFactory()
+        published(document)
+
+        self.assert_lead_drawn(client.get(document_address(document)))
+
+    def test_the_comparison_page(self, client):
+        document = DocumentFactory()
+        first = published(document, "First wording")
+        second = published(document, "Second wording")
+
+        self.assert_lead_drawn(client.get(comparison_address(document, first, second)))
+
+    def test_the_agreement_page(self, client, user):
+        published(DocumentFactory())
+        client.force_login(user)
+
+        self.assert_lead_drawn(client.get(agreement_address()))
+
+    def test_the_agreed_documents_page(self, client, user):
+        accept(user, DocumentFactory())
+        client.force_login(user)
+
+        self.assert_lead_drawn(client.get(agreed_address()))
+
+    def test_the_personal_data_page(self, declare, client, user, collects):
+        declare("tests.kinds.Notes")
+        client.force_login(user)
+        confirm(client)
+
+        self.assert_lead_drawn(client.get(personal_data_address()))
+
+    def test_the_delete_account_page(self, declare, client, user):
+        declare("tests.kinds.Erases")
+        client.force_login(user)
+        confirm(client)
+
+        self.assert_lead_drawn(client.get(delete_address()))
