@@ -6,7 +6,7 @@ from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -18,10 +18,54 @@ from mvp_compliance.models import (
     Translation,
     Version,
     declared_documents,
+    language_name,
     offered_languages,
 )
 from mvp_compliance.records import produce, resolve_subject
 from mvp_compliance.rendering import get_renderer
+
+
+class MissingTranslationFilter(admin.SimpleListFilter):
+    """Narrow versions to those with no current translation in a language.
+
+    Offered only while the site offers a language, since until then nothing
+    about translations appears.
+    """
+
+    title = _("Missing a translation")
+    parameter_name = "missing_translation"
+
+    def lookups(self, request, model_admin):
+        """Offer any offered language, and one choice for a gap in any of them.
+
+        Args:
+            request: The current request.
+            model_admin: The version admin.
+
+        Returns:
+            The choices, empty (hiding the filter) when no language is offered.
+        """
+        languages = offered_languages()
+        if not languages:
+            return []
+        return [("any", _("Any language")), *languages]
+
+    def queryset(self, request, queryset):
+        """Keep the versions lacking a translation in the chosen language.
+
+        Args:
+            request: The current request.
+            queryset: The versions the list would show.
+
+        Returns:
+            The narrowed queryset, or the original when no choice is made.
+        """
+        choice = self.value()
+        if choice == "any":
+            return queryset.missing_translation()
+        if choice in dict(offered_languages()):
+            return queryset.missing_translation(choice)
+        return queryset
 
 
 @admin.register(Document)
@@ -177,6 +221,7 @@ class VersionAdmin(admin.ModelAdmin):
         "published_at",
         "published_by",
         "html",
+        "translation_list",
     ]
     list_display = [
         "document",
@@ -186,9 +231,111 @@ class VersionAdmin(admin.ModelAdmin):
         "published_by",
     ]
     list_select_related = ["document", "publisher"]
-    list_filter = ["document", "status"]
+    list_filter = ["document", "status", MissingTranslationFilter]
     search_fields = ["document__name"]
     ordering = ["document", F("published_at").desc(nulls_first=True), "-pk"]
+
+    def get_fields(self, request, obj=None):
+        """Show the translations only on a pending or published version.
+
+        They are listed when the site offers a language or the version has a
+        translation to keep.
+        """
+        fields = list(super().get_fields(request, obj))
+        shown = (
+            obj is not None
+            and obj.status != Version.Status.DRAFT
+            and (offered_languages() or obj.translations.exists())
+        )
+        if not shown and "translation_list" in fields:
+            fields.remove("translation_list")
+        return fields
+
+    @admin.display(description=_("Translations"))
+    def translation_list(self, version):
+        """List each offered language with its translation or a way to add one.
+
+        A translation in a language the site no longer offers, or that has
+        become the main language, is kept and listed with a ``data-`` hook
+        marking it.
+
+        Args:
+            version: The pending or published version the page shows.
+
+        Returns:
+            A list with a row per language.
+        """
+        wordings: dict[str, Translation] = {}
+        for translation in version.translations.order_by("published_at", "pk"):
+            held = wordings.get(translation.language)
+            if (
+                held is None
+                or translation.status == Translation.Status.CURRENT
+                or held.status != Translation.Status.CURRENT
+            ):
+                wordings[translation.language] = translation
+        offered = dict(offered_languages())
+        kept = [code for code in wordings if code not in offered]
+        rows = [
+            self.translation_row(version, code, name, wordings.get(code), False)
+            for code, name in offered.items()
+        ] + [
+            self.translation_row(
+                version, code, language_name(code), wordings[code], True
+            )
+            for code in kept
+        ]
+        return format_html(
+            "<ul data-translations>{}</ul>",
+            format_html_join("", "{}", [(row,) for row in rows]),
+        )
+
+    def translation_row(self, version, code, name, translation, kept):
+        """Build the row for one language.
+
+        Args:
+            version: The version the page shows.
+            code: The language's code.
+            name: The language's name.
+            translation: The wording to link, or ``None`` when there is none.
+            kept: Whether the language is no longer offered, so a wording in
+                it is kept but cannot be added to.
+
+        Returns:
+            The row as safe HTML.
+        """
+        links = []
+        if translation is not None:
+            links.append(
+                format_html(
+                    '<a href="{}">{}</a>',
+                    reverse(
+                        "admin:mvp_compliance_translation_change",
+                        args=[translation.pk],
+                    ),
+                    translation.get_status_display(),
+                )
+            )
+        if not kept and (
+            translation is None or translation.status == Translation.Status.CURRENT
+        ):
+            links.append(
+                format_html(
+                    '<a href="{}">{}</a>',
+                    f"{reverse('admin:mvp_compliance_translation_add')}"
+                    f"?version={version.pk}&language={code}",
+                    _("Correct") if translation is not None else _("Add"),
+                )
+            )
+        return format_html(
+            '<li data-translation-language="{}"{}>{}: {}</li>',
+            code,
+            mark_safe(" data-translation-kept") if kept else "",
+            name,
+            format_html_join(" ", "{}", [(link,) for link in links])
+            if links
+            else _("No translation"),
+        )
 
     @admin.display(description=_("number"), ordering="published_at")
     def version_number(self, version):

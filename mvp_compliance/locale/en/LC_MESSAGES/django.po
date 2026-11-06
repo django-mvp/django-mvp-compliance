@@ -22,116 +22,140 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:101
+#: mvp_compliance/admin.py:35
+msgid "Missing a translation"
+msgstr "Missing a translation"
+
+#: mvp_compliance/admin.py:51
+msgid "Any language"
+msgstr "Any language"
+
+#: mvp_compliance/admin.py:145
 msgid "Current version"
 msgstr "Current version"
 
-#: mvp_compliance/admin.py:113
+#: mvp_compliance/admin.py:157
 msgid "No version in force"
 msgstr "No version in force"
 
-#: mvp_compliance/admin.py:118
+#: mvp_compliance/admin.py:162
 #: mvp_compliance/templates/cotton/compliance/outstanding.html:21
 #: mvp_compliance/templates/cotton/compliance/outstanding.html:41
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
 
-#: mvp_compliance/admin.py:121
+#: mvp_compliance/admin.py:165
 msgid "In force since"
 msgstr "In force since"
 
-#: mvp_compliance/admin.py:134 mvp_compliance/admin.py:205
+#: mvp_compliance/admin.py:178 mvp_compliance/admin.py:349
 #: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:3
 msgid "Published by"
 msgstr "Published by"
 
-#: mvp_compliance/admin.py:149
+#: mvp_compliance/admin.py:193
 msgid "Published versions"
 msgstr "Published versions"
 
-#: mvp_compliance/admin.py:193 mvp_compliance/models.py:607
+#: mvp_compliance/admin.py:254
+msgid "Translations"
+msgstr "Translations"
+
+#: mvp_compliance/admin.py:324
+msgid "Correct"
+msgstr "Correct"
+
+#: mvp_compliance/admin.py:324
+msgid "Add"
+msgstr "Add"
+
+#: mvp_compliance/admin.py:334
+msgid "No translation"
+msgstr "No translation"
+
+#: mvp_compliance/admin.py:337 mvp_compliance/models.py:607
 msgid "number"
 msgstr "number"
 
-#: mvp_compliance/admin.py:203 mvp_compliance/models.py:640
+#: mvp_compliance/admin.py:347 mvp_compliance/models.py:640
 #: mvp_compliance/models.py:1240
 msgid "Draft"
 msgstr "Draft"
 
-#: mvp_compliance/admin.py:392 mvp_compliance/admin.py:791
+#: mvp_compliance/admin.py:536 mvp_compliance/admin.py:934
 #: mvp_compliance/templates/admin/mvp_compliance/translation/change_form.html:8
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:429
+#: mvp_compliance/admin.py:573
 #, python-format
 msgid "Version %(number)s of %(document)s is now published."
 msgstr "Version %(number)s of %(document)s is now published."
 
-#: mvp_compliance/admin.py:440
+#: mvp_compliance/admin.py:584
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:21
 msgid "Publish"
 msgstr "Publish"
 
-#: mvp_compliance/admin.py:500
+#: mvp_compliance/admin.py:644
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:21
 #: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:16
 msgid "Lock for translation"
 msgstr "Lock for translation"
 
-#: mvp_compliance/admin.py:501
+#: mvp_compliance/admin.py:645
 msgid "The version is locked for translation."
 msgstr "The version is locked for translation."
 
-#: mvp_compliance/admin.py:519
+#: mvp_compliance/admin.py:663
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:28
 #: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:15
 msgid "Return to draft"
 msgstr "Return to draft"
 
-#: mvp_compliance/admin.py:520
+#: mvp_compliance/admin.py:664
 msgid "The version is a draft again."
 msgstr "The version is a draft again."
 
-#: mvp_compliance/admin.py:553
+#: mvp_compliance/admin.py:697
 msgid "Translating"
 msgstr "Translating"
 
-#: mvp_compliance/admin.py:563
+#: mvp_compliance/admin.py:707
 #, python-format
 msgid "%(version)s into %(language)s"
 msgstr "%(version)s into %(language)s"
 
-#: mvp_compliance/admin.py:568
+#: mvp_compliance/admin.py:712
 msgid "Live since"
 msgstr "Live since"
 
-#: mvp_compliance/admin.py:580
+#: mvp_compliance/admin.py:724
 msgid "Put live by"
 msgstr "Put live by"
 
-#: mvp_compliance/admin.py:592
+#: mvp_compliance/admin.py:736
 msgid "Wording a reader is served"
 msgstr "Wording a reader is served"
 
-#: mvp_compliance/admin.py:709
+#: mvp_compliance/admin.py:852
 msgid "Correct a translation"
 msgstr "Correct a translation"
 
-#: mvp_compliance/admin.py:827
+#: mvp_compliance/admin.py:970
 #, python-format
 msgid "The %(language)s wording of %(version)s is now live."
 msgstr "The %(language)s wording of %(version)s is now live."
 
-#: mvp_compliance/admin.py:841
+#: mvp_compliance/admin.py:986
 #: mvp_compliance/templates/admin/mvp_compliance/translation/change_form.html:14
 msgid "Put live"
 msgstr "Put live"
 
-#: mvp_compliance/admin.py:900
+#: mvp_compliance/admin.py:1045
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:5
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
@@ -262,15 +286,15 @@ msgstr "Added:"
 msgid "Removed:"
 msgstr "Removed:"
 
-#: mvp_compliance/forms.py:36 mvp_compliance/models.py:1209
+#: mvp_compliance/forms.py:38 mvp_compliance/models.py:1209
 msgid "language"
 msgstr "language"
 
-#: mvp_compliance/forms.py:92
+#: mvp_compliance/forms.py:97
 msgid "Person"
 msgstr "Person"
 
-#: mvp_compliance/forms.py:94
+#: mvp_compliance/forms.py:99
 msgid ""
 "The account's login name or email address, or, for somebody whose account "
 "has since been removed, the identifier their records still carry."
