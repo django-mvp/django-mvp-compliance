@@ -4313,3 +4313,123 @@ class TestPageLead:
         confirm(client)
 
         self.assert_lead_drawn(client.get(delete_address()))
+
+
+def pending(document, markdown="Pending wording"):
+    """Lock a new version of ``document`` for translation and return it."""
+    version = VersionFactory(document=document, markdown=markdown)
+    version.lock_for_translation()
+    return version
+
+
+@pytest.mark.django_db
+class TestPendingIsNotPublishedToReaders:
+    """A pending version is invisible to readers, as a draft is (FR-021, SC-007)."""
+
+    def test_a_document_with_only_a_pending_version_is_not_found_for_everybody(
+        self, client, django_user_model
+    ):
+        document = DocumentFactory()
+        pending(document)
+        signed_in = django_user_model.objects.create_user("reader", password="pw")
+        staff = django_user_model.objects.create_user(
+            "editor", password="pw", is_staff=True, is_superuser=True
+        )
+
+        assert client.get(document_address(document)).status_code == 404
+        client.force_login(signed_in)
+        assert client.get(document_address(document)).status_code == 404
+        client.force_login(staff)
+        assert client.get(document_address(document)).status_code == 404
+
+    def test_a_document_with_only_a_pending_version_has_no_version_parameter_page(
+        self, client
+    ):
+        document = DocumentFactory()
+        pending(document)
+
+        response = client.get(version_address(document, "2026.1"))
+
+        assert response.status_code == 404
+
+    def test_a_pending_version_is_not_listed_in_the_switcher(self, client):
+        document = DocumentFactory()
+        published(document)
+        pending(document)
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert "Pending wording" not in content
+        assert content.count("?version=") == 1
+
+    def test_a_pending_version_is_not_offered_for_comparison(self, client):
+        document = DocumentFactory()
+        published(document, "First wording")
+        pending(document)
+
+        content = client.get(document_address(document)).content.decode()
+
+        assert reverse("mvp_compliance:comparison", args=[document.slug]) not in content
+
+    def test_a_pending_version_beside_the_one_in_force_leaves_the_page_showing_it(
+        self, client
+    ):
+        document = DocumentFactory()
+        current = published(document, "In force wording")
+        pending(document, "Pending wording")
+
+        response = client.get(document_address(document))
+
+        assert current.html in response.content.decode()
+        assert "Pending wording" not in response.content.decode()
+
+    def test_a_pending_only_document_is_absent_from_the_side_list(self, client):
+        shown = DocumentFactory(name="Privacy policy")
+        published(shown)
+        pending(DocumentFactory(name="Pending only"))
+
+        response = client.get(document_address(shown))
+
+        assert list(response.context["documents"]) == [shown]
+        assert "Pending only" not in response.content.decode()
+
+    def test_a_notice_with_only_a_pending_version_is_not_found(self, client):
+        notice = DocumentFactory(name="Impressum", kind=Document.Kind.NOTICE)
+        pending(notice)
+
+        assert client.get(document_address(notice)).status_code == 404
+
+
+@pytest.mark.django_db
+class TestPendingIsNotAgreedTo:
+    """A pending version is not put to anybody to agree to (FR-021)."""
+
+    @pytest.fixture
+    def signed_in(self, client, user):
+        client.force_login(user)
+        return client
+
+    def test_a_document_with_only_a_pending_version_is_not_listed_to_agree_to(
+        self, signed_in
+    ):
+        pending(DocumentFactory())
+        outstanding = DocumentFactory()
+        published(outstanding)
+
+        response = signed_in.get(agreement_address())
+
+        listed = [entry["document"] for entry in response.context["entries"]]
+        assert listed == [outstanding]
+
+    def test_a_submission_naming_a_pending_version_records_nothing(
+        self, signed_in, user
+    ):
+        listed = published(DocumentFactory())
+        locked = pending(DocumentFactory())
+
+        response = signed_in.post(
+            agreement_address(), {"agree": [locked.pk], "listed": [listed.pk]}
+        )
+
+        assert response.status_code == 200
+        assert not Acceptance.objects.exists()

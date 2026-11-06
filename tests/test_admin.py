@@ -1742,3 +1742,131 @@ class TestPublishAnnouncement:
 
         levels = [m.level for m in messages.get_messages(response.wsgi_request)]
         assert levels == [messages.ERROR]
+
+
+def locked(**kwargs):
+    """Build a version and lock it for translation."""
+    version = VersionFactory(**kwargs)
+    version.lock_for_translation()
+    return version
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestPendingInTheAdmin:
+    """A pending version is read-only, discardable, and not counted as published."""
+
+    @pytest.mark.parametrize("address", DRAFT_PRIVACY_ADDRESSES)
+    def test_anonymous_reaches_nothing(self, client, address) -> None:
+        pending = locked()
+
+        response = client.get(DRAFT_PRIVACY_ADDRESSES[address](pending))
+
+        assert response.status_code == 302
+        assert pending.markdown.encode() not in response.content
+
+    @pytest.mark.parametrize("address", DRAFT_PRIVACY_ADDRESSES)
+    def test_staff_without_permissions_reaches_nothing(
+        self, client, staff_without_permissions, address
+    ) -> None:
+        pending = locked()
+        client.force_login(staff_without_permissions)
+
+        response = client.get(DRAFT_PRIVACY_ADDRESSES[address](pending))
+
+        assert response.status_code == 403
+        assert pending.markdown.encode() not in response.content
+
+    def test_a_pending_version_is_shown_read_only(self, client, editor) -> None:
+        pending = locked()
+        client.force_login(editor)
+        change_url = reverse("admin:mvp_compliance_version_change", args=[pending.pk])
+
+        get_response = client.get(change_url)
+        post_response = client.post(
+            change_url,
+            data={"document": pending.document_id, "markdown": "Changed wording"},
+        )
+
+        pending.refresh_from_db()
+        assert get_response.status_code == 200
+        assert b'name="markdown"' not in get_response.content
+        assert post_response.status_code == 403
+        assert pending.markdown != "Changed wording"
+        assert pending.status == Version.Status.PENDING
+
+    def test_a_pending_version_has_no_change_permission_and_a_draft_does(
+        self, rf, editor, draft
+    ) -> None:
+        model_admin = admin.site._registry[Version]
+        request = rf.get("/")
+        request.user = editor
+        pending = locked()
+
+        assert model_admin.has_change_permission(request, pending) is False
+        assert model_admin.has_change_permission(request, draft) is True
+
+    def test_a_pending_version_can_be_discarded(self, client, editor, document) -> None:
+        client.force_login(editor)
+        keeper = VersionFactory(document=document)
+        keeper.publish()
+        victim = locked(document=document, markdown="Pending wording")
+        delete_url = reverse("admin:mvp_compliance_version_delete", args=[victim.pk])
+
+        response = client.post(delete_url, data={"post": "yes"})
+
+        assert response.status_code == 302
+        assert not Version.objects.filter(pk=victim.pk).exists()
+        keeper.refresh_from_db()
+        assert keeper.status == Version.Status.CURRENT
+
+    def test_a_pending_version_is_published_by_the_same_action_as_a_draft(
+        self, client, publisher
+    ) -> None:
+        pending = locked()
+        client.force_login(publisher)
+        change_url = reverse("admin:mvp_compliance_version_change", args=[pending.pk])
+        publish_url = reverse("admin:mvp_compliance_version_publish", args=[pending.pk])
+
+        offered = client.get(change_url).content
+        response = client.post(publish_url)
+
+        pending.refresh_from_db()
+        assert publish_url.encode() in offered
+        assert response.status_code == 302
+        assert pending.status == Version.Status.CURRENT
+
+    def test_a_pending_version_alone_reads_as_nothing_in_force(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        locked(document=document, markdown="Pending wording")
+
+        response = client.get(reverse("admin:mvp_compliance_document_changelist"))
+
+        content = response.content.decode()
+        assert not VERSION_CHANGE_URL_RE.search(content)
+        assert 'field-published_version_count">0<' in content
+
+    def test_a_pending_version_beside_a_version_in_force_is_not_counted(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        VersionFactory(document=document, markdown="Current wording").publish()
+        locked(document=document, markdown="Pending rewording")
+
+        response = client.get(reverse("admin:mvp_compliance_document_changelist"))
+
+        assert 'field-published_version_count">1<' in response.content.decode()
+
+    def test_a_document_with_only_a_pending_version_keeps_an_editable_slug(
+        self, client, editor, document
+    ) -> None:
+        client.force_login(editor)
+        locked(document=document)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_document_change", args=[document.pk])
+        )
+
+        assert b'name="slug"' in response.content

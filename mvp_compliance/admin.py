@@ -61,7 +61,12 @@ class DocumentAdmin(admin.ModelAdmin):
         queryset = queryset.annotate(
             published_version_count=Count(
                 "versions",
-                filter=~Q(versions__status=Version.Status.DRAFT),
+                filter=Q(
+                    versions__status__in=[
+                        Version.Status.CURRENT,
+                        Version.Status.SUPERSEDED,
+                    ]
+                ),
                 distinct=True,
             )
         )
@@ -207,8 +212,10 @@ class VersionAdmin(admin.ModelAdmin):
         return super().has_delete_permission(request, obj)
 
     def has_change_permission(self, request, obj=None):
-        """Refuse changing a published version, so Django serves its read-only page."""
-        if obj is not None and obj.is_published:
+        """Refuse changing a published or pending version, so Django serves its read-only page."""
+        if obj is not None and (
+            obj.is_published or obj.status == Version.Status.PENDING
+        ):
             return False
         return super().has_change_permission(request, obj)
 

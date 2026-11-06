@@ -3124,3 +3124,88 @@ class TestPendingVersion:
             Version.objects.filter(pk=draft.pk).update(
                 status="pending", html="<p>x</p>"
             )
+
+
+@pytest.mark.django_db
+class TestPendingIsNotPublished:
+    """Everything that ignores a draft ignores a pending version too (SC-007)."""
+
+    def test_a_document_with_only_a_pending_version_is_not_in_force(self):
+        document = DocumentFactory()
+        lock(VersionFactory(document=document))
+
+        assert document not in Document.objects.in_force()
+
+    def test_a_pending_version_is_not_a_replacement(self, document):
+        first = VersionFactory(document=document, markdown="First")
+        first.publish()
+        lock(VersionFactory(document=document, markdown="Second"))
+
+        replaced = Version.objects.all().with_replaced_at().get(pk=first.pk)
+
+        assert replaced.replaced_at is None
+
+    def test_a_pending_version_is_left_out_of_what_has_been_published_since(
+        self, user, document
+    ):
+        first = VersionFactory(document=document, markdown="First")
+        first.publish()
+        Acceptance.objects.record(user, first)
+        lock(VersionFactory(document=document, markdown="Second"))
+
+        assert not Version.objects.all().since_last_accepted_by(user).exists()
+
+    def test_recording_against_a_pending_version_is_refused(self, user, draft):
+        lock(draft)
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, draft)
+
+        assert not Acceptance.objects.exists()
+
+    def test_a_pending_version_is_refused_and_nothing_in_the_batch_is_written(
+        self, user, published_version, draft
+    ):
+        lock(draft)
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record_many(user, [published_version, draft])
+
+        assert not Acceptance.objects.exists()
+
+    def test_a_document_with_only_a_pending_version_is_outstanding_for_nobody(
+        self, user
+    ):
+        document = DocumentFactory()
+        lock(VersionFactory(document=document))
+
+        assert document not in Document.objects.outstanding_for(user)
+        assert document not in Document.objects.enforced_outstanding_for(user)
+        assert not document.is_outstanding_for(user)
+
+    def test_a_pending_version_beside_the_one_in_force_changes_nothing_outstanding(
+        self, user, published_version
+    ):
+        lock(VersionFactory(document=published_version.document, markdown="Newer"))
+
+        assert set(Document.objects.outstanding_for(user)) == {
+            published_version.document
+        }
+
+    def test_a_pending_version_does_not_fix_the_slug(self, document):
+        lock(VersionFactory(document=document))
+
+        document.slug = "another-slug"
+        document.save()
+
+        assert Document.objects.get(pk=document.pk).slug == "another-slug"
+
+    def test_a_pending_version_does_not_stand_in_for_the_agreed_version(
+        self, user, published_version
+    ):
+        pending = lock(
+            VersionFactory(document=published_version.document, markdown="Newer")
+        )
+        Acceptance.objects.record(user, published_version)
+
+        assert Acceptance.objects.for_person(user).filter(version=pending).count() == 0
