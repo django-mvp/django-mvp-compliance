@@ -8,7 +8,7 @@ import factory
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from mvp_compliance.models import Acceptance, Document, Version
+from mvp_compliance.models import Acceptance, Document, Translation, Version
 from tests.models import Note, Topic
 
 
@@ -64,6 +64,21 @@ class VersionFactory(factory.django.DjangoModelFactory):
 
     document = factory.SubFactory(DocumentFactory)
     markdown = factory.Sequence(lambda n: f"Wording {n}")
+
+
+class TranslationFactory(factory.django.DjangoModelFactory):
+    """Build a saved draft :class:`Translation` into German.
+
+    The version is a pending one, since a draft cannot be translated. The site
+    must offer the language: ask for the ``site_languages`` fixture.
+    """
+
+    class Meta:
+        model = Translation
+
+    version = factory.SubFactory(VersionFactory, pending=True)
+    language = "de"
+    markdown = factory.Sequence(lambda n: f"Übersetzung {n}")
 
 
 class AcceptanceFactory(factory.django.DjangoModelFactory):

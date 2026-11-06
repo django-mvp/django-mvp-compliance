@@ -3099,6 +3099,56 @@ class TestPendingVersion:
         draft.refresh_from_db()
         assert draft.status == Version.Status.CURRENT
 
+    @pytest.mark.usefixtures("site_languages")
+    def test_returning_to_draft_returns_every_translation_with_its_wording(self, draft):
+        lock(draft)
+        put_back = put_live(TranslationFactory(version=draft, language="de"))
+        replaced = put_live(
+            TranslationFactory(version=draft, language="fr", markdown="Erste")
+        )
+        put_live(TranslationFactory(version=draft, language="fr", markdown="Zweite"))
+        already_draft = TranslationFactory(
+            version=draft, language="de", markdown="Entwurf"
+        )
+        wording = {
+            t.pk: (t.markdown, t.summary)
+            for t in Translation.objects.filter(version=draft)
+        }
+
+        draft.return_to_draft()
+
+        rows = list(Translation.objects.filter(version=draft))
+        assert len(rows) == 4
+        for row in rows:
+            assert row.status == Translation.Status.DRAFT
+            assert row.html == ""
+            assert row.published_at is None
+            assert row.publisher is None
+            assert row.publisher_subject == ""
+            assert (row.markdown, row.summary) == wording[row.pk]
+        assert {put_back.pk, replaced.pk, already_draft.pk} <= set(wording)
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_returning_to_draft_forgets_who_put_a_translation_live(self, draft, user):
+        lock(draft)
+        translation = put_live(TranslationFactory(version=draft), publisher=user)
+
+        draft.return_to_draft()
+
+        translation.refresh_from_db()
+        assert translation.publisher is None
+        assert translation.publisher_subject == ""
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_a_refused_return_leaves_the_translations_alone(self, published_version):
+        translation = put_live(TranslationFactory(version=published_version))
+        before = Translation.objects.filter(pk=translation.pk).values().get()
+
+        with pytest.raises(PublishError):
+            published_version.return_to_draft()
+
+        assert Translation.objects.filter(pk=translation.pk).values().get() == before
+
     def test_a_pending_version_is_not_published(self, draft):
         lock(draft)
 
