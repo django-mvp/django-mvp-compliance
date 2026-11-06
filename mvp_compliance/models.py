@@ -1595,7 +1595,7 @@ class Translation(models.Model):
         Returns:
             ``True`` when it is not a draft.
         """
-        return stored["status"] != cls.Status.DRAFT
+        return bool(stored["status"] != cls.Status.DRAFT)
 
     def refuse_if_live_wording_changed(self, stored: dict) -> None:
         """Refuse a ``save()`` that changes a frozen field of a frozen row.

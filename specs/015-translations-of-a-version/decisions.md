@@ -25,8 +25,13 @@ spec's edge case on simultaneous corrections requires.
 ## D3 — Live is derived, not stored
 
 A translation is live when its row is not a draft and its version is published. One put live on a
-pending version therefore goes live with the version, with no hook on `Version.publish()`, and can
-still be returned to draft with it.
+pending version therefore goes live with the version, with no hook on `Version.publish()`.
+
+Frozen is wider than live: a wording is frozen from the moment it is put live, whatever its
+version's status, because otherwise code could rewrite a wording, or its stored HTML, between being
+put live and being served (code review TRN-001). Returning a pending version to draft is the one
+sanctioned change, made through the base manager. The test an earlier group wrote asserting the
+opposite was inverted with the fix.
 
 **ADR:** docs/adr/0032-a-translation-keeps-every-wording-it-has-had.md
 
