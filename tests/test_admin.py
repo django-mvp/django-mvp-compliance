@@ -18,6 +18,7 @@ from django.test import override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import NoReverseMatch, path, reverse
 from django.utils import formats, timezone
+from django.utils.html import escape
 
 import mvp_compliance
 from mvp_compliance.models import Acceptance, Document, Translation, Version
@@ -2396,3 +2397,207 @@ class TestTranslationAdmin:
         assert f'href="{publish_url}"'.encode() in permitted.content
         assert f'href="{preview_url}"'.encode() in withheld.content
         assert f'href="{publish_url}"'.encode() not in withheld.content
+
+
+def href(url: str) -> bytes:
+    """The attribute a link to this address carries, as the page escapes it."""
+    return f'href="{escape(url)}"'.encode()
+
+
+def put_live(version, language):
+    """Write and put live a translation of a version, returning it."""
+    translation = TranslationFactory(version=version, language=language)
+    translation.publish()
+    return translation
+
+
+def listed_row(content: bytes, language: str) -> str:
+    """The opening tag of the row a page gives one language."""
+    match = re.search(
+        rf'<li[^>]*data-translation-language="{language}"[^>]*>', content.decode()
+    )
+    assert match, f"no row for {language}"
+    return match.group(0)
+
+
+def filter_parameters(response) -> list[str]:
+    """The query parameters the changelist's filters answer to."""
+    return [
+        getattr(spec, "parameter_name", None)
+        for spec in response.context["cl"].filter_specs
+    ]
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestVersionTranslations:
+    @pytest.mark.usefixtures("site_languages")
+    @pytest.mark.parametrize("state", ["pending", "published"])
+    def test_the_page_lists_each_offered_language_with_a_way_to_add_or_correct(
+        self, client, editor, state
+    ) -> None:
+        client.force_login(editor)
+        version = locked()
+        german = put_live(version, "de")
+        if state == "published":
+            version.publish()
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[version.pk])
+        )
+
+        content = response.content
+        change_url = reverse(
+            "admin:mvp_compliance_translation_change", args=[german.pk]
+        )
+        assert [
+            code
+            for code in ("de", "fr")
+            if f'data-translation-language="{code}"'.encode() in content
+        ] == ["de", "fr"]
+        assert href(change_url) in content
+        assert href(add_translation_url(version, "de")) in content
+        assert href(add_translation_url(version, "fr")) in content
+        assert content.count(b'data-translation-language="en"') == 0
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_a_language_with_only_a_draft_links_to_the_draft_and_offers_no_second(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        version = locked()
+        written = TranslationFactory(version=version, language="fr")
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[version.pk])
+        )
+
+        change_url = reverse(
+            "admin:mvp_compliance_translation_change", args=[written.pk]
+        )
+        assert href(change_url) in response.content
+        assert href(add_translation_url(version, "fr")) not in response.content
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_a_drafts_page_lists_no_translations(self, client, editor, draft) -> None:
+        client.force_login(editor)
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+        )
+
+        assert b"data-translation-language" not in response.content
+
+    def test_with_no_language_offered_and_no_translation_neither_list_nor_filter_appears(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        version = locked()
+
+        page = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[version.pk])
+        )
+        changelist = client.get(reverse("admin:mvp_compliance_version_changelist"))
+
+        assert b"data-translation-language" not in page.content
+        assert "missing_translation" not in filter_parameters(changelist)
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_the_changelist_offers_the_filter_when_a_language_is_offered(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+
+        response = client.get(reverse("admin:mvp_compliance_version_changelist"))
+
+        assert "missing_translation" in filter_parameters(response)
+
+    @pytest.mark.usefixtures("site_languages")
+    @pytest.mark.parametrize(
+        ("choice", "expected"),
+        [
+            ("de", {"french_only", "neither", "published_neither"}),
+            ("fr", {"german_only", "neither", "published_neither"}),
+            ("any", {"german_only", "french_only", "neither", "published_neither"}),
+        ],
+    )
+    def test_the_filter_narrows_to_versions_missing_a_translation(
+        self, client, editor, choice, expected
+    ) -> None:
+        client.force_login(editor)
+        both = locked()
+        put_live(both, "de")
+        put_live(both, "fr")
+        german_only = locked()
+        put_live(german_only, "de")
+        french_only = locked()
+        put_live(french_only, "fr")
+        neither = locked()
+        published_neither = VersionFactory()
+        published_neither.publish()
+        VersionFactory()  # a draft, which cannot be translated
+        names = {
+            german_only.pk: "german_only",
+            neither.pk: "neither",
+            published_neither.pk: "published_neither",
+            both.pk: "both",
+            french_only.pk: "french_only",
+        }
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_changelist"),
+            {"missing_translation": choice},
+        )
+
+        listed = {names[v.pk] for v in response.context["cl"].result_list}
+        assert listed == expected
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_a_kept_translation_is_listed_and_flagged_when_its_language_is_no_longer_offered(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        version = locked()
+        german = put_live(version, "de")
+
+        with override_settings(LANGUAGES=[("en", "English")]):
+            response = client.get(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk])
+            )
+
+        row = listed_row(response.content, "de")
+        change_url = reverse(
+            "admin:mvp_compliance_translation_change", args=[german.pk]
+        )
+        assert "data-translation-kept" in row
+        assert href(change_url) in response.content
+        assert href(add_translation_url(version, "de")) not in response.content
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_a_kept_translation_is_flagged_when_its_language_became_the_main_one(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        version = locked()
+        put_live(version, "de")
+
+        with override_settings(LANGUAGE_CODE="de"):
+            response = client.get(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk])
+            )
+
+        assert "data-translation-kept" in listed_row(response.content, "de")
+        assert "data-translation-kept" not in listed_row(response.content, "en")
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_an_offered_language_is_not_flagged_as_kept(self, client, editor) -> None:
+        client.force_login(editor)
+        version = locked()
+        put_live(version, "de")
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[version.pk])
+        )
+
+        assert "data-translation-kept" not in listed_row(response.content, "de")
+        assert "data-translation-kept" not in listed_row(response.content, "fr")
