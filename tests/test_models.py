@@ -4147,3 +4147,60 @@ class TestTranslationFromCode:
 
         assert Translation.objects.filter(pk=translation.pk).values().get() == before
         assert Translation.objects.count() == 1
+
+
+@pytest.mark.django_db
+class TestStaleInstanceIsRefused:
+    """An instance that differs from the stored row is refused, writing and sending nothing (FR-020)."""
+
+    @pytest.fixture
+    def stale(self, draft):
+        """An instance of ``draft`` read before another writer changed it."""
+        copy = Version.objects.get(pk=draft.pk)
+        Version.objects.filter(pk=draft.pk).update(
+            markdown="Changed elsewhere", summary="Summary changed elsewhere"
+        )
+        return copy
+
+    @pytest.mark.parametrize("field", ["markdown", "summary"])
+    def test_locking_an_instance_that_differs_from_the_stored_row_is_refused(
+        self, django_capture_on_commit_callbacks, draft, field
+    ):
+        stale = Version.objects.get(pk=draft.pk)
+        Version.objects.filter(pk=draft.pk).update(**{field: "Changed elsewhere"})
+        before = Version.objects.filter(pk=draft.pk).values().get()
+
+        with (
+            django_capture_on_commit_callbacks(execute=True) as callbacks,
+            pytest.raises(PublishError),
+        ):
+            stale.lock_for_translation()
+
+        assert Version.objects.filter(pk=draft.pk).values().get() == before
+        assert callbacks == []
+
+    def test_publishing_an_instance_that_differs_from_the_stored_row_is_refused(
+        self, django_capture_on_commit_callbacks, draft, stale
+    ):
+        before = Version.objects.filter(pk=draft.pk).values().get()
+
+        with (
+            django_capture_on_commit_callbacks(execute=True) as callbacks,
+            pytest.raises(PublishError),
+        ):
+            stale.publish()
+
+        assert Version.objects.filter(pk=draft.pk).values().get() == before
+        assert callbacks == []
+
+    def test_an_instance_that_matches_the_stored_row_still_locks_and_publishes(
+        self, document
+    ):
+        locked = VersionFactory(document=document, markdown="One")
+        published = VersionFactory(document=document, markdown="Two")
+
+        Version.objects.get(pk=locked.pk).lock_for_translation()
+        Version.objects.get(pk=published.pk).publish()
+
+        assert Version.objects.get(pk=locked.pk).status == Version.Status.PENDING
+        assert Version.objects.get(pk=published.pk).status == Version.Status.CURRENT

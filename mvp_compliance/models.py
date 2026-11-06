@@ -859,6 +859,7 @@ class Version(models.Model):
             stored = self.stored_row()
             if stored is None or stored["status"] != self.Status.DRAFT:
                 raise PublishError(_("This version is no longer a draft."))
+            self.refuse_if_changed_since_read(stored)
             current = document.versions.current().first()
             if current is not None and same_wording(self.markdown, current.markdown):
                 raise PublishError(
@@ -872,6 +873,18 @@ class Version(models.Model):
                     version_pending.send_robust, sender=Version, version=self, by=by
                 )
             )
+
+    def refuse_if_changed_since_read(self, stored: dict) -> None:
+        """Refuse to act on wording this instance does not share with the stored row.
+
+        Args:
+            stored: The row as ``stored_row()`` returned it.
+
+        Raises:
+            PublishError: The stored ``markdown`` or ``summary`` differs from this instance's.
+        """
+        if stored["markdown"] != self.markdown or stored["summary"] != self.summary:
+            raise PublishError(_("This version has changed since it was read."))
 
     def return_to_draft(self, by=None) -> None:
         """Return this pending version to a draft, so its wording can change again.
@@ -969,6 +982,7 @@ class Version(models.Model):
             stored = self.stored_row()
             if stored is None or stored["status"] not in self.UNPUBLISHED:
                 raise PublishError(_("This version is no longer a draft."))
+            self.refuse_if_changed_since_read(stored)
             # Under the same lock, because a draft that duplicates today's version in
             # force stops being a duplicate once somebody publishes another one.
             current = document.versions.current().first()
