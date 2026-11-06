@@ -2822,3 +2822,305 @@ class TestSkipAgreementPermission:
         )
 
         assert user.has_perm("mvp_compliance.skip_agreement")
+
+
+def lock(version):
+    """Lock a draft for translation, as the admin's lock page will."""
+    version.lock_for_translation()
+    return version
+
+
+@pytest.mark.django_db
+class TestPendingVersion:
+    """A draft locked for translation: frozen wording, no standing (FS-015)."""
+
+    def test_the_factory_builds_a_pending_version_with_no_standing(self):
+        version = VersionFactory(pending=True)
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.PENDING
+
+    def test_locking_a_draft_makes_it_pending_with_no_standing(self, draft):
+        draft.lock_for_translation()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.PENDING
+        assert draft.number is None
+        assert draft.published_at is None
+        assert draft.html == ""
+        assert draft.publisher is None
+        assert draft.publisher_subject == ""
+
+    def test_locking_renders_nothing(self, draft):
+        draft.lock_for_translation()
+
+        assert Version.objects.get(pk=draft.pk).html == ""
+
+    def test_locking_consumes_no_number(self, document):
+        first = VersionFactory(document=document)
+        lock(first)
+        second = VersionFactory(document=document, markdown="Second wording")
+
+        second.publish()
+
+        assert second.number.endswith(".1")
+
+    @pytest.mark.parametrize("start", ["pending", "current", "superseded"])
+    def test_locking_anything_but_a_draft_is_refused_and_writes_nothing(self, start):
+        version = VersionFactory()
+        if start == "pending":
+            lock(version)
+        else:
+            version.publish()
+            if start == "superseded":
+                VersionFactory(document=version.document, markdown="Newer").publish()
+        before = Version.objects.filter(pk=version.pk).values().get()
+
+        with pytest.raises(PublishError):
+            version.lock_for_translation()
+
+        assert Version.objects.filter(pk=version.pk).values().get() == before
+
+    def test_locking_a_draft_with_empty_output_is_refused(self, document):
+        version = VersionFactory(document=document, markdown="   \n\n   ")
+
+        with pytest.raises(PublishError):
+            version.lock_for_translation()
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.DRAFT
+
+    def test_locking_a_draft_that_repeats_the_version_in_force_is_refused(
+        self, published_version
+    ):
+        repeat = VersionFactory(
+            document=published_version.document,
+            markdown=f"{published_version.markdown}\r\n",
+        )
+
+        with pytest.raises(PublishError):
+            repeat.lock_for_translation()
+
+        repeat.refresh_from_db()
+        assert repeat.status == Version.Status.DRAFT
+
+    def test_locking_rechecks_the_stored_status_under_the_lock(self, draft):
+        stale = Version.objects.get(pk=draft.pk)
+        draft.publish()
+
+        with pytest.raises(PublishError):
+            stale.lock_for_translation()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.CURRENT
+
+    def test_a_pending_wording_is_refused_a_change_through_save(self, draft):
+        lock(draft)
+        draft.markdown = "Changed"
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        assert Version.objects.get(pk=draft.pk).markdown != "Changed"
+
+    def test_a_pending_summary_is_refused_a_change_through_save(self, draft):
+        lock(draft)
+        draft.summary = "Changed"
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        assert Version.objects.get(pk=draft.pk).summary == ""
+
+    def test_a_pending_document_is_refused_a_change_through_save(self, draft):
+        lock(draft)
+        draft.document = DocumentFactory()
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+    @pytest.mark.parametrize("field", ["markdown", "summary"])
+    def test_a_pending_wording_is_refused_a_change_through_update(self, draft, field):
+        lock(draft)
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=draft.pk).update(**{field: "Changed"})
+
+        assert getattr(Version.objects.get(pk=draft.pk), field) != "Changed"
+
+    def test_a_pending_document_is_refused_a_change_through_update(self, draft):
+        lock(draft)
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=draft.pk).update(document=DocumentFactory())
+
+    def test_a_pending_wording_is_refused_a_change_through_bulk_update(self, draft):
+        lock(draft)
+        draft.markdown = "Changed"
+
+        with pytest.raises(PublishedVersionError), transaction.atomic():
+            Version.objects.bulk_update([draft], ["markdown"])
+
+        assert Version.objects.get(pk=draft.pk).markdown != "Changed"
+
+    def test_an_update_over_a_pending_row_and_a_draft_writes_neither(self, document):
+        pending = lock(VersionFactory(document=document))
+        draft = VersionFactory(document=document, markdown="Another draft")
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(document=document).update(markdown="Changed")
+
+        draft.refresh_from_db()
+        assert draft.markdown == "Another draft"
+        assert Version.objects.get(pk=pending.pk).markdown != "Changed"
+
+    def test_a_draft_beside_a_pending_version_is_still_editable(self, document):
+        lock(VersionFactory(document=document))
+        draft = VersionFactory(document=document, markdown="Another draft")
+
+        draft.markdown = "Revised"
+        draft.save()
+
+        assert Version.objects.get(pk=draft.pk).markdown == "Revised"
+
+    def test_a_published_version_is_still_refused_every_frozen_field(
+        self, published_version
+    ):
+        published_version.html = "<p>Other</p>"
+
+        with pytest.raises(PublishedVersionError):
+            published_version.save()
+
+    def test_a_pending_version_saves_when_nothing_frozen_changed(self, draft):
+        lock(draft)
+
+        draft.save()
+
+        assert Version.objects.get(pk=draft.pk).status == Version.Status.PENDING
+
+    def test_a_pending_version_can_be_deleted(self, draft):
+        lock(draft)
+        pk = draft.pk
+
+        draft.delete()
+
+        assert not Version.objects.filter(pk=pk).exists()
+
+    def test_a_pending_version_can_be_deleted_through_the_queryset(self, draft):
+        lock(draft)
+
+        Version.objects.filter(pk=draft.pk).delete()
+
+        assert not Version.objects.filter(pk=draft.pk).exists()
+
+    def test_publishing_a_pending_version_publishes_it_as_a_draft_is(self, document):
+        version = lock(VersionFactory(document=document, markdown="# Heading"))
+
+        version.publish()
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.CURRENT
+        assert version.number is not None
+        assert version.published_at is not None
+        assert "<h1>Heading</h1>" in version.html
+
+    def test_publishing_a_pending_version_supersedes_the_one_in_force(
+        self, published_version
+    ):
+        pending = lock(
+            VersionFactory(document=published_version.document, markdown="Newer")
+        )
+
+        pending.publish()
+
+        published_version.refresh_from_db()
+        assert published_version.status == Version.Status.SUPERSEDED
+
+    def test_publishing_a_pending_version_that_repeats_the_one_in_force_is_refused(
+        self, document
+    ):
+        pending = lock(VersionFactory(document=document, markdown="Same"))
+        VersionFactory(document=document, markdown="Same").publish()
+
+        with pytest.raises(PublishError):
+            pending.publish()
+
+        pending.refresh_from_db()
+        assert pending.status == Version.Status.PENDING
+
+    def test_publishing_the_draft_leaves_the_pending_version_pending(self, document):
+        pending = lock(VersionFactory(document=document, markdown="Pending"))
+        draft = VersionFactory(document=document, markdown="Draft")
+
+        draft.publish()
+
+        pending.refresh_from_db()
+        assert pending.status == Version.Status.PENDING
+
+    def test_returning_a_pending_version_to_draft_makes_it_editable_again(self, draft):
+        lock(draft)
+
+        draft.return_to_draft()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.DRAFT
+        draft.markdown = "Revised"
+        draft.save()
+        assert Version.objects.get(pk=draft.pk).markdown == "Revised"
+
+    @pytest.mark.parametrize("start", ["draft", "current", "superseded"])
+    def test_returning_anything_but_a_pending_version_is_refused(self, start):
+        version = VersionFactory()
+        if start != "draft":
+            version.publish()
+        if start == "superseded":
+            VersionFactory(document=version.document, markdown="Newer").publish()
+        before = Version.objects.filter(pk=version.pk).values().get()
+
+        with pytest.raises(PublishError):
+            version.return_to_draft()
+
+        assert Version.objects.filter(pk=version.pk).values().get() == before
+
+    def test_returning_rechecks_the_stored_status_under_the_lock(self, draft):
+        lock(draft)
+        stale = Version.objects.get(pk=draft.pk)
+        draft.publish()
+
+        with pytest.raises(PublishError):
+            stale.return_to_draft()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.CURRENT
+
+    def test_a_pending_version_is_not_published(self, draft):
+        lock(draft)
+
+        assert draft.is_published is False
+        assert draft.publisher_display is None
+
+    def test_the_querysets_tell_pending_from_draft_and_published(self, document):
+        draft = VersionFactory(document=document, markdown="Draft")
+        pending = lock(VersionFactory(document=document, markdown="Pending"))
+        current = VersionFactory(document=document, markdown="Current")
+        current.publish()
+
+        assert list(Version.objects.pending()) == [pending]
+        assert list(Version.objects.drafts()) == [draft]
+        assert list(Version.objects.published()) == [current]
+
+    def test_a_status_other_than_the_four_is_refused_by_the_database(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(status="locked")
+
+    def test_a_pending_row_carrying_a_number_is_refused_by_the_database(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(
+                status="pending", number="2026.1"
+            )
+
+    def test_a_pending_row_carrying_html_is_refused_by_the_database(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(
+                status="pending", html="<p>x</p>"
+            )
