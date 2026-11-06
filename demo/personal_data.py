@@ -2,7 +2,6 @@
 
 from django.contrib.auth import get_user_model
 from django.db import DatabaseError, transaction
-from django.utils.translation import gettext_lazy as _
 
 from demo.models import Upload
 from mvp_compliance.personal_data import PersonalData
@@ -11,8 +10,8 @@ from mvp_compliance.personal_data import PersonalData
 class Profile(PersonalData):
     """The person's own account: always one record."""
 
-    heading = _("Your profile")
-    description = _("The name, address and date of the account you signed up with.")
+    heading = "Your profile"
+    description = "The name, address and date of the account you signed up with."
     model = get_user_model()
     fields = ["username", "email", "date_joined"]
     single = True
@@ -25,8 +24,8 @@ class Profile(PersonalData):
 class Uploads(PersonalData):
     """The files the person uploaded, each with the licence they gave it."""
 
-    heading = _("Files you uploaded")
-    description = _("Every file you uploaded, with its title and licence.")
+    heading = "Files you uploaded"
+    description = "Every file you uploaded, with its title and licence."
     model = Upload
     fields = ["title", "licence", "uploaded", "file"]
 

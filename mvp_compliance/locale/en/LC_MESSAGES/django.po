@@ -4,7 +4,7 @@
 #
 # Regenerate from the repository root, not from inside the package:
 #
-#     poetry run python manage.py makemessages -l en --no-obsolete
+#     poetry run python manage.py makemessages -l en --no-obsolete --ignore demo
 #
 # Run anywhere else and every file reference below is rewritten relative to
 # that directory instead, so the whole file diffs without a single string

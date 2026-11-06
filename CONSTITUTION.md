@@ -45,7 +45,10 @@ acronyms are exempt. A package ships a base English (`en`) catalog and a `locale
 host projects can compile or extend translations. CI runs `makemessages` clean over the source as
 the i18n gate; correct wrapper usage is otherwise enforced by review, and a hard-coded user-visible
 string in a PR is a blocking comment. A package with no user-facing strings satisfies this
-trivially.
+trivially. The article covers the package only. The `demo/` app is never translated: it
+uses plain strings, `makemessages` is run with `--ignore demo`, and translation markup in `demo/`
+is a blocking comment in review. Demo wiring that lets the package's own translations be seen
+working (`LocaleMiddleware`, `set_language`) stays.
 
 ### Article IX — Data-model conventions (Django)
 Every model field is a deliberate indexing decision. Because consumers of a published package cannot
