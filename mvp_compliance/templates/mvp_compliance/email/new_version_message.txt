@@ -1,0 +1,9 @@
+{% load i18n mvp_email %}{% autoescape off %}{% email_url document_path as document_url %}{% if replaced %}{% blocktranslate with name=version.document.name date=version.published_at|date:"DATE_FORMAT" %}A new version of {{ name }} applies from {{ date }}.{% endblocktranslate %}{% else %}{% blocktranslate with name=version.document.name date=version.published_at|date:"DATE_FORMAT" %}{{ name }} is published and applies from {{ date }}.{% endblocktranslate %}{% endif %}
+{% if version.summary %}
+{% translate "What changed" %}:
+
+{{ version.summary }}
+{% endif %}
+{% translate "Read it" %}: {{ document_url }}
+{% if comparison_path %}{% email_url comparison_path as comparison_url %}{% blocktranslate with number=replaced.number %}Compare it with version {{ number }}{% endblocktranslate %}: {{ comparison_url }}
+{% endif %}{% endautoescape %}

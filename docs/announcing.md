@@ -3,8 +3,9 @@
 When a version is published, this package sends one signal, `version_published`, so a host
 project can act on it — email the owners, post to a channel, write its own audit trail —
 without watching for it. The package sends nothing itself: no email, no message, no request.
-It can write the text of an email for you, as described [below](#a-ready-made-email), but
-rendering is not sending, and what happens next is the host project's receiver.
+It can write an email for you, to [the people running the site](#a-ready-made-email) or to
+[the people who use it](#an-email-to-the-people-who-use-the-site), but rendering is not
+sending, and what happens next is the host project's receiver.
 
 ```python
 from django.dispatch import receiver
@@ -124,3 +125,74 @@ Put a template at the same path in one of your own template directories, ahead o
 package's, and yours is used. Each receives `version`, `replaced` (`None` for a first version)
 and `admin_url`. Keep `{% autoescape off %}` around the text, since it is not HTML. The
 package's own strings are in English; the language is the one active when the function is called.
+
+## An email to the people who use the site
+
+When a document the site's users agreed to changes, they often want to read the new wording
+before they carry on. `render_new_version_email` writes that email: a subject, a plain-text body
+and an HTML body. It sends nothing and chooses no recipient. Who hears about which document is
+your decision.
+
+```python
+from django.core.mail import EmailMultiAlternatives
+from django.dispatch import receiver
+
+from mvp_compliance.emails import render_new_version_email
+from mvp_compliance.signals import version_published
+
+
+@receiver(version_published)
+def tell_the_users(sender, version, replaced, **kwargs):
+    subject, text, html = render_new_version_email(version, replaced)
+    message = EmailMultiAlternatives(subject, text, None, bcc=recipients_for(version))
+    message.attach_alternative(html, "text/html")
+    message.send()
+```
+
+`recipients_for` stands for your own choice of who is told, such as everyone who agreed to an
+earlier version of the document. Send to them in `bcc`, or one message each, so nobody sees the
+others' addresses. On a site with many users, have the receiver put the sending on a task queue,
+as [Where it runs](#where-it-runs) says.
+
+The email says:
+
+- which document changed, and the date the new version applies from
+- what changed, when the person who prepared the version wrote a summary, with its line breaks
+  kept. With no summary the email has no part about what changed.
+- a link to the document's page, and, when the version replaced another, a link to the page
+  comparing the two
+
+It never names who published the version.
+
+### Where its links point
+
+The HTML body extends django-mvp's email layout, `mvp/email/base.html`, so it carries your site's
+name, logo and colours, and its links are full addresses. Both bodies take the address the way
+that layout does, described in
+[django-mvp's email documentation](https://github.com/django-mvp/django-mvp/blob/main/docs/developer/email.md#give-a-link-an-absolute-address):
+
+- **With a request**, passed as `render_new_version_email(version, replaced, request=request)`,
+  the links use that request's scheme and host.
+- **Without one**, as in a signal receiver, they use the domain of the current `Site`. Install
+  `django.contrib.sites`, set `SITE_ID` and give that `Site` your domain, or rendering raises
+  `ImproperlyConfigured`.
+
+The links point at the pages under `mvp_compliance.urls`, so the project must mount them.
+
+### Changing its wording or its look
+
+The email is three templates, and the text in each is translatable:
+
+- `mvp_compliance/email/new_version_subject.txt`
+- `mvp_compliance/email/new_version_message.txt`
+- `mvp_compliance/email/new_version_message.html`
+
+Put a template at the same path in one of your own template directories, ahead of the package's,
+and yours is used. Each receives `version`, `replaced` (`None` for a first version),
+`document_path` and `comparison_path` (`None` for a first version). The two paths are relative,
+so turn them into full addresses with `{% email_url %}` after `{% load mvp_email %}`. Keep
+`{% autoescape off %}` around the plain-text templates. To change how every email on the site
+looks, replace django-mvp's layout rather than this template.
+
+The subject is always a single line, whatever the document is called. The plain-text body carries
+the document's name as written, and the HTML body escapes it.

@@ -43,3 +43,29 @@ msgstr ""
 
 msgid "Title"
 msgstr "Titel"
+
+#, python-format
+msgid "%(name)s has changed"
+msgstr "%(name)s wurde geändert"
+
+#, python-format
+msgid "%(name)s is published"
+msgstr "%(name)s ist veröffentlicht"
+
+#, python-format
+msgid "A new version of %(name)s applies from %(date)s."
+msgstr "Eine neue Fassung von %(name)s gilt ab %(date)s."
+
+#, python-format
+msgid "%(name)s is published and applies from %(date)s."
+msgstr "%(name)s ist veröffentlicht und gilt ab %(date)s."
+
+msgid "What changed"
+msgstr "Was sich geändert hat"
+
+msgid "Read it"
+msgstr "Lesen"
+
+#, python-format
+msgid "Compare it with version %(number)s"
+msgstr "Mit Version %(number)s vergleichen"

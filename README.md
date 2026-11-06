@@ -145,7 +145,7 @@ The standing directions this package steers by are in [GOALS.md](https://github.
 
 - Python 3.12 or later.
 - Django 5.2, 6.0 or 6.1.
-- [django-mvp](https://github.com/django-mvp/django-mvp) 0.30 or later, which the pages render in.
+- [django-mvp](https://github.com/django-mvp/django-mvp) 0.34 or later, which the pages and the email to the site's users render in.
 
 The CI matrix is the authoritative statement of what is supported.
 
@@ -549,7 +549,7 @@ the page and its menu entry do not exist. See
   a document, the page that asks a person to agree, and the page where a signed-in person sees
   what they agreed to.
 - [docs/announcing.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/announcing.md) — the signal sent when a version is published, what it
-  carries, and what happens when a receiver fails.
+  carries, what happens when a receiver fails, and the two ready-made emails to send from it.
 - [docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md) — the admin surface: the editor and what it offers,
   the form, and reading a version back the way the public will see it.
 - [docs/disclosure.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/disclosure.md) — producing everything held about a person: the

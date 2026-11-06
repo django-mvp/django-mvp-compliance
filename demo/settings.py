@@ -4,6 +4,7 @@ Demonstration target, never deployed. It runs on the development server so the
 components can be looked at in a browser while they are being built.
 """
 
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "mvp",
     "mvp_sphinx",
     "daisy_cotton",
@@ -151,6 +153,20 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 STATIC_URL = "/static/"
+
+# The email to the site's users is rendered in a signal receiver, with no request, so its links
+# take their address from this site. seed_demo sets its domain.
+SITE_ID = 1
+
+# Where the demo's email goes. By default it is printed to the console. Set EMAIL_BACKEND to
+# "django.core.mail.backends.smtp.EmailBackend", with EMAIL_HOST and EMAIL_PORT, to send it to a
+# mail catcher such as Mailpit instead.
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
+DEFAULT_FROM_EMAIL = "legal@example.com"
 
 # Where the files people upload to the demo are stored. Git-ignored.
 MEDIA_ROOT = BASE_DIR / "demo_media"

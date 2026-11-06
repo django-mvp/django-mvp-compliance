@@ -6,15 +6,18 @@ import pytest
 from django.conf import settings
 from django.contrib import admin
 from django.core import mail
-from django.test import override_settings
-from django.urls import path
+from django.test import RequestFactory, override_settings
+from django.urls import include, path
 from django.utils import translation
 
-from mvp_compliance.emails import render_publication_email
+from mvp_compliance.emails import render_new_version_email, render_publication_email
 from tests.factories import DocumentFactory, UserFactory, VersionFactory
 from tests.test_admin import PACKAGE_DIR, catalog_entries
 
-urlpatterns = [path("admin/", admin.site.urls)]
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("legal/", include("mvp_compliance.urls")),
+]
 
 SITE_URL = "https://example.com"
 
@@ -27,13 +30,15 @@ VARIABLE_RE = re.compile(r"{{\s*(\w+)\s*}}")
 
 
 def email_template_strings() -> set[str]:
-    """Every translatable string in the two email templates, as a catalog msgid.
+    """Every translatable string in the email templates, as a catalog msgid.
 
     A ``blocktranslate`` body is turned into the msgid ``makemessages`` writes
     for it, each ``{{ name }}`` becoming ``%(name)s``.
     """
     strings: set[str] = set()
-    for path_ in EMAIL_TEMPLATES.glob("*.txt"):
+    for path_ in sorted(EMAIL_TEMPLATES.glob("*.txt")) + sorted(
+        EMAIL_TEMPLATES.glob("*.html")
+    ):
         text = path_.read_text(encoding="utf-8")
         strings.update(match.group(2) for match in TRANSLATE_TAG_RE.finditer(text))
         for block in BLOCKTRANSLATE_RE.findall(text):
@@ -157,6 +162,162 @@ class TestRenderPublicationEmail:
         assert version.number in subject
         assert "ada" in body
         assert replaced.number in body
+
+
+def site_request():
+    """A request to the site, so the email's addresses use its host."""
+    return RequestFactory().get("/", HTTP_HOST="testserver")
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestRenderNewVersionEmail:
+    def test_returns_a_subject_a_text_body_and_an_html_body_and_sends_nothing(
+        self,
+    ) -> None:
+        replaced, version = publish_two()
+
+        subject, text, html = render_new_version_email(
+            version, replaced, request=site_request()
+        )
+
+        assert "Terms of service" in subject
+        assert "Terms of service" in text
+        assert "Terms of service" in html
+        assert mail.outbox == []
+
+    def test_both_bodies_carry_the_summary_of_what_changed(self) -> None:
+        document = DocumentFactory(name="Terms of service")
+        VersionFactory(document=document, markdown="First wording").publish()
+        version = VersionFactory(
+            document=document,
+            markdown="Second wording",
+            summary="We now keep your data for one year.\nNothing else changed.",
+        )
+        version.publish()
+
+        _subject, text, html = render_new_version_email(
+            version, document.versions.get(number__lt=version.number), site_request()
+        )
+
+        assert "We now keep your data for one year.\nNothing else changed." in text
+        assert "We now keep your data for one year.<br>Nothing else changed." in html
+
+    def test_a_version_without_a_summary_has_no_section_about_what_changed(
+        self,
+    ) -> None:
+        replaced, version = publish_two()
+
+        _subject, text, html = render_new_version_email(
+            version, replaced, site_request()
+        )
+
+        assert "What changed" not in text
+        assert "What changed" not in html
+
+    def test_both_bodies_link_to_the_document_and_the_comparison_in_full(
+        self,
+    ) -> None:
+        replaced, version = publish_two()
+        document_url = f"http://testserver/legal/{version.document.slug}/"
+        comparison_url = (
+            f"{document_url}compare/?from={replaced.number}&to={version.number}"
+        )
+
+        _subject, text, html = render_new_version_email(
+            version, replaced, site_request()
+        )
+
+        assert document_url in text
+        assert comparison_url in text
+        assert f'href="{document_url}"' in html
+        assert f'href="{comparison_url.replace("&", "&amp;")}"' in html
+
+    def test_a_first_version_links_to_the_document_and_offers_no_comparison(
+        self,
+    ) -> None:
+        version = VersionFactory(document=DocumentFactory(slug="terms"))
+        version.publish()
+
+        _subject, text, html = render_new_version_email(version, None, site_request())
+
+        assert "http://testserver/legal/terms/" in text
+        assert 'href="http://testserver/legal/terms/"' in html
+        assert "/compare/" not in text + html
+
+    def test_the_html_body_is_drawn_in_the_django_mvp_email_layout(self) -> None:
+        replaced, version = publish_two()
+
+        _subject, _text, html = render_new_version_email(
+            version, replaced, site_request()
+        )
+
+        assert html.lstrip().startswith("<!DOCTYPE html>")
+        assert "mvp-email-card" in html
+
+    def test_the_email_names_nobody_who_published_the_version(self) -> None:
+        replaced, version = publish_two(publisher=UserFactory(username="ada"))
+
+        subject, text, html = render_new_version_email(
+            version, replaced, site_request()
+        )
+
+        assert "ada" not in subject + text + html
+
+    def test_a_name_with_a_line_break_and_markup_is_escaped_only_in_the_html(
+        self,
+    ) -> None:
+        name = 'Terms\r\nBcc: x@example.com <b>&"of" use</b>'
+        replaced, version = publish_two(name=name)
+
+        subject, text, html = render_new_version_email(
+            version, replaced, site_request()
+        )
+
+        assert "\n" not in subject
+        assert "\r" not in subject
+        assert name in text
+        assert "<b>&" not in html
+        assert "&lt;b&gt;&amp;" in html
+
+    def test_project_templates_at_the_same_paths_replace_the_packages(
+        self, tmp_path
+    ) -> None:
+        directory = tmp_path / "mvp_compliance" / "email"
+        directory.mkdir(parents=True)
+        (directory / "new_version_subject.txt").write_text(
+            "Ours: {{ version.document.name }}"
+        )
+        (directory / "new_version_message.txt").write_text("Ours: {{ document_path }}")
+        (directory / "new_version_message.html").write_text(
+            "<p>Ours: {{ comparison_path }}</p>"
+        )
+        templates = [{**settings.TEMPLATES[0], "DIRS": [tmp_path]}]
+        replaced, version = publish_two()
+
+        with override_settings(TEMPLATES=templates):
+            subject, text, html = render_new_version_email(
+                version, replaced, site_request()
+            )
+
+        slug = version.document.slug
+        assert subject == "Ours: Terms of service"
+        assert text == f"Ours: /legal/{slug}/"
+        assert html == (
+            f"<p>Ours: /legal/{slug}/compare/"
+            f"?from={replaced.number}&amp;to={version.number}</p>"
+        )
+
+    def test_the_email_renders_in_the_active_language(self) -> None:
+        replaced, version = publish_two()
+
+        english = render_new_version_email(version, replaced, site_request())
+        with translation.override("de"):
+            german = render_new_version_email(version, replaced, site_request())
+
+        for english_part, german_part in zip(english, german, strict=True):
+            assert german_part != english_part
+            assert "Terms of service" in german_part
 
 
 class TestEmailCatalog:
