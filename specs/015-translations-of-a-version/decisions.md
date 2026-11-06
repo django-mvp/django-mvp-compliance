@@ -49,7 +49,28 @@ draft version therefore goes live with the version, with no hook on `Version.pub
 Django's built-in default lists every language it ships, and no site offers all of them. With no
 override, nothing about translations appears.
 
-## D5 — The frozen-field guard is shared by `Version` and `Translation`
+## D5 — `Translation` has its own guard, and `Version` is left alone
 
-Extracted into a base rather than copied, so the rule that a published wording never changes is
-enforced by one piece of code.
+A shared abstract base was planned and dropped at design review. Django removes abstract bases from
+the models it builds for migrations, so a guard that reaches its frozen fields through the base
+would stop refusing writes there, or crash. `Translation`'s guard names `Translation`, as
+`Version`'s names `Version` and `Acceptance`'s names `Acceptance`.
+
+**ADR:** none — it applies an existing ADR (0004) to a new model.
+
+## D6 — Indexes on `Translation`
+
+The partial unique on `(version, language)` for the current row serves `live()` and the version
+page. A composite `(version, language, published_at)` serves the history and the `replaced_at`
+subquery. `publisher_subject` is indexed as on `Version`, for finding what a removed account put
+live. `language` gets no index of its own: nothing filters on it without the version.
+
+**ADR:** none — local to this model.
+
+## D7 — Discarding a draft version takes its translations without their permissions
+
+The admin checks delete permission on everything a delete removes. A translation put live on a
+draft is not deletable by itself, so the version's discard would be refused. `VersionAdmin` drops
+translations from that check: discarding a draft is the version's own permission (FR-006).
+
+**ADR:** none — local to this admin.

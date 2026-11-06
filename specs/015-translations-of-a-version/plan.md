@@ -5,9 +5,7 @@ Spec: [spec.md](./spec.md) · Research: [research.md](./research.md) · Tasks: [
 ## Summary
 
 One new model, `Translation`, one row per wording of a version in one language, reusing the
-guard, rendering, publisher and admin patterns `Version` already has. The frozen-field guard is
-extracted from `Version` into a shared base so both models use the same code. No reader-facing
-page changes.
+guard, rendering, publisher and admin patterns `Version` already has. `Version` is not changed. No reader-facing page changes.
 
 ## Technical context
 
@@ -20,27 +18,13 @@ Python 3.12+, Django 5.2 / 6.0 / 6.1, uv. No new dependency (research N1). One m
 |---|---|
 | I (test first) | Every behaviour task in `tasks.md` is preceded by its failing test |
 | VIII (i18n) | Every new string marked. `makemessages` over the package stays clean |
-| XI (immutability) | A translation's frozen fields are guarded on the instance and the queryset, by the same code as a version's. Writing a translation never writes to `Version` |
+| XI (immutability) | A translation's frozen fields are guarded on the instance and the queryset, by its own guard naming `Translation`, as `VersionQuerySet` names `Version` (ADR 0004: the guard must hold on historical models in migrations, which carry no abstract base). Writing a translation never writes to `Version` |
 | XII (stored HTML) | HTML is rendered once, when a translation is put live, and stored |
 | XIII (no claim) | No string says a translation governs or is equivalent. The version page says the version's own text governs |
 | XIV (personal data) | `publisher` + `publisher_subject` on `Translation`, with `help_text`, and a CHANGELOG entry naming them |
 | XV (stored data) | The migration creates a table and touches no version or acceptance |
 
 ## Design
-
-### Shared guard — `mvp_compliance/models.py`
-
-Extract from `Version` into an abstract base `FrozenOnPublication(models.Model)` and a
-queryset base `FrozenOnPublicationQuerySet`:
-
-- `frozen_fields()`, `frozen_field_keys()`, `stored_row()`, `refuse_if_published_wording_changed()`,
-  `save()` and `delete()` guards, parameterised by a class attribute `FROZEN_FIELDS` and the
-  error message.
-- Queryset `update()` and `delete()` guards and `published()` / `drafts()` / `current()`.
-
-`Version` keeps its behaviour exactly: `PUBLISHED_FROZEN_FIELDS` becomes its `FROZEN_FIELDS`,
-its manager still forwards explicitly (ADR 0006) and still has `use_in_migrations` (ADR 0004).
-Behaviour-preserving: the existing suite is the proof, and no test is added for it.
 
 ### `Translation`
 
@@ -54,6 +38,8 @@ field. Frozen once published: `version`, `language`, `markdown`, `summary`, `htm
 Constraints: one current row per `(version, language)` (partial unique); a check constraint
 tying status to `published_at` / `html`, as `Version` has. Meta permission
 `("publish_translation", "Can put a translation live")`.
+
+Guards: `save()` / `delete()` on the instance and `update()` / `delete()` / `bulk_create(update_conflicts=...)` on `TranslationQuerySet`, each naming `Translation` directly; refusals raise `PublishedTranslationError`. `same_wording` moves to a module function used by both models. Indexes: the partial unique on `(version, language)` for the current row serves `live()` and the version page; `Meta.indexes` adds `(version, language, published_at)` for the history and `replaced_at` subquery; `publisher_subject` is indexed, as on `Version`, for the account-removed lookup.
 
 Manager `TranslationManager` (explicit forwarding, `use_in_migrations`), queryset adds:
 
@@ -71,10 +57,10 @@ Methods:
   longer a draft (rechecked under `select_for_update()` on the version row).
 - `publish()` supersedes the current row for the same version and language, renders and stores
   `html`, sets `published_at`, `publisher`, `publisher_subject`, inside one transaction.
-- `live_since` property: the later of `published_at` and `version.published_at`, `None` while
-  the version is a draft.
+- `live_since` property: the later of `published_at` and `version.published_at`; `None` while
+  the version is a draft, and when the row was replaced at or before the version's publication.
 - `publisher_display` as on `Version`.
-- `language_name` from `get_language_info`, and `is_offered` for the admin's flag (FR-015).
+- `language_name` from the site's own label in `LANGUAGES`, then `get_language_info`, then the code, and `is_offered` for the admin's flag (FR-015).
 
 `offered_languages()` (module function, read at use): `[]` unless
 `settings.is_overridden("LANGUAGES")`; otherwise `settings.LANGUAGES` without the code
@@ -85,8 +71,7 @@ that language, or in any offered language when `None`. One query.
 
 ### Exceptions
 
-`TranslationError(Exception)` in `exceptions.py`, for a refused create or clean called from
-code. `save()` calls the language check so `objects.create()` refuses too (US-2).
+`TranslationError(Exception)` for a refused create or clean (a language not offered, the main language), and `PublishedTranslationError(Exception)` for a write to a wording once live, in `exceptions.py`. A language dropped from `LANGUAGES` between create and publish is refused at publish with `TranslationError`; `save(update_fields=...)` inside `publish()` skips the check. `save()` calls the language check so `objects.create()` refuses too (US-2).
 
 ### Admin — `mvp_compliance/admin.py`
 
@@ -102,9 +87,8 @@ code. `save()` calls the language check so `objects.create()` refuses too (US-2)
 - `VersionAdmin`: a read-only `translations` field on the version's page listing each offered
   language with the live translation (link), a link to add one, or to correct it, plus any
   kept translation in a language no longer offered, flagged (FR-015). A list filter "Missing a
-  translation" with one choice per offered language and one for any. Neither shown when
-  `offered_languages()` is empty. Query count of the versions list unchanged by the number of
-  translations (prefetch).
+  translation" with one choice per offered language and one for any. The list shows when `offered_languages()` is non-empty or the version has any translation. The filter shows only when a language is offered.
+- `VersionAdmin.get_deleted_objects` drops translations from `perms_needed`: discarding a draft version is the version's own permission, and its translations go with it (FR-006).
 
 ### Docs
 
@@ -128,5 +112,4 @@ docs/authoring.md, docs/models.md, CONTEXT.md, README.md, CHANGELOG.md, specs/00
 
 ## Complexity tracking
 
-The shared guard is the one structural change outside the new code, and it removes the copy
-that a second guarded model would otherwise need.
+None. `Version` is untouched, and `Translation` repeats the guard pattern rather than sharing a base, because a shared abstract base would not survive into migration state.
