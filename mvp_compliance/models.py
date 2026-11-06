@@ -1,13 +1,17 @@
 """Documents and their versions."""
 
 from functools import partial
-from typing import cast
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.translation import (
+    get_language_info,
+    get_supported_language_variant,
+)
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import (
@@ -40,6 +44,55 @@ PENDING_FROZEN_FIELDS = (
     "markdown",
     "summary",
 )
+
+
+def main_language() -> str:
+    """Return the code of the language a version's own wording is in.
+
+    Returns:
+        ``LANGUAGE_CODE`` resolved against the site's ``LANGUAGES``, so ``en-us``
+        stands for ``en``. ``LANGUAGE_CODE`` as written when none matches.
+    """
+    try:
+        return get_supported_language_variant(settings.LANGUAGE_CODE)
+    except LookupError:
+        return settings.LANGUAGE_CODE
+
+
+def language_name(code: str) -> str:
+    """Name a language for a person.
+
+    Args:
+        code: A language code.
+
+    Returns:
+        The label the site gave it in ``LANGUAGES``, else Django's name for it,
+        else the code itself.
+    """
+    sites_own = dict(settings.LANGUAGES)
+    if code in sites_own:
+        return str(sites_own[code])
+    try:
+        return str(get_language_info(code)["name"])
+    except KeyError:
+        return code
+
+
+def offered_languages() -> list[tuple[str, str]]:
+    """Return the languages a version can be translated into.
+
+    Read when called, never when imported. Django's default ``LANGUAGES`` lists
+    every language it ships, so none is offered until the site sets its own.
+
+    Returns:
+        A ``(code, name)`` pair for each language in the site's ``LANGUAGES``
+        except the main language. Empty while ``LANGUAGES`` is not overridden.
+    """
+    # The type stubs leave out ``LazySettings.is_overridden``.
+    if not cast(Any, settings).is_overridden("LANGUAGES"):
+        return []
+    main = main_language()
+    return [(code, str(name)) for code, name in settings.LANGUAGES if code != main]
 
 
 #: A slug is lowercase letters and digits, joined by single hyphens. Django's
