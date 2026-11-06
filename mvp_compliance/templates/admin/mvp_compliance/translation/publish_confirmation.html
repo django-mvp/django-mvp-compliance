@@ -1,0 +1,16 @@
+{% extends "admin/mvp_compliance/version/publish_confirmation.html" %}
+{% load i18n %}
+
+{% block content_title %}
+<h1>{% translate "Put this translation live?" %}</h1>
+{% endblock %}
+
+{% block explanation %}
+{% translate "This will make it the wording readers of this language are served. Once it is live, the wording cannot be changed — a correction is put live as another wording and this one is kept." %}
+{% endblock %}
+
+{% block back_link %}
+<a href="{% url 'admin:mvp_compliance_translation_change' original.pk %}">
+  {% translate "Back" %}
+</a>
+{% endblock %}
