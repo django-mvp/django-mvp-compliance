@@ -52,11 +52,15 @@ class DocumentFactory(factory.django.DjangoModelFactory):
 class VersionFactory(factory.django.DjangoModelFactory):
     """Build a saved :class:`Version`, auto-creating its owning document.
 
-    ``number`` is left unset — the model assigns it in ``save()``.
+    ``number`` is left unset — the model assigns it in ``save()``. The
+    ``pending`` trait builds a draft that has been locked for translation.
     """
 
     class Meta:
         model = Version
+
+    class Params:
+        pending = factory.Trait(status="pending")
 
     document = factory.SubFactory(DocumentFactory)
     markdown = factory.Sequence(lambda n: f"Wording {n}")
