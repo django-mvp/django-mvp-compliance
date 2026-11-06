@@ -755,7 +755,13 @@ class Command(BaseCommand):
                 content_type__app_label="mvp_compliance", codename="skip_agreement"
             )
         )
-        group.user_set.add(get_user_model().objects.get(username=SUPPORT_ACCOUNT))
+        # The accounts that work on documents in the admin are let past too, so
+        # they reach it without first agreeing to what the site publishes.
+        group.user_set.add(
+            *get_user_model().objects.filter(
+                username__in=[SUPPORT_ACCOUNT, "publisher.user", "translator.user"]
+            )
+        )
 
     def make_departed_publisher_document(self):
         """A version whose publisher's account has since been removed."""
