@@ -625,6 +625,16 @@ Removing the account that put a wording live succeeds and leaves the translation
 unchanged: `publisher` becomes empty, `publisher_subject` stays, and `publisher_display` reads
 "Account removed".
 
+### Exceptions
+
+All are in `mvp_compliance.exceptions`, and a refused call writes nothing.
+
+| Exception | Raised when |
+|---|---|
+| `TranslationError` | A translation is created for a version that is still a draft, in the site's main language, or in a language the site does not offer |
+| `PublishedTranslationError` | A wording that has been live is changed or deleted, by `save()`, `update()`, an upsert through `bulk_create()`, or `delete()` |
+| `PublishError` | A translation is put live when it is not a draft, its language is no longer offered, its version is a draft, it renders to nothing, or it says what the current wording says. Also what locking and returning a version raise |
+
 ### Comparing wordings
 
 `mvp_compliance.models.same_wording(one, other)` says whether two Markdown wordings say the same

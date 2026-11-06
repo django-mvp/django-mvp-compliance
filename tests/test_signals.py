@@ -528,7 +528,8 @@ class TestAReceiverTranslatingFromCode:
     def test_a_translation_added_by_a_version_pending_receiver_goes_live_with_the_version(
         self, django_capture_on_commit_callbacks, draft
     ):
-        def translate(sender, version, **kwargs):
+        # The receiver in docs/authoring.md "From code".
+        def translate(sender, version, by, **kwargs):
             translation = Translation.objects.create(
                 version=version, language="de", markdown="Hallo Welt"
             )

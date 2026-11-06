@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   live a translation, with `TranslationForm`, a Translations list on a version's page and a
   **Missing a translation** filter on the versions list. See
   [docs/authoring.md](docs/authoring.md#translating-a-version).
+- Four signals in `mvp_compliance.signals`, each sent once after its change commits:
+  `version_pending`, `version_returned_to_draft`, `translation_published` and
+  `translation_returned_to_draft`. A translation can be added and put live from code, as the admin
+  does. See [docs/announcing.md](docs/announcing.md#every-signal) and
+  [docs/authoring.md](docs/authoring.md#from-code).
 - The `publish_translation` permission, held separately from `publish_version`, for putting a
   translation live.
 - `Translation.publisher` and `Translation.publisher_subject` hold the account that put a wording

@@ -204,6 +204,43 @@ nothing can delete it.
 Putting a translation live records who did it, shown as **Put live by**, and removing that account
 later leaves "Account removed" in its place, as for a version's publisher.
 
+### From code
+
+Everything the admin does to a translation can be done from code, with the same rules and the same
+results. A refused call raises the package's own exception and writes nothing: `TranslationError`
+when a translation cannot be created, and `PublishError` when it cannot be put live.
+
+A site that keeps its translations somewhere else can connect to the signal sent when a version
+becomes pending, add the translations and put them live:
+
+```python
+from django.dispatch import receiver
+
+from mvp_compliance.models import Translation, Version
+from mvp_compliance.signals import version_pending
+
+
+@receiver(version_pending, sender=Version)
+def translate(sender, version, by, **kwargs):
+    translation = Translation.objects.create(
+        version=version, language="de", markdown="Hallo Welt"
+    )
+    translation.publish()
+```
+
+The translation is current as soon as it is put live, and is served once the version is published.
+Nobody is named as having put it live unless the call names an account:
+`translation.publish(publisher=user)`. A correction is another `Translation.objects.create()` for
+the same version and language, put live the same way. The earlier wording is kept as superseded.
+
+Connect the receiver somewhere that runs at startup, such as an `AppConfig.ready()`. The other
+signals, and what each carries, are listed in [announcing.md](announcing.md#every-signal).
+
+A data migration imports `mvp_compliance.models.Translation` and does not use
+`apps.get_model("mvp_compliance", "Translation")`. The model a migration is given is a historical
+copy that carries none of the rules: no check that the version can be translated, no refusal to
+change a wording that has been live, and no rendering when one is put live.
+
 ## Starting the next version from the one in force
 
 Most rewordings are edits to what is already there rather than a rewrite from nothing, so a
