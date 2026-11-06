@@ -918,7 +918,11 @@ class Version(models.Model):
                     status=Translation.Status.DRAFT
                 )
             )
-            Translation.objects.filter(pk__in=[row.pk for row in returned]).update(
+            # The one sanctioned change to a wording put live, so it goes round
+            # the guard on the default manager.
+            Translation._base_manager.filter(
+                pk__in=[row.pk for row in returned]
+            ).update(
                 status=Translation.Status.DRAFT,
                 html="",
                 published_at=None,
@@ -1111,7 +1115,7 @@ TRANSLATION_FROZEN_FIELDS = (
 class TranslationQuerySet(models.QuerySet):
     """Refuses every route that would change or delete a wording that has been live.
 
-    A row is held once it is not a draft and its version is published. Every
+    A row is held once it is not a draft, whatever its version's status. Every
     guard names ``Translation`` rather than ``self.model``, so a historical
     model in a migration is refused the same way
     (docs/adr/0004-migrations-are-the-one-route-immutability-cannot-close.md).
@@ -1121,11 +1125,9 @@ class TranslationQuerySet(models.QuerySet):
         """Narrow to the wordings that can no longer change.
 
         Returns:
-            The rows that are not drafts and whose version is published.
+            The rows that are not drafts, whatever their version's status.
         """
-        return self.exclude(status=Translation.Status.DRAFT).filter(
-            version__status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED]
-        )
+        return self.exclude(status=Translation.Status.DRAFT)
 
     def update(self, **kwargs) -> int:
         """Refuse an update touching a frozen field of a frozen row.
@@ -1579,9 +1581,7 @@ class Translation(models.Model):
             return None
         attnames = [field.attname for field in self.frozen_fields()]
         stored = (
-            Translation.objects.filter(pk=self.pk)
-            .values("status", "version__status", *attnames)
-            .first()
+            Translation.objects.filter(pk=self.pk).values("status", *attnames).first()
         )
         return cast(dict | None, stored)
 
@@ -1593,12 +1593,9 @@ class Translation(models.Model):
             stored: The row as ``stored_row()`` returned it.
 
         Returns:
-            ``True`` when it is not a draft and its version is published.
+            ``True`` when it is not a draft.
         """
-        return stored["status"] != cls.Status.DRAFT and stored["version__status"] in (
-            Version.Status.CURRENT,
-            Version.Status.SUPERSEDED,
-        )
+        return stored["status"] != cls.Status.DRAFT
 
     def refuse_if_live_wording_changed(self, stored: dict) -> None:
         """Refuse a ``save()`` that changes a frozen field of a frozen row.

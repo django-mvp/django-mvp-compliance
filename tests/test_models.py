@@ -3886,16 +3886,15 @@ class TestTranslationImmutability:
 
         assert Translation.objects.filter(pk=live.pk).exists()
 
-    def test_a_wording_put_live_on_a_pending_version_is_not_yet_frozen(
-        self, pending_version
-    ):
+    def test_a_wording_put_live_on_a_pending_version_is_frozen(self, pending_version):
         translation = put_live(TranslationFactory(version=pending_version))
 
-        Translation.objects.filter(pk=translation.pk).update(
-            status="draft", html="", published_at=None, publisher=None
-        )
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=translation.pk).update(
+                status="draft", html="", published_at=None, publisher=None
+            )
 
-        assert Translation.objects.get(pk=translation.pk).status == "draft"
+        assert Translation.objects.get(pk=translation.pk).status == "current"
 
     def test_discarding_a_pending_version_discards_its_translations(
         self, pending_version
@@ -4249,3 +4248,64 @@ class TestReturningToDraftLocksTheVersion:
         row = Translation.objects.get(pk=waiting.pk)
         assert row.status == Translation.Status.DRAFT
         assert row.html == ""
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestPutLiveWordingOnAPendingVersionIsFrozen:
+    """A wording put live never changes, whatever its version's status (FR-005, FR-008)."""
+
+    @pytest.fixture
+    def live(self, pending_version):
+        return put_live(TranslationFactory(version=pending_version, language="de"))
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("markdown", "Changed"),
+            ("summary", "Changed"),
+            ("html", "<script>alert(1)</script>"),
+        ],
+    )
+    def test_saving_a_changed_field_is_refused(self, live, field, value):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+        setattr(live, field, value)
+
+        with pytest.raises(PublishedTranslationError):
+            live.save()
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("markdown", "Changed"),
+            ("summary", "Changed"),
+            ("html", "<script>alert(1)</script>"),
+        ],
+    )
+    def test_updating_a_changed_field_is_refused(self, live, field, value):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=live.pk).update(**{field: value})
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    def test_returning_the_version_to_draft_still_resets_the_wording(
+        self, pending_version, live
+    ):
+        pending_version.return_to_draft()
+
+        row = Translation.objects.get(pk=live.pk)
+        assert row.status == Translation.Status.DRAFT
+        assert row.html == ""
+        assert row.markdown == live.markdown
+
+    def test_a_draft_beside_it_stays_editable(self, pending_version, live):
+        draft = TranslationFactory(version=pending_version, language="fr")
+
+        draft.markdown = "Revised"
+        draft.save()
+
+        assert Translation.objects.get(pk=draft.pk).markdown == "Revised"

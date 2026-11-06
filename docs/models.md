@@ -603,14 +603,16 @@ It costs no extra query however many rows are read.
 
 ### Immutability
 
-Once a wording has been put live and its version is published, its `version`, `language`,
-`markdown`, `summary`, `html`, `published_at`, `publisher` and `publisher_subject` can never
-change, and it cannot be deleted. Only `status` moves, from current to superseded. A draft
-translation, and a wording put live on a version that is still pending, stay editable.
+Once a wording has been put live, whether or not its version is published yet, its `version`,
+`language`, `markdown`, `summary`, `html`, `published_at`, `publisher` and `publisher_subject` can
+never change, and it cannot be deleted. Only `status` moves, from current to superseded. Only a
+draft translation stays editable. The one exception is returning a pending version to draft, which
+returns its translations to draft with it, so they can be read again against the corrected
+version. Discarding a pending version removes its translations with it.
 
 ```python
 translation.markdown = "Revised wording"
-translation.save()  # raises PublishedTranslationError once its version is published
+translation.save()  # raises PublishedTranslationError once it has been put live
 Translation.objects.filter(pk=translation.pk).update(markdown="x")  # same
 translation.delete()  # same
 ```
