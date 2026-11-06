@@ -904,6 +904,9 @@ class Version(models.Model):
 
         with transaction.atomic():
             Document.objects.select_for_update().get(pk=self.document_id)
+            # Translation.publish() locks this row, so one of the two finishes
+            # first and the other reads the outcome.
+            Version.objects.select_for_update().get(pk=self.pk)
             stored = self.stored_row()
             if stored is None or stored["status"] != self.Status.PENDING:
                 raise PublishError(_("This version is no longer locked."))

@@ -1,6 +1,7 @@
 """Tests for mvp_compliance.models."""
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.apps import apps
@@ -10,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, QuerySet
 from django.test import RequestFactory, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -4204,3 +4205,47 @@ class TestStaleInstanceIsRefused:
 
         assert Version.objects.get(pk=locked.pk).status == Version.Status.PENDING
         assert Version.objects.get(pk=published.pk).status == Version.Status.CURRENT
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestReturningToDraftLocksTheVersion:
+    """A translation put live as the version returns is either returned or refused (FR-022)."""
+
+    def test_the_document_then_the_version_are_locked_before_translations_are_read(
+        self, pending_version
+    ):
+        events = []
+        real_select_for_update = QuerySet.select_for_update
+        real_iterator = QuerySet._fetch_all
+
+        def spy_lock(queryset, *args, **kwargs):
+            events.append(("lock", queryset.model))
+            return real_select_for_update(queryset, *args, **kwargs)
+
+        def spy_read(queryset):
+            if queryset.model is Translation and not queryset._result_cache:
+                events.append(("read", queryset.model))
+            return real_iterator(queryset)
+
+        with (
+            patch.object(QuerySet, "select_for_update", spy_lock),
+            patch.object(QuerySet, "_fetch_all", spy_read),
+        ):
+            pending_version.return_to_draft()
+
+        assert events.index(("lock", Document)) < events.index(("lock", Version))
+        assert events.index(("lock", Version)) < events.index(("read", Translation))
+
+    def test_a_translation_put_live_after_the_version_returned_is_refused(
+        self, pending_version
+    ):
+        waiting = TranslationFactory(version=pending_version, language="de")
+        pending_version.return_to_draft()
+
+        with pytest.raises(PublishError):
+            waiting.publish()
+
+        row = Translation.objects.get(pk=waiting.pk)
+        assert row.status == Translation.Status.DRAFT
+        assert row.html == ""
