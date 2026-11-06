@@ -3982,3 +3982,85 @@ class TestHistoricalTranslation:
         historical.objects.filter(pk=draft.pk).update(markdown="Changed")
 
         assert historical.objects.get(pk=draft.pk).markdown == "Changed"
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestMissingTranslation:
+    """Which versions still lack a live translation (FR-011)."""
+
+    def test_it_lists_pending_and_published_versions_and_never_drafts(self, document):
+        draft = VersionFactory(document=document, markdown="Draft")
+        pending = lock(VersionFactory(document=document, markdown="Pending"))
+        current = VersionFactory(document=document, markdown="Current")
+        current.publish()
+        superseded = VersionFactory(document=DocumentFactory())
+        superseded.publish()
+        VersionFactory(document=superseded.document, markdown="Newer").publish()
+
+        missing = set(Version.objects.missing_translation("de"))
+
+        assert draft not in missing
+        assert {pending, current, superseded} <= missing
+
+    def test_a_version_with_a_current_wording_in_the_language_is_not_listed(
+        self, published_version
+    ):
+        put_live(TranslationFactory(version=published_version, language="de"))
+
+        assert published_version not in Version.objects.missing_translation("de")
+
+    def test_a_current_wording_of_a_pending_version_counts(self, pending_version):
+        put_live(TranslationFactory(version=pending_version, language="de"))
+
+        assert pending_version not in Version.objects.missing_translation("de")
+
+    def test_a_draft_wording_does_not_count(self, published_version):
+        TranslationFactory(version=published_version, language="de")
+
+        assert published_version in Version.objects.missing_translation("de")
+
+    def test_another_language_does_not_count(self, published_version):
+        put_live(TranslationFactory(version=published_version, language="fr"))
+
+        assert published_version in Version.objects.missing_translation("de")
+        assert published_version not in Version.objects.missing_translation("fr")
+
+    def test_with_no_language_it_covers_every_offered_language(self):
+        both = VersionFactory()
+        both.publish()
+        only_german = VersionFactory()
+        only_german.publish()
+        none = VersionFactory()
+        none.publish()
+        put_live(TranslationFactory(version=both, language="de"))
+        put_live(TranslationFactory(version=both, language="fr"))
+        put_live(TranslationFactory(version=only_german, language="de"))
+
+        missing = list(Version.objects.missing_translation())
+
+        assert both not in missing
+        assert missing.count(only_german) == 1
+        assert missing.count(none) == 1
+
+    def test_with_no_languages_offered_nothing_is_missing(self, published_version):
+        with override_settings(LANGUAGES=[("en", "English")]):
+            assert not Version.objects.missing_translation().exists()
+
+    def test_it_narrows_a_documents_own_versions(self, document):
+        first = VersionFactory(document=document, markdown="First")
+        first.publish()
+        second = VersionFactory(document=document, markdown="Second")
+        second.publish()
+        put_live(TranslationFactory(version=second, language="de"))
+
+        assert list(document.versions.missing_translation("de")) == [first]
+
+    def test_it_reads_in_one_query(self, published_version):
+        lock(VersionFactory(markdown="Pending"))
+
+        with CaptureQueriesContext(connection) as queries:
+            list(Version.objects.missing_translation())
+            list(Version.objects.missing_translation("de"))
+
+        assert len(queries) == 2
