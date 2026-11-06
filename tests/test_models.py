@@ -31,6 +31,8 @@ from mvp_compliance.models import (
     Version,
     VersionManager,
     keep_or_remove_acceptances,
+    language_name,
+    offered_languages,
 )
 from mvp_compliance.records import produce
 from mvp_compliance.rendering import MarkdownRenderer
@@ -3209,3 +3211,64 @@ class TestPendingIsNotPublished:
         Acceptance.objects.record(user, published_version)
 
         assert Acceptance.objects.for_person(user).filter(version=pending).count() == 0
+
+
+class TestOfferedLanguages:
+    """The languages a site offers translations in (FR-001)."""
+
+    @staticmethod
+    def codes():
+        return [code for code, _name in offered_languages()]
+
+    def test_the_main_language_is_not_offered(self, site_languages):
+        assert self.codes() == ["de", "fr"]
+
+    def test_a_main_language_with_a_region_resolves_against_the_site_list(
+        self, site_languages
+    ):
+        with override_settings(LANGUAGE_CODE="en-us"):
+            assert "en" not in self.codes()
+
+    def test_a_different_main_language_is_the_one_left_out(self, site_languages):
+        with override_settings(LANGUAGE_CODE="de"):
+            assert self.codes() == ["en", "fr"]
+
+    def test_a_main_language_the_site_does_not_list_leaves_every_language_offered(
+        self,
+    ):
+        with override_settings(
+            LANGUAGES=[("de", "German"), ("fr", "French")], LANGUAGE_CODE="en"
+        ):
+            assert self.codes() == ["de", "fr"]
+
+    def test_none_is_offered_while_the_site_has_not_set_its_languages(self):
+        assert self.codes() == []
+
+    def test_each_language_comes_with_the_name_the_site_gave_it(self, site_languages):
+        assert offered_languages() == [("de", "German"), ("fr", "French")]
+
+    def test_the_languages_are_read_when_asked_not_when_imported(self):
+        assert self.codes() == []
+        with override_settings(LANGUAGES=[("en", "English"), ("fr", "French")]):
+            assert self.codes() == ["fr"]
+        assert self.codes() == []
+
+
+class TestLanguageName:
+    """A language is named by the site, then by Django, then by its code."""
+
+    def test_a_code_outside_djangos_list_is_named_by_the_sites_label(self):
+        with override_settings(LANGUAGES=[("en", "English"), ("xx", "Klingon")]):
+            assert language_name("xx") == "Klingon"
+
+    def test_a_code_nobody_labelled_is_named_by_itself(self):
+        with override_settings(LANGUAGES=[("en", "English")]):
+            assert language_name("xx") == "xx"
+
+    def test_the_sites_label_wins_over_djangos_name(self):
+        with override_settings(LANGUAGES=[("en", "English"), ("de", "Deutsch (CH)")]):
+            assert language_name("de") == "Deutsch (CH)"
+
+    def test_a_language_the_site_no_longer_lists_is_named_by_django(self):
+        with override_settings(LANGUAGES=[("en", "English")]):
+            assert language_name("de") == "German"
