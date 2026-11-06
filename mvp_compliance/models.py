@@ -25,7 +25,13 @@ from mvp_compliance.exceptions import (
     TranslationError,
 )
 from mvp_compliance.rendering import get_renderer
-from mvp_compliance.signals import version_published
+from mvp_compliance.signals import (
+    translation_published,
+    translation_returned_to_draft,
+    version_pending,
+    version_published,
+    version_returned_to_draft,
+)
 
 #: Everything a published version carries except its standing. The one change a
 #: published version ever undergoes is draft -> current -> superseded.
@@ -860,6 +866,12 @@ class Version(models.Model):
                 )
             self.status = self.Status.PENDING
             self.save(update_fields=["status"])
+            # Last, as in publish(), so a rollback discards it.
+            transaction.on_commit(
+                partial(
+                    version_pending.send_robust, sender=Version, version=self, by=by
+                )
+            )
 
     def return_to_draft(self, by=None) -> None:
         """Return this pending version to a draft, so its wording can change again.
@@ -883,9 +895,12 @@ class Version(models.Model):
             if stored is None or stored["status"] != self.Status.PENDING:
                 raise PublishError(_("This version is no longer locked."))
             # Read again against the corrected wording before any goes live.
-            Translation.objects.filter(version=self).exclude(
-                status=Translation.Status.DRAFT
-            ).update(
+            returned = list(
+                Translation.objects.filter(version=self).exclude(
+                    status=Translation.Status.DRAFT
+                )
+            )
+            Translation.objects.filter(pk__in=[row.pk for row in returned]).update(
                 status=Translation.Status.DRAFT,
                 html="",
                 published_at=None,
@@ -894,6 +909,25 @@ class Version(models.Model):
             )
             self.status = self.Status.DRAFT
             self.save(update_fields=["status"])
+            # Last, as in publish(), so a rollback discards them all.
+            for row in returned:
+                row.refresh_from_db()
+                transaction.on_commit(
+                    partial(
+                        translation_returned_to_draft.send_robust,
+                        sender=Translation,
+                        translation=row,
+                        by=by,
+                    )
+                )
+            transaction.on_commit(
+                partial(
+                    version_returned_to_draft.send_robust,
+                    sender=Version,
+                    version=self,
+                    by=by,
+                )
+            )
 
     def publish(self, publisher=None) -> None:
         """Make this draft or pending version the version in force.
@@ -1467,6 +1501,7 @@ class Translation(models.Model):
                 Translation.objects.filter(pk=current.pk).update(
                     status=self.Status.SUPERSEDED
                 )
+                current.status = self.Status.SUPERSEDED
             self.html = html
             self.status = self.Status.CURRENT
             self.published_at = timezone.now()
@@ -1480,6 +1515,16 @@ class Translation(models.Model):
                     "publisher",
                     "publisher_subject",
                 ]
+            )
+            # Last, as in Version.publish(), so a rollback discards it.
+            transaction.on_commit(
+                partial(
+                    translation_published.send_robust,
+                    sender=Translation,
+                    translation=self,
+                    publisher=publisher,
+                    replaced=current,
+                )
             )
 
     def save(self, *args, **kwargs) -> None:
