@@ -4064,3 +4064,86 @@ class TestMissingTranslation:
             list(Version.objects.missing_translation("de"))
 
         assert len(queries) == 2
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationFromCode:
+    """The route the admin uses is public: a developer calls it directly (FS-015)."""
+
+    def test_create_then_publish_gives_the_row_the_admin_gives(self, pending_version):
+        translation = Translation.objects.create(
+            version=pending_version, language="de", markdown="Hallo **Welt**"
+        )
+        translation.publish()
+
+        stored = Translation.objects.get(pk=translation.pk)
+        assert stored.status == Translation.Status.CURRENT
+        assert "<strong>Welt</strong>" in stored.html
+        assert stored.published_at is not None
+        assert stored.publisher is None
+        assert stored.publisher_subject == ""
+        nobody_named = VersionFactory()
+        nobody_named.publish()
+        assert stored.publisher_display == nobody_named.publisher_display
+
+    def test_an_account_passed_to_publish_is_the_one_named(self, pending_version, user):
+        translation = Translation.objects.create(
+            version=pending_version, language="de", markdown="Hallo"
+        )
+        translation.publish(publisher=user)
+
+        stored = Translation.objects.get(pk=translation.pk)
+        assert stored.publisher == user
+        assert stored.publisher_subject == Acceptance.subject_of(user)
+
+    def test_a_correction_from_code_keeps_the_earlier_wording(self, pending_version):
+        first = Translation.objects.create(
+            version=pending_version, language="de", markdown="Erster Text"
+        )
+        first.publish()
+        correction = Translation.objects.create(
+            version=pending_version, language="de", markdown="Besserer Text"
+        )
+        correction.publish()
+
+        first.refresh_from_db()
+        correction.refresh_from_db()
+        assert first.status == Translation.Status.SUPERSEDED
+        assert first.markdown == "Erster Text"
+        assert "Erster Text" in first.html
+        assert correction.status == Translation.Status.CURRENT
+
+    @pytest.mark.parametrize(
+        "language", ["fr-ca", "en"], ids=["not-offered", "main-language"]
+    )
+    def test_a_language_not_offered_raises_and_writes_nothing(
+        self, pending_version, language
+    ):
+        with pytest.raises(TranslationError):
+            Translation.objects.create(
+                version=pending_version, language=language, markdown="Hallo"
+            )
+
+        assert not Translation.objects.exists()
+
+    def test_a_draft_version_raises_and_writes_nothing(self, draft):
+        with pytest.raises(TranslationError):
+            Translation.objects.create(version=draft, language="de", markdown="Hallo")
+
+        assert not Translation.objects.exists()
+
+    def test_publishing_an_already_published_row_raises_and_writes_nothing(
+        self, pending_version
+    ):
+        translation = Translation.objects.create(
+            version=pending_version, language="de", markdown="Hallo"
+        )
+        translation.publish()
+        before = Translation.objects.filter(pk=translation.pk).values().get()
+
+        with pytest.raises(PublishError):
+            translation.publish()
+
+        assert Translation.objects.filter(pk=translation.pk).values().get() == before
+        assert Translation.objects.count() == 1
