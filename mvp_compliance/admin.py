@@ -697,6 +697,10 @@ class TranslationAdmin(admin.ModelAdmin):
     list_filter = ["language", "status"]
     search_fields = ["version__document__name"]
 
+    def get_queryset(self, request):
+        """Annotate when each wording was replaced, so the list reads one query for all."""
+        return super().get_queryset(request).with_replaced_at()
+
     @admin.display(description=_("Translating"))
     def translating(self, translation):
         """Say which version and language this wording is for.

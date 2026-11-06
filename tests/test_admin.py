@@ -2601,3 +2601,29 @@ class TestVersionTranslations:
 
         assert "data-translation-kept" not in listed_row(response.content, "de")
         assert "data-translation-kept" not in listed_row(response.content, "fr")
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationChangelistCost:
+    """The translations list costs the same however many rows it shows."""
+
+    def test_the_list_costs_a_fixed_number_of_queries_with_put_live_wordings(
+        self, client, translator, django_assert_num_queries
+    ) -> None:
+        client.force_login(translator)
+        url = reverse("admin:mvp_compliance_translation_changelist")
+
+        def add_put_live(count):
+            for _ in range(count):
+                version = VersionFactory()
+                version.publish()
+                put_live(version, "de")
+
+        add_put_live(1)
+        with CaptureQueriesContext(connection) as at_one:
+            assert client.get(url).status_code == 200
+        add_put_live(4)
+        with django_assert_num_queries(len(at_one.captured_queries)):
+            assert client.get(url).status_code == 200

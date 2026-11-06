@@ -751,7 +751,9 @@ class Version(models.Model):
         ]
 
     def __str__(self) -> str:
-        """Return the document's name with the number, or "(draft)"."""
+        """Return the document's name with the number, or its unpublished state."""
+        if self.status == self.Status.PENDING:
+            return f"{self.document} ({_('locked for translation')})"
         if self.number is None:
             return f"{self.document} ({_('draft')})"
         return f"{self.document} #{self.number}"
@@ -1421,18 +1423,21 @@ class Translation(models.Model):
 
         Returns:
             The later of the moment it was put live and the moment its version
-            was published. ``None`` for a draft, while the version is not
+            was published. Read from ``replaced_at`` when the queryset annotated it. ``None`` for a draft, while the version is not
             published, and for a wording replaced before the version was.
         """
         version_at = self.version.published_at
         if self.status == self.Status.DRAFT or version_at is None:
             return None
-        replaced_at = (
-            Translation.objects.with_replaced_at()
-            .filter(pk=self.pk)
-            .values_list("replaced_at", flat=True)
-            .first()
-        )
+        if hasattr(self, "replaced_at"):
+            replaced_at = self.replaced_at
+        else:
+            replaced_at = (
+                Translation.objects.with_replaced_at()
+                .filter(pk=self.pk)
+                .values_list("replaced_at", flat=True)
+                .first()
+            )
         if replaced_at is not None and replaced_at <= version_at:
             return None
         return max(self.published_at, version_at)

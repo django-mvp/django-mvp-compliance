@@ -18,7 +18,7 @@
 <div id="mvp-compliance-publish-preview">{{ html|safe }}</div>
 <form method="post">
   {% csrf_token %}
-  <input type="submit" value="{% translate 'Publish' %}">
+  <input type="submit" value="{% block submit_label %}{% translate 'Publish' %}{% endblock %}">
 </form>
 <p>
   {% block back_link %}
