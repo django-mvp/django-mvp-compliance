@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content_title %}
+<h1>{% translate "Lock this version for translation?" %}</h1>
+{% endblock %}
+
+{% block content %}
+<p>{{ original }}</p>
+<p>
+  {% translate "Its wording and summary will stop changing so that it can be translated. It stays a draft: no reader sees it, and it can still be discarded or returned to a draft." %}
+</p>
+<div id="mvp-compliance-lock-preview">{{ html|safe }}</div>
+<form method="post">
+  {% csrf_token %}
+  <input type="submit" value="{% translate 'Lock for translation' %}">
+</form>
+<p>
+  <a href="{% url 'admin:mvp_compliance_version_change' original.pk %}">
+    {% translate "Back" %}
+  </a>
+</p>
+{% endblock %}

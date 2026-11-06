@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content_title %}
+<h1>{% translate "Return this version to a draft?" %}</h1>
+{% endblock %}
+
+{% block content %}
+<p>{{ original }}</p>
+<p>
+  {% translate "Its wording can be changed again. Every translation of it that was put live goes back to a draft with its wording kept, and has to be put live again." %}
+</p>
+<form method="post">
+  {% csrf_token %}
+  <input type="submit" value="{% translate 'Return to draft' %}">
+</form>
+<p>
+  <a href="{% url 'admin:mvp_compliance_version_change' original.pk %}">
+    {% translate "Back" %}
+  </a>
+</p>
+{% endblock %}

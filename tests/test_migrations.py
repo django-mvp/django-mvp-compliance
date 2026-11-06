@@ -20,7 +20,8 @@ from django.db.migrations.operations.special import RunPython, RunSQL
 from django.utils import timezone
 
 import mvp_compliance.migrations as migrations_package
-from tests.factories import UserFactory, VersionFactory
+from mvp_compliance.exceptions import PublishedVersionError
+from tests.factories import DocumentFactory, UserFactory, VersionFactory
 
 
 class TestMigrationOperations:
@@ -184,3 +185,50 @@ class TestSummaryColumn:
             list(after.get_model("mvp_compliance", "Acceptance").objects.values())
             == held["Acceptance"]
         )
+
+
+@pytest.mark.django_db
+class TestHistoricalPendingVersion:
+    """The historical model carries the pending guard too (docs/adr/0004)."""
+
+    @pytest.fixture
+    def historical(self):
+        loader = MigrationLoader(connection)
+        (leaf,) = loader.graph.leaf_nodes(app="mvp_compliance")
+        return loader.project_state(leaf).apps.get_model("mvp_compliance", "Version")
+
+    def test_a_migration_cannot_change_a_pending_rows_wording(self, historical):
+        version = VersionFactory()
+        version.lock_for_translation()
+
+        with pytest.raises(PublishedVersionError):
+            historical.objects.filter(pk=version.pk).update(markdown="Changed")
+
+        assert historical.objects.get(pk=version.pk).markdown == version.markdown
+
+    def test_a_migration_cannot_change_a_pending_rows_summary_or_document(
+        self, historical
+    ):
+        version = VersionFactory()
+        version.lock_for_translation()
+
+        with pytest.raises(PublishedVersionError):
+            historical.objects.filter(pk=version.pk).update(summary="Changed")
+        with pytest.raises(PublishedVersionError):
+            historical.objects.filter(pk=version.pk).update(
+                document_id=DocumentFactory().pk
+            )
+
+    def test_a_migration_still_refuses_a_published_rows_wording(self, historical):
+        version = VersionFactory()
+        version.publish()
+
+        with pytest.raises(PublishedVersionError):
+            historical.objects.filter(pk=version.pk).update(html="<p>Other</p>")
+
+    def test_a_migration_can_edit_a_draft(self, historical):
+        version = VersionFactory()
+
+        historical.objects.filter(pk=version.pk).update(markdown="Changed")
+
+        assert historical.objects.get(pk=version.pk).markdown == "Changed"

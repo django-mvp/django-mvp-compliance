@@ -1,0 +1,25 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+  {% if change %}
+    <li>
+      <a href="{% url opts|admin_urlname:'preview' original.pk %}" class="button">
+        {% translate "Preview" %}
+      </a>
+    </li>
+    {% if original.status == "draft" and perms.mvp_compliance.publish_translation %}
+    <li>
+      <a href="{% url opts|admin_urlname:'publish' original.pk %}" class="button">
+        {% translate "Put live" %}
+      </a>
+    </li>
+    {% endif %}
+    <li>
+      <a href="{% url 'admin:mvp_compliance_version_change' original.version_id %}" class="button">
+        {% translate "Back to the version" %}
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

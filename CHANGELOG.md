@@ -15,10 +15,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document's page and to a comparison with the version it replaced. Its HTML body extends
   django-mvp's email layout, so it is drawn in the site's own look. See
   [docs/announcing.md](docs/announcing.md#an-email-to-the-people-who-use-the-site).
+- A pending state for a version: a draft locked for translation, whose document, wording and
+  summary stop changing. `Version.lock_for_translation()` and `Version.return_to_draft()` move a
+  version in and out of it, and `VersionQuerySet.pending()` and
+  `VersionQuerySet.missing_translation()` find versions. See
+  [docs/models.md](docs/models.md#the-pending-state).
+- `Translation`, a wording of a pending or published version in one language, with
+  `TranslationManager`, `TranslationQuerySet`, `Translation.live_since` and the helpers
+  `offered_languages()`, `language_name()` and `main_language()`. A wording that has been live is
+  never changed or deleted, and a correction is a new wording. `TranslationError` and
+  `PublishedTranslationError` are raised for a refused translation and for a change to a wording
+  that has been live. See [docs/models.md](docs/models.md#translation).
+- Admin pages to lock a version for translation, return it to a draft, and write, preview and put
+  live a translation, with `TranslationForm`, a Translations list on a version's page and a
+  **Missing a translation** filter on the versions list. See
+  [docs/authoring.md](docs/authoring.md#translating-a-version).
+- Four signals in `mvp_compliance.signals`, each sent once after its change commits:
+  `version_pending`, `version_returned_to_draft`, `translation_published` and
+  `translation_returned_to_draft`. A translation can be added and put live from code, as the admin
+  does. See [docs/announcing.md](docs/announcing.md#every-signal) and
+  [docs/authoring.md](docs/authoring.md#from-code).
+- The `publish_translation` permission, held separately from `publish_version`, for putting a
+  translation live.
+- `Translation.publisher` and `Translation.publisher_subject` hold the account that put a wording
+  live, as personal data under the same rules as a version's publisher: removing the account
+  clears `publisher` and keeps `publisher_subject`.
 
 ### Changed
 
 - django-mvp 0.34.0 or later is required, for the email layout the new email extends.
+- `VersionQuerySet.published()` and `Version.is_published` leave out a pending version. They
+  cover current and superseded versions only.
+- `VersionQuerySet.drafts()` leaves out pending versions. It lists plain drafts only, and
+  `pending()` lists the pending ones.
+- `Version.same_wording` is now the function `mvp_compliance.models.same_wording`. The method is
+  removed, with no alias.
 
 ## [v0.5.1] - 2026-10-28
 

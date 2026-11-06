@@ -97,6 +97,26 @@ The one published version of a document that a reader is served today and that a
 measured against. Exactly one per document.
 _Avoid_: latest (a draft can be more recent), active.
 
+**Pending**:
+A draft locked for translation. Its document, wording and summary no longer change, so translators
+work against text that will not move. It is a draft in every other respect: no number, no standing,
+invisible to readers, and it can be discarded. It becomes published like any draft, or returns to a
+draft so its wording can change again.
+_Avoid_: frozen, awaiting, locked (that is what is done to it), outstanding (a different term below).
+
+**Translation**:
+The wording of one pending or published version in one language other than the main language. The
+version's own wording governs and is taken to be in the main language; a translation is never what
+an acceptance points at. Once a wording has been live it is kept as it was, and a correction is a
+new wording that replaces it.
+_Avoid_: reading, locale, copy, version (a translation is not a version).
+
+**Live**:
+A translation's current wording once its version is published. A wording put live on a pending
+version is current but not yet live; it is served from the moment the version is published. It is
+not a synonym for published, which is a state of a version.
+_Avoid_: active, released, in force (that is a version's).
+
 **Superseded**:
 A published version that is no longer current. It stays readable at its own URL forever, because
 someone accepted it and is entitled to see what they accepted.

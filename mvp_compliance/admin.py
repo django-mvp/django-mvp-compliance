@@ -6,14 +6,66 @@ from django.db.models import Count, F, Prefetch, Q
 from django.http import Http404, HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import PublishError
-from mvp_compliance.forms import DisclosureForm, VersionForm
-from mvp_compliance.models import Disclosure, Document, Version, declared_documents
+from mvp_compliance.forms import DisclosureForm, TranslationForm, VersionForm
+from mvp_compliance.models import (
+    Disclosure,
+    Document,
+    Translation,
+    Version,
+    declared_documents,
+    language_name,
+    offered_languages,
+)
 from mvp_compliance.records import produce, resolve_subject
 from mvp_compliance.rendering import get_renderer
+
+
+class MissingTranslationFilter(admin.SimpleListFilter):
+    """Narrow versions to those with no current translation in a language.
+
+    Offered only while the site offers a language, since until then nothing
+    about translations appears.
+    """
+
+    title = _("Missing a translation")
+    parameter_name = "missing_translation"
+
+    def lookups(self, request, model_admin):
+        """Offer any offered language, and one choice for a gap in any of them.
+
+        Args:
+            request: The current request.
+            model_admin: The version admin.
+
+        Returns:
+            The choices, empty (hiding the filter) when no language is offered.
+        """
+        languages = offered_languages()
+        if not languages:
+            return []
+        return [("any", _("Any language")), *languages]
+
+    def queryset(self, request, queryset):
+        """Keep the versions lacking a translation in the chosen language.
+
+        Args:
+            request: The current request.
+            queryset: The versions the list would show.
+
+        Returns:
+            The narrowed queryset, or the original when no choice is made.
+        """
+        choice = self.value()
+        if choice == "any":
+            return queryset.missing_translation()
+        if choice in dict(offered_languages()):
+            return queryset.missing_translation(choice)
+        return queryset
 
 
 @admin.register(Document)
@@ -61,7 +113,12 @@ class DocumentAdmin(admin.ModelAdmin):
         queryset = queryset.annotate(
             published_version_count=Count(
                 "versions",
-                filter=~Q(versions__status=Version.Status.DRAFT),
+                filter=Q(
+                    versions__status__in=[
+                        Version.Status.CURRENT,
+                        Version.Status.SUPERSEDED,
+                    ]
+                ),
                 distinct=True,
             )
         )
@@ -152,8 +209,9 @@ class VersionAdmin(admin.ModelAdmin):
     """Writing, previewing and publishing versions (FS-002).
 
     A version is only added from a document, a published version has no
-    editable form, and publishing has a confirmation page behind the
-    ``publish_version`` permission.
+    editable form, and publishing, locking for translation and returning to
+    draft each have a confirmation page behind the ``publish_version``
+    permission.
     """
 
     form = VersionForm
@@ -163,6 +221,7 @@ class VersionAdmin(admin.ModelAdmin):
         "published_at",
         "published_by",
         "html",
+        "translation_list",
     ]
     list_display = [
         "document",
@@ -172,9 +231,111 @@ class VersionAdmin(admin.ModelAdmin):
         "published_by",
     ]
     list_select_related = ["document", "publisher"]
-    list_filter = ["document", "status"]
+    list_filter = ["document", "status", MissingTranslationFilter]
     search_fields = ["document__name"]
     ordering = ["document", F("published_at").desc(nulls_first=True), "-pk"]
+
+    def get_fields(self, request, obj=None):
+        """Show the translations only on a pending or published version.
+
+        They are listed when the site offers a language or the version has a
+        translation to keep.
+        """
+        fields = list(super().get_fields(request, obj))
+        shown = (
+            obj is not None
+            and obj.status != Version.Status.DRAFT
+            and (offered_languages() or obj.translations.exists())
+        )
+        if not shown and "translation_list" in fields:
+            fields.remove("translation_list")
+        return fields
+
+    @admin.display(description=_("Translations"))
+    def translation_list(self, version):
+        """List each offered language with its translation or a way to add one.
+
+        A translation in a language the site no longer offers, or that has
+        become the main language, is kept and listed with a ``data-`` hook
+        marking it.
+
+        Args:
+            version: The pending or published version the page shows.
+
+        Returns:
+            A list with a row per language.
+        """
+        wordings: dict[str, Translation] = {}
+        for translation in version.translations.order_by("published_at", "pk"):
+            held = wordings.get(translation.language)
+            if (
+                held is None
+                or translation.status == Translation.Status.CURRENT
+                or held.status != Translation.Status.CURRENT
+            ):
+                wordings[translation.language] = translation
+        offered = dict(offered_languages())
+        kept = [code for code in wordings if code not in offered]
+        rows = [
+            self.translation_row(version, code, name, wordings.get(code), False)
+            for code, name in offered.items()
+        ] + [
+            self.translation_row(
+                version, code, language_name(code), wordings[code], True
+            )
+            for code in kept
+        ]
+        return format_html(
+            "<ul data-translations>{}</ul>",
+            format_html_join("", "{}", [(row,) for row in rows]),
+        )
+
+    def translation_row(self, version, code, name, translation, kept):
+        """Build the row for one language.
+
+        Args:
+            version: The version the page shows.
+            code: The language's code.
+            name: The language's name.
+            translation: The wording to link, or ``None`` when there is none.
+            kept: Whether the language is no longer offered, so a wording in
+                it is kept but cannot be added to.
+
+        Returns:
+            The row as safe HTML.
+        """
+        links = []
+        if translation is not None:
+            links.append(
+                format_html(
+                    '<a href="{}">{}</a>',
+                    reverse(
+                        "admin:mvp_compliance_translation_change",
+                        args=[translation.pk],
+                    ),
+                    translation.get_status_display(),
+                )
+            )
+        if not kept and (
+            translation is None or translation.status == Translation.Status.CURRENT
+        ):
+            links.append(
+                format_html(
+                    '<a href="{}">{}</a>',
+                    f"{reverse('admin:mvp_compliance_translation_add')}"
+                    f"?version={version.pk}&language={code}",
+                    _("Correct") if translation is not None else _("Add"),
+                )
+            )
+        return format_html(
+            '<li data-translation-language="{}"{}>{}: {}</li>',
+            code,
+            mark_safe(" data-translation-kept") if kept else "",
+            name,
+            format_html_join(" ", "{}", [(link,) for link in links])
+            if links
+            else _("No translation"),
+        )
 
     @admin.display(description=_("number"), ordering="published_at")
     def version_number(self, version):
@@ -206,9 +367,32 @@ class VersionAdmin(admin.ModelAdmin):
             return False
         return super().has_delete_permission(request, obj)
 
+    def get_deleted_objects(self, objs, request):
+        """Leave a version's translations out of the permissions a discard needs.
+
+        Discarding a draft or pending version takes its translations with it,
+        and that is the version's own permission: a translation put live on it
+        cannot be deleted by itself (FR-006).
+
+        Args:
+            objs: The versions being deleted.
+            request: The current request.
+
+        Returns:
+            Django's four values, with translations removed from the
+            permissions still missing.
+        """
+        to_delete, model_count, perms_needed, protected = super().get_deleted_objects(
+            objs, request
+        )
+        perms_needed.discard(Translation._meta.verbose_name)
+        return to_delete, model_count, perms_needed, protected
+
     def has_change_permission(self, request, obj=None):
-        """Refuse changing a published version, so Django serves its read-only page."""
-        if obj is not None and obj.is_published:
+        """Refuse changing a published or pending version, so Django serves its read-only page."""
+        if obj is not None and (
+            obj.is_published or obj.status == Version.Status.PENDING
+        ):
             return False
         return super().has_change_permission(request, obj)
 
@@ -259,7 +443,7 @@ class VersionAdmin(admin.ModelAdmin):
             return None
 
     def get_urls(self):
-        """Add the preview and publish pages."""
+        """Add the preview, publish, lock and return pages."""
         urls = [
             path(
                 "<int:object_id>/preview/",
@@ -270,6 +454,16 @@ class VersionAdmin(admin.ModelAdmin):
                 "<int:object_id>/publish/",
                 self.admin_site.admin_view(self.publish_view),
                 name="mvp_compliance_version_publish",
+            ),
+            path(
+                "<int:object_id>/lock/",
+                self.admin_site.admin_view(self.lock_view),
+                name="mvp_compliance_version_lock",
+            ),
+            path(
+                "<int:object_id>/return-to-draft/",
+                self.admin_site.admin_view(self.return_to_draft_view),
+                name="mvp_compliance_version_return_to_draft",
             ),
         ]
         return urls + super().get_urls()
@@ -391,6 +585,412 @@ class VersionAdmin(admin.ModelAdmin):
             version,
             "admin/mvp_compliance/version/publish_confirmation.html",
             _("Publish"),
+        )
+
+    def transition_view(self, request, object_id, action, template, title, done):
+        """Confirm on GET and apply a change of standing on POST.
+
+        Locking for translation and returning to draft share this shape with
+        publishing, and the same permission: each decides what a reader may
+        come to be served.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the version.
+            action: The name of the version method to call, with the caller.
+            template: The confirmation template.
+            title: The page title.
+            done: The message shown when the change was made.
+
+        Returns:
+            The confirmation page on GET, or a redirect to the version's page
+            on POST.
+
+        Raises:
+            Http404: No version has that primary key.
+            PermissionDenied: The caller does not hold ``publish_version``.
+        """
+        version = self.get_object(request, object_id)
+        if version is None:
+            raise Http404
+        if not request.user.has_perm("mvp_compliance.publish_version"):
+            raise PermissionDenied
+
+        if request.method == "POST":
+            try:
+                getattr(version, action)(request.user)
+            except PublishError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, done)
+            return HttpResponseRedirect(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk])
+            )
+
+        return self.version_page(request, version, template, title)
+
+    def lock_view(self, request, object_id):
+        """Confirm on GET and lock the draft for translation on POST.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the draft to lock.
+
+        Returns:
+            The confirmation page or a redirect to the version's page.
+        """
+        return self.transition_view(
+            request,
+            object_id,
+            "lock_for_translation",
+            "admin/mvp_compliance/version/lock_confirmation.html",
+            _("Lock for translation"),
+            _("The version is locked for translation."),
+        )
+
+    def return_to_draft_view(self, request, object_id):
+        """Confirm on GET and return the version to a draft on POST.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the pending version to return.
+
+        Returns:
+            The confirmation page or a redirect to the version's page.
+        """
+        return self.transition_view(
+            request,
+            object_id,
+            "return_to_draft",
+            "admin/mvp_compliance/version/return_to_draft_confirmation.html",
+            _("Return to draft"),
+            _("The version is a draft again."),
+        )
+
+
+@admin.register(Translation)
+class TranslationAdmin(admin.ModelAdmin):
+    """Writing, previewing and putting live a wording of a version in a language.
+
+    Modelled on :class:`VersionAdmin`. A wording is only added from a pending
+    or published version in an offered language, a wording that is not a draft
+    has no editable form and cannot be deleted, and putting one live has a
+    confirmation page behind ``publish_translation`` alone.
+    """
+
+    form = TranslationForm
+    readonly_fields = [
+        "translating",
+        "status",
+        "live_since",
+        "put_live_by",
+        "stored_wording",
+    ]
+    list_display = [
+        "version",
+        "language",
+        "status",
+        "live_since",
+        "put_live_by",
+    ]
+    list_select_related = ["version__document", "publisher"]
+    list_filter = ["language", "status"]
+    search_fields = ["version__document__name"]
+
+    def get_queryset(self, request):
+        """Annotate when each wording was replaced, so the list reads one query for all."""
+        return super().get_queryset(request).with_replaced_at()
+
+    @admin.display(description=_("Translating"))
+    def translating(self, translation):
+        """Say which version and language this wording is for.
+
+        Args:
+            translation: The wording the page shows.
+
+        Returns:
+            The version with the language's name.
+        """
+        return _("%(version)s into %(language)s") % {
+            "version": translation.version,
+            "language": translation.language_name,
+        }
+
+    @admin.display(description=_("Live since"))
+    def live_since(self, translation):
+        """Return when a reader could first have been served this wording.
+
+        Args:
+            translation: The wording the row or page shows.
+
+        Returns:
+            The moment, or ``None`` when no reader has been served it.
+        """
+        return translation.live_since
+
+    @admin.display(description=_("Put live by"))
+    def put_live_by(self, translation):
+        """Return who put this wording live.
+
+        Args:
+            translation: The wording the row or page shows.
+
+        Returns:
+            The wording's ``publisher_display``, ``None`` for a draft.
+        """
+        return translation.publisher_display
+
+    @admin.display(description=_("Wording a reader is served"))
+    def stored_wording(self, translation):
+        """Show the HTML stored when this wording was put live.
+
+        Args:
+            translation: The wording the page shows.
+
+        Returns:
+            The stored HTML, which the renderer sanitised when it was stored.
+            Nothing for a draft, which has none.
+        """
+        return mark_safe(translation.html)  # noqa: S308 - sanitised when stored
+
+    def get_fields(self, request, obj=None):
+        """Show the form's fields on a draft and the stored wording on the rest.
+
+        The summary is left out when the version has none to translate.
+        """
+        if obj is None:
+            fields = ["version", "language", "markdown", "summary"]
+            version = self.version_from(request.GET.get("version"))
+        elif obj.status == Translation.Status.DRAFT:
+            fields = ["translating", "markdown", "summary"]
+            version = obj.version
+        else:
+            fields = [
+                "translating",
+                "status",
+                "live_since",
+                "put_live_by",
+                "markdown",
+                "summary",
+                "stored_wording",
+            ]
+            version = obj.version
+        if version is not None and not version.summary.strip():
+            fields.remove("summary")
+        return fields
+
+    def has_change_permission(self, request, obj=None):
+        """Refuse changing a wording that is not a draft, so Django serves its read-only page."""
+        if obj is not None and obj.status != Translation.Status.DRAFT:
+            return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        """Refuse deleting a wording that is not a draft."""
+        if obj is not None and obj.status != Translation.Status.DRAFT:
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def has_add_permission(self, request):
+        """Allow adding only for a pending or published version and an offered language."""
+        if not super().has_add_permission(request):
+            return False
+        return self.version_from(
+            request.GET.get("version")
+        ) is not None and request.GET.get("language") in dict(offered_languages())
+
+    def version_from(self, version_id):
+        """Return the pending or published version a query string names.
+
+        The value comes straight off the query string, so it can be anything.
+
+        Args:
+            version_id: The raw ``version`` value from the query string.
+
+        Returns:
+            The version, or ``None`` when the value names no version that can
+            be translated.
+        """
+        if not version_id:
+            return None
+        try:
+            return (
+                Version.objects.exclude(status=Version.Status.DRAFT)
+                .filter(pk=version_id)
+                .first()
+            )
+        except (ValueError, TypeError):
+            return None
+
+    def get_changeform_initial_data(self, request):
+        """Start a new wording from the wording it will replace."""
+        initial = super().get_changeform_initial_data(request)
+        current = self.current_wording(request)
+        if current is not None:
+            initial["markdown"] = current.markdown
+            initial["summary"] = current.summary
+        return initial
+
+    def current_wording(self, request):
+        """Return the wording in force for the version and language the address names.
+
+        Args:
+            request: The current request.
+
+        Returns:
+            The current translation, or ``None`` when there is none or the
+            address names no version.
+        """
+        version = self.version_from(request.GET.get("version"))
+        if version is None:
+            return None
+        return version.translations.filter(
+            language=request.GET.get("language"), status=Translation.Status.CURRENT
+        ).first()
+
+    def render_change_form(
+        self, request, context, add=False, change=False, form_url="", obj=None
+    ):
+        """Hide Save and add another, and name a correction as one."""
+        # Its redirect drops the query string naming the version and language,
+        # landing on a form has_add_permission() refuses.
+        context["show_save_and_add_another"] = False
+        if add and self.current_wording(request) is not None:
+            context["title"] = _("Correct a translation")
+        return super().render_change_form(
+            request, context, add=add, change=change, form_url=form_url, obj=obj
+        )
+
+    def get_urls(self):
+        """Add the preview and publish pages."""
+        urls = [
+            path(
+                "<int:object_id>/preview/",
+                self.admin_site.admin_view(self.preview_view),
+                name="mvp_compliance_translation_preview",
+            ),
+            path(
+                "<int:object_id>/publish/",
+                self.admin_site.admin_view(self.publish_view),
+                name="mvp_compliance_translation_publish",
+            ),
+        ]
+        return urls + super().get_urls()
+
+    def output_for(self, translation):
+        """Return the HTML a reader would be served for this wording.
+
+        A draft is rendered here, as publication will. A wording that has been
+        put live is read as it was stored, never rendered again.
+
+        Args:
+            translation: The wording to show.
+
+        Returns:
+            The stored HTML, or a fresh rendering of a draft.
+        """
+        if translation.status != Translation.Status.DRAFT:
+            return translation.html
+        return get_renderer()().render(translation.markdown)
+
+    def translation_page(self, request, translation, template, title):
+        """Render one of this admin's own pages for a single wording.
+
+        Args:
+            request: The current request.
+            translation: The wording the page is about.
+            template: The template to render.
+            title: The page title.
+
+        Returns:
+            The rendered page.
+        """
+        context = {
+            **self.admin_site.each_context(request),
+            "title": title,
+            "opts": self.opts,
+            "original": translation,
+            "html": self.output_for(translation),
+        }
+        return TemplateResponse(request, template, context)
+
+    def preview_view(self, request, object_id):
+        """Show the rendering a reader will be served.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the wording to preview.
+
+        Returns:
+            The preview page.
+
+        Raises:
+            Http404: No wording has that primary key.
+            PermissionDenied: The caller may not view the wording.
+        """
+        translation = self.get_object(request, object_id)
+        if translation is None:
+            raise Http404
+        if not self.has_view_permission(request, translation):
+            raise PermissionDenied
+
+        return self.translation_page(
+            request,
+            translation,
+            "admin/mvp_compliance/translation/preview.html",
+            _("Preview"),
+        )
+
+    def publish_view(self, request, object_id):
+        """Confirm on GET and put the wording live on POST.
+
+        Checks ``publish_translation`` itself: writing a translation and making
+        it what readers are served are different levels of trust. A refused
+        publication is reported as an error message.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the wording to put live.
+
+        Returns:
+            The confirmation page on GET, or a redirect to the wording's page
+            on POST.
+
+        Raises:
+            Http404: No wording has that primary key.
+            PermissionDenied: The caller does not hold ``publish_translation``.
+        """
+        translation = self.get_object(request, object_id)
+        if translation is None:
+            raise Http404
+        if not request.user.has_perm("mvp_compliance.publish_translation"):
+            raise PermissionDenied
+
+        if request.method == "POST":
+            try:
+                translation.publish(publisher=request.user)
+            except PublishError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    _("The %(language)s wording of %(version)s is now live.")
+                    % {
+                        "language": translation.language_name,
+                        "version": translation.version,
+                    },
+                )
+            return HttpResponseRedirect(
+                reverse(
+                    "admin:mvp_compliance_translation_change", args=[translation.pk]
+                )
+            )
+
+        return self.translation_page(
+            request,
+            translation,
+            "admin/mvp_compliance/translation/publish_confirmation.html",
+            _("Put live"),
         )
 
 

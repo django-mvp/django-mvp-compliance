@@ -120,6 +120,130 @@ Once a version is published, its change page in the admin offers nothing to edit
 its summary and its publisher never change, and all three are readable in full. Django serves its own read-only
 page — not a form with disabled fields, and not one whose save is silently refused.
 
+## Locking a version for translation
+
+A site that offers its documents in more than one language needs the wording to hold still while
+it is translated. A draft's page offers **Lock for translation** to whoever holds
+`publish_version`. The link leads to a confirmation page, and locking happens only when that page
+is posted.
+
+A locked version is **pending**. Its document, wording and summary can no longer be edited, and its
+page is read-only. It is still a draft in every other respect: it has no number, no standing, no
+rendering is stored, readers are never served it, and it can still be discarded, which takes its
+translations with it. Publishing a pending version works exactly as publishing a draft does.
+
+To change the wording again, use **Return to draft** on the pending version's page. It asks for
+confirmation too. Every translation of it that was put live goes back to a draft with its wording
+kept, so each is read against the corrected text before it goes live again.
+
+Locking is refused, with a message on the page, when the version renders to nothing or says
+exactly what the version in force already says. See [models.md](models.md#the-pending-state) for
+doing the same from code.
+
+## Translating a version
+
+The translations a site offers are the languages in its `LANGUAGES` setting other than its main
+language, `LANGUAGE_CODE`. A site that sets neither offers none, and none of this appears. The demo
+project sets `LANGUAGES` to English and German:
+
+```python
+# settings.py
+LANGUAGE_CODE = "en"
+LANGUAGES = [("en", "English"), ("de", "German")]
+```
+
+A pending or published version's page lists **Translations**, one row for each offered language,
+with a link to the translation or to add one. A version that is still a draft has none, because
+there is nothing fixed yet to translate. **Missing a translation** on the versions list narrows it
+to the versions that lack a current translation in some offered language, or in one language when
+that is chosen.
+
+The add page for a translation is opened from that row, and says which version and language it is
+for. A translation has a Markdown field, with the same editor as a version, and a summary field
+when the version has a summary to translate. It starts empty, or from the current wording when
+the page is correcting one.
+
+### What governs
+
+The version's own wording governs. A translation is a wording of a version, offered to readers who
+prefer another language, and it is not what anyone accepts: an acceptance points at the version,
+and nothing about a translation changes it. Translating a document does not make a site compliant
+with anything, and putting a translation live is a decision somebody makes about the wording, not
+a check the package performs.
+
+`TranslationForm` is what the translation page posts, importable from `mvp_compliance.forms`. It
+carries `version` and `language` as hidden fields on the add page, taken from the address that
+opened it, and `markdown` with the same editor widget as a version. It drops `summary` when the
+version has none to translate. On a draft's own page `version` and `language` are not fields at
+all, since a wording does not move to another version or language. The languages are read when the
+form is built, so a change to `LANGUAGES` applies from the next request.
+
+### Putting a translation live
+
+A translation is written as a draft, and each draft has a preview, at its own address, that shows
+the rendering a reader will be served. **Put live** leads to a confirmation page, and the wording
+goes live only when that page is posted. It needs its own permission, `publish_translation`.
+
+Putting a translation live on a pending version records it as current, but no reader is served it
+until the version itself is published. That is what **live** means in this package: a translation's
+current wording once its version is published. A translation put live on a version already
+published is live at once.
+
+A translation is refused, with a message on the page, when its language is no longer offered, when
+it renders to nothing, when it has a summary the version lacks, or when it says exactly what the
+current wording already says.
+
+### Correcting a translation
+
+A wording that has been live never changes. A correction is a new wording for the same version and
+language: use **Correct** on the language's row, and the new draft starts from the
+current wording. When it is put live it replaces the current wording, which is kept as superseded,
+readable in full, with the moment it was put live and who put it live. Neither is removed, and
+nothing can delete it.
+
+Putting a translation live records who did it, shown as **Put live by**, and removing that account
+later leaves "Account removed" in its place, as for a version's publisher.
+
+### From code
+
+Everything the admin does to a translation can be done from code, with the same rules and the same
+results. A refused call raises the package's own exception and writes nothing: `TranslationError`
+when a translation cannot be created, and `PublishError` when it cannot be put live.
+
+A site that keeps its translations somewhere else can connect to the signal sent when a version
+becomes pending, add the translations and put them live:
+
+```python
+from django.dispatch import receiver
+
+from mvp_compliance.models import Translation, Version
+from mvp_compliance.signals import version_pending
+
+
+@receiver(version_pending, sender=Version)
+def translate(sender, version, by, **kwargs):
+    translation = Translation.objects.create(
+        version=version, language="de", markdown="Hallo Welt"
+    )
+    translation.publish()
+```
+
+The translation is current as soon as it is put live, and is served once the version is published.
+Nobody is named as having put it live unless the call names an account:
+`translation.publish(publisher=user)`. A correction is another `Translation.objects.create()` for
+the same version and language, put live the same way. The earlier wording is kept as superseded.
+
+Connect the receiver somewhere that runs at startup, such as an `AppConfig.ready()`. The other
+signals, and what each carries, are listed in [announcing.md](announcing.md#every-signal).
+
+A data migration takes the model from `apps.get_model("mvp_compliance", "Translation")`, as any
+migration does, and never imports the model from `mvp_compliance.models`, which would tie the
+migration to a schema that later migrations change. The historical model carries the queryset
+refusals, so `update()`, `delete()` and a bulk upsert of a wording that has been live are refused
+there as everywhere. `save()` and `publish()` carry no rules in a migration: nothing checks that
+the version can be translated, and nothing renders a wording when it is put live. See
+[the decision record](adr/0004-migrations-are-the-one-route-immutability-cannot-close.md).
+
 ## Starting the next version from the one in force
 
 Most rewordings are edits to what is already there rather than a rewrite from nothing, so a
@@ -236,5 +360,16 @@ request that names none, so the versions list offers no add control and a bare r
 add form is refused regardless of `add_version`. Reaching the add form from a document, the way
 both change pages above do, still works.
 
-See [Permissions](https://github.com/django-mvp/django-mvp-compliance/blob/main/README.md#permissions) in the README for `publish_version`, which is
+Translations have their own permissions on `Translation`, the ones Django creates:
+`view_translation` and `change_translation` for reading and writing, and `add_translation` to
+start one. A translator also needs `view_version`: a version's page is where the links to add and
+correct a translation are, and `view_version` grants nothing beyond reading versions. Putting a translation live needs `publish_translation`, which no other permission
+stands in for, and which is separate from `publish_version`.
+
+Locking a version for translation and returning it to a draft need `publish_version`, because each
+decides what the version may come to say to a reader. Discarding a draft or pending version needs
+only `delete_version`, and takes its translations with it without asking for any translation
+permission. A translation that has been live cannot be deleted by anybody.
+
+See [Permissions](https://github.com/django-mvp/django-mvp-compliance/blob/main/README.md#permissions) in the README for `publish_version` and `publish_translation`, which are
 deliberately separate from the permissions above.

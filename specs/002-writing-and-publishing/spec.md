@@ -294,7 +294,8 @@ to its summary. Publish another draft with no summary and confirm it carries non
   on documents, and separately may hold the permission to publish. This term is new and joins
   `CONTEXT.md` when the feature is built.
 - **Draft** and **Version**: as defined in `CONTEXT.md` and specified in FS-001. This feature adds
-  one thing to a version, its summary (US-6), and no state to either.
+  one thing to a version, its summary (US-6), and no state to either. FS-015 adds the pending
+  state, between draft and published, for a version locked for translation.
 - **Summary**: what changed in a version since the version before, as defined in `CONTEXT.md`.
   Part of the version, and frozen with it at publication.
 

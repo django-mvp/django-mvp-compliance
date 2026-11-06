@@ -1,6 +1,6 @@
 # Announcing a publication
 
-When a version is published, this package sends one signal, `version_published`, so a host
+When a version is published, this package sends a signal, `version_published`, so a host
 project can act on it — email the owners, post to a channel, write its own audit trail —
 without watching for it. The package sends nothing itself: no email, no message, no request.
 It can write an email for you, to [the people running the site](#a-ready-made-email) or to
@@ -50,6 +50,41 @@ The sender is the `Version` class. Every argument is passed by keyword.
 | `replaced` | The version this one superseded, with its `status` already `Version.Status.SUPERSEDED`, or `None` for a document's first publication. |
 
 Accept `**kwargs` as well, so a receiver keeps working if an argument is added later.
+
+## Every signal
+
+All are in `mvp_compliance.signals`. Every argument is passed by keyword, and every signal is sent
+only after the change has committed. A refused change, and a change inside a transaction that is
+rolled back, sends nothing. A receiver that raises cannot undo the change, and the receivers after
+it still run.
+
+| Signal | Sender | Arguments | Sent |
+|---|---|---|---|
+| `version_pending` | `Version` | `version`, `by` | Once a draft is locked for translation. `by` is the account that locked it, or `None` |
+| `version_returned_to_draft` | `Version` | `version`, `by` | Once a pending version is returned to a draft. `by` is the account that returned it, or `None` |
+| `version_published` | `Version` | `version`, `publisher`, `replaced` | Once a draft or pending version is published, as described above |
+| `translation_published` | `Translation` | `translation`, `publisher`, `replaced` | Once a translation is put live. `replaced` is the wording it superseded, already `Translation.Status.SUPERSEDED`, or `None` for a language's first. On a pending version readers are served the wording from the version's publication, which `version_published` announces; this signal is not sent again then |
+| `translation_returned_to_draft` | `Translation` | `translation`, `by` | Once for each live translation a version's return to a draft sends back to a draft, before `version_returned_to_draft`. Translations that were already drafts are not announced |
+| `personal_data_copied` | `PersonalDataView` | `user`, `kinds` | Each time a person's copy of their data is handed over. See [the how-to](how-to/declare-what-the-project-holds-about-a-person.md) |
+| `account_deleted` | `DeleteAccountView` | `user`, `subject`, `kinds` | Once a person has deleted their own account. See [the how-to](how-to/delete-an-account.md) |
+
+A receiver for a translation signal looks the same as one for `version_published`:
+
+```python
+from django.dispatch import receiver
+
+from mvp_compliance.models import Translation
+from mvp_compliance.signals import translation_published
+
+
+@receiver(translation_published, sender=Translation)
+def note_translation(sender, translation, publisher, replaced, **kwargs):
+    ...
+```
+
+The admin passes the signed-in user as `by` and `publisher`. Called from code, each method takes
+the account as an argument (`lock_for_translation(by=user)`, `return_to_draft(by=user)`,
+`publish(publisher=user)`), and sends `None` when none is given.
 
 ## When a receiver fails
 
