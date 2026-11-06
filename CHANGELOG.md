@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - django-mvp 0.34.0 or later is required, for the email layout the new email extends.
 - `VersionQuerySet.published()` and `Version.is_published` leave out a pending version. They
   cover current and superseded versions only.
+- `VersionQuerySet.drafts()` leaves out pending versions. It lists plain drafts only, and
+  `pending()` lists the pending ones.
 - `Version.same_wording` is now the function `mvp_compliance.models.same_wording`. The method is
   removed, with no alias.
 

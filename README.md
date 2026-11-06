@@ -452,7 +452,7 @@ and no link to it is offered.
 Locking a version for translation and returning it to a draft need `publish_version` too.
 Putting a translation live needs `publish_translation`, held separately again, so someone can
 write translations without being able to put them live. Writing them needs the permissions
-Django creates for `Translation`. See
+Django creates for `Translation`, and `view_version`, which grants nothing beyond reading versions. See
 [docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md#translating-a-version).
 
 `mvp_compliance.skip_agreement` is a permission of a different kind: it is for

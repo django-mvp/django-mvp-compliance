@@ -359,7 +359,8 @@ both change pages above do, still works.
 
 Translations have their own permissions on `Translation`, the ones Django creates:
 `view_translation` and `change_translation` for reading and writing, and `add_translation` to
-start one. Putting a translation live needs `publish_translation`, which no other permission
+start one. A translator also needs `view_version`: a version's page is where the links to add and
+correct a translation are, and `view_version` grants nothing beyond reading versions. Putting a translation live needs `publish_translation`, which no other permission
 stands in for, and which is separate from `publish_version`.
 
 Locking a version for translation and returning it to a draft need `publish_version`, because each

@@ -526,7 +526,10 @@ language, and it is the only text that governs: an acceptance points at the vers
 translation is never what a person accepted.
 
 ```python
-from mvp_compliance.models import Translation
+from mvp_compliance.models import Translation, Version
+
+version = Version.objects.create(document=privacy, markdown="# Privacy policy, second edition\n\n...")
+version.lock_for_translation()
 
 translation = Translation.objects.create(
     version=version,
