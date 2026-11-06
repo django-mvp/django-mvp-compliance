@@ -1,6 +1,7 @@
 """Documents and their versions."""
 
-from functools import partial
+import operator
+from functools import partial, reduce
 from typing import Any, cast
 
 from django.conf import settings
@@ -447,6 +448,39 @@ class VersionQuerySet(models.QuerySet):
         """
         return self.filter(status=Version.Status.CURRENT)
 
+    def missing_translation(self, language: str | None = None) -> "VersionQuerySet":
+        """Narrow to the versions with no current translation.
+
+        Drafts are never listed: they cannot be translated. A current wording of
+        a pending version counts, whether or not the version is published yet.
+        One query however many versions are read.
+
+        Args:
+            language: The language to ask about. ``None`` asks about every
+                offered language, and lists a version missing any of them.
+
+        Returns:
+            The pending and published versions with no current translation in
+            ``language``, or in some offered language. Empty when ``None`` is
+            given and the site offers none.
+        """
+        languages = [language] if language else [c for c, _n in offered_languages()]
+        lacks = [
+            ~models.Exists(
+                Translation.objects.filter(
+                    version=models.OuterRef("pk"),
+                    language=code,
+                    status=Translation.Status.CURRENT,
+                )
+            )
+            for code in languages
+        ]
+        if not lacks:
+            return self.none()
+        return self.exclude(status=Version.Status.DRAFT).filter(
+            reduce(operator.or_, lacks)
+        )
+
     def with_replaced_at(self) -> "VersionQuerySet":
         """Annotate ``replaced_at``: when the next published version took over.
 
@@ -539,6 +573,17 @@ class VersionManager(models.Manager):
             The result of ``VersionQuerySet.current``.
         """
         return self.get_queryset().current()
+
+    def missing_translation(self, language: str | None = None) -> VersionQuerySet:
+        """Return the versions with no current translation.
+
+        Args:
+            language: The language to ask about, or ``None`` for every offered one.
+
+        Returns:
+            The result of ``VersionQuerySet.missing_translation``.
+        """
+        return self.get_queryset().missing_translation(language)
 
 
 class Version(models.Model):
