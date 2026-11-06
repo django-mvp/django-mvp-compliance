@@ -325,14 +325,63 @@ Removing the publisher's account succeeds and leaves the version otherwise uncha
 Once the publication commits, `publish()` sends the `version_published` signal; see
 [announcing.md](announcing.md).
 
-Publishing an already-published version raises `mvp_compliance.exceptions.PublishError`
-and changes nothing about the document. The same applies when something else published
-the version first and this copy of it is out of date, so a caller that catches
-`PublishError` catches both. Publishing is also refused, before anything is written,
+Publishing a version that is neither a draft nor pending raises
+`mvp_compliance.exceptions.PublishError` and changes nothing about the document. The same
+applies when something else published the version first and this copy of it is out of date,
+so a caller that catches `PublishError` catches both. Publishing is also refused, before anything is written,
 when the rendered output is empty once whitespace is stripped — a draft whose markdown
 produces nothing has nothing to publish. Publishing is one-way: the
 package offers no `unpublish`, `revert`, `rollback`, `restore` or `make_current` — a
 correction of any size is published again as a new version.
+
+### The pending state
+
+A version is in one of four states, the values of `Version.Status`:
+
+| `version.status` | Meaning |
+|---|---|
+| `DRAFT` | Never published and not locked. Freely editable and discardable. |
+| `PENDING` | A draft locked for translation: its `document`, `markdown` and `summary` no longer change. |
+| `CURRENT` | The version in force. |
+| `SUPERSEDED` | Published, and replaced by a later one. |
+
+A pending version is still a draft in every other respect. It has no number, no standing and no
+rendered output, readers are never served it, and it can be discarded. Locking exists so the
+people translating it work against wording that will not move.
+
+```python
+version = Version.objects.create(document=privacy, markdown="# Privacy policy\n\n...")
+version.lock_for_translation()
+version.status  # Version.Status.PENDING
+version.is_published  # False
+```
+
+`lock_for_translation(by=None)` raises `PublishError`, and writes nothing, when the version is not
+a draft, when its Markdown renders to nothing, or when it says exactly what the version in force
+already says. Locking does not render or store anything. `by` names the account locking it and is
+not recorded on the version.
+
+`return_to_draft(by=None)` is the way back. It raises `PublishError` unless the version is pending.
+Every translation of it that was put live goes back to a draft in the same transaction, with its
+wording kept, because the version's wording is about to change and the translations have to be
+read against the corrected text before any goes live again.
+
+```python
+version.return_to_draft()
+version.status  # Version.Status.DRAFT
+```
+
+`publish()` accepts a pending version as well as a draft. Both unpublished states are listed in
+`Version.UNPUBLISHED`.
+
+A pending version is not published, so `version.is_published` is `False` for it, and
+`Version.objects.published()` leaves it out; it lists current and superseded versions only.
+`Version.objects.pending()` is the queryset of pending versions, and `Version.objects.drafts()`
+lists only versions that are plain drafts. The same methods are on `document.versions`.
+
+Saving a pending version with a different `document`, `markdown` or `summary` raises
+`PublishedVersionError`, as do an `update()` or `bulk_update()` that would change one of them.
+Discarding one is allowed, and takes its translations with it.
 
 ### Rendering
 
@@ -423,7 +472,7 @@ One version by its number, the plain Django idiom, no wrapper method:
 document.versions.get(number="2026.2")
 ```
 
-The published history, in order, with drafts absent — `VersionQuerySet.published()`,
+The published history, in order, with drafts and pending versions absent — `VersionQuerySet.published()`,
 reachable through the related manager on any document:
 
 ```python
@@ -450,10 +499,138 @@ changed = Version.objects.published().since_last_accepted_by(user)
 changed.exclude(summary="").order_by("-published_at")  # what to tell them, newest first
 ```
 
-`VersionQuerySet` also carries `.drafts()`, the complement — every version that has
-never been published — and `.current()`, the queryset `document.current` is built on
-top of. All three are available both as `Version.objects.<method>()` and as
-`document.versions.<method>()`.
+`VersionQuerySet` also carries `.drafts()`, the versions that are neither published nor
+locked for translation, `.pending()`, the ones that are locked, and `.current()`, the
+queryset `document.current` is built on top of. All of them are available both as
+`Version.objects.<method>()` and as `document.versions.<method>()`.
+
+`VersionQuerySet.missing_translation(language=None)` narrows to the pending and published
+versions with no current translation in `language`. Given no language it asks about every
+language the site offers, and lists a version that lacks any of them. Drafts are never listed,
+because they cannot be translated. A current translation of a pending version counts as present,
+whether or not the version is published yet. It is one query however many versions are read:
+
+```python
+Version.objects.missing_translation("de")  # the versions with no German wording
+Version.objects.missing_translation()      # missing any offered language
+```
+
+It returns nothing when `language` is not given and the site offers none. The admin's
+**Missing a translation** filter on the versions list is this method.
+
+## `Translation`
+
+A wording of one pending or published version in one language other than the site's main
+language. The version's own `markdown` is the wording of the version, written in the main
+language, and it is the only text that governs: an acceptance points at the version, and a
+translation is never what a person accepted.
+
+```python
+from mvp_compliance.models import Translation
+
+translation = Translation.objects.create(
+    version=version,
+    language="de",
+    markdown="# Datenschutzerklärung\n\n...",
+)
+translation.status  # Translation.Status.DRAFT
+translation.publish()
+translation.status  # Translation.Status.CURRENT
+```
+
+The fields are `version` (reached back as `version.translations`), `language`, `markdown`, an
+optional plain-text `summary`, `html`, `status`, `published_at`, `publisher` and
+`publisher_subject`. They behave as the same-named fields of `Version` do. `html` is rendered once,
+when the wording is put live, and is empty for a draft. `status` is `DRAFT`, `CURRENT` or
+`SUPERSEDED`. `published_at` is when it was put live, and the publisher is recorded the same way
+as a version's, including the `publisher_display` property and its three answers. A database
+constraint holds at most one current wording per version and language.
+
+Creating a translation raises `mvp_compliance.exceptions.TranslationError`, and writes nothing,
+when the version is a draft, when `language` is the main language, or when the site does not
+offer `language`.
+
+### Which languages are offered
+
+The site's `LANGUAGES` setting decides. A version can be translated into each language in it
+except the main language, `LANGUAGE_CODE`. Django's own default `LANGUAGES` lists every language
+it ships, so until a site sets its own, none is offered.
+
+```python
+# settings.py
+LANGUAGE_CODE = "en"
+LANGUAGES = [("en", "English"), ("de", "German")]
+```
+
+```python
+from mvp_compliance.models import language_name, main_language, offered_languages
+
+main_language()       # "en"
+offered_languages()   # [("de", "German")]
+language_name("de")   # "German"
+```
+
+`main_language()` resolves `LANGUAGE_CODE` against `LANGUAGES`, so `en-us` stands for `en`.
+`offered_languages()` returns a `(code, name)` pair for each language the site offers, read when
+called, so a change to the setting takes effect on the next request. `language_name(code)` is the
+label the site gave the language, else Django's name for it, else the code. A translation says the
+same through `translation.language_name`, and `translation.is_offered` says whether its language is
+still offered. A translation in a language the site stops offering is kept, shown as such in the
+admin, and cannot be put live.
+
+### Putting a translation live
+
+`translation.publish(publisher=None)` puts a draft wording live, and supersedes whichever wording
+was current for the version and language. The version and its acceptances are not touched. It
+raises `PublishError`, and writes nothing, when the wording is not a draft, when its language is
+no longer offered, when its version is a draft, when it has a summary and the version has none to
+translate, when it renders to nothing, or when it says exactly what the current wording says.
+
+A translation put live on a pending version is current, but no reader is served it until the
+version is published. `Translation.objects.live()` is the queryset of wordings a reader is
+served: the current wording of each published version. `translation.live_since` says when a
+reader could first have been served the wording, which is the later of when it was put live and
+when its version was published, and is `None` for a draft, for a wording on a version not yet
+published, and for one replaced before its version was published. In this package, **live** has
+exactly that meaning, which is narrower than published.
+
+`Translation.objects.with_replaced_at()` annotates `replaced_at` with the moment the next wording
+for the same version and language was put live, and `None` for the current wording and for drafts.
+It costs no extra query however many rows are read.
+
+### Immutability
+
+Once a wording has been put live and its version is published, its `version`, `language`,
+`markdown`, `summary`, `html`, `published_at`, `publisher` and `publisher_subject` can never
+change, and it cannot be deleted. Only `status` moves, from current to superseded. A draft
+translation, and a wording put live on a version that is still pending, stay editable.
+
+```python
+translation.markdown = "Revised wording"
+translation.save()  # raises PublishedTranslationError once its version is published
+Translation.objects.filter(pk=translation.pk).update(markdown="x")  # same
+translation.delete()  # same
+```
+
+A correction is a new wording that replaces it, never an edit: the earlier wording stays on record
+as superseded, readable in full. `TranslationQuerySet.frozen()`, as in `Translation.objects.all().frozen()`, narrows to the
+wordings that can no longer change. `TranslationManager` and `TranslationQuerySet`, importable from
+`mvp_compliance.models`, carry the guard on the write routes above, and
+`TranslationManager.use_in_migrations` is set so a historical model inside a migration inherits
+it. `mvp_compliance.exceptions.PublishedTranslationError` is what each route raises.
+
+### Account removal
+
+Removing the account that put a wording live succeeds and leaves the translation otherwise
+unchanged: `publisher` becomes empty, `publisher_subject` stays, and `publisher_display` reads
+"Account removed".
+
+### Comparing wordings
+
+`mvp_compliance.models.same_wording(one, other)` says whether two Markdown wordings say the same
+thing for the purpose of refusing a duplicate. It ignores line endings and surrounding whitespace.
+It is what `Version.publish()` and `Translation.publish()` use, and it is a function of the module
+rather than a method of `Version`.
 
 ## `Acceptance`
 

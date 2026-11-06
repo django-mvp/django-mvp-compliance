@@ -182,5 +182,6 @@ MVP_COMPLIANCE_PERSONAL_DATA = [
 USE_TZ = True
 USE_I18N = True
 LANGUAGE_CODE = "en-us"
+LANGUAGES = [("en", "English"), ("de", "German")]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
