@@ -20,7 +20,7 @@ from django.urls import NoReverseMatch, path, reverse
 from django.utils import formats, timezone
 
 import mvp_compliance
-from mvp_compliance.models import Acceptance, Document, Version
+from mvp_compliance.models import Acceptance, Document, Translation, Version
 from mvp_compliance.records import PersonalRecord
 from mvp_compliance.rendering import get_renderer
 from mvp_compliance.widgets import MarkdownEditorWidget
@@ -28,6 +28,7 @@ from tests.conftest import grant
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
+    TranslationFactory,
     UserFactory,
     VersionFactory,
 )
@@ -1870,3 +1871,166 @@ class TestPendingInTheAdmin:
         )
 
         assert b'name="slug"' in response.content
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+class TestLockingForTranslation:
+    def test_a_drafts_page_offers_locking_to_a_publisher_only(
+        self, client, publisher, editor, draft
+    ) -> None:
+        lock_url = reverse("admin:mvp_compliance_version_lock", args=[draft.pk])
+        change_url = reverse("admin:mvp_compliance_version_change", args=[draft.pk])
+
+        client.force_login(publisher)
+        offered = client.get(change_url)
+        client.force_login(editor)
+        withheld = client.get(change_url)
+
+        assert f'href="{lock_url}"'.encode() in offered.content
+        assert f'href="{lock_url}"'.encode() not in withheld.content
+
+    def test_a_caller_without_publish_version_is_refused_the_lock_view(
+        self, client, editor, draft
+    ) -> None:
+        client.force_login(editor)
+        lock_url = reverse("admin:mvp_compliance_version_lock", args=[draft.pk])
+
+        get_response = client.get(lock_url)
+        post_response = client.post(lock_url)
+
+        draft.refresh_from_db()
+        assert get_response.status_code == 403
+        assert post_response.status_code == 403
+        assert draft.status == draft.Status.DRAFT
+
+    def test_a_get_confirms_and_a_post_locks(self, client, publisher, draft) -> None:
+        client.force_login(publisher)
+        lock_url = reverse("admin:mvp_compliance_version_lock", args=[draft.pk])
+
+        confirmation = client.get(lock_url)
+        draft.refresh_from_db()
+        assert confirmation.status_code == 200
+        assert draft.status == draft.Status.DRAFT
+
+        response = client.post(lock_url)
+
+        draft.refresh_from_db()
+        assert response.status_code == 302
+        assert draft.status == draft.Status.PENDING
+
+    def test_a_refused_lock_reaches_the_caller_as_a_message(
+        self, client, publisher, document
+    ) -> None:
+        client.force_login(publisher)
+        empty = VersionFactory(document=document, markdown="   \n\n   ")
+
+        response = client.post(
+            reverse("admin:mvp_compliance_version_lock", args=[empty.pk]), follow=True
+        )
+
+        empty.refresh_from_db()
+        assert [m.level for m in response.context["messages"]] == [messages.ERROR]
+        assert empty.status == empty.Status.DRAFT
+
+    def test_a_pending_versions_page_has_no_form_and_offers_three_controls(
+        self, client, publisher
+    ) -> None:
+        client.force_login(publisher)
+        pending = locked()
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[pending.pk])
+        )
+
+        content = response.content
+        assert response.status_code == 200
+        assert b"<textarea" not in content
+        assert b'name="_save"' not in content
+        for name in ("publish", "return_to_draft"):
+            url = reverse(f"admin:mvp_compliance_version_{name}", args=[pending.pk])
+            assert f'href="{url}"'.encode() in content
+        delete_url = reverse("admin:mvp_compliance_version_delete", args=[pending.pk])
+        assert f'href="{delete_url}"'.encode() in content
+
+    def test_a_pending_versions_page_offers_no_locking(self, client, publisher) -> None:
+        client.force_login(publisher)
+        pending = locked()
+        lock_url = reverse("admin:mvp_compliance_version_lock", args=[pending.pk])
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_change", args=[pending.pk])
+        )
+
+        assert f'href="{lock_url}"'.encode() not in response.content
+
+    def test_a_pending_version_returns_to_draft_and_publishes(
+        self, client, publisher
+    ) -> None:
+        client.force_login(publisher)
+        returning = locked()
+        publishing = locked()
+
+        returned = client.post(
+            reverse("admin:mvp_compliance_version_return_to_draft", args=[returning.pk])
+        )
+        published = client.post(
+            reverse("admin:mvp_compliance_version_publish", args=[publishing.pk])
+        )
+
+        returning.refresh_from_db()
+        publishing.refresh_from_db()
+        assert returned.status_code == 302
+        assert returning.status == returning.Status.DRAFT
+        assert published.status_code == 302
+        assert publishing.status == publishing.Status.CURRENT
+
+    def test_a_caller_without_publish_version_is_refused_the_return_view(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        pending = locked()
+        return_url = reverse(
+            "admin:mvp_compliance_version_return_to_draft", args=[pending.pk]
+        )
+
+        get_response = client.get(return_url)
+        post_response = client.post(return_url)
+
+        pending.refresh_from_db()
+        assert get_response.status_code == 403
+        assert post_response.status_code == 403
+        assert pending.status == pending.Status.PENDING
+
+    def test_a_get_of_the_return_view_confirms_and_changes_nothing(
+        self, client, publisher
+    ) -> None:
+        client.force_login(publisher)
+        pending = locked()
+
+        response = client.get(
+            reverse("admin:mvp_compliance_version_return_to_draft", args=[pending.pk])
+        )
+
+        pending.refresh_from_db()
+        assert response.status_code == 200
+        assert pending.status == pending.Status.PENDING
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_deleting_permission_alone_discards_a_pending_version_and_its_translations(
+        self, client, editor
+    ) -> None:
+        client.force_login(editor)
+        pending = locked()
+        TranslationFactory(version=pending, language="de")
+        live = TranslationFactory(version=pending, language="fr")
+        live.publish()
+        delete_url = reverse("admin:mvp_compliance_version_delete", args=[pending.pk])
+
+        confirmation = client.get(delete_url)
+        response = client.post(delete_url, data={"post": "yes"})
+
+        assert confirmation.status_code == 200
+        assert response.status_code == 302
+        assert not Version.objects.filter(pk=pending.pk).exists()
+        assert not Translation.objects.filter(version_id=pending.pk).exists()
