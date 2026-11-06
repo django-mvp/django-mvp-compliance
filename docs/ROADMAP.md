@@ -127,7 +127,7 @@ What a complete and dependable version is expected to carry.
 
 ### R6 — Telling people what changed
 
-*feature · advances G3*
+*delivered in [#42](https://github.com/django-mvp/django-mvp-compliance/issues/42), [#132](https://github.com/django-mvp/django-mvp-compliance/issues/132), [#133](https://github.com/django-mvp/django-mvp-compliance/issues/133) · advances G3*
 
 A new version put in front of somebody who already agreed to the last one raises an obvious
 question, and answering it is the difference between informed agreement and a click. Every
