@@ -577,6 +577,14 @@ msgstr "Locking this would leave it with no output."
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
 
+#: mvp_compliance/models.py
+msgid "This version has changed since it was read."
+msgstr "This version has changed since it was read."
+
+#: mvp_compliance/models.py
+msgid "locked for translation"
+msgstr "locked for translation"
+
 #: mvp_compliance/models.py:859 mvp_compliance/models.py:943
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
