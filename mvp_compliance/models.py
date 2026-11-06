@@ -33,6 +33,14 @@ PUBLISHED_FROZEN_FIELDS = (
     "publisher_subject",
 )
 
+#: What a pending version, locked for translation, may no longer change. It is
+#: a draft in every other respect, so nothing else is held.
+PENDING_FROZEN_FIELDS = (
+    "document",
+    "markdown",
+    "summary",
+)
+
 
 #: A slug is lowercase letters and digits, joined by single hyphens. Django's
 #: own ``SlugField`` validator also accepts capitals and underscores, which no
@@ -306,11 +314,24 @@ class VersionQuerySet(models.QuerySet):
     """
 
     def update(self, **kwargs) -> int:
-        """Refuse an update touching a frozen field while any row is published."""
-        touches_frozen_field = bool(Version.frozen_field_keys() & set(kwargs))
-        if touches_frozen_field and self.published().exists():
+        """Refuse an update touching a frozen field while a row is frozen by it.
+
+        A published row is held by every field of ``PUBLISHED_FROZEN_FIELDS`` and
+        a pending one by ``PENDING_FROZEN_FIELDS``. Both sets name ``Version``
+        rather than ``self.model``, so a historical model in a migration is
+        refused the same way.
+
+        Raises:
+            PublishedVersionError: A row the update would reach is frozen against it.
+        """
+        keys = set(kwargs)
+        if Version.frozen_field_keys() & keys and self.published().exists():
             raise PublishedVersionError(
                 _("A published version's wording and publisher cannot be changed.")
+            )
+        if Version.pending_frozen_field_keys() & keys and self.pending().exists():
+            raise PublishedVersionError(
+                _("A version locked for translation cannot have its wording changed.")
             )
         return super().update(**kwargs)
 
@@ -324,17 +345,27 @@ class VersionQuerySet(models.QuerySet):
         """Narrow to every version ever published, current or superseded.
 
         Returns:
-            The published versions.
+            The published versions. Never a draft or a pending version.
         """
-        return self.exclude(status=Version.Status.DRAFT)
+        return self.filter(
+            status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED]
+        )
 
     def drafts(self) -> "VersionQuerySet":
-        """Narrow to the versions never published.
+        """Narrow to the versions never published and not locked for translation.
 
         Returns:
             The drafts.
         """
         return self.filter(status=Version.Status.DRAFT)
+
+    def pending(self) -> "VersionQuerySet":
+        """Narrow to the drafts locked for translation.
+
+        Returns:
+            The pending versions.
+        """
+        return self.filter(status=Version.Status.PENDING)
 
     def current(self) -> "VersionQuerySet":
         """Narrow to the version in force.
@@ -414,12 +445,20 @@ class VersionManager(models.Manager):
         return self.get_queryset().published()
 
     def drafts(self) -> VersionQuerySet:
-        """Return the versions never published.
+        """Return the versions never published and not locked for translation.
 
         Returns:
             The result of ``VersionQuerySet.drafts``.
         """
         return self.get_queryset().drafts()
+
+    def pending(self) -> VersionQuerySet:
+        """Return the versions locked for translation.
+
+        Returns:
+            The result of ``VersionQuerySet.pending``.
+        """
+        return self.get_queryset().pending()
 
     def current(self) -> VersionQuerySet:
         """Return the version in force.
@@ -482,8 +521,12 @@ class Version(models.Model):
 
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
+        PENDING = "pending", _("Pending")
         CURRENT = "current", _("Current")
         SUPERSEDED = "superseded", _("Superseded")
+
+    #: The standings a version holds before it is published.
+    UNPUBLISHED = (Status.DRAFT, Status.PENDING)
 
     status = models.CharField(
         _("status"),
@@ -492,8 +535,8 @@ class Version(models.Model):
         default=Status.DRAFT,
         editable=False,
         help_text=_(
-            "Whether this version is a draft, the version currently in force, "
-            "or superseded by a later one."
+            "Whether this version is a draft, a draft locked for translation, "
+            "the version currently in force, or superseded by a later one."
         ),
     )
     published_at = models.DateTimeField(
@@ -567,7 +610,7 @@ class Version(models.Model):
                 # The published branch names both standings because status is the
                 # one field the queryset guard lets through on a published row.
                 condition=models.Q(
-                    status="draft",
+                    status__in=["draft", "pending"],
                     number__isnull=True,
                     published_at__isnull=True,
                     html="",
@@ -592,8 +635,11 @@ class Version(models.Model):
 
     @property
     def is_published(self) -> bool:
-        """Whether this version has ever been published — current or superseded."""
-        return self.status != self.Status.DRAFT
+        """Whether this version has been published — current or superseded.
+
+        A pending version is not: it is a draft locked for translation.
+        """
+        return self.status in (self.Status.CURRENT, self.Status.SUPERSEDED)
 
     @property
     def publisher_display(self) -> "str | None":
@@ -640,6 +686,29 @@ class Version(models.Model):
             keys.add(field.attname)
         return keys
 
+    @classmethod
+    def pending_frozen_attnames(cls) -> list[str]:
+        """Return the column name of each field a pending version may not change.
+
+        Returns:
+            The attnames of ``PENDING_FROZEN_FIELDS``, so ``document_id`` stands
+            for ``document``.
+        """
+        return [
+            cast(models.Field, cls._meta.get_field(name)).attname
+            for name in PENDING_FROZEN_FIELDS
+        ]
+
+    @classmethod
+    def pending_frozen_field_keys(cls) -> set[str]:
+        """Return each pending-frozen field's name and attname.
+
+        Returns:
+            The names and attnames, so ``document_id`` is caught as well as
+            ``document``.
+        """
+        return set(PENDING_FROZEN_FIELDS) | set(cls.pending_frozen_attnames())
+
     @staticmethod
     def same_wording(one: str, other: str) -> bool:
         """Say whether two wordings say the same thing.
@@ -657,8 +726,68 @@ class Version(models.Model):
         """
         return one.replace("\r\n", "\n").strip() == other.replace("\r\n", "\n").strip()
 
+    def lock_for_translation(self, by=None) -> None:
+        """Lock this draft for translation, making it pending.
+
+        Its document, wording and summary stop changing so translators work
+        against text that will not move. It stays a draft in every other
+        respect: no number, no standing, invisible to readers, and it can be
+        discarded. Nothing is rendered or stored.
+
+        Args:
+            by: The account locking it. Kept for the signal that announces the
+                lock; the lock itself records nobody.
+
+        Raises:
+            PublishError: The version is not a draft, its rendered output would
+                be empty, or it says exactly what the version in force says.
+                Nothing is written.
+        """
+        if self.status != self.Status.DRAFT:
+            raise PublishError(_("Only a draft can be locked for translation."))
+        if not get_renderer()().render(self.markdown).strip():
+            raise PublishError(_("Locking this would leave it with no output."))
+
+        with transaction.atomic():
+            document = Document.objects.select_for_update().get(pk=self.document_id)
+            stored = self.stored_row()
+            if stored is None or stored["status"] != self.Status.DRAFT:
+                raise PublishError(_("This version is no longer a draft."))
+            current = document.versions.current().first()
+            if current is not None and self.same_wording(
+                self.markdown, current.markdown
+            ):
+                raise PublishError(
+                    _("This says exactly what the version in force already says.")
+                )
+            self.status = self.Status.PENDING
+            self.save(update_fields=["status"])
+
+    def return_to_draft(self, by=None) -> None:
+        """Return this pending version to a draft, so its wording can change again.
+
+        Args:
+            by: The account returning it. Kept for the signal that announces
+                the return; the return itself records nobody.
+
+        Raises:
+            PublishError: The version is not pending. Nothing is written.
+        """
+        if self.status != self.Status.PENDING:
+            raise PublishError(_("Only a version locked for translation can return."))
+
+        with transaction.atomic():
+            Document.objects.select_for_update().get(pk=self.document_id)
+            stored = self.stored_row()
+            if stored is None or stored["status"] != self.Status.PENDING:
+                raise PublishError(_("This version is no longer locked."))
+            self.status = self.Status.DRAFT
+            self.save(update_fields=["status"])
+
     def publish(self, publisher=None) -> None:
-        """Make this draft the version in force, superseding whichever one held it.
+        """Make this draft or pending version the version in force.
+
+        Whichever version held it is superseded.
 
         Every refusal comes before anything about this row or the document is
         touched. Once the publication commits, ``version_published`` is sent,
@@ -670,10 +799,10 @@ class Version(models.Model):
                 frozen with the wording. ``None`` records nobody.
 
         Raises:
-            PublishError: The version is not a draft, its rendered output is
-                empty, or it says exactly what the version in force says.
+            PublishError: The version is neither a draft nor pending, its rendered
+                output is empty, or it says exactly what the version in force says.
         """
-        if self.status != self.Status.DRAFT:
+        if self.status not in self.UNPUBLISHED:
             raise PublishError(_("This version has already been published."))
 
         html = get_renderer()().render(self.markdown)
@@ -693,7 +822,7 @@ class Version(models.Model):
             # Under the lock, ask the row rather than this instance: the check above
             # read a copy that is stale if a second process published first.
             stored = self.stored_row()
-            if stored is None or stored["status"] != self.Status.DRAFT:
+            if stored is None or stored["status"] not in self.UNPUBLISHED:
                 raise PublishError(_("This version is no longer a draft."))
             # Under the same lock, because a draft that duplicates today's version in
             # force stops being a duplicate once somebody publishes another one.
@@ -770,25 +899,33 @@ class Version(models.Model):
         return cast(dict | None, stored)
 
     def refuse_if_published_wording_changed(self, stored: dict) -> None:
-        """Refuse a ``save()`` that changes a frozen field on a published row.
+        """Refuse a ``save()`` that changes a frozen field on a frozen row.
 
-        Compares against the stored row rather than this instance's own
-        history, so the check survives ``refresh_from_db``, deferred loading
-        and an instance built by a third party.
+        A published row is held by ``PUBLISHED_FROZEN_FIELDS``, a pending one by
+        ``PENDING_FROZEN_FIELDS``. Compares against the stored row rather than
+        this instance's own history, so the check survives ``refresh_from_db``,
+        deferred loading and an instance built by a third party.
 
         Args:
             stored: The row as ``stored_row()`` returned it.
 
         Raises:
-            PublishedVersionError: The row is published and a frozen field differs.
+            PublishedVersionError: The row is frozen and a frozen field differs.
         """
         if stored["status"] == self.Status.DRAFT:
             return
-        attnames = [field.attname for field in self.frozen_fields()]
-        if any(stored[attname] != getattr(self, attname) for attname in attnames):
-            raise PublishedVersionError(
-                _("A published version's wording and publisher cannot be changed.")
+        if stored["status"] == self.Status.PENDING:
+            attnames = self.pending_frozen_attnames()
+            message = _(
+                "A version locked for translation cannot have its wording changed."
             )
+        else:
+            attnames = [field.attname for field in self.frozen_fields()]
+            message = _(
+                "A published version's wording and publisher cannot be changed."
+            )
+        if any(stored[attname] != getattr(self, attname) for attname in attnames):
+            raise PublishedVersionError(message)
 
     def delete(self, *args, **kwargs):
         """Refuse deleting a published version."""
