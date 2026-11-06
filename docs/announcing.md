@@ -63,7 +63,7 @@ it still run.
 | `version_pending` | `Version` | `version`, `by` | Once a draft is locked for translation. `by` is the account that locked it, or `None` |
 | `version_returned_to_draft` | `Version` | `version`, `by` | Once a pending version is returned to a draft. `by` is the account that returned it, or `None` |
 | `version_published` | `Version` | `version`, `publisher`, `replaced` | Once a draft or pending version is published, as described above |
-| `translation_published` | `Translation` | `translation`, `publisher`, `replaced` | Once a translation is put live. `replaced` is the wording it superseded, already `Translation.Status.SUPERSEDED`, or `None` for a language's first |
+| `translation_published` | `Translation` | `translation`, `publisher`, `replaced` | Once a translation is put live. `replaced` is the wording it superseded, already `Translation.Status.SUPERSEDED`, or `None` for a language's first. On a pending version readers are served the wording from the version's publication, which `version_published` announces; this signal is not sent again then |
 | `translation_returned_to_draft` | `Translation` | `translation`, `by` | Once for each live translation a version's return to a draft sends back to a draft, before `version_returned_to_draft`. Translations that were already drafts are not announced |
 | `personal_data_copied` | `PersonalDataView` | `user`, `kinds` | Each time a person's copy of their data is handed over. See [the how-to](how-to/declare-what-the-project-holds-about-a-person.md) |
 | `account_deleted` | `DeleteAccountView` | `user`, `subject`, `kinds` | Once a person has deleted their own account. See [the how-to](how-to/delete-an-account.md) |

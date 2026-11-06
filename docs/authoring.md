@@ -236,10 +236,13 @@ the same version and language, put live the same way. The earlier wording is kep
 Connect the receiver somewhere that runs at startup, such as an `AppConfig.ready()`. The other
 signals, and what each carries, are listed in [announcing.md](announcing.md#every-signal).
 
-A data migration imports `mvp_compliance.models.Translation` and does not use
-`apps.get_model("mvp_compliance", "Translation")`. The model a migration is given is a historical
-copy that carries none of the rules: no check that the version can be translated, no refusal to
-change a wording that has been live, and no rendering when one is put live.
+A data migration takes the model from `apps.get_model("mvp_compliance", "Translation")`, as any
+migration does, and never imports the model from `mvp_compliance.models`, which would tie the
+migration to a schema that later migrations change. The historical model carries the queryset
+refusals, so `update()`, `delete()` and a bulk upsert of a wording that has been live are refused
+there as everywhere. `save()` and `publish()` carry no rules in a migration: nothing checks that
+the version can be translated, and nothing renders a wording when it is put live. See
+[the decision record](adr/0004-migrations-are-the-one-route-immutability-cannot-close.md).
 
 ## Starting the next version from the one in force
 
