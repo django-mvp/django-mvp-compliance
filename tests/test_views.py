@@ -4346,11 +4346,17 @@ class TestPendingIsNotPublishedToReaders:
         self, client
     ):
         document = DocumentFactory()
+        first = published(document, "Published wording")
         pending(document)
 
-        response = client.get(version_address(document, "2026.1"))
+        response = client.get(version_address(document, first.number))
 
-        assert response.status_code == 404
+        assert response.status_code == 200
+        assert response.context["version"] == first
+        assert list(response.context["versions"]) == [first]
+        content = response.content.decode()
+        assert "Published wording" in content
+        assert "Pending wording" not in content
 
     def test_a_pending_version_is_not_listed_in_the_switcher(self, client):
         document = DocumentFactory()
