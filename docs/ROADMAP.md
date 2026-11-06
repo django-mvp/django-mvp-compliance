@@ -71,7 +71,7 @@ Serves G2. Does not cover the flow that collects the agreement, which is R4.
 
 ### R4 — Asking a person to agree
 
-*feature · advances G3, G5*
+*delivered in [#86](https://github.com/django-mvp/django-mvp-compliance/issues/86) · advances G3, G5*
 
 The flow itself: a signed-in person who has not agreed to what is currently in force is shown it
 and asked, and what they do next is recorded. It reads as part of the site, not as an interstitial
@@ -94,7 +94,7 @@ Serves G3 and G5. Does not cover deciding when the flow is triggered, which is R
 
 ### R5 — Making it apply across the site
 
-*feature · advances G3*
+*delivered in [#65](https://github.com/django-mvp/django-mvp-compliance/issues/65), [#87](https://github.com/django-mvp/django-mvp-compliance/issues/87) · advances G3*
 
 R4 builds the flow. This decides when a person meets it. Applying the check across a whole site
 rather than page by page is what makes it dependable, since the one view somebody forgets to
@@ -163,7 +163,7 @@ Serves G7.
 
 ### R9 — A person's own record, where they expect to find it
 
-*feature · advances G8*
+*delivered in [#66](https://github.com/django-mvp/django-mvp-compliance/issues/66) · advances G8*
 
 Somewhere in the account area, a signed-in person can see what they have agreed to, when, and what
 they currently allow, and can read again anything they agreed to. It is the visible half of a
