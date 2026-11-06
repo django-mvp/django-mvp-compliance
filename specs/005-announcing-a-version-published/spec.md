@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Serves**: G1 · **Roadmap**: — · **Issue**: #12
+**Serves**: G1, G3 · **Roadmap**: — · **Issue**: #12, #42
 
 **Input**: When a version of a legal document goes live, more than one person usually wants to know.
 The people who own the wording are often not the people who run the site, and a policy taking
@@ -30,9 +30,13 @@ site. It is translatable, rendered by Django's template system, and replaced by 
 of the same name in the project. The package renders it and hands back the subject and body. The
 project chooses who receives it and sends it.
 
-An email to the site's users about a new version is issue #42. It needs a public page for the
-document to link to and a summary of what changed, and neither exists yet. Telling readers what
-changed is R6, and the site-wide picture of where a site stands is R10. Keeping a record of who
+The package also ships a ready-made email for the people who use the site. It tells them a
+document has a new version, carries the summary of what changed when the version has one, and
+links to the document's page and to the comparison with the version it replaced. Its HTML part is
+built on django-mvp's email layout, so it is drawn in the site's own look, and its plain-text part
+says the same. As with the first email, the package renders it and the project sends it.
+
+The site-wide picture of where a site stands is R10. Keeping a record of who
 produced a person's consent records is issue #35. How versions are numbered is issue #38, and this
 feature uses whatever number a version has.
 
@@ -163,6 +167,55 @@ confirm the override is used.
 
 ---
 
+### User Story 4 - A ready-made email for the people who use the site (Priority: P2)
+
+A developer whose site's users agreed to a document wants to tell them when it changes, so each
+can read the new wording before they carry on. They render the package's email from their
+receiver and send it to whoever they choose. The email says which document changed and from when,
+gives the summary of what changed when the person who prepared the version wrote one, and links to
+the new version on the site and to a comparison with the version it replaced.
+
+The people who use a site read their email in the site's own look, so the HTML part extends
+django-mvp's email layout and carries the site's name, logo and colours. The plain-text part says
+the same in words. The email never names who published the version: that is a member of staff,
+and the people who use the site have no need to know.
+
+**Why this priority**: The signal alone meets the need, and so does an email a project writes for
+itself. This saves every project writing, laying out and translating the same one.
+
+**Independent Test**: From a receiver, render the email for a version with a summary and confirm
+the subject is one line, both bodies carry the summary and full links to the document's page and
+the comparison, and the HTML is drawn in django-mvp's email layout. Override the three templates
+in a test project and confirm the overrides are used.
+
+**Acceptance Scenarios**:
+
+1. **Given** a publication, **When** the email is rendered, **Then** a subject, a plain-text body
+   and an HTML body are returned and nothing is sent.
+2. **Given** a version with a summary, **When** the email is rendered, **Then** both bodies carry
+   it, with its line breaks kept.
+3. **Given** a version with no summary, **When** the email is rendered, **Then** neither body has a
+   part about what changed.
+4. **Given** a version that replaced another, **When** the email is rendered, **Then** both bodies
+   link, as full addresses, to the document's page and to the comparison of the replaced version
+   with this one.
+5. **Given** a document's first version, **When** the email is rendered, **Then** it links to the
+   document's page and offers no comparison.
+6. **Given** any rendering, **When** the HTML body is read, **Then** it is drawn in django-mvp's
+   email layout.
+7. **Given** a version with a publisher, **When** the email is rendered, **Then** it names nobody
+   who published it.
+8. **Given** a document's name with a line break or characters that look like markup, **When** the
+   email is rendered, **Then** the subject is one line, the plain-text body carries the name as
+   written, and the HTML body escapes it.
+9. **Given** project templates at the same paths as the package's, **When** the email is rendered,
+   **Then** the project's templates are used.
+10. **Given** a language other than English active when it is rendered, and a catalog for that
+    language, **When** the email is rendered, **Then** the subject and both bodies are in that
+    language.
+
+---
+
 ### Edge Cases
 
 - Two drafts of one document are published at nearly the same moment. Each publication that
@@ -231,6 +284,20 @@ confirm the override is used.
   sends the ready-made email. *(US-1, US-3)*
 - **FR-024**: The glossary MUST define *Publisher* as the person who put a version in force.
   *(US-2)*
+- **FR-025**: The package MUST ship a subject template, a plain-text body template and an HTML body
+  template for an email telling the site's users about a new version. The HTML body MUST extend
+  django-mvp's email layout. *(US-4)*
+- **FR-026**: The package MUST offer one call that renders the subject and both bodies from the
+  values the signal carries and returns them without sending anything. *(US-4)*
+- **FR-027**: The email MUST name the document and the date the version applies from, carry the
+  version's summary when it has one, and link to the document's page. When the version replaced
+  another it MUST also link to the comparison of the two. *(US-4)*
+- **FR-028**: The email's links MUST be full addresses, taken from the request it is rendered for
+  when one is given and otherwise from the current site, as django-mvp's email layout takes them.
+  *(US-4)*
+- **FR-029**: The email MUST NOT name or identify the version's publisher. *(US-4)*
+- **FR-030**: The rendered subject MUST be a single line, every string in the three templates MUST
+  be translatable, and a project template at the same path MUST replace the package's. *(US-4)*
 
 ### Key Entities
 
@@ -258,7 +325,9 @@ confirm the override is used.
   code or fewer, not counting choosing the recipients.
 - **SC-007**: The rendered subject contains no line break for any document name, including one that
   contains one.
-- **SC-008**: `makemessages` over the package picks up every string in both email templates.
+- **SC-008**: `makemessages` over the package picks up every string in every email template.
+- **SC-009**: A developer can send the email to the site's users, with its HTML part, from a
+  receiver in six lines of their own code or fewer, not counting choosing the recipients.
 
 ## Clarifications
 
@@ -271,9 +340,10 @@ confirm the override is used.
   (FR-007). Who is told, how and when is the host project's decision, and a project usually has its
   own way of doing this already. The package provides the announcement and a ready-made email to
   send from it. Sam's ruling at intake.
-- **Q**: Does the ready-made email include one for the site's users? → **A**: No. That email needs
-  a public page for the document and a summary of what changed, and neither exists yet. It is split
-  out as issue #42. This feature ships the email for the people running the site.
+- **Q**: Does the ready-made email include one for the site's users? → **A**: Yes, as a second
+  email (US-4). It links to the document's public page (FS-006) and carries the summary of what
+  changed (#132), and it is HTML in the site's look, built on django-mvp's email layout. The email
+  for the people running the site stays plain text.
 - **Q**: When a receiver fails, does the publication fail with it? → **A**: No (FR-005, FR-006).
   The version is already in force when the signal is sent. Failing the request would tell the
   publisher something went wrong with a publication that succeeded, and they might try again. The

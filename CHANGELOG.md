@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `render_new_version_email` renders an email telling the site's users that a document has a
+  new version. It returns a subject, a plain-text body and an HTML body, and sends nothing. The
+  email gives the date the version applies from and its summary of what changed, and links to the
+  document's page and to a comparison with the version it replaced. Its HTML body extends
+  django-mvp's email layout, so it is drawn in the site's own look. See
+  [docs/announcing.md](docs/announcing.md#an-email-to-the-people-who-use-the-site).
+
+### Changed
+
+- django-mvp 0.34.0 or later is required, for the email layout the new email extends.
+
 ## [v0.5.1] - 2026-10-28
 
 ### Changed

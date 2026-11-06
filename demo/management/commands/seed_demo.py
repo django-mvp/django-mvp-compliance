@@ -5,12 +5,14 @@ surface can be used rather than read about — every state the admin can put a
 version in is reachable without anybody creating a row by hand.
 """
 
+import os
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.contrib.sites.models import Site
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.http import HttpRequest
@@ -498,7 +500,22 @@ def on(year, month, day):
 class Command(BaseCommand):
     help = "Seed the demo with the standard accounts and a document in every state."
 
+    def make_site(self):
+        """Give the site the address the demo is served at, for the links in its email.
+
+        ``localhost:8021`` unless ``DEMO_SITE_DOMAIN`` names another, such as the
+        hostname the demo is reached at over the network.
+        """
+        Site.objects.update_or_create(
+            pk=1,
+            defaults={
+                "domain": os.environ.get("DEMO_SITE_DOMAIN", "localhost:8021"),
+                "name": "django-mvp-compliance demo",
+            },
+        )
+
     def handle(self, *args, **options):
+        self.make_site()
         for email, (is_staff, is_superuser, codenames) in ACCOUNTS.items():
             self.make_account(email, is_staff, is_superuser, codenames)
 

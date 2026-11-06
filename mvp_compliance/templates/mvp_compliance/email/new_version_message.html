@@ -1,0 +1,18 @@
+{% extends "mvp/email/base.html" %}
+{% load i18n mvp_email %}
+{% block subject %}{% if replaced %}{% blocktranslate with name=version.document.name %}{{ name }} has changed{% endblocktranslate %}{% else %}{% blocktranslate with name=version.document.name %}{{ name }} is published{% endblocktranslate %}{% endif %}{% endblock %}
+{% block preheader %}{% if replaced %}{% blocktranslate with name=version.document.name date=version.published_at|date:"DATE_FORMAT" %}A new version of {{ name }} applies from {{ date }}.{% endblocktranslate %}{% else %}{% blocktranslate with name=version.document.name date=version.published_at|date:"DATE_FORMAT" %}{{ name }} is published and applies from {{ date }}.{% endblocktranslate %}{% endif %}{% endblock %}
+{% block body %}
+  {% email_url document_path as document_url %}
+  <h1>{{ version.document.name }}</h1>
+  <c-mvp.email.text>{% if replaced %}{% blocktranslate with name=version.document.name date=version.published_at|date:"DATE_FORMAT" %}A new version of {{ name }} applies from {{ date }}.{% endblocktranslate %}{% else %}{% blocktranslate with name=version.document.name date=version.published_at|date:"DATE_FORMAT" %}{{ name }} is published and applies from {{ date }}.{% endblocktranslate %}{% endif %}</c-mvp.email.text>
+  {% if version.summary %}
+    <h2>{% translate "What changed" %}</h2>
+    <c-mvp.email.text>{{ version.summary|linebreaksbr }}</c-mvp.email.text>
+  {% endif %}
+  <c-mvp.email.button :href="document_url" text="{% translate 'Read it' %}" />
+  {% if comparison_path %}
+    {% email_url comparison_path as comparison_url %}
+    <c-mvp.email.note><a href="{{ comparison_url }}">{% blocktranslate with number=replaced.number %}Compare it with version {{ number }}{% endblocktranslate %}</a></c-mvp.email.note>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,1 @@
+{% load i18n %}{% autoescape off %}{% if replaced %}{% blocktranslate with name=version.document.name %}{{ name }} has changed{% endblocktranslate %}{% else %}{% blocktranslate with name=version.document.name %}{{ name }} is published{% endblocktranslate %}{% endif %}{% endautoescape %}
