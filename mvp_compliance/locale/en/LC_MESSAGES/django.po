@@ -22,60 +22,80 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: mvp_compliance/admin.py:93
+#: mvp_compliance/admin.py:99
 msgid "Current version"
 msgstr "Current version"
 
-#: mvp_compliance/admin.py:105
+#: mvp_compliance/admin.py:111
 msgid "No version in force"
 msgstr "No version in force"
 
-#: mvp_compliance/admin.py:110
+#: mvp_compliance/admin.py:116
 #: mvp_compliance/templates/cotton/compliance/outstanding.html:21
 #: mvp_compliance/templates/cotton/compliance/outstanding.html:41
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
 
-#: mvp_compliance/admin.py:113
+#: mvp_compliance/admin.py:119
 msgid "In force since"
 msgstr "In force since"
 
-#: mvp_compliance/admin.py:126 mvp_compliance/admin.py:196
+#: mvp_compliance/admin.py:132 mvp_compliance/admin.py:203
 #: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:3
 msgid "Published by"
 msgstr "Published by"
 
-#: mvp_compliance/admin.py:141
+#: mvp_compliance/admin.py:147
 msgid "Published versions"
 msgstr "Published versions"
 
-#: mvp_compliance/admin.py:184 mvp_compliance/models.py:607
+#: mvp_compliance/admin.py:191 mvp_compliance/models.py:607
 msgid "number"
 msgstr "number"
 
-#: mvp_compliance/admin.py:194 mvp_compliance/models.py:640
+#: mvp_compliance/admin.py:201 mvp_compliance/models.py:640
 #: mvp_compliance/models.py:1240
 msgid "Draft"
 msgstr "Draft"
 
-#: mvp_compliance/admin.py:352
+#: mvp_compliance/admin.py:390
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: mvp_compliance/admin.py:389
+#: mvp_compliance/admin.py:427
 #, python-format
 msgid "Version %(number)s of %(document)s is now published."
 msgstr "Version %(number)s of %(document)s is now published."
 
-#: mvp_compliance/admin.py:400
+#: mvp_compliance/admin.py:438
 #: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
 #: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:19
 msgid "Publish"
 msgstr "Publish"
 
-#: mvp_compliance/admin.py:459
+#: mvp_compliance/admin.py:498
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:21
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:16
+msgid "Lock for translation"
+msgstr "Lock for translation"
+
+#: mvp_compliance/admin.py:499
+msgid "The version is locked for translation."
+msgstr "The version is locked for translation."
+
+#: mvp_compliance/admin.py:517
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:28
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:15
+msgid "Return to draft"
+msgstr ""
+
+#: mvp_compliance/admin.py:518
+msgid "The version is a draft again."
+msgstr "The version is a draft again."
+
+#: mvp_compliance/admin.py:577
 #: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:5
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
@@ -123,10 +143,12 @@ msgid "Give it as a number of seconds, such as %(example)s."
 msgstr "Give it as a number of seconds, such as %(example)s."
 
 #: mvp_compliance/checks.py:128
+#, python-format
 msgid "%(setting)s is not a list."
 msgstr "%(setting)s is not a list."
 
 #: mvp_compliance/checks.py:130
+#, python-format
 msgid "Write it as a list of dotted paths, even for one kind: %(example)s."
 msgstr "Write it as a list of dotted paths, even for one kind: %(example)s."
 
@@ -831,9 +853,26 @@ msgstr "View current version"
 msgid "Version history"
 msgstr "Version history"
 
-#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:22
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:36
 msgid "Start the next version"
 msgstr "Start the next version"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:5
+msgid "Lock this version for translation?"
+msgstr "Lock this version for translation?"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:11
+msgid ""
+"Its wording and summary will stop changing so that it can be translated. It "
+"stays a draft: no reader sees it, and it can still be discarded or returned "
+"to a draft."
+msgstr ""
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:20
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:23
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:19
+msgid "Back"
+msgstr "Back"
 
 #: mvp_compliance/templates/admin/mvp_compliance/version/preview.html:5
 msgid "This is what a reader will be served"
@@ -859,9 +898,15 @@ msgstr ""
 msgid "Summary"
 msgstr "Summary"
 
-#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:23
-msgid "Back"
-msgstr "Back"
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:5
+msgid "Return this version to a draft?"
+msgstr "Return this version to a draft?"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:11
+msgid ""
+"Its wording can be changed again. Every translation of it that was put live "
+"goes back to a draft with its wording kept, and has to be put live again."
+msgstr ""
 
 #: mvp_compliance/templates/cotton/compliance/copy_value.html:5
 msgid "No value"
@@ -1009,6 +1054,7 @@ msgid "Legal documents"
 msgstr "Legal documents"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:24
+#, python-format
 msgid "From v%(number)s"
 msgstr "From v%(number)s"
 
@@ -1022,24 +1068,29 @@ msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:38
+#, python-format
 msgid "To v%(number)s"
 msgstr "To v%(number)s"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:59
+#, python-format
 msgid "Older: v%(number)s"
 msgstr "Older: v%(number)s"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:62
 #: mvp_compliance/templates/mvp_compliance/comparison.html:75
+#, python-format
 msgid "In force from %(published)s to %(replaced)s"
 msgstr "In force from %(published)s to %(replaced)s"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:64
 #: mvp_compliance/templates/mvp_compliance/comparison.html:77
+#, python-format
 msgid "In force since %(published)s"
 msgstr "In force since %(published)s"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:72
+#, python-format
 msgid "Newer: v%(number)s"
 msgstr "Newer: v%(number)s"
 
@@ -1057,6 +1108,7 @@ msgid "Added text"
 msgstr "Added text"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:92
+#, python-format
 msgid "is in v%(number)s only."
 msgstr "is in v%(number)s only."
 
@@ -1065,6 +1117,7 @@ msgid "Removed text"
 msgstr "Removed text"
 
 #: mvp_compliance/templates/mvp_compliance/comparison.html:93
+#, python-format
 msgid "was in v%(number)s only."
 msgstr "was in v%(number)s only."
 
@@ -1101,6 +1154,7 @@ msgid "Nothing of this kind is held about you."
 msgstr "Nothing of this kind is held about you."
 
 #: mvp_compliance/templates/mvp_compliance/copy/index.html:46
+#, python-format
 msgid "%(document)s, v%(number)s"
 msgstr "%(document)s, v%(number)s"
 
@@ -1174,6 +1228,7 @@ msgid "Cancel"
 msgstr "Cancel"
 
 #: mvp_compliance/templates/mvp_compliance/document_detail.html:39
+#, python-format
 msgid "Compare v%(number)s with"
 msgstr "Compare v%(number)s with"
 

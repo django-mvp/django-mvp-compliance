@@ -11,7 +11,13 @@ from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import PublishError
 from mvp_compliance.forms import DisclosureForm, VersionForm
-from mvp_compliance.models import Disclosure, Document, Version, declared_documents
+from mvp_compliance.models import (
+    Disclosure,
+    Document,
+    Translation,
+    Version,
+    declared_documents,
+)
 from mvp_compliance.records import produce, resolve_subject
 from mvp_compliance.rendering import get_renderer
 
@@ -157,8 +163,9 @@ class VersionAdmin(admin.ModelAdmin):
     """Writing, previewing and publishing versions (FS-002).
 
     A version is only added from a document, a published version has no
-    editable form, and publishing has a confirmation page behind the
-    ``publish_version`` permission.
+    editable form, and publishing, locking for translation and returning to
+    draft each have a confirmation page behind the ``publish_version``
+    permission.
     """
 
     form = VersionForm
@@ -210,6 +217,27 @@ class VersionAdmin(admin.ModelAdmin):
         if obj is not None and obj.is_published:
             return False
         return super().has_delete_permission(request, obj)
+
+    def get_deleted_objects(self, objs, request):
+        """Leave a version's translations out of the permissions a discard needs.
+
+        Discarding a draft or pending version takes its translations with it,
+        and that is the version's own permission: a translation put live on it
+        cannot be deleted by itself (FR-006).
+
+        Args:
+            objs: The versions being deleted.
+            request: The current request.
+
+        Returns:
+            Django's four values, with translations removed from the
+            permissions still missing.
+        """
+        to_delete, model_count, perms_needed, protected = super().get_deleted_objects(
+            objs, request
+        )
+        perms_needed.discard(Translation._meta.verbose_name)
+        return to_delete, model_count, perms_needed, protected
 
     def has_change_permission(self, request, obj=None):
         """Refuse changing a published or pending version, so Django serves its read-only page."""
@@ -266,7 +294,7 @@ class VersionAdmin(admin.ModelAdmin):
             return None
 
     def get_urls(self):
-        """Add the preview and publish pages."""
+        """Add the preview, publish, lock and return pages."""
         urls = [
             path(
                 "<int:object_id>/preview/",
@@ -277,6 +305,16 @@ class VersionAdmin(admin.ModelAdmin):
                 "<int:object_id>/publish/",
                 self.admin_site.admin_view(self.publish_view),
                 name="mvp_compliance_version_publish",
+            ),
+            path(
+                "<int:object_id>/lock/",
+                self.admin_site.admin_view(self.lock_view),
+                name="mvp_compliance_version_lock",
+            ),
+            path(
+                "<int:object_id>/return-to-draft/",
+                self.admin_site.admin_view(self.return_to_draft_view),
+                name="mvp_compliance_version_return_to_draft",
             ),
         ]
         return urls + super().get_urls()
@@ -398,6 +436,86 @@ class VersionAdmin(admin.ModelAdmin):
             version,
             "admin/mvp_compliance/version/publish_confirmation.html",
             _("Publish"),
+        )
+
+    def transition_view(self, request, object_id, action, template, title, done):
+        """Confirm on GET and apply a change of standing on POST.
+
+        Locking for translation and returning to draft share this shape with
+        publishing, and the same permission: each decides what a reader may
+        come to be served.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the version.
+            action: The name of the version method to call, with the caller.
+            template: The confirmation template.
+            title: The page title.
+            done: The message shown when the change was made.
+
+        Returns:
+            The confirmation page on GET, or a redirect to the version's page
+            on POST.
+
+        Raises:
+            Http404: No version has that primary key.
+            PermissionDenied: The caller does not hold ``publish_version``.
+        """
+        version = self.get_object(request, object_id)
+        if version is None:
+            raise Http404
+        if not request.user.has_perm("mvp_compliance.publish_version"):
+            raise PermissionDenied
+
+        if request.method == "POST":
+            try:
+                getattr(version, action)(request.user)
+            except PublishError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, done)
+            return HttpResponseRedirect(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk])
+            )
+
+        return self.version_page(request, version, template, title)
+
+    def lock_view(self, request, object_id):
+        """Confirm on GET and lock the draft for translation on POST.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the draft to lock.
+
+        Returns:
+            The confirmation page or a redirect to the version's page.
+        """
+        return self.transition_view(
+            request,
+            object_id,
+            "lock_for_translation",
+            "admin/mvp_compliance/version/lock_confirmation.html",
+            _("Lock for translation"),
+            _("The version is locked for translation."),
+        )
+
+    def return_to_draft_view(self, request, object_id):
+        """Confirm on GET and return the version to a draft on POST.
+
+        Args:
+            request: The current request.
+            object_id: The primary key of the pending version to return.
+
+        Returns:
+            The confirmation page or a redirect to the version's page.
+        """
+        return self.transition_view(
+            request,
+            object_id,
+            "return_to_draft",
+            "admin/mvp_compliance/version/return_to_draft_confirmation.html",
+            _("Return to draft"),
+            _("The version is a draft again."),
         )
 
 

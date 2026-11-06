@@ -15,6 +15,20 @@
       </a>
     </li>
     {% endif %}
+    {% if original.status == "draft" and perms.mvp_compliance.publish_version %}
+    <li>
+      <a href="{% url opts|admin_urlname:'lock' original.pk %}" class="button">
+        {% translate "Lock for translation" %}
+      </a>
+    </li>
+    {% endif %}
+    {% if original.status == "pending" and perms.mvp_compliance.publish_version %}
+    <li>
+      <a href="{% url opts|admin_urlname:'return_to_draft' original.pk %}" class="button">
+        {% translate "Return to draft" %}
+      </a>
+    </li>
+    {% endif %}
     {% if original.status == "current" %}
     <li>
       <a href="{% url 'admin:mvp_compliance_version_add' %}?document={{ original.document_id }}"
