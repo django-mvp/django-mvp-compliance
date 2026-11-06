@@ -16,11 +16,12 @@ from django.contrib.sites.models import Site
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.http import HttpRequest
+from django.test import override_settings
 
 from demo.models import Upload
 from demo.personal_data import Uploads
 from mvp_compliance.deletion import delete_account
-from mvp_compliance.models import Acceptance, Document, Version
+from mvp_compliance.models import Acceptance, Document, Translation, Version
 
 PASSWORD = "password"
 
@@ -46,6 +47,18 @@ ACCOUNTS = {
     # being separate: fielding a request is a different job from writing a
     # document, and staff.user above holds neither.
     "disclosure.user@example.com": (True, False, ["produce_disclosure"]),
+    # Translates and puts translations live, and can only read versions.
+    "translator.user@example.com": (
+        True,
+        False,
+        [
+            "view_version",
+            "view_translation",
+            "add_translation",
+            "change_translation",
+            "publish_translation",
+        ],
+    ),
     # Named in demo/settings.py, so it is never stopped by the agreement check.
     "monitoring.user@example.com": (False, False, []),
     # Holds nothing itself: it is in the group below, which holds the permission
@@ -342,6 +355,59 @@ Treat the people here the way you would want to be treated.
 Keep each thread to what it started about.
 """
 
+PRIVACY_DE = """\
+## Welche Daten wir {wort}
+
+Wir {wort} Ihre E-Mail-Adresse und die Angaben, die Sie uns selbst geben.
+
+## Wie lange wir sie aufbewahren
+
+So lange Ihr Konto besteht, und danach nicht länger als nötig.
+"""
+
+PRIVACY_NEXT_SUMMARY_DE = "Wir sagen jetzt, wie lange wir Ihre Daten aufbewahren."
+
+TERMS_NEXT = """\
+## Using this site
+
+Use it for what it is for. Do not try to break it, and do not use it to reach
+somebody else's account.
+
+## What we promise
+
+The site will be here, and it will do what it says. We tell you before a planned
+outage.
+"""
+
+TERMS_NEXT_DE = """\
+## Die Nutzung dieser Website
+
+Nutzen Sie sie für ihren Zweck. Versuchen Sie nicht, sie zu stören, und nutzen
+Sie sie nicht, um auf das Konto eines anderen zuzugreifen.
+
+## Was wir versprechen
+
+Die Website ist da und tut, was sie sagt. Geplante Ausfälle kündigen wir vorher an.
+"""
+
+TERMS_NEXT_FR = """\
+## Utiliser ce site
+
+Utilisez-le pour ce à quoi il sert.
+"""
+
+IMPRESSUM_DE = """\
+## Angaben gemäß § 5 DDG
+
+Beispiel GmbH, Musterstraße 1, 10115 Berlin.
+"""
+
+IMPRESSUM_ES = """\
+## Información legal
+
+Beispiel GmbH, Musterstraße 1, 10115 Berlín.
+"""
+
 IMPRESSUM = """\
 ## Publisher
 
@@ -609,6 +675,7 @@ class Command(BaseCommand):
             kind=Document.Kind.NOTICE,
         )
 
+        self.make_translations()
         self.make_acceptances()
         self.make_asked()
         self.make_uploads()
@@ -623,6 +690,62 @@ class Command(BaseCommand):
         Document.objects.filter(name="House rules").update(enforced=False)
 
         self.stdout.write(self.style.SUCCESS("Demo data is ready."))
+
+    def make_translations(self):
+        """Translations in every state, and a version locked for translation.
+
+        The privacy policy in force has a German translation corrected once and
+        no French one. The terms of use have a next version locked for
+        translation, with German put live and French still a draft. The
+        impressum has a German translation and one in Spanish, a language the
+        site no longer offers. The cookie policy's draft can be locked.
+        """
+        if Translation.objects.exists():
+            self.stdout.write("  translations: already seeded")
+            return
+        translator = get_user_model().objects.get(username="translator.user")
+        publisher = get_user_model().objects.get(username="publisher.user")
+
+        privacy = Version.objects.current().get(document__name="Privacy policy")
+        first = Translation.objects.create(
+            version=privacy, language="de", markdown=PRIVACY_DE.format(wort="erheben")
+        )
+        with on(2026, 6, 20):
+            first.publish(publisher=translator)
+        correction = Translation.objects.create(
+            version=privacy,
+            language="de",
+            markdown=PRIVACY_DE.format(wort="verarbeiten"),
+            summary=PRIVACY_NEXT_SUMMARY_DE,
+        )
+        with on(2026, 7, 14):
+            correction.publish(publisher=translator)
+
+        terms = Document.objects.get(name="Terms of use")
+        pending = Version.objects.create(document=terms, markdown=TERMS_NEXT)
+        pending.lock_for_translation(by=publisher)
+        german = Translation.objects.create(
+            version=pending, language="de", markdown=TERMS_NEXT_DE
+        )
+        german.publish(publisher=translator)
+        Translation.objects.create(
+            version=pending, language="fr", markdown=TERMS_NEXT_FR
+        )
+
+        impressum = Version.objects.current().get(document__name="Impressum")
+        Translation.objects.create(
+            version=impressum, language="de", markdown=IMPRESSUM_DE
+        ).publish(publisher=translator)
+        with override_settings(
+            LANGUAGES=[("en", "English"), ("de", "German"), ("es", "Spanish")]
+        ):
+            Translation.objects.create(
+                version=impressum, language="es", markdown=IMPRESSUM_ES
+            ).publish(publisher=translator)
+        self.stdout.write(
+            "  translations: German corrected once, a pending version, and one in "
+            "a language no longer offered"
+        )
 
     def make_support_group(self):
         """Put the support account in a group that holds ``skip_agreement``."""
