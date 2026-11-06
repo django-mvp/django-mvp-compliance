@@ -1077,6 +1077,9 @@ class TranslationQuerySet(models.QuerySet):
     def update(self, **kwargs) -> int:
         """Refuse an update touching a frozen field of a frozen row.
 
+        Returns:
+            The number of rows updated.
+
         Raises:
             PublishedTranslationError: A row the update would reach is frozen.
         """
@@ -1142,6 +1145,9 @@ class TranslationQuerySet(models.QuerySet):
         It is the ``published_at`` of the earliest wording of the same version
         and language put live after this one, and ``None`` for the current
         wording and for drafts. One query however many rows are read.
+
+        Returns:
+            The queryset with ``replaced_at`` annotated.
         """
         later = Translation.objects.filter(
             version=models.OuterRef("version"),
@@ -1229,6 +1235,8 @@ class Translation(models.Model):
     )
 
     class Status(models.TextChoices):
+        """The standings of a wording."""
+
         DRAFT = "draft", _("Draft")
         CURRENT = "current", _("Current")
         SUPERSEDED = "superseded", _("Superseded")
