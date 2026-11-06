@@ -2034,3 +2034,365 @@ class TestLockingForTranslation:
         assert response.status_code == 302
         assert not Version.objects.filter(pk=pending.pk).exists()
         assert not Translation.objects.filter(version_id=pending.pk).exists()
+
+
+TRANSLATOR_PERMISSIONS = (
+    "add_translation",
+    "change_translation",
+    "view_translation",
+    "view_version",
+)
+
+
+@pytest.fixture
+def translator(db):
+    """Somebody who may write translations but not put them live."""
+    return grant(UserFactory(is_staff=True), *TRANSLATOR_PERMISSIONS)
+
+
+@pytest.fixture
+def translation_publisher(db):
+    """Somebody who may write translations and put them live, and nothing on versions."""
+    return grant(
+        UserFactory(is_staff=True), *TRANSLATOR_PERMISSIONS, "publish_translation"
+    )
+
+
+def add_translation_url(version, language="de") -> str:
+    """The address that opens the add form for a version and a language."""
+    return (
+        reverse("admin:mvp_compliance_translation_add")
+        + f"?version={version.pk}&language={language}"
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.urls(__name__)
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationAdmin:
+    @pytest.mark.parametrize("state", ["pending", "published"])
+    def test_a_translation_is_added_from_a_pending_or_published_version(
+        self, client, translator, state
+    ) -> None:
+        client.force_login(translator)
+        version = locked()
+        if state == "published":
+            version.publish()
+
+        get_response = client.get(add_translation_url(version))
+        post_response = client.post(
+            add_translation_url(version),
+            data={
+                "version": version.pk,
+                "language": "de",
+                "markdown": "Neuer Wortlaut",
+            },
+        )
+
+        written = Translation.objects.get(version=version)
+        assert get_response.status_code == 200
+        assert post_response.status_code == 302
+        assert written.language == "de"
+        assert written.status == Translation.Status.DRAFT
+
+    @pytest.mark.parametrize(
+        "address",
+        [
+            lambda draft, pending: reverse("admin:mvp_compliance_translation_add"),
+            lambda draft, pending: add_translation_url(draft),
+            lambda draft, pending: add_translation_url(pending, "en"),
+            lambda draft, pending: add_translation_url(pending, "xx"),
+            lambda draft, pending: add_translation_url(pending, ""),
+            lambda draft, pending: (
+                reverse("admin:mvp_compliance_translation_add")
+                + "?version=not-a-number&language=de"
+            ),
+        ],
+        ids=[
+            "bare",
+            "draft version",
+            "main language",
+            "language not offered",
+            "no language",
+            "version not a number",
+        ],
+    )
+    def test_the_add_form_is_refused_unless_both_halves_are_valid(
+        self, client, translator, draft, address
+    ) -> None:
+        client.force_login(translator)
+        pending = locked()
+
+        response = client.get(address(draft, pending))
+
+        assert response.status_code == 403
+        assert not Translation.objects.exists()
+
+    def test_adding_where_one_exists_starts_from_its_current_wording(
+        self, client, translator
+    ) -> None:
+        client.force_login(translator)
+        pending = locked()
+        existing = TranslationFactory(version=pending, markdown="Bestehender Text")
+        existing.publish()
+
+        response = client.get(add_translation_url(pending))
+
+        initial = response.context["adminform"].form.initial
+        assert initial["markdown"] == "Bestehender Text"
+
+    def test_adding_a_correction_keeps_the_wording_it_replaces(
+        self, client, translation_publisher
+    ) -> None:
+        client.force_login(translation_publisher)
+        pending = locked()
+        original = TranslationFactory(version=pending, markdown="Erster Text")
+        original.publish()
+        client.post(
+            add_translation_url(pending),
+            data={"version": pending.pk, "language": "de", "markdown": "Besserer Text"},
+        )
+        correction = Translation.objects.get(
+            version=pending, status=Translation.Status.DRAFT
+        )
+
+        client.post(
+            reverse("admin:mvp_compliance_translation_publish", args=[correction.pk])
+        )
+
+        original.refresh_from_db()
+        correction.refresh_from_db()
+        assert original.status == Translation.Status.SUPERSEDED
+        assert original.markdown == "Erster Text"
+        assert correction.status == Translation.Status.CURRENT
+
+    def test_a_draft_translation_can_be_edited(self, client, translator) -> None:
+        client.force_login(translator)
+        draft_translation = TranslationFactory(markdown="Vorher")
+        change_url = reverse(
+            "admin:mvp_compliance_translation_change", args=[draft_translation.pk]
+        )
+
+        page = client.get(change_url)
+        response = client.post(change_url, data={"markdown": "Nachher"})
+
+        draft_translation.refresh_from_db()
+        assert b'name="markdown"' in page.content
+        assert response.status_code == 302
+        assert draft_translation.markdown == "Nachher"
+        assert draft_translation.language == "de"
+
+    def test_a_translation_holder_can_add_preview_and_put_live_and_nothing_on_versions(
+        self, client, translation_publisher
+    ) -> None:
+        client.force_login(translation_publisher)
+        pending = locked()
+        client.post(
+            add_translation_url(pending),
+            data={"version": pending.pk, "language": "de", "markdown": "Text"},
+        )
+        written = Translation.objects.get(version=pending)
+
+        preview = client.get(
+            reverse("admin:mvp_compliance_translation_preview", args=[written.pk])
+        )
+        confirmation = client.get(
+            reverse("admin:mvp_compliance_translation_publish", args=[written.pk])
+        )
+        put_live = client.post(
+            reverse("admin:mvp_compliance_translation_publish", args=[written.pk])
+        )
+
+        written.refresh_from_db()
+        assert preview.status_code == 200
+        assert confirmation.status_code == 200
+        assert put_live.status_code == 302
+        assert written.status == Translation.Status.CURRENT
+        assert written.publisher == translation_publisher
+
+    @pytest.mark.parametrize("name", ["lock", "return_to_draft", "publish"])
+    def test_a_translation_holder_is_refused_the_versions_status_views(
+        self, client, translation_publisher, name
+    ) -> None:
+        client.force_login(translation_publisher)
+        pending = locked()
+        draft_version = VersionFactory()
+        url = reverse(f"admin:mvp_compliance_version_{name}", args=[pending.pk])
+        draft_url = reverse(
+            f"admin:mvp_compliance_version_{name}", args=[draft_version.pk]
+        )
+
+        responses = [client.get(url), client.post(url), client.post(draft_url)]
+
+        pending.refresh_from_db()
+        draft_version.refresh_from_db()
+        assert [r.status_code for r in responses] == [403, 403, 403]
+        assert pending.status == pending.Status.PENDING
+        assert draft_version.status == draft_version.Status.DRAFT
+
+    def test_a_translation_holder_can_neither_change_nor_delete_a_version(
+        self, client, translation_publisher, draft
+    ) -> None:
+        client.force_login(translation_publisher)
+        pending = locked()
+
+        changes = [
+            client.post(
+                reverse("admin:mvp_compliance_version_change", args=[version.pk]),
+                data={"document": version.document_id, "markdown": "Rewritten"},
+            )
+            for version in (draft, pending)
+        ]
+        deletes = [
+            client.post(
+                reverse("admin:mvp_compliance_version_delete", args=[version.pk]),
+                data={"post": "yes"},
+            )
+            for version in (draft, pending)
+        ]
+
+        assert [r.status_code for r in changes] == [403, 403]
+        assert [r.status_code for r in deletes] == [403, 403]
+        assert Version.objects.filter(pk__in=[draft.pk, pending.pk]).count() == 2
+
+    def test_without_publish_translation_the_publish_view_is_refused(
+        self, client, translator
+    ) -> None:
+        client.force_login(translator)
+        written = TranslationFactory()
+        url = reverse("admin:mvp_compliance_translation_publish", args=[written.pk])
+
+        get_response = client.get(url)
+        post_response = client.post(url)
+
+        written.refresh_from_db()
+        assert get_response.status_code == 403
+        assert post_response.status_code == 403
+        assert written.status == Translation.Status.DRAFT
+
+    def test_the_publish_view_checks_publish_translation_only(
+        self, client, publisher
+    ) -> None:
+        client.force_login(publisher)
+        written = TranslationFactory()
+        url = reverse("admin:mvp_compliance_translation_publish", args=[written.pk])
+
+        response = client.post(url)
+
+        written.refresh_from_db()
+        assert response.status_code == 403
+        assert written.status == Translation.Status.DRAFT
+
+    def test_a_refused_publication_reaches_the_caller_as_a_message(
+        self, client, translation_publisher
+    ) -> None:
+        client.force_login(translation_publisher)
+        written = TranslationFactory(markdown="   \n   ")
+
+        response = client.post(
+            reverse("admin:mvp_compliance_translation_publish", args=[written.pk]),
+            follow=True,
+        )
+
+        written.refresh_from_db()
+        assert [m.level for m in response.context["messages"]] == [messages.ERROR]
+        assert written.status == Translation.Status.DRAFT
+
+    def test_a_non_draft_translations_page_has_no_form_and_no_delete(
+        self, client, translation_publisher
+    ) -> None:
+        user = grant(translation_publisher, "delete_translation")
+        client.force_login(user)
+        written = TranslationFactory()
+        written.publish()
+        change_url = reverse(
+            "admin:mvp_compliance_translation_change", args=[written.pk]
+        )
+        delete_url = reverse(
+            "admin:mvp_compliance_translation_delete", args=[written.pk]
+        )
+
+        page = client.get(change_url)
+        changed = client.post(change_url, data={"markdown": "Anders"})
+        deleted = client.post(delete_url, data={"post": "yes"})
+
+        written.refresh_from_db()
+        assert page.status_code == 200
+        assert b"<textarea" not in page.content
+        assert b'name="_save"' not in page.content
+        assert f'href="{delete_url}"'.encode() not in page.content
+        assert changed.status_code == 403
+        assert deleted.status_code == 403
+        assert Translation.objects.filter(pk=written.pk).exists()
+        assert written.markdown != "Anders"
+
+    def test_the_preview_shows_the_rendering_the_publish_will_store(
+        self, client, translation_publisher
+    ) -> None:
+        client.force_login(translation_publisher)
+        written = TranslationFactory(
+            markdown="# Titel\n\n**fett** <script>x()</script>"
+        )
+        expected = get_renderer()().render(written.markdown)
+
+        preview = client.get(
+            reverse("admin:mvp_compliance_translation_preview", args=[written.pk])
+        )
+        confirmation = client.get(
+            reverse("admin:mvp_compliance_translation_publish", args=[written.pk])
+        )
+        client.post(
+            reverse("admin:mvp_compliance_translation_publish", args=[written.pk])
+        )
+
+        written.refresh_from_db()
+        assert expected in preview.content.decode()
+        assert expected in confirmation.content.decode()
+        assert written.html == expected
+
+    def test_a_put_live_translations_pages_show_its_stored_html(
+        self, client, translation_publisher
+    ) -> None:
+        client.force_login(translation_publisher)
+        written = TranslationFactory()
+        written.publish()
+        stored_html = written.html
+        addresses = [
+            reverse(f"admin:mvp_compliance_translation_{name}", args=[written.pk])
+            for name in ("preview", "change")
+        ]
+
+        with override_settings(
+            MVP_COMPLIANCE_RENDERER="tests.test_models.UppercaseRenderer"
+        ):
+            responses = [client.get(address) for address in addresses]
+
+        for response in responses:
+            content = response.content.decode()
+            assert response.status_code == 200
+            assert stored_html in content
+            assert stored_html.upper() not in content
+
+    def test_the_change_form_of_a_draft_offers_preview_and_publish_by_permission(
+        self, client, translator, translation_publisher
+    ) -> None:
+        written = TranslationFactory()
+        preview_url = reverse(
+            "admin:mvp_compliance_translation_preview", args=[written.pk]
+        )
+        publish_url = reverse(
+            "admin:mvp_compliance_translation_publish", args=[written.pk]
+        )
+        change_url = reverse(
+            "admin:mvp_compliance_translation_change", args=[written.pk]
+        )
+
+        client.force_login(translation_publisher)
+        permitted = client.get(change_url)
+        client.force_login(translator)
+        withheld = client.get(change_url)
+
+        assert f'href="{preview_url}"'.encode() in permitted.content
+        assert f'href="{publish_url}"'.encode() in permitted.content
+        assert f'href="{preview_url}"'.encode() in withheld.content
+        assert f'href="{publish_url}"'.encode() not in withheld.content
