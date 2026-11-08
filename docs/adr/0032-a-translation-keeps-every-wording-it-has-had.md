@@ -27,9 +27,10 @@ producible later, exactly as it was. A translation that could be overwritten wou
 leaving the version untouched. Keeping each wording as a row reuses the rules a version already
 follows: drafts, a preview, publication behind its own permission, HTML stored once.
 
-django-modeltranslation and django-parler were considered. Both keep one editable wording per
-language, and django-modeltranslation stores it in columns on the version's own row, which the
-version's immutability rules forbid.
+django-modeltranslation and django-parler were considered, and neither is used. Both keep one
+editable wording per language. django-modeltranslation stores it in columns on the version's own
+row. django-parler moves the main language's wording into its own table. The full reasoning is in
+[Why translations are not built on a translation package](../explanation/why-translations-are-not-built-on-a-translation-package.md).
 
 A shared abstract base for the version and translation guards was considered and dropped: Django
 leaves abstract bases out of the models it builds for migrations, so the guard would not hold

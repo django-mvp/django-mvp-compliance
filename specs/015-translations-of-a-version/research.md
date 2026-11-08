@@ -4,7 +4,7 @@ Read against `main` at 2026-11-06 (FS-001 to FS-014 delivered).
 
 ## Planning notes
 
-### N1 — "Django-model-translations" (`django-modeltranslation`)
+### N1 — "Django-model-translations" (`django-modeltranslation` and `django-parler`)
 
 **Not adopted.** `django-modeltranslation` 0.19 registers a model's fields for translation
 and adds one database column per field per language (`markdown_de`, `html_de`, …) to that
@@ -22,10 +22,14 @@ model's own table. Three things rule it out here:
   never shipped. Article XV makes stored data the one thing the package's migrations must
   carry forward exactly.
 
-`django-parler` was looked at for the same reason (a separate translations table, one row per
-object and language). It keeps one mutable row per language and has no drafts, no stored
-rendering and no history, so it solves the part of this feature that is easy and none of the
-part that is not. Not adopted either.
+`django-parler` 2.4 (May 2026, Django 5.1 to 6.0) is the package the maintainer meant. **Not
+adopted.** It keeps translations in their own table, so translating would not write to the
+version's row. But it keeps one editable row per language, so a correction overwrites, and it
+treats the main language as a translation too, which would move every version's own wording into
+its table in a migration. It has no drafts, putting live, stored rendering or freezing, and it does
+not declare Django 6.1. What it would add, admin language tabs and a reading fallback, is small next
+to that. The reasoning is published in
+`docs/explanation/why-translations-are-not-built-on-a-translation-package.md`.
 
 ## Approach
 
