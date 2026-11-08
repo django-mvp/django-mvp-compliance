@@ -1,6 +1,7 @@
 """Tests for mvp_compliance.models."""
 
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.apps import apps
@@ -10,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.loader import MigrationLoader
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, QuerySet
 from django.test import RequestFactory, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -18,25 +19,31 @@ from django.utils import timezone
 
 from mvp_compliance.exceptions import (
     DeclaredDocumentError,
+    PublishedTranslationError,
     PublishedVersionError,
     PublishError,
     RecordedAcceptanceError,
     RecordError,
+    TranslationError,
 )
 from mvp_compliance.models import (
     Acceptance,
     AcceptanceManager,
     AcceptanceQuerySet,
     Document,
+    Translation,
     Version,
     VersionManager,
     keep_or_remove_acceptances,
+    language_name,
+    offered_languages,
 )
 from mvp_compliance.records import produce
 from mvp_compliance.rendering import MarkdownRenderer
 from tests.factories import (
     AcceptanceFactory,
     DocumentFactory,
+    TranslationFactory,
     UserFactory,
     VersionFactory,
 )
@@ -2822,3 +2829,1483 @@ class TestSkipAgreementPermission:
         )
 
         assert user.has_perm("mvp_compliance.skip_agreement")
+
+
+def lock(version):
+    """Lock a draft for translation, as the admin's lock page will."""
+    version.lock_for_translation()
+    return version
+
+
+@pytest.mark.django_db
+class TestPendingVersion:
+    """A draft locked for translation: frozen wording, no standing (FS-015)."""
+
+    def test_the_factory_builds_a_pending_version_with_no_standing(self):
+        version = VersionFactory(pending=True)
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.PENDING
+
+    def test_locking_a_draft_makes_it_pending_with_no_standing(self, draft):
+        draft.lock_for_translation()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.PENDING
+        assert draft.number is None
+        assert draft.published_at is None
+        assert draft.html == ""
+        assert draft.publisher is None
+        assert draft.publisher_subject == ""
+
+    def test_locking_renders_nothing(self, draft):
+        draft.lock_for_translation()
+
+        assert Version.objects.get(pk=draft.pk).html == ""
+
+    def test_locking_consumes_no_number(self, document):
+        first = VersionFactory(document=document)
+        lock(first)
+        second = VersionFactory(document=document, markdown="Second wording")
+
+        second.publish()
+
+        assert second.number.endswith(".1")
+
+    @pytest.mark.parametrize("start", ["pending", "current", "superseded"])
+    def test_locking_anything_but_a_draft_is_refused_and_writes_nothing(self, start):
+        version = VersionFactory()
+        if start == "pending":
+            lock(version)
+        else:
+            version.publish()
+            if start == "superseded":
+                VersionFactory(document=version.document, markdown="Newer").publish()
+        before = Version.objects.filter(pk=version.pk).values().get()
+
+        with pytest.raises(PublishError):
+            version.lock_for_translation()
+
+        assert Version.objects.filter(pk=version.pk).values().get() == before
+
+    def test_locking_a_draft_with_empty_output_is_refused(self, document):
+        version = VersionFactory(document=document, markdown="   \n\n   ")
+
+        with pytest.raises(PublishError):
+            version.lock_for_translation()
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.DRAFT
+
+    def test_locking_a_draft_that_repeats_the_version_in_force_is_refused(
+        self, published_version
+    ):
+        repeat = VersionFactory(
+            document=published_version.document,
+            markdown=f"{published_version.markdown}\r\n",
+        )
+
+        with pytest.raises(PublishError):
+            repeat.lock_for_translation()
+
+        repeat.refresh_from_db()
+        assert repeat.status == Version.Status.DRAFT
+
+    def test_locking_rechecks_the_stored_status_under_the_lock(self, draft):
+        stale = Version.objects.get(pk=draft.pk)
+        draft.publish()
+
+        with pytest.raises(PublishError):
+            stale.lock_for_translation()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.CURRENT
+
+    def test_a_pending_wording_is_refused_a_change_through_save(self, draft):
+        lock(draft)
+        draft.markdown = "Changed"
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        assert Version.objects.get(pk=draft.pk).markdown != "Changed"
+
+    def test_a_pending_summary_is_refused_a_change_through_save(self, draft):
+        lock(draft)
+        draft.summary = "Changed"
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+        assert Version.objects.get(pk=draft.pk).summary == ""
+
+    def test_a_pending_document_is_refused_a_change_through_save(self, draft):
+        lock(draft)
+        draft.document = DocumentFactory()
+
+        with pytest.raises(PublishedVersionError):
+            draft.save()
+
+    @pytest.mark.parametrize("field", ["markdown", "summary"])
+    def test_a_pending_wording_is_refused_a_change_through_update(self, draft, field):
+        lock(draft)
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=draft.pk).update(**{field: "Changed"})
+
+        assert getattr(Version.objects.get(pk=draft.pk), field) != "Changed"
+
+    def test_a_pending_document_is_refused_a_change_through_update(self, draft):
+        lock(draft)
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(pk=draft.pk).update(document=DocumentFactory())
+
+    def test_a_pending_wording_is_refused_a_change_through_bulk_update(self, draft):
+        lock(draft)
+        draft.markdown = "Changed"
+
+        with pytest.raises(PublishedVersionError), transaction.atomic():
+            Version.objects.bulk_update([draft], ["markdown"])
+
+        assert Version.objects.get(pk=draft.pk).markdown != "Changed"
+
+    def test_an_update_over_a_pending_row_and_a_draft_writes_neither(self, document):
+        pending = lock(VersionFactory(document=document))
+        draft = VersionFactory(document=document, markdown="Another draft")
+
+        with pytest.raises(PublishedVersionError):
+            Version.objects.filter(document=document).update(markdown="Changed")
+
+        draft.refresh_from_db()
+        assert draft.markdown == "Another draft"
+        assert Version.objects.get(pk=pending.pk).markdown != "Changed"
+
+    def test_a_draft_beside_a_pending_version_is_still_editable(self, document):
+        lock(VersionFactory(document=document))
+        draft = VersionFactory(document=document, markdown="Another draft")
+
+        draft.markdown = "Revised"
+        draft.save()
+
+        assert Version.objects.get(pk=draft.pk).markdown == "Revised"
+
+    def test_a_published_version_is_still_refused_every_frozen_field(
+        self, published_version
+    ):
+        published_version.html = "<p>Other</p>"
+
+        with pytest.raises(PublishedVersionError):
+            published_version.save()
+
+    def test_a_pending_version_saves_when_nothing_frozen_changed(self, draft):
+        lock(draft)
+
+        draft.save()
+
+        assert Version.objects.get(pk=draft.pk).status == Version.Status.PENDING
+
+    def test_a_pending_version_can_be_deleted(self, draft):
+        lock(draft)
+        pk = draft.pk
+
+        draft.delete()
+
+        assert not Version.objects.filter(pk=pk).exists()
+
+    def test_a_pending_version_can_be_deleted_through_the_queryset(self, draft):
+        lock(draft)
+
+        Version.objects.filter(pk=draft.pk).delete()
+
+        assert not Version.objects.filter(pk=draft.pk).exists()
+
+    def test_publishing_a_pending_version_publishes_it_as_a_draft_is(self, document):
+        version = lock(VersionFactory(document=document, markdown="# Heading"))
+
+        version.publish()
+
+        version.refresh_from_db()
+        assert version.status == Version.Status.CURRENT
+        assert version.number is not None
+        assert version.published_at is not None
+        assert "<h1>Heading</h1>" in version.html
+
+    def test_publishing_a_pending_version_supersedes_the_one_in_force(
+        self, published_version
+    ):
+        pending = lock(
+            VersionFactory(document=published_version.document, markdown="Newer")
+        )
+
+        pending.publish()
+
+        published_version.refresh_from_db()
+        assert published_version.status == Version.Status.SUPERSEDED
+
+    def test_publishing_a_pending_version_that_repeats_the_one_in_force_is_refused(
+        self, document
+    ):
+        pending = lock(VersionFactory(document=document, markdown="Same"))
+        VersionFactory(document=document, markdown="Same").publish()
+
+        with pytest.raises(PublishError):
+            pending.publish()
+
+        pending.refresh_from_db()
+        assert pending.status == Version.Status.PENDING
+
+    def test_publishing_the_draft_leaves_the_pending_version_pending(self, document):
+        pending = lock(VersionFactory(document=document, markdown="Pending"))
+        draft = VersionFactory(document=document, markdown="Draft")
+
+        draft.publish()
+
+        pending.refresh_from_db()
+        assert pending.status == Version.Status.PENDING
+
+    def test_returning_a_pending_version_to_draft_makes_it_editable_again(self, draft):
+        lock(draft)
+
+        draft.return_to_draft()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.DRAFT
+        draft.markdown = "Revised"
+        draft.save()
+        assert Version.objects.get(pk=draft.pk).markdown == "Revised"
+
+    @pytest.mark.parametrize("start", ["draft", "current", "superseded"])
+    def test_returning_anything_but_a_pending_version_is_refused(self, start):
+        version = VersionFactory()
+        if start != "draft":
+            version.publish()
+        if start == "superseded":
+            VersionFactory(document=version.document, markdown="Newer").publish()
+        before = Version.objects.filter(pk=version.pk).values().get()
+
+        with pytest.raises(PublishError):
+            version.return_to_draft()
+
+        assert Version.objects.filter(pk=version.pk).values().get() == before
+
+    def test_returning_rechecks_the_stored_status_under_the_lock(self, draft):
+        lock(draft)
+        stale = Version.objects.get(pk=draft.pk)
+        draft.publish()
+
+        with pytest.raises(PublishError):
+            stale.return_to_draft()
+
+        draft.refresh_from_db()
+        assert draft.status == Version.Status.CURRENT
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_returning_to_draft_returns_every_translation_with_its_wording(self, draft):
+        lock(draft)
+        put_back = put_live(TranslationFactory(version=draft, language="de"))
+        replaced = put_live(
+            TranslationFactory(version=draft, language="fr", markdown="Erste")
+        )
+        put_live(TranslationFactory(version=draft, language="fr", markdown="Zweite"))
+        already_draft = TranslationFactory(
+            version=draft, language="de", markdown="Entwurf"
+        )
+        wording = {
+            t.pk: (t.markdown, t.summary)
+            for t in Translation.objects.filter(version=draft)
+        }
+
+        draft.return_to_draft()
+
+        rows = list(Translation.objects.filter(version=draft))
+        assert len(rows) == 4
+        for row in rows:
+            assert row.status == Translation.Status.DRAFT
+            assert row.html == ""
+            assert row.published_at is None
+            assert row.publisher is None
+            assert row.publisher_subject == ""
+            assert (row.markdown, row.summary) == wording[row.pk]
+        assert {put_back.pk, replaced.pk, already_draft.pk} <= set(wording)
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_returning_to_draft_forgets_who_put_a_translation_live(self, draft, user):
+        lock(draft)
+        translation = put_live(TranslationFactory(version=draft), publisher=user)
+
+        draft.return_to_draft()
+
+        translation.refresh_from_db()
+        assert translation.publisher is None
+        assert translation.publisher_subject == ""
+
+    @pytest.mark.usefixtures("site_languages")
+    def test_a_refused_return_leaves_the_translations_alone(self, published_version):
+        translation = put_live(TranslationFactory(version=published_version))
+        before = Translation.objects.filter(pk=translation.pk).values().get()
+
+        with pytest.raises(PublishError):
+            published_version.return_to_draft()
+
+        assert Translation.objects.filter(pk=translation.pk).values().get() == before
+
+    def test_a_pending_version_is_not_published(self, draft):
+        lock(draft)
+
+        assert draft.is_published is False
+        assert draft.publisher_display is None
+
+    def test_the_querysets_tell_pending_from_draft_and_published(self, document):
+        draft = VersionFactory(document=document, markdown="Draft")
+        pending = lock(VersionFactory(document=document, markdown="Pending"))
+        current = VersionFactory(document=document, markdown="Current")
+        current.publish()
+
+        assert list(Version.objects.pending()) == [pending]
+        assert list(Version.objects.drafts()) == [draft]
+        assert list(Version.objects.published()) == [current]
+
+    def test_a_status_other_than_the_four_is_refused_by_the_database(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(status="locked")
+
+    def test_a_pending_row_carrying_a_number_is_refused_by_the_database(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(
+                status="pending", number="2026.1"
+            )
+
+    def test_a_pending_row_carrying_html_is_refused_by_the_database(self, draft):
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Version.objects.filter(pk=draft.pk).update(
+                status="pending", html="<p>x</p>"
+            )
+
+
+@pytest.mark.django_db
+class TestPendingIsNotPublished:
+    """Everything that ignores a draft ignores a pending version too (SC-007)."""
+
+    def test_a_document_with_only_a_pending_version_is_not_in_force(self):
+        document = DocumentFactory()
+        lock(VersionFactory(document=document))
+
+        assert document not in Document.objects.in_force()
+
+    def test_a_pending_version_is_not_a_replacement(self, document):
+        first = VersionFactory(document=document, markdown="First")
+        first.publish()
+        lock(VersionFactory(document=document, markdown="Second"))
+
+        replaced = Version.objects.all().with_replaced_at().get(pk=first.pk)
+
+        assert replaced.replaced_at is None
+
+    def test_a_pending_version_is_left_out_of_what_has_been_published_since(
+        self, user, document
+    ):
+        first = VersionFactory(document=document, markdown="First")
+        first.publish()
+        Acceptance.objects.record(user, first)
+        lock(VersionFactory(document=document, markdown="Second"))
+
+        assert not Version.objects.all().since_last_accepted_by(user).exists()
+
+    def test_recording_against_a_pending_version_is_refused(self, user, draft):
+        lock(draft)
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record(user, draft)
+
+        assert not Acceptance.objects.exists()
+
+    def test_a_pending_version_is_refused_and_nothing_in_the_batch_is_written(
+        self, user, published_version, draft
+    ):
+        lock(draft)
+
+        with pytest.raises(RecordError):
+            Acceptance.objects.record_many(user, [published_version, draft])
+
+        assert not Acceptance.objects.exists()
+
+    def test_a_document_with_only_a_pending_version_is_outstanding_for_nobody(
+        self, user
+    ):
+        document = DocumentFactory()
+        lock(VersionFactory(document=document))
+
+        assert document not in Document.objects.outstanding_for(user)
+        assert document not in Document.objects.enforced_outstanding_for(user)
+        assert not document.is_outstanding_for(user)
+
+    def test_a_pending_version_beside_the_one_in_force_changes_nothing_outstanding(
+        self, user, published_version
+    ):
+        lock(VersionFactory(document=published_version.document, markdown="Newer"))
+
+        assert set(Document.objects.outstanding_for(user)) == {
+            published_version.document
+        }
+
+    def test_a_pending_version_does_not_fix_the_slug(self, document):
+        lock(VersionFactory(document=document))
+
+        document.slug = "another-slug"
+        document.save()
+
+        assert Document.objects.get(pk=document.pk).slug == "another-slug"
+
+    def test_a_pending_version_does_not_stand_in_for_the_agreed_version(
+        self, user, published_version
+    ):
+        pending = lock(
+            VersionFactory(document=published_version.document, markdown="Newer")
+        )
+        Acceptance.objects.record(user, published_version)
+
+        assert Acceptance.objects.for_person(user).filter(version=pending).count() == 0
+
+
+class TestOfferedLanguages:
+    """The languages a site offers translations in (FR-001)."""
+
+    @staticmethod
+    def codes():
+        return [code for code, _name in offered_languages()]
+
+    def test_the_main_language_is_not_offered(self, site_languages):
+        assert self.codes() == ["de", "fr"]
+
+    def test_a_main_language_with_a_region_resolves_against_the_site_list(
+        self, site_languages
+    ):
+        with override_settings(LANGUAGE_CODE="en-us"):
+            assert "en" not in self.codes()
+
+    def test_a_different_main_language_is_the_one_left_out(self, site_languages):
+        with override_settings(LANGUAGE_CODE="de"):
+            assert self.codes() == ["en", "fr"]
+
+    def test_a_main_language_the_site_does_not_list_leaves_every_language_offered(
+        self,
+    ):
+        with override_settings(
+            LANGUAGES=[("de", "German"), ("fr", "French")], LANGUAGE_CODE="en"
+        ):
+            assert self.codes() == ["de", "fr"]
+
+    def test_none_is_offered_while_the_site_has_not_set_its_languages(self):
+        assert self.codes() == []
+
+    def test_each_language_comes_with_the_name_the_site_gave_it(self, site_languages):
+        assert offered_languages() == [("de", "German"), ("fr", "French")]
+
+    def test_the_languages_are_read_when_asked_not_when_imported(self):
+        assert self.codes() == []
+        with override_settings(LANGUAGES=[("en", "English"), ("fr", "French")]):
+            assert self.codes() == ["fr"]
+        assert self.codes() == []
+
+
+class TestLanguageName:
+    """A language is named by the site, then by Django, then by its code."""
+
+    def test_a_code_outside_djangos_list_is_named_by_the_sites_label(self):
+        with override_settings(LANGUAGES=[("en", "English"), ("xx", "Klingon")]):
+            assert language_name("xx") == "Klingon"
+
+    def test_a_code_nobody_labelled_is_named_by_itself(self):
+        with override_settings(LANGUAGES=[("en", "English")]):
+            assert language_name("xx") == "xx"
+
+    def test_the_sites_label_wins_over_djangos_name(self):
+        with override_settings(LANGUAGES=[("en", "English"), ("de", "Deutsch (CH)")]):
+            assert language_name("de") == "Deutsch (CH)"
+
+    def test_a_language_the_site_no_longer_lists_is_named_by_django(self):
+        with override_settings(LANGUAGES=[("en", "English")]):
+            assert language_name("de") == "German"
+
+
+def put_live(translation, publisher=None):
+    """Put a translation live, as the admin's page will."""
+    translation.publish(publisher=publisher)
+    return translation
+
+
+def snapshot_of_the_version_side(version):
+    """Everything about a version and its acceptances, to compare later."""
+    return (
+        Version.objects.filter(pk=version.pk).values().get(),
+        list(Acceptance.objects.filter(version=version).values()),
+    )
+
+
+def another_published_version(translation):
+    """A published version other than the translation's own."""
+    other = VersionFactory()
+    other.publish()
+    return other
+
+
+#: A change to each frozen field, given the live translation it is made to.
+FROZEN_CHANGES = {
+    "version": another_published_version,
+    "language": lambda t: "fr",
+    "markdown": lambda t: "Changed",
+    "summary": lambda t: "Changed",
+    "html": lambda t: "<p>Changed</p>",
+    "published_at": lambda t: t.published_at + timedelta(days=1),
+    "publisher": lambda t: UserFactory(),
+    "publisher_subject": lambda t: "9999",
+}
+
+
+@pytest.fixture
+def pending_version(db):
+    return lock(VersionFactory())
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestTranslation:
+    """One wording of a pending or published version in one language (FS-015)."""
+
+    def test_a_translation_of_a_pending_version_is_written_as_a_draft(
+        self, pending_version
+    ):
+        translation = TranslationFactory(version=pending_version)
+
+        translation.refresh_from_db()
+        assert translation.status == Translation.Status.DRAFT
+        assert translation.html == ""
+        assert translation.published_at is None
+        assert translation.publisher is None
+        assert translation.publisher_subject == ""
+
+    def test_a_translation_of_a_published_version_is_written_as_a_draft(
+        self, published_version
+    ):
+        translation = TranslationFactory(version=published_version)
+
+        assert translation.status == Translation.Status.DRAFT
+
+    def test_a_translation_of_a_draft_version_is_refused_and_writes_nothing(
+        self, draft
+    ):
+        with pytest.raises(TranslationError):
+            TranslationFactory(version=draft)
+
+        assert not Translation.objects.exists()
+
+    def test_a_language_the_site_does_not_offer_is_refused_and_writes_nothing(
+        self, pending_version
+    ):
+        with pytest.raises(TranslationError):
+            TranslationFactory(version=pending_version, language="ja")
+
+        assert not Translation.objects.exists()
+
+    def test_the_main_language_is_refused_and_writes_nothing(self, pending_version):
+        with pytest.raises(TranslationError):
+            TranslationFactory(version=pending_version, language="en")
+
+        assert not Translation.objects.exists()
+
+    def test_a_draft_translation_is_writable(self, pending_version):
+        translation = TranslationFactory(version=pending_version)
+
+        translation.markdown = "Revised"
+        translation.summary = "Revised summary"
+        translation.save()
+        Translation.objects.filter(pk=translation.pk).update(markdown="Again")
+
+        assert Translation.objects.get(pk=translation.pk).markdown == "Again"
+
+    def test_a_notice_is_translated_like_any_other_document(self):
+        notice = VersionFactory(document=DocumentFactory(kind=Document.Kind.NOTICE))
+        notice.publish()
+
+        translation = put_live(TranslationFactory(version=notice))
+
+        assert translation.status == Translation.Status.CURRENT
+
+    def test_two_drafts_for_one_version_and_language_are_both_kept(
+        self, pending_version
+    ):
+        first = TranslationFactory(version=pending_version, markdown="Erste")
+        second = TranslationFactory(version=pending_version, markdown="Zweite")
+
+        put_live(second)
+
+        assert Translation.objects.count() == 2
+        first.refresh_from_db()
+        second.refresh_from_db()
+        assert first.status == Translation.Status.DRAFT
+        assert second.status == Translation.Status.CURRENT
+
+    def test_the_database_refuses_two_current_wordings_for_one_language(
+        self, pending_version
+    ):
+        put_live(TranslationFactory(version=pending_version))
+        other = TranslationFactory(version=pending_version, markdown="Anders")
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Translation.objects.filter(pk=other.pk).update(
+                status="current", html="<p>x</p>", published_at=timezone.now()
+            )
+
+    def test_the_database_refuses_a_draft_carrying_html(self, pending_version):
+        translation = TranslationFactory(version=pending_version)
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Translation.objects.filter(pk=translation.pk).update(html="<p>x</p>")
+
+    def test_the_database_refuses_a_live_wording_with_no_html(self, pending_version):
+        translation = TranslationFactory(version=pending_version)
+
+        with pytest.raises(IntegrityError), transaction.atomic():
+            Translation.objects.filter(pk=translation.pk).update(
+                status="current", published_at=timezone.now()
+            )
+
+    def test_a_language_is_named_and_says_whether_it_is_still_offered(
+        self, pending_version
+    ):
+        translation = TranslationFactory(version=pending_version, language="de")
+
+        assert translation.language_name == "German"
+        assert translation.is_offered is True
+        with override_settings(LANGUAGES=[("en", "English"), ("fr", "French")]):
+            assert translation.is_offered is False
+        with override_settings(LANGUAGES=[("de", "German")], LANGUAGE_CODE="de"):
+            assert translation.is_offered is False
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestPuttingATranslationLive:
+    def test_publishing_stores_the_rendered_and_sanitised_html(self, published_version):
+        translation = TranslationFactory(
+            version=published_version, markdown="Hallo **Welt**<script>x()</script>"
+        )
+
+        put_live(translation)
+
+        translation.refresh_from_db()
+        assert translation.status == Translation.Status.CURRENT
+        assert "<strong>Welt</strong>" in translation.html
+        assert "<script" not in translation.html
+        assert translation.published_at is not None
+
+    def test_the_stored_html_is_what_the_renderer_made_at_that_moment(
+        self, published_version
+    ):
+        translation = TranslationFactory(version=published_version, markdown="Hallo")
+
+        with override_settings(
+            MVP_COMPLIANCE_RENDERER="tests.test_models.UppercaseRenderer"
+        ):
+            put_live(translation)
+
+        translation.refresh_from_db()
+        assert translation.html == "<P>HALLO</P>"
+
+    def test_publishing_records_the_publisher_and_their_subject(
+        self, published_version, user
+    ):
+        translation = TranslationFactory(version=published_version)
+
+        put_live(translation, publisher=user)
+
+        translation.refresh_from_db()
+        assert translation.publisher == user
+        assert translation.publisher_subject == Acceptance.subject_of(user)
+
+    def test_publishing_with_nobody_named_records_nobody(self, published_version):
+        translation = put_live(TranslationFactory(version=published_version))
+
+        translation.refresh_from_db()
+        assert translation.publisher is None
+        assert translation.publisher_subject == ""
+        assert translation.publisher_display == "Unknown publisher"
+
+    def test_an_unsaved_publisher_is_refused_before_anything_changes(
+        self, published_version
+    ):
+        translation = TranslationFactory(version=published_version)
+
+        with pytest.raises(RecordError):
+            translation.publish(publisher=get_user_model()(username="unsaved"))
+
+        translation.refresh_from_db()
+        assert translation.status == Translation.Status.DRAFT
+
+    def test_a_summary_is_refused_when_the_version_has_none(self, published_version):
+        translation = TranslationFactory(version=published_version, summary="Neu")
+
+        with pytest.raises(PublishError):
+            translation.publish()
+
+        translation.refresh_from_db()
+        assert translation.status == Translation.Status.DRAFT
+
+    def test_a_summary_is_accepted_when_the_version_has_one(self):
+        version = VersionFactory(summary="What changed")
+        version.publish()
+        translation = TranslationFactory(version=version, summary="Was sich änderte")
+
+        put_live(translation)
+
+        translation.refresh_from_db()
+        assert translation.summary == "Was sich änderte"
+
+    def test_output_that_renders_empty_is_refused(self, published_version):
+        translation = TranslationFactory(version=published_version, markdown="  \n ")
+
+        with pytest.raises(PublishError):
+            translation.publish()
+
+        translation.refresh_from_db()
+        assert translation.status == Translation.Status.DRAFT
+
+    def test_a_translation_of_a_draft_version_cannot_be_put_live(self, pending_version):
+        translation = TranslationFactory(version=pending_version)
+        pending_version.return_to_draft()
+        translation.refresh_from_db()
+
+        with pytest.raises(PublishError):
+            translation.publish()
+
+    def test_a_language_the_site_stopped_offering_is_refused_and_kept(
+        self, published_version
+    ):
+        translation = TranslationFactory(version=published_version, language="de")
+
+        with (
+            override_settings(LANGUAGES=[("en", "English"), ("fr", "French")]),
+            pytest.raises(PublishError),
+        ):
+            translation.publish()
+
+        translation.refresh_from_db()
+        assert translation.status == Translation.Status.DRAFT
+
+    def test_putting_a_wording_live_twice_is_refused(self, published_version):
+        translation = put_live(TranslationFactory(version=published_version))
+        before = Translation.objects.filter(pk=translation.pk).values().get()
+
+        with pytest.raises(PublishError):
+            translation.publish()
+
+        assert Translation.objects.filter(pk=translation.pk).values().get() == before
+
+    def test_the_stored_status_is_rechecked_before_publishing(self, published_version):
+        translation = TranslationFactory(version=published_version)
+        stale = Translation.objects.get(pk=translation.pk)
+        put_live(translation)
+
+        with pytest.raises(PublishError):
+            stale.publish()
+
+        assert Translation.objects.filter(status="current").count() == 1
+
+    def test_a_second_wording_supersedes_the_first_which_keeps_every_field(
+        self, published_version, user
+    ):
+        first = put_live(
+            TranslationFactory(version=published_version, markdown="Erste"),
+            publisher=user,
+        )
+        kept = Translation.objects.filter(pk=first.pk).values().get()
+
+        second = put_live(
+            TranslationFactory(version=published_version, markdown="Zweite")
+        )
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        assert second.status == Translation.Status.CURRENT
+        assert first.status == Translation.Status.SUPERSEDED
+        assert {
+            **Translation.objects.filter(pk=first.pk).values().get(),
+            "status": "current",
+        } == kept
+        replaced_at = (
+            Translation.objects.with_replaced_at().get(pk=first.pk).replaced_at
+        )
+        assert replaced_at == second.published_at
+        assert (
+            Translation.objects.with_replaced_at().get(pk=second.pk).replaced_at is None
+        )
+
+    def test_a_second_language_does_not_supersede_the_first(self, published_version):
+        german = put_live(TranslationFactory(version=published_version, language="de"))
+        french = put_live(TranslationFactory(version=published_version, language="fr"))
+
+        german.refresh_from_db()
+        french.refresh_from_db()
+        assert german.status == french.status == Translation.Status.CURRENT
+
+    def test_a_wording_identical_to_the_current_one_is_refused(self, published_version):
+        put_live(
+            TranslationFactory(version=published_version, markdown="Hallo", summary="")
+        )
+        repeat = TranslationFactory(version=published_version, markdown="Hallo\r\n")
+
+        with pytest.raises(PublishError):
+            repeat.publish()
+
+        repeat.refresh_from_db()
+        assert repeat.status == Translation.Status.DRAFT
+
+    def test_a_correction_to_the_summary_alone_goes_live_and_supersedes(self):
+        version = VersionFactory(summary="What changed")
+        version.publish()
+        first = put_live(
+            TranslationFactory(version=version, markdown="Hallo", summary="Alt")
+        )
+        correction = TranslationFactory(
+            version=version, markdown="Hallo", summary="Neu"
+        )
+
+        put_live(correction)
+
+        first.refresh_from_db()
+        correction.refresh_from_db()
+        assert first.status == Translation.Status.SUPERSEDED
+        assert correction.status == Translation.Status.CURRENT
+
+    def test_a_wording_is_not_a_repeat_of_one_in_another_language(
+        self, published_version
+    ):
+        put_live(TranslationFactory(version=published_version, language="de"))
+
+        french = put_live(
+            TranslationFactory(
+                version=published_version,
+                language="fr",
+                markdown=Translation.objects.get().markdown,
+            )
+        )
+
+        assert french.status == Translation.Status.CURRENT
+
+    def test_the_version_and_its_acceptances_are_unchanged_throughout(
+        self, published_version, user
+    ):
+        Acceptance.objects.record(user, published_version)
+        before = snapshot_of_the_version_side(published_version)
+
+        translation = TranslationFactory(version=published_version)
+        put_live(translation, publisher=user)
+        put_live(TranslationFactory(version=published_version, markdown="Besser"))
+
+        assert snapshot_of_the_version_side(published_version) == before
+
+    def test_the_version_of_a_pending_translation_is_unchanged_throughout(
+        self, pending_version
+    ):
+        before = snapshot_of_the_version_side(pending_version)
+
+        put_live(TranslationFactory(version=pending_version))
+
+        assert snapshot_of_the_version_side(pending_version) == before
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationIsLive:
+    """A translation is live once its version is published (FR-006)."""
+
+    def test_a_current_wording_of_a_pending_version_is_not_live(self, pending_version):
+        translation = put_live(TranslationFactory(version=pending_version))
+
+        assert translation not in Translation.objects.live()
+        assert translation.live_since is None
+
+    def test_it_is_live_once_the_version_is_published(self, pending_version):
+        translation = put_live(TranslationFactory(version=pending_version))
+
+        pending_version.publish()
+
+        assert translation in Translation.objects.live()
+        translation.refresh_from_db()
+        assert translation.live_since == pending_version.published_at
+
+    def test_a_wording_put_live_after_the_version_is_live_from_that_moment(
+        self, published_version
+    ):
+        translation = put_live(TranslationFactory(version=published_version))
+
+        assert translation in Translation.objects.live()
+        assert translation.live_since == translation.published_at
+
+    def test_a_draft_is_never_live(self, published_version):
+        translation = TranslationFactory(version=published_version)
+
+        assert translation not in Translation.objects.live()
+        assert translation.live_since is None
+
+    def test_a_wording_replaced_before_the_version_was_published_was_never_live(
+        self, pending_version
+    ):
+        first = put_live(TranslationFactory(version=pending_version, markdown="Erste"))
+        second = put_live(
+            TranslationFactory(version=pending_version, markdown="Zweite")
+        )
+
+        pending_version.publish()
+
+        first.refresh_from_db()
+        second.refresh_from_db()
+        assert first.live_since is None
+        assert second.live_since == pending_version.published_at
+        assert list(Translation.objects.live()) == [second]
+
+    def test_a_wording_replaced_after_the_version_was_published_was_live(
+        self, published_version
+    ):
+        first = put_live(TranslationFactory(version=published_version, markdown="A"))
+        put_live(TranslationFactory(version=published_version, markdown="B"))
+
+        first.refresh_from_db()
+        assert first.live_since == first.published_at
+        assert first not in Translation.objects.live()
+
+    def test_a_superseded_wording_is_not_live(self, published_version):
+        first = put_live(TranslationFactory(version=published_version, markdown="A"))
+        put_live(TranslationFactory(version=published_version, markdown="B"))
+
+        assert first not in Translation.objects.live()
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationImmutability:
+    """A wording that has been live can never change or go (FR-008, SC-003)."""
+
+    @pytest.fixture
+    def live(self, published_version, user):
+        return put_live(TranslationFactory(version=published_version), publisher=user)
+
+    @pytest.mark.parametrize("field", list(FROZEN_CHANGES))
+    def test_saving_a_changed_frozen_field_is_refused(self, live, field):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+        setattr(live, field, FROZEN_CHANGES[field](live))
+
+        with pytest.raises(PublishedTranslationError):
+            live.save()
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    @pytest.mark.parametrize("field", list(FROZEN_CHANGES))
+    def test_updating_a_frozen_field_is_refused(self, live, field):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+        value = FROZEN_CHANGES[field](live)
+        key = field if not hasattr(value, "pk") else f"{field}_id"
+        value = value.pk if hasattr(value, "pk") else value
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=live.pk).update(**{key: value})
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    def test_a_superseded_wording_stays_frozen(self, published_version, live):
+        put_live(TranslationFactory(version=published_version, markdown="Besser"))
+        live.refresh_from_db()
+        assert live.status == Translation.Status.SUPERSEDED
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=live.pk).update(markdown="Changed")
+        live.markdown = "Changed"
+        with pytest.raises(PublishedTranslationError):
+            live.save()
+
+    def test_a_bulk_upsert_of_a_live_wording_is_refused(self, live):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+        changed = Translation.objects.get(pk=live.pk)
+        changed.markdown = "Changed"
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.bulk_create(
+                [changed],
+                update_conflicts=True,
+                unique_fields=["id"],
+                update_fields=["markdown"],
+            )
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    def test_a_bulk_upsert_of_a_draft_is_allowed(self, published_version):
+        draft = TranslationFactory(version=published_version)
+        draft.markdown = "Revised"
+
+        Translation.objects.bulk_create(
+            [draft],
+            update_conflicts=True,
+            unique_fields=["id"],
+            update_fields=["markdown"],
+        )
+
+        assert Translation.objects.get(pk=draft.pk).markdown == "Revised"
+
+    def test_the_standing_of_a_live_wording_may_still_change(self, live):
+        Translation.objects.filter(pk=live.pk).update(status="superseded")
+
+        assert Translation.objects.get(pk=live.pk).status == "superseded"
+
+    def test_deleting_a_live_wording_is_refused(self, live):
+        with pytest.raises(PublishedTranslationError):
+            live.delete()
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=live.pk).delete()
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.all().delete()
+
+        assert Translation.objects.filter(pk=live.pk).exists()
+
+    def test_deleting_a_superseded_wording_is_refused(self, published_version, live):
+        put_live(TranslationFactory(version=published_version, markdown="Besser"))
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=live.pk).delete()
+
+    def test_a_draft_may_be_deleted(self, published_version):
+        draft = TranslationFactory(version=published_version)
+
+        draft.delete()
+
+        assert not Translation.objects.exists()
+
+    def test_a_published_version_cannot_be_deleted_with_its_translations(self, live):
+        with pytest.raises(PublishedVersionError):
+            live.version.delete()
+
+        assert Translation.objects.filter(pk=live.pk).exists()
+
+    def test_a_wording_put_live_on_a_pending_version_is_frozen(self, pending_version):
+        translation = put_live(TranslationFactory(version=pending_version))
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=translation.pk).update(
+                status="draft", html="", published_at=None, publisher=None
+            )
+
+        assert Translation.objects.get(pk=translation.pk).status == "current"
+
+    def test_discarding_a_pending_version_discards_its_translations(
+        self, pending_version
+    ):
+        put_live(TranslationFactory(version=pending_version, language="de"))
+        TranslationFactory(version=pending_version, language="fr")
+
+        pending_version.delete()
+
+        assert not Translation.objects.exists()
+
+    def test_a_wording_frozen_by_its_version_being_published_is_frozen_from_then(
+        self, pending_version
+    ):
+        translation = put_live(TranslationFactory(version=pending_version))
+        pending_version.publish()
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=translation.pk).update(markdown="Changed")
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationPublisher:
+    def test_removing_the_publishers_account_keeps_who_it_was(
+        self, published_version, user
+    ):
+        translation = put_live(
+            TranslationFactory(version=published_version), publisher=user
+        )
+        subject = Acceptance.subject_of(user)
+
+        user.delete()
+
+        translation.refresh_from_db()
+        assert translation.publisher is None
+        assert translation.publisher_subject == subject
+        assert translation.publisher_display == "Account removed"
+
+    def test_a_publisher_is_named(self, published_version, user):
+        translation = put_live(
+            TranslationFactory(version=published_version), publisher=user
+        )
+
+        assert translation.publisher_display == str(user)
+
+    def test_a_draft_has_no_publisher_to_display(self, published_version):
+        assert TranslationFactory(version=published_version).publisher_display is None
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestHistoricalTranslation:
+    """The historical model carries the guards too (docs/adr/0004)."""
+
+    @pytest.fixture
+    def historical(self):
+        loader = MigrationLoader(connection)
+        (leaf,) = loader.graph.leaf_nodes(app="mvp_compliance")
+        return loader.project_state(leaf).apps.get_model(
+            "mvp_compliance", "Translation"
+        )
+
+    @pytest.fixture
+    def live(self, published_version):
+        return put_live(TranslationFactory(version=published_version))
+
+    def test_a_migration_cannot_change_a_live_wording(self, historical, live):
+        with pytest.raises(PublishedTranslationError):
+            historical.objects.filter(pk=live.pk).update(markdown="Changed")
+        with pytest.raises(PublishedTranslationError):
+            historical.objects.filter(pk=live.pk).update(html="<p>Other</p>")
+
+        assert historical.objects.get(pk=live.pk).markdown == live.markdown
+
+    def test_a_migration_cannot_delete_a_live_wording(self, historical, live):
+        with pytest.raises(PublishedTranslationError):
+            historical.objects.filter(pk=live.pk).delete()
+
+        assert historical.objects.filter(pk=live.pk).exists()
+
+    def test_a_migration_can_edit_a_draft(self, historical, published_version):
+        draft = TranslationFactory(version=published_version)
+
+        historical.objects.filter(pk=draft.pk).update(markdown="Changed")
+
+        assert historical.objects.get(pk=draft.pk).markdown == "Changed"
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestMissingTranslation:
+    """Which versions still lack a live translation (FR-011)."""
+
+    def test_it_lists_pending_and_published_versions_and_never_drafts(self, document):
+        draft = VersionFactory(document=document, markdown="Draft")
+        pending = lock(VersionFactory(document=document, markdown="Pending"))
+        current = VersionFactory(document=document, markdown="Current")
+        current.publish()
+        superseded = VersionFactory(document=DocumentFactory())
+        superseded.publish()
+        VersionFactory(document=superseded.document, markdown="Newer").publish()
+
+        missing = set(Version.objects.missing_translation("de"))
+
+        assert draft not in missing
+        assert {pending, current, superseded} <= missing
+
+    def test_a_version_with_a_current_wording_in_the_language_is_not_listed(
+        self, published_version
+    ):
+        put_live(TranslationFactory(version=published_version, language="de"))
+
+        assert published_version not in Version.objects.missing_translation("de")
+
+    def test_a_current_wording_of_a_pending_version_counts(self, pending_version):
+        put_live(TranslationFactory(version=pending_version, language="de"))
+
+        assert pending_version not in Version.objects.missing_translation("de")
+
+    def test_a_draft_wording_does_not_count(self, published_version):
+        TranslationFactory(version=published_version, language="de")
+
+        assert published_version in Version.objects.missing_translation("de")
+
+    def test_another_language_does_not_count(self, published_version):
+        put_live(TranslationFactory(version=published_version, language="fr"))
+
+        assert published_version in Version.objects.missing_translation("de")
+        assert published_version not in Version.objects.missing_translation("fr")
+
+    def test_with_no_language_it_covers_every_offered_language(self):
+        both = VersionFactory()
+        both.publish()
+        only_german = VersionFactory()
+        only_german.publish()
+        none = VersionFactory()
+        none.publish()
+        put_live(TranslationFactory(version=both, language="de"))
+        put_live(TranslationFactory(version=both, language="fr"))
+        put_live(TranslationFactory(version=only_german, language="de"))
+
+        missing = list(Version.objects.missing_translation())
+
+        assert both not in missing
+        assert missing.count(only_german) == 1
+        assert missing.count(none) == 1
+
+    def test_with_no_languages_offered_nothing_is_missing(self, published_version):
+        with override_settings(LANGUAGES=[("en", "English")]):
+            assert not Version.objects.missing_translation().exists()
+
+    def test_it_narrows_a_documents_own_versions(self, document):
+        first = VersionFactory(document=document, markdown="First")
+        first.publish()
+        second = VersionFactory(document=document, markdown="Second")
+        second.publish()
+        put_live(TranslationFactory(version=second, language="de"))
+
+        assert list(document.versions.missing_translation("de")) == [first]
+
+    def test_it_reads_in_one_query(self, published_version):
+        lock(VersionFactory(markdown="Pending"))
+
+        with CaptureQueriesContext(connection) as queries:
+            list(Version.objects.missing_translation())
+            list(Version.objects.missing_translation("de"))
+
+        assert len(queries) == 2
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestTranslationFromCode:
+    """The route the admin uses is public: a developer calls it directly (FS-015)."""
+
+    def test_create_then_publish_gives_the_row_the_admin_gives(self, pending_version):
+        translation = Translation.objects.create(
+            version=pending_version, language="de", markdown="Hallo **Welt**"
+        )
+        translation.publish()
+
+        stored = Translation.objects.get(pk=translation.pk)
+        assert stored.status == Translation.Status.CURRENT
+        assert "<strong>Welt</strong>" in stored.html
+        assert stored.published_at is not None
+        assert stored.publisher is None
+        assert stored.publisher_subject == ""
+        nobody_named = VersionFactory()
+        nobody_named.publish()
+        assert stored.publisher_display == nobody_named.publisher_display
+
+    def test_an_account_passed_to_publish_is_the_one_named(self, pending_version, user):
+        translation = Translation.objects.create(
+            version=pending_version, language="de", markdown="Hallo"
+        )
+        translation.publish(publisher=user)
+
+        stored = Translation.objects.get(pk=translation.pk)
+        assert stored.publisher == user
+        assert stored.publisher_subject == Acceptance.subject_of(user)
+
+    def test_a_correction_from_code_keeps_the_earlier_wording(self, pending_version):
+        first = Translation.objects.create(
+            version=pending_version, language="de", markdown="Erster Text"
+        )
+        first.publish()
+        correction = Translation.objects.create(
+            version=pending_version, language="de", markdown="Besserer Text"
+        )
+        correction.publish()
+
+        first.refresh_from_db()
+        correction.refresh_from_db()
+        assert first.status == Translation.Status.SUPERSEDED
+        assert first.markdown == "Erster Text"
+        assert "Erster Text" in first.html
+        assert correction.status == Translation.Status.CURRENT
+
+    @pytest.mark.parametrize(
+        "language", ["fr-ca", "en"], ids=["not-offered", "main-language"]
+    )
+    def test_a_language_not_offered_raises_and_writes_nothing(
+        self, pending_version, language
+    ):
+        with pytest.raises(TranslationError):
+            Translation.objects.create(
+                version=pending_version, language=language, markdown="Hallo"
+            )
+
+        assert not Translation.objects.exists()
+
+    def test_a_draft_version_raises_and_writes_nothing(self, draft):
+        with pytest.raises(TranslationError):
+            Translation.objects.create(version=draft, language="de", markdown="Hallo")
+
+        assert not Translation.objects.exists()
+
+    def test_publishing_an_already_published_row_raises_and_writes_nothing(
+        self, pending_version
+    ):
+        translation = Translation.objects.create(
+            version=pending_version, language="de", markdown="Hallo"
+        )
+        translation.publish()
+        before = Translation.objects.filter(pk=translation.pk).values().get()
+
+        with pytest.raises(PublishError):
+            translation.publish()
+
+        assert Translation.objects.filter(pk=translation.pk).values().get() == before
+        assert Translation.objects.count() == 1
+
+
+@pytest.mark.django_db
+class TestStaleInstanceIsRefused:
+    """An instance that differs from the stored row is refused, writing and sending nothing (FR-020)."""
+
+    @pytest.fixture
+    def stale(self, draft):
+        """An instance of ``draft`` read before another writer changed it."""
+        copy = Version.objects.get(pk=draft.pk)
+        Version.objects.filter(pk=draft.pk).update(
+            markdown="Changed elsewhere", summary="Summary changed elsewhere"
+        )
+        return copy
+
+    @pytest.mark.parametrize("field", ["markdown", "summary"])
+    def test_locking_an_instance_that_differs_from_the_stored_row_is_refused(
+        self, django_capture_on_commit_callbacks, draft, field
+    ):
+        stale = Version.objects.get(pk=draft.pk)
+        Version.objects.filter(pk=draft.pk).update(**{field: "Changed elsewhere"})
+        before = Version.objects.filter(pk=draft.pk).values().get()
+
+        with (
+            django_capture_on_commit_callbacks(execute=True) as callbacks,
+            pytest.raises(PublishError),
+        ):
+            stale.lock_for_translation()
+
+        assert Version.objects.filter(pk=draft.pk).values().get() == before
+        assert callbacks == []
+
+    def test_publishing_an_instance_that_differs_from_the_stored_row_is_refused(
+        self, django_capture_on_commit_callbacks, draft, stale
+    ):
+        before = Version.objects.filter(pk=draft.pk).values().get()
+
+        with (
+            django_capture_on_commit_callbacks(execute=True) as callbacks,
+            pytest.raises(PublishError),
+        ):
+            stale.publish()
+
+        assert Version.objects.filter(pk=draft.pk).values().get() == before
+        assert callbacks == []
+
+    def test_an_instance_that_matches_the_stored_row_still_locks_and_publishes(
+        self, document
+    ):
+        locked = VersionFactory(document=document, markdown="One")
+        published = VersionFactory(document=document, markdown="Two")
+
+        Version.objects.get(pk=locked.pk).lock_for_translation()
+        Version.objects.get(pk=published.pk).publish()
+
+        assert Version.objects.get(pk=locked.pk).status == Version.Status.PENDING
+        assert Version.objects.get(pk=published.pk).status == Version.Status.CURRENT
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestReturningToDraftLocksTheVersion:
+    """A translation put live as the version returns is either returned or refused (FR-022)."""
+
+    def test_the_document_then_the_version_are_locked_before_translations_are_read(
+        self, pending_version
+    ):
+        events = []
+        real_select_for_update = QuerySet.select_for_update
+        real_iterator = QuerySet._fetch_all
+
+        def spy_lock(queryset, *args, **kwargs):
+            events.append(("lock", queryset.model))
+            return real_select_for_update(queryset, *args, **kwargs)
+
+        def spy_read(queryset):
+            if queryset.model is Translation and not queryset._result_cache:
+                events.append(("read", queryset.model))
+            return real_iterator(queryset)
+
+        with (
+            patch.object(QuerySet, "select_for_update", spy_lock),
+            patch.object(QuerySet, "_fetch_all", spy_read),
+        ):
+            pending_version.return_to_draft()
+
+        assert events.index(("lock", Document)) < events.index(("lock", Version))
+        assert events.index(("lock", Version)) < events.index(("read", Translation))
+
+    def test_a_translation_put_live_after_the_version_returned_is_refused(
+        self, pending_version
+    ):
+        waiting = TranslationFactory(version=pending_version, language="de")
+        pending_version.return_to_draft()
+
+        with pytest.raises(PublishError):
+            waiting.publish()
+
+        row = Translation.objects.get(pk=waiting.pk)
+        assert row.status == Translation.Status.DRAFT
+        assert row.html == ""
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("site_languages")
+class TestPutLiveWordingOnAPendingVersionIsFrozen:
+    """A wording put live never changes, whatever its version's status (FR-005, FR-008)."""
+
+    @pytest.fixture
+    def live(self, pending_version):
+        return put_live(TranslationFactory(version=pending_version, language="de"))
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("markdown", "Changed"),
+            ("summary", "Changed"),
+            ("html", "<script>alert(1)</script>"),
+        ],
+    )
+    def test_saving_a_changed_field_is_refused(self, live, field, value):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+        setattr(live, field, value)
+
+        with pytest.raises(PublishedTranslationError):
+            live.save()
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("markdown", "Changed"),
+            ("summary", "Changed"),
+            ("html", "<script>alert(1)</script>"),
+        ],
+    )
+    def test_updating_a_changed_field_is_refused(self, live, field, value):
+        before = Translation.objects.filter(pk=live.pk).values().get()
+
+        with pytest.raises(PublishedTranslationError):
+            Translation.objects.filter(pk=live.pk).update(**{field: value})
+
+        assert Translation.objects.filter(pk=live.pk).values().get() == before
+
+    def test_returning_the_version_to_draft_still_resets_the_wording(
+        self, pending_version, live
+    ):
+        pending_version.return_to_draft()
+
+        row = Translation.objects.get(pk=live.pk)
+        assert row.status == Translation.Status.DRAFT
+        assert row.html == ""
+        assert row.markdown == live.markdown
+
+    def test_a_draft_beside_it_stays_editable(self, pending_version, live):
+        draft = TranslationFactory(version=pending_version, language="fr")
+
+        draft.markdown = "Revised"
+        draft.save()
+
+        assert Translation.objects.get(pk=draft.pk).markdown == "Revised"

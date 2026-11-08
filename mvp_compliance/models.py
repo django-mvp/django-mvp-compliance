@@ -1,24 +1,37 @@
 """Documents and their versions."""
 
-from functools import partial
-from typing import cast
+import operator
+from functools import partial, reduce
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.translation import (
+    get_language_info,
+    get_supported_language_variant,
+)
 from django.utils.translation import gettext_lazy as _
 
 from mvp_compliance.exceptions import (
     DeclaredDocumentError,
+    PublishedTranslationError,
     PublishedVersionError,
     PublishError,
     RecordedAcceptanceError,
     RecordError,
+    TranslationError,
 )
 from mvp_compliance.rendering import get_renderer
-from mvp_compliance.signals import version_published
+from mvp_compliance.signals import (
+    translation_published,
+    translation_returned_to_draft,
+    version_pending,
+    version_published,
+    version_returned_to_draft,
+)
 
 #: Everything a published version carries except its standing. The one change a
 #: published version ever undergoes is draft -> current -> superseded.
@@ -32,6 +45,80 @@ PUBLISHED_FROZEN_FIELDS = (
     "publisher",
     "publisher_subject",
 )
+
+#: What a pending version, locked for translation, may no longer change. It is
+#: a draft in every other respect, so nothing else is held.
+PENDING_FROZEN_FIELDS = (
+    "document",
+    "markdown",
+    "summary",
+)
+
+
+def main_language() -> str:
+    """Return the code of the language a version's own wording is in.
+
+    Returns:
+        ``LANGUAGE_CODE`` resolved against the site's ``LANGUAGES``, so ``en-us``
+        stands for ``en``. ``LANGUAGE_CODE`` as written when none matches.
+    """
+    try:
+        return get_supported_language_variant(settings.LANGUAGE_CODE)
+    except LookupError:
+        return settings.LANGUAGE_CODE
+
+
+def language_name(code: str) -> str:
+    """Name a language for a person.
+
+    Args:
+        code: A language code.
+
+    Returns:
+        The label the site gave it in ``LANGUAGES``, else Django's name for it,
+        else the code itself.
+    """
+    sites_own = dict(settings.LANGUAGES)
+    if code in sites_own:
+        return str(sites_own[code])
+    try:
+        return str(get_language_info(code)["name"])
+    except KeyError:
+        return code
+
+
+def offered_languages() -> list[tuple[str, str]]:
+    """Return the languages a version can be translated into.
+
+    Read when called, never when imported. Django's default ``LANGUAGES`` lists
+    every language it ships, so none is offered until the site sets its own.
+
+    Returns:
+        A ``(code, name)`` pair for each language in the site's ``LANGUAGES``
+        except the main language. Empty while ``LANGUAGES`` is not overridden.
+    """
+    # The type stubs leave out ``LazySettings.is_overridden``.
+    if not cast(Any, settings).is_overridden("LANGUAGES"):
+        return []
+    main = main_language()
+    return [(code, str(name)) for code, name in settings.LANGUAGES if code != main]
+
+
+def same_wording(one: str, other: str) -> bool:
+    """Say whether two wordings say the same thing.
+
+    Line endings and surrounding whitespace are ignored. A browser stores
+    a text area's content with a carriage return before every newline, and
+    a trailing newline depends on how the wording was entered.
+
+    Args:
+        one: A wording in Markdown.
+        other: Another wording in Markdown.
+
+    Returns:
+        ``True`` when a reader would see no difference between them.
+    """
+    return one.replace("\r\n", "\n").strip() == other.replace("\r\n", "\n").strip()
 
 
 #: A slug is lowercase letters and digits, joined by single hyphens. Django's
@@ -306,11 +393,24 @@ class VersionQuerySet(models.QuerySet):
     """
 
     def update(self, **kwargs) -> int:
-        """Refuse an update touching a frozen field while any row is published."""
-        touches_frozen_field = bool(Version.frozen_field_keys() & set(kwargs))
-        if touches_frozen_field and self.published().exists():
+        """Refuse an update touching a frozen field while a row is frozen by it.
+
+        A published row is held by every field of ``PUBLISHED_FROZEN_FIELDS`` and
+        a pending one by ``PENDING_FROZEN_FIELDS``. Both sets name ``Version``
+        rather than ``self.model``, so a historical model in a migration is
+        refused the same way.
+
+        Raises:
+            PublishedVersionError: A row the update would reach is frozen against it.
+        """
+        keys = set(kwargs)
+        if Version.frozen_field_keys() & keys and self.published().exists():
             raise PublishedVersionError(
                 _("A published version's wording and publisher cannot be changed.")
+            )
+        if Version.pending_frozen_field_keys() & keys and self.pending().exists():
+            raise PublishedVersionError(
+                _("A version locked for translation cannot have its wording changed.")
             )
         return super().update(**kwargs)
 
@@ -324,17 +424,27 @@ class VersionQuerySet(models.QuerySet):
         """Narrow to every version ever published, current or superseded.
 
         Returns:
-            The published versions.
+            The published versions. Never a draft or a pending version.
         """
-        return self.exclude(status=Version.Status.DRAFT)
+        return self.filter(
+            status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED]
+        )
 
     def drafts(self) -> "VersionQuerySet":
-        """Narrow to the versions never published.
+        """Narrow to the versions never published and not locked for translation.
 
         Returns:
             The drafts.
         """
         return self.filter(status=Version.Status.DRAFT)
+
+    def pending(self) -> "VersionQuerySet":
+        """Narrow to the drafts locked for translation.
+
+        Returns:
+            The pending versions.
+        """
+        return self.filter(status=Version.Status.PENDING)
 
     def current(self) -> "VersionQuerySet":
         """Narrow to the version in force.
@@ -343,6 +453,39 @@ class VersionQuerySet(models.QuerySet):
             Zero or one row per document.
         """
         return self.filter(status=Version.Status.CURRENT)
+
+    def missing_translation(self, language: str | None = None) -> "VersionQuerySet":
+        """Narrow to the versions with no current translation.
+
+        Drafts are never listed: they cannot be translated. A current wording of
+        a pending version counts, whether or not the version is published yet.
+        One query however many versions are read.
+
+        Args:
+            language: The language to ask about. ``None`` asks about every
+                offered language, and lists a version missing any of them.
+
+        Returns:
+            The pending and published versions with no current translation in
+            ``language``, or in some offered language. Empty when ``None`` is
+            given and the site offers none.
+        """
+        languages = [language] if language else [c for c, _n in offered_languages()]
+        lacks = [
+            ~models.Exists(
+                Translation.objects.filter(
+                    version=models.OuterRef("pk"),
+                    language=code,
+                    status=Translation.Status.CURRENT,
+                )
+            )
+            for code in languages
+        ]
+        if not lacks:
+            return self.none()
+        return self.exclude(status=Version.Status.DRAFT).filter(
+            reduce(operator.or_, lacks)
+        )
 
     def with_replaced_at(self) -> "VersionQuerySet":
         """Annotate ``replaced_at``: when the next published version took over.
@@ -414,12 +557,20 @@ class VersionManager(models.Manager):
         return self.get_queryset().published()
 
     def drafts(self) -> VersionQuerySet:
-        """Return the versions never published.
+        """Return the versions never published and not locked for translation.
 
         Returns:
             The result of ``VersionQuerySet.drafts``.
         """
         return self.get_queryset().drafts()
+
+    def pending(self) -> VersionQuerySet:
+        """Return the versions locked for translation.
+
+        Returns:
+            The result of ``VersionQuerySet.pending``.
+        """
+        return self.get_queryset().pending()
 
     def current(self) -> VersionQuerySet:
         """Return the version in force.
@@ -428,6 +579,17 @@ class VersionManager(models.Manager):
             The result of ``VersionQuerySet.current``.
         """
         return self.get_queryset().current()
+
+    def missing_translation(self, language: str | None = None) -> VersionQuerySet:
+        """Return the versions with no current translation.
+
+        Args:
+            language: The language to ask about, or ``None`` for every offered one.
+
+        Returns:
+            The result of ``VersionQuerySet.missing_translation``.
+        """
+        return self.get_queryset().missing_translation(language)
 
 
 class Version(models.Model):
@@ -482,8 +644,12 @@ class Version(models.Model):
 
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
+        PENDING = "pending", _("Pending")
         CURRENT = "current", _("Current")
         SUPERSEDED = "superseded", _("Superseded")
+
+    #: The standings a version holds before it is published.
+    UNPUBLISHED = (Status.DRAFT, Status.PENDING)
 
     status = models.CharField(
         _("status"),
@@ -492,8 +658,8 @@ class Version(models.Model):
         default=Status.DRAFT,
         editable=False,
         help_text=_(
-            "Whether this version is a draft, the version currently in force, "
-            "or superseded by a later one."
+            "Whether this version is a draft, a draft locked for translation, "
+            "the version currently in force, or superseded by a later one."
         ),
     )
     published_at = models.DateTimeField(
@@ -567,7 +733,7 @@ class Version(models.Model):
                 # The published branch names both standings because status is the
                 # one field the queryset guard lets through on a published row.
                 condition=models.Q(
-                    status="draft",
+                    status__in=["draft", "pending"],
                     number__isnull=True,
                     published_at__isnull=True,
                     html="",
@@ -585,15 +751,20 @@ class Version(models.Model):
         ]
 
     def __str__(self) -> str:
-        """Return the document's name with the number, or "(draft)"."""
+        """Return the document's name with the number, or its unpublished state."""
+        if self.status == self.Status.PENDING:
+            return f"{self.document} ({_('locked for translation')})"
         if self.number is None:
             return f"{self.document} ({_('draft')})"
         return f"{self.document} #{self.number}"
 
     @property
     def is_published(self) -> bool:
-        """Whether this version has ever been published — current or superseded."""
-        return self.status != self.Status.DRAFT
+        """Whether this version has been published — current or superseded.
+
+        A pending version is not: it is a draft locked for translation.
+        """
+        return self.status in (self.Status.CURRENT, self.Status.SUPERSEDED)
 
     @property
     def publisher_display(self) -> "str | None":
@@ -640,25 +811,150 @@ class Version(models.Model):
             keys.add(field.attname)
         return keys
 
-    @staticmethod
-    def same_wording(one: str, other: str) -> bool:
-        """Say whether two wordings say the same thing.
-
-        Line endings and surrounding whitespace are ignored. A browser stores
-        a text area's content with a carriage return before every newline, and
-        a trailing newline depends on how the wording was entered.
-
-        Args:
-            one: A wording in Markdown.
-            other: Another wording in Markdown.
+    @classmethod
+    def pending_frozen_attnames(cls) -> list[str]:
+        """Return the column name of each field a pending version may not change.
 
         Returns:
-            ``True`` when a reader would see no difference between them.
+            The attnames of ``PENDING_FROZEN_FIELDS``, so ``document_id`` stands
+            for ``document``.
         """
-        return one.replace("\r\n", "\n").strip() == other.replace("\r\n", "\n").strip()
+        return [
+            cast(models.Field, cls._meta.get_field(name)).attname
+            for name in PENDING_FROZEN_FIELDS
+        ]
+
+    @classmethod
+    def pending_frozen_field_keys(cls) -> set[str]:
+        """Return each pending-frozen field's name and attname.
+
+        Returns:
+            The names and attnames, so ``document_id`` is caught as well as
+            ``document``.
+        """
+        return set(PENDING_FROZEN_FIELDS) | set(cls.pending_frozen_attnames())
+
+    def lock_for_translation(self, by=None) -> None:
+        """Lock this draft for translation, making it pending.
+
+        Its document, wording and summary stop changing so translators work
+        against text that will not move. It stays a draft in every other
+        respect: no number, no standing, invisible to readers, and it can be
+        discarded. Nothing is rendered or stored.
+
+        Args:
+            by: The account locking it. Kept for the signal that announces the
+                lock; the lock itself records nobody.
+
+        Raises:
+            PublishError: The version is not a draft, its rendered output would
+                be empty, or it says exactly what the version in force says.
+                Nothing is written.
+        """
+        if self.status != self.Status.DRAFT:
+            raise PublishError(_("Only a draft can be locked for translation."))
+        if not get_renderer()().render(self.markdown).strip():
+            raise PublishError(_("Locking this would leave it with no output."))
+
+        with transaction.atomic():
+            document = Document.objects.select_for_update().get(pk=self.document_id)
+            stored = self.stored_row()
+            if stored is None or stored["status"] != self.Status.DRAFT:
+                raise PublishError(_("This version is no longer a draft."))
+            self.refuse_if_changed_since_read(stored)
+            current = document.versions.current().first()
+            if current is not None and same_wording(self.markdown, current.markdown):
+                raise PublishError(
+                    _("This says exactly what the version in force already says.")
+                )
+            self.status = self.Status.PENDING
+            self.save(update_fields=["status"])
+            # Last, as in publish(), so a rollback discards it.
+            transaction.on_commit(
+                partial(
+                    version_pending.send_robust, sender=Version, version=self, by=by
+                )
+            )
+
+    def refuse_if_changed_since_read(self, stored: dict) -> None:
+        """Refuse to act on wording this instance does not share with the stored row.
+
+        Args:
+            stored: The row as ``stored_row()`` returned it.
+
+        Raises:
+            PublishError: The stored ``markdown`` or ``summary`` differs from this instance's.
+        """
+        if stored["markdown"] != self.markdown or stored["summary"] != self.summary:
+            raise PublishError(_("This version has changed since it was read."))
+
+    def return_to_draft(self, by=None) -> None:
+        """Return this pending version to a draft, so its wording can change again.
+
+        Every translation of it that was put live goes back to a draft with its
+        wording kept, in the same transaction.
+
+        Args:
+            by: The account returning it. Kept for the signal that announces
+                the return; the return itself records nobody.
+
+        Raises:
+            PublishError: The version is not pending. Nothing is written.
+        """
+        if self.status != self.Status.PENDING:
+            raise PublishError(_("Only a version locked for translation can return."))
+
+        with transaction.atomic():
+            Document.objects.select_for_update().get(pk=self.document_id)
+            # Translation.publish() locks this row, so one of the two finishes
+            # first and the other reads the outcome.
+            Version.objects.select_for_update().get(pk=self.pk)
+            stored = self.stored_row()
+            if stored is None or stored["status"] != self.Status.PENDING:
+                raise PublishError(_("This version is no longer locked."))
+            # Read again against the corrected wording before any goes live.
+            returned = list(
+                Translation.objects.filter(version=self).exclude(
+                    status=Translation.Status.DRAFT
+                )
+            )
+            # The one sanctioned change to a wording put live, so it goes round
+            # the guard on the default manager.
+            Translation._base_manager.filter(
+                pk__in=[row.pk for row in returned]
+            ).update(
+                status=Translation.Status.DRAFT,
+                html="",
+                published_at=None,
+                publisher=None,
+                publisher_subject="",
+            )
+            self.status = self.Status.DRAFT
+            self.save(update_fields=["status"])
+            # Last, as in publish(), so a rollback discards them all.
+            for row in returned:
+                row.refresh_from_db()
+                transaction.on_commit(
+                    partial(
+                        translation_returned_to_draft.send_robust,
+                        sender=Translation,
+                        translation=row,
+                        by=by,
+                    )
+                )
+            transaction.on_commit(
+                partial(
+                    version_returned_to_draft.send_robust,
+                    sender=Version,
+                    version=self,
+                    by=by,
+                )
+            )
 
     def publish(self, publisher=None) -> None:
-        """Make this draft the version in force, superseding whichever one held it.
+        """Make this draft or pending version the version in force.
+
+        Whichever version held it is superseded.
 
         Every refusal comes before anything about this row or the document is
         touched. Once the publication commits, ``version_published`` is sent,
@@ -670,10 +966,10 @@ class Version(models.Model):
                 frozen with the wording. ``None`` records nobody.
 
         Raises:
-            PublishError: The version is not a draft, its rendered output is
-                empty, or it says exactly what the version in force says.
+            PublishError: The version is neither a draft nor pending, its rendered
+                output is empty, or it says exactly what the version in force says.
         """
-        if self.status != self.Status.DRAFT:
+        if self.status not in self.UNPUBLISHED:
             raise PublishError(_("This version has already been published."))
 
         html = get_renderer()().render(self.markdown)
@@ -693,14 +989,13 @@ class Version(models.Model):
             # Under the lock, ask the row rather than this instance: the check above
             # read a copy that is stale if a second process published first.
             stored = self.stored_row()
-            if stored is None or stored["status"] != self.Status.DRAFT:
+            if stored is None or stored["status"] not in self.UNPUBLISHED:
                 raise PublishError(_("This version is no longer a draft."))
+            self.refuse_if_changed_since_read(stored)
             # Under the same lock, because a draft that duplicates today's version in
             # force stops being a duplicate once somebody publishes another one.
             current = document.versions.current().first()
-            if current is not None and self.same_wording(
-                self.markdown, current.markdown
-            ):
+            if current is not None and same_wording(self.markdown, current.markdown):
                 raise PublishError(
                     _("This says exactly what the version in force already says.")
                 )
@@ -770,30 +1065,584 @@ class Version(models.Model):
         return cast(dict | None, stored)
 
     def refuse_if_published_wording_changed(self, stored: dict) -> None:
-        """Refuse a ``save()`` that changes a frozen field on a published row.
+        """Refuse a ``save()`` that changes a frozen field on a frozen row.
 
-        Compares against the stored row rather than this instance's own
-        history, so the check survives ``refresh_from_db``, deferred loading
-        and an instance built by a third party.
+        A published row is held by ``PUBLISHED_FROZEN_FIELDS``, a pending one by
+        ``PENDING_FROZEN_FIELDS``. Compares against the stored row rather than
+        this instance's own history, so the check survives ``refresh_from_db``,
+        deferred loading and an instance built by a third party.
 
         Args:
             stored: The row as ``stored_row()`` returned it.
 
         Raises:
-            PublishedVersionError: The row is published and a frozen field differs.
+            PublishedVersionError: The row is frozen and a frozen field differs.
         """
         if stored["status"] == self.Status.DRAFT:
             return
-        attnames = [field.attname for field in self.frozen_fields()]
-        if any(stored[attname] != getattr(self, attname) for attname in attnames):
-            raise PublishedVersionError(
-                _("A published version's wording and publisher cannot be changed.")
+        if stored["status"] == self.Status.PENDING:
+            attnames = self.pending_frozen_attnames()
+            message = _(
+                "A version locked for translation cannot have its wording changed."
             )
+        else:
+            attnames = [field.attname for field in self.frozen_fields()]
+            message = _(
+                "A published version's wording and publisher cannot be changed."
+            )
+        if any(stored[attname] != getattr(self, attname) for attname in attnames):
+            raise PublishedVersionError(message)
 
     def delete(self, *args, **kwargs):
         """Refuse deleting a published version."""
         if self.is_published:
             raise PublishedVersionError(_("A published version cannot be deleted."))
+        return super().delete(*args, **kwargs)
+
+
+TRANSLATION_FROZEN_FIELDS = (
+    "version",
+    "language",
+    "markdown",
+    "summary",
+    "html",
+    "published_at",
+    "publisher",
+    "publisher_subject",
+)
+
+
+class TranslationQuerySet(models.QuerySet):
+    """Refuses every route that would change or delete a wording that has been live.
+
+    A row is held once it is not a draft, whatever its version's status. Every
+    guard names ``Translation`` rather than ``self.model``, so a historical
+    model in a migration is refused the same way
+    (docs/adr/0004-migrations-are-the-one-route-immutability-cannot-close.md).
+    """
+
+    def frozen(self) -> "TranslationQuerySet":
+        """Narrow to the wordings that can no longer change.
+
+        Returns:
+            The rows that are not drafts, whatever their version's status.
+        """
+        return self.exclude(status=Translation.Status.DRAFT)
+
+    def update(self, **kwargs) -> int:
+        """Refuse an update touching a frozen field of a frozen row.
+
+        Returns:
+            The number of rows updated.
+
+        Raises:
+            PublishedTranslationError: A row the update would reach is frozen.
+        """
+        if Translation.frozen_field_keys() & set(kwargs) and self.frozen().exists():
+            raise PublishedTranslationError(
+                _("A wording that has been live cannot be changed.")
+            )
+        return super().update(**kwargs)
+
+    def delete(self):
+        """Refuse deleting while any row is frozen."""
+        if self.frozen().exists():
+            raise PublishedTranslationError(
+                _("A wording that has been live cannot be deleted.")
+            )
+        return super().delete()
+
+    def bulk_create(self, objs, *args, **kwargs):
+        """Refuse an upsert that would rewrite a frozen field of a frozen row.
+
+        ``bulk_create(update_conflicts=True)`` writes through to existing rows
+        without calling ``update()``.
+
+        Args:
+            objs: The translations to write.
+            *args: Passed on to ``bulk_create()``.
+            **kwargs: Passed on to ``bulk_create()``.
+
+        Returns:
+            The translations written.
+
+        Raises:
+            PublishedTranslationError: The upsert would change a frozen row.
+        """
+        objs = list(objs)
+        if kwargs.get("update_conflicts"):
+            keys = set(kwargs.get("update_fields") or ())
+            pks = [obj.pk for obj in objs if obj.pk is not None]
+            if (
+                Translation.frozen_field_keys() & keys
+                and self.filter(pk__in=pks).frozen().exists()
+            ):
+                raise PublishedTranslationError(
+                    _("A wording that has been live cannot be changed.")
+                )
+        return super().bulk_create(objs, *args, **kwargs)
+
+    def live(self) -> "TranslationQuerySet":
+        """Narrow to the wordings a reader is served.
+
+        Returns:
+            The current rows of published versions. A current row of a pending
+            version is not live until the version is published.
+        """
+        return self.filter(
+            status=Translation.Status.CURRENT,
+            version__status__in=[Version.Status.CURRENT, Version.Status.SUPERSEDED],
+        )
+
+    def with_replaced_at(self) -> "TranslationQuerySet":
+        """Annotate ``replaced_at``: when the next wording took over.
+
+        It is the ``published_at`` of the earliest wording of the same version
+        and language put live after this one, and ``None`` for the current
+        wording and for drafts. One query however many rows are read.
+
+        Returns:
+            The queryset with ``replaced_at`` annotated.
+        """
+        later = Translation.objects.filter(
+            version=models.OuterRef("version"),
+            language=models.OuterRef("language"),
+            published_at__gt=models.OuterRef("published_at"),
+        ).order_by("published_at")
+        return self.annotate(
+            replaced_at=models.Subquery(later.values("published_at")[:1])
+        )
+
+
+class TranslationManager(models.Manager):
+    """Gives a historical model in a migration the same guards.
+
+    ``TranslationQuerySet``'s methods are forwarded explicitly
+    (docs/adr/0006-version-manager-forwards-queryset-methods-explicitly.md).
+    """
+
+    use_in_migrations = True
+
+    def get_queryset(self) -> TranslationQuerySet:
+        """Return a ``TranslationQuerySet``."""
+        return TranslationQuerySet(self.model, using=self._db)
+
+    def live(self) -> TranslationQuerySet:
+        """Return the wordings a reader is served.
+
+        Returns:
+            The result of ``TranslationQuerySet.live``.
+        """
+        return self.get_queryset().live()
+
+    def with_replaced_at(self) -> TranslationQuerySet:
+        """Return every translation annotated with when it was replaced.
+
+        Returns:
+            The result of ``TranslationQuerySet.with_replaced_at``.
+        """
+        return self.get_queryset().with_replaced_at()
+
+
+class Translation(models.Model):
+    """One wording of a pending or published version in one language.
+
+    A version's own wording is taken to be in the main language. A translation
+    is never the text an acceptance points at: the version is. Once a wording
+    has been live it is kept as it was, and a correction is a new wording that
+    replaces it.
+    """
+
+    version = models.ForeignKey(
+        Version,
+        verbose_name=_("version"),
+        help_text=_("The version this is a translation of."),
+        related_name="translations",
+        on_delete=models.CASCADE,
+    )
+    language = models.CharField(
+        _("language"),
+        max_length=15,
+        help_text=_(
+            "The code of the language this wording is in, one of the site's "
+            "languages other than its main language."
+        ),
+    )
+    markdown = models.TextField(
+        _("markdown"),
+        help_text=_("The translated wording, written in Markdown."),
+    )
+    summary = models.TextField(
+        _("summary"),
+        blank=True,
+        help_text=_(
+            "The translated summary of what changed. Only when the version has a "
+            "summary. Plain text. Optional."
+        ),
+    )
+    html = models.TextField(
+        _("html"),
+        blank=True,
+        help_text=_(
+            "The HTML a reader is served, rendered from the markdown once, when "
+            "this wording is put live. Empty for a draft."
+        ),
+    )
+
+    class Status(models.TextChoices):
+        """The standings of a wording."""
+
+        DRAFT = "draft", _("Draft")
+        CURRENT = "current", _("Current")
+        SUPERSEDED = "superseded", _("Superseded")
+
+    status = models.CharField(
+        _("status"),
+        max_length=10,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        editable=False,
+        help_text=_(
+            "Whether this wording is a draft, the wording currently in force for "
+            "its language, or replaced by a later one."
+        ),
+    )
+    published_at = models.DateTimeField(
+        _("put live at"),
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=_(
+            "The moment this wording was put live. Null for a draft. A wording put "
+            "live on a pending version is not shown until the version is published."
+        ),
+    )
+    # Cleared by account removal through the plain base manager, as for Version.
+    publisher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("publisher"),
+        help_text=_(
+            "The account that put this wording live. Empty for a draft, for a "
+            "wording put live from code with nobody named, and once that account "
+            "is removed."
+        ),
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    publisher_subject = models.CharField(
+        _("publisher subject"),
+        max_length=255,
+        blank=True,
+        default="",
+        editable=False,
+        db_index=True,
+        help_text=_(
+            "The publisher's primary key as text, written once when the wording is "
+            "put live. It lets the translation say an account was since removed "
+            "after the link to it is cleared. Empty when nobody was recorded."
+        ),
+    )
+
+    objects = TranslationManager()
+
+    class Meta:
+        verbose_name = _("translation")
+        verbose_name_plural = _("translations")
+        ordering = [
+            "version",
+            "language",
+            models.F("published_at").asc(nulls_last=True),
+            "pk",
+        ]
+        # Translating is a different level of trust from deciding the wording
+        # of a version, so putting a translation live has a permission of its own.
+        permissions = [("publish_translation", _("Can put a translation live"))]
+        indexes = [
+            models.Index(
+                fields=["version", "language", "published_at"],
+                name="translation_history_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["version", "language"],
+                condition=models.Q(status="current"),
+                name="one_current_translation_per_language",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    status="draft",
+                    published_at__isnull=True,
+                    html="",
+                    publisher__isnull=True,
+                    publisher_subject="",
+                )
+                | (
+                    models.Q(status__in=["current", "superseded"])
+                    & models.Q(published_at__isnull=False)
+                    & ~models.Q(html="")
+                ),
+                name="translation_status_agrees_with_its_publication",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        """Return the version with the language."""
+        return f"{self.version} ({self.language})"
+
+    @property
+    def language_name(self) -> str:
+        """Name this translation's language for a person."""
+        return language_name(self.language)
+
+    @property
+    def is_offered(self) -> bool:
+        """Whether the site still offers this translation's language."""
+        return self.language in {code for code, _name in offered_languages()}
+
+    @property
+    def publisher_display(self) -> "str | None":
+        """Say who put this wording live.
+
+        Returns:
+            The publisher's name, a note that the account was removed, or a note
+            that nobody was recorded. ``None`` for a draft.
+        """
+        if self.status == self.Status.DRAFT:
+            return None
+        if self.publisher_id is not None:
+            return str(self.publisher)
+        if self.publisher_subject:
+            return str(_("Account removed"))
+        return str(_("Unknown publisher"))
+
+    @property
+    def live_since(self):
+        """When a reader could first have been served this wording.
+
+        Returns:
+            The later of the moment it was put live and the moment its version
+            was published. Read from ``replaced_at`` when the queryset annotated it. ``None`` for a draft, while the version is not
+            published, and for a wording replaced before the version was.
+        """
+        version_at = self.version.published_at
+        if self.status == self.Status.DRAFT or version_at is None:
+            return None
+        if hasattr(self, "replaced_at"):
+            replaced_at = self.replaced_at
+        else:
+            replaced_at = (
+                Translation.objects.with_replaced_at()
+                .filter(pk=self.pk)
+                .values_list("replaced_at", flat=True)
+                .first()
+            )
+        if replaced_at is not None and replaced_at <= version_at:
+            return None
+        return max(self.published_at, version_at)
+
+    @classmethod
+    def frozen_fields(cls) -> list[models.Field]:
+        """Return the fields a wording that has been live may never change.
+
+        Returns:
+            The fields named in ``TRANSLATION_FROZEN_FIELDS``.
+        """
+        return [
+            cast(models.Field, cls._meta.get_field(name))
+            for name in TRANSLATION_FROZEN_FIELDS
+        ]
+
+    @classmethod
+    def frozen_field_keys(cls) -> set[str]:
+        """Return each frozen field's name and attname.
+
+        Returns:
+            The names and attnames, so ``version_id`` is caught as well as
+            ``version``.
+        """
+        keys: set[str] = set()
+        for field in cls.frozen_fields():
+            keys.add(field.name)
+            keys.add(field.attname)
+        return keys
+
+    def publish(self, publisher=None) -> None:
+        """Put this draft wording live.
+
+        Whichever wording was current for the version and language is
+        superseded. The version and its acceptances are not touched. On a
+        pending version the wording is current but is not shown until the
+        version is published.
+
+        Args:
+            publisher: The account putting it live, kept with the wording.
+                ``None`` records nobody.
+
+        Raises:
+            PublishError: The wording is not a draft, its version is a draft, its
+                language is no longer offered, it has a summary the version lacks,
+                it renders to nothing, or it says what the current wording says.
+                Nothing is written.
+        """
+        if self.status != self.Status.DRAFT:
+            raise PublishError(_("This wording has already been put live."))
+        if not self.is_offered:
+            raise PublishError(_("The site no longer offers this language."))
+        if self.version.status == Version.Status.DRAFT:
+            raise PublishError(_("A draft version cannot have a live translation."))
+        if self.summary.strip() and not self.version.summary.strip():
+            raise PublishError(_("The version has no summary to translate."))
+        html = get_renderer()().render(self.markdown)
+        if not html.strip():
+            raise PublishError(_("Putting this live would produce no output."))
+        publisher_subject = (
+            "" if publisher is None else Acceptance.subject_of(publisher)
+        )
+
+        with transaction.atomic():
+            version = Version.objects.select_for_update().get(pk=self.version_id)
+            stored = Translation.objects.filter(pk=self.pk).values("status").first()
+            if stored is None or stored["status"] != self.Status.DRAFT:
+                raise PublishError(_("This wording is no longer a draft."))
+            if version.status == Version.Status.DRAFT:
+                raise PublishError(_("A draft version cannot have a live translation."))
+            current = Translation.objects.filter(
+                version=version, language=self.language, status=self.Status.CURRENT
+            ).first()
+            if (
+                current is not None
+                and same_wording(self.markdown, current.markdown)
+                and same_wording(self.summary, current.summary)
+            ):
+                raise PublishError(
+                    _("This says exactly what the current wording already says.")
+                )
+            if current is not None:
+                Translation.objects.filter(pk=current.pk).update(
+                    status=self.Status.SUPERSEDED
+                )
+                current.status = self.Status.SUPERSEDED
+            self.html = html
+            self.status = self.Status.CURRENT
+            self.published_at = timezone.now()
+            self.publisher = publisher
+            self.publisher_subject = publisher_subject
+            self.save(
+                update_fields=[
+                    "status",
+                    "published_at",
+                    "html",
+                    "publisher",
+                    "publisher_subject",
+                ]
+            )
+            # Last, as in Version.publish(), so a rollback discards it.
+            transaction.on_commit(
+                partial(
+                    translation_published.send_robust,
+                    sender=Translation,
+                    translation=self,
+                    publisher=publisher,
+                    replaced=current,
+                )
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        """Refuse a save that changes a frozen field of a frozen row, or a new row nobody can translate.
+
+        Raises:
+            PublishedTranslationError: The row is frozen and a frozen field differs.
+            TranslationError: The version is a draft, or the language is not
+                offered or is the main language.
+        """
+        stored = self.stored_row()
+        if stored is not None:
+            self.refuse_if_live_wording_changed(stored)
+        if kwargs.get("update_fields") is None and (
+            stored is None
+            or stored["language"] != self.language
+            or stored["version_id"] != self.version_id
+        ):
+            self.refuse_if_untranslatable()
+        super().save(*args, **kwargs)
+
+    def stored_row(self) -> dict | None:
+        """Return this row as the database holds it.
+
+        Returns:
+            The stored status, the status of its version and the frozen fields,
+            or ``None`` when no row exists.
+        """
+        if self.pk is None:
+            return None
+        attnames = [field.attname for field in self.frozen_fields()]
+        stored = (
+            Translation.objects.filter(pk=self.pk).values("status", *attnames).first()
+        )
+        return cast(dict | None, stored)
+
+    @classmethod
+    def row_is_frozen(cls, stored: dict) -> bool:
+        """Say whether a stored row can no longer change.
+
+        Args:
+            stored: The row as ``stored_row()`` returned it.
+
+        Returns:
+            ``True`` when it is not a draft.
+        """
+        return bool(stored["status"] != cls.Status.DRAFT)
+
+    def refuse_if_live_wording_changed(self, stored: dict) -> None:
+        """Refuse a ``save()`` that changes a frozen field of a frozen row.
+
+        Args:
+            stored: The row as ``stored_row()`` returned it.
+
+        Raises:
+            PublishedTranslationError: The row is frozen and a frozen field differs.
+        """
+        if not self.row_is_frozen(stored):
+            return
+        if any(
+            stored[field.attname] != getattr(self, field.attname)
+            for field in self.frozen_fields()
+        ):
+            raise PublishedTranslationError(
+                _("A wording that has been live cannot be changed.")
+            )
+
+    def refuse_if_untranslatable(self) -> None:
+        """Refuse a version nobody can translate yet, and a language not offered.
+
+        Raises:
+            TranslationError: The version is a draft, the language is not offered,
+                or it is the main language.
+        """
+        if self.version.status == Version.Status.DRAFT:
+            raise TranslationError(
+                _(
+                    "A draft version cannot be translated. Lock it for translation first."
+                )
+            )
+        if self.language == main_language():
+            raise TranslationError(
+                _("The version's own wording is in the main language.")
+            )
+        if self.language not in {code for code, _name in offered_languages()}:
+            raise TranslationError(_("The site does not offer this language."))
+
+    def delete(self, *args, **kwargs):
+        """Refuse deleting a wording that has been live."""
+        stored = self.stored_row()
+        if stored is not None and self.row_is_frozen(stored):
+            raise PublishedTranslationError(
+                _("A wording that has been live cannot be deleted.")
+            )
         return super().delete(*args, **kwargs)
 
 

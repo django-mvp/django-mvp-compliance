@@ -54,6 +54,19 @@ def declare():
 
 
 @pytest.fixture
+def site_languages():
+    """Offer English, German and French, so a test can translate into two of them.
+
+    ``tests/settings.py`` sets no ``LANGUAGES``, so a test that does not ask for
+    this fixture runs the case where the site offers none.
+    """
+    with override_settings(
+        LANGUAGES=[("en", "English"), ("de", "German"), ("fr", "French")]
+    ):
+        yield
+
+
+@pytest.fixture
 def stored_files(settings, tmp_path):
     """An empty folder for the files the tests store, and where they are read from."""
     settings.MEDIA_ROOT = tmp_path
