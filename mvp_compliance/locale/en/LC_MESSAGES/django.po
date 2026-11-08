@@ -16,200 +16,285 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-mvp-compliance\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-06 08:14-0600\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:88
+#: mvp_compliance/admin.py:35
+msgid "Missing a translation"
+msgstr "Missing a translation"
+
+#: mvp_compliance/admin.py:51
+msgid "Any language"
+msgstr "Any language"
+
+#: mvp_compliance/admin.py:145
 msgid "Current version"
 msgstr "Current version"
 
-#: admin.py:100
+#: mvp_compliance/admin.py:157
 msgid "No version in force"
 msgstr "No version in force"
 
-#: admin.py:105 templates/cotton/compliance/outstanding.html:21
-#: templates/cotton/compliance/outstanding.html:41
+#: mvp_compliance/admin.py:162
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:21
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:41
 #, python-format
 msgid "Version %(number)s"
 msgstr "Version %(number)s"
 
-#: admin.py:108
+#: mvp_compliance/admin.py:165
 msgid "In force since"
 msgstr "In force since"
 
-#: admin.py:121 admin.py:191
-#: templates/mvp_compliance/email/version_published_body.txt:3
+#: mvp_compliance/admin.py:178 mvp_compliance/admin.py:349
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:3
 msgid "Published by"
 msgstr "Published by"
 
-#: admin.py:136
+#: mvp_compliance/admin.py:193
 msgid "Published versions"
 msgstr "Published versions"
 
-#: admin.py:179 models.py:451
+#: mvp_compliance/admin.py:254
+msgid "Translations"
+msgstr "Translations"
+
+#: mvp_compliance/admin.py:324
+msgid "Correct"
+msgstr "Correct"
+
+#: mvp_compliance/admin.py:324
+msgid "Add"
+msgstr "Add"
+
+#: mvp_compliance/admin.py:334
+msgid "No translation"
+msgstr "No translation"
+
+#: mvp_compliance/admin.py:337 mvp_compliance/models.py:607
 msgid "number"
 msgstr "number"
 
-#: admin.py:189 models.py:484
+#: mvp_compliance/admin.py:347 mvp_compliance/models.py:640
+#: mvp_compliance/models.py:1240
 msgid "Draft"
 msgstr "Draft"
 
-#: admin.py:345 templates/admin/mvp_compliance/version/change_form.html:8
+#: mvp_compliance/admin.py:536 mvp_compliance/admin.py:934
+#: mvp_compliance/templates/admin/mvp_compliance/translation/change_form.html:8
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:8
 msgid "Preview"
 msgstr "Preview"
 
-#: admin.py:382
+#: mvp_compliance/admin.py:573
 #, python-format
 msgid "Version %(number)s of %(document)s is now published."
 msgstr "Version %(number)s of %(document)s is now published."
 
-#: admin.py:393 templates/admin/mvp_compliance/version/change_form.html:14
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:19
+#: mvp_compliance/admin.py:584
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:14
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:21
 msgid "Publish"
 msgstr "Publish"
 
-#: admin.py:452 templates/admin/mvp_compliance/disclosure/produce.html:5
+#: mvp_compliance/admin.py:644
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:21
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:16
+msgid "Lock for translation"
+msgstr "Lock for translation"
+
+#: mvp_compliance/admin.py:645
+msgid "The version is locked for translation."
+msgstr "The version is locked for translation."
+
+#: mvp_compliance/admin.py:663
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:28
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:15
+msgid "Return to draft"
+msgstr "Return to draft"
+
+#: mvp_compliance/admin.py:664
+msgid "The version is a draft again."
+msgstr "The version is a draft again."
+
+#: mvp_compliance/admin.py:697
+msgid "Translating"
+msgstr "Translating"
+
+#: mvp_compliance/admin.py:707
+#, python-format
+msgid "%(version)s into %(language)s"
+msgstr "%(version)s into %(language)s"
+
+#: mvp_compliance/admin.py:712
+msgid "Live since"
+msgstr "Live since"
+
+#: mvp_compliance/admin.py:724
+msgid "Put live by"
+msgstr "Put live by"
+
+#: mvp_compliance/admin.py:736
+msgid "Wording a reader is served"
+msgstr "Wording a reader is served"
+
+#: mvp_compliance/admin.py:852
+msgid "Correct a translation"
+msgstr "Correct a translation"
+
+#: mvp_compliance/admin.py:970
+#, python-format
+msgid "The %(language)s wording of %(version)s is now live."
+msgstr "The %(language)s wording of %(version)s is now live."
+
+#: mvp_compliance/admin.py:986
+#: mvp_compliance/templates/admin/mvp_compliance/translation/change_form.html:14
+msgid "Put live"
+msgstr "Put live"
+
+#: mvp_compliance/admin.py:1045
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:5
 msgid "Everything held about a person"
 msgstr "Everything held about a person"
 
-#: apps.py:14
+#: mvp_compliance/apps.py:14
 msgid "Compliance"
 msgstr "Compliance"
 
-#: checks.py:54
+#: mvp_compliance/checks.py:54
 msgid "The page that asks a person to agree has no address."
 msgstr "The page that asks a person to agree has no address."
 
-#: checks.py:55
+#: mvp_compliance/checks.py:55
 #, python-format
 msgid "Add %(line)s to the project's URLconf."
 msgstr "Add %(line)s to the project's URLconf."
 
-#: checks.py:66
+#: mvp_compliance/checks.py:66
 msgid "Nothing that identifies the signed-in user comes before the check."
 msgstr "Nothing that identifies the signed-in user comes before the check."
 
-#: checks.py:67
+#: mvp_compliance/checks.py:67
 #, python-format
 msgid "List %(check)s after %(authentication)s in MIDDLEWARE."
 msgstr "List %(check)s after %(authentication)s in MIDDLEWARE."
 
-#: checks.py:80
+#: mvp_compliance/checks.py:80
 #, python-format
 msgid "%(setting)s is a string, and has to be a list."
 msgstr "%(setting)s is a string, and has to be a list."
 
-#: checks.py:82
+#: mvp_compliance/checks.py:82
 #, python-format
 msgid "Write it as a list, even for one entry: %(example)s."
 msgstr "Write it as a list, even for one entry: %(example)s."
 
-#: checks.py:91
+#: mvp_compliance/checks.py:91
 #, python-format
 msgid "%(setting)s is not a number."
 msgstr "%(setting)s is not a number."
 
-#: checks.py:93
+#: mvp_compliance/checks.py:93
 #, python-format
 msgid "Give it as a number of seconds, such as %(example)s."
 msgstr "Give it as a number of seconds, such as %(example)s."
 
-#: checks.py:128
-#, fuzzy, python-format
-#| msgid "%(setting)s is not a number."
+#: mvp_compliance/checks.py:128
+#, python-format
 msgid "%(setting)s is not a list."
-msgstr "%(setting)s is not a number."
+msgstr "%(setting)s is not a list."
 
-#: checks.py:130
-#, fuzzy, python-format
-#| msgid "Write it as a list, even for one entry: %(example)s."
+#: mvp_compliance/checks.py:130
+#, python-format
 msgid "Write it as a list of dotted paths, even for one kind: %(example)s."
-msgstr "Write it as a list, even for one entry: %(example)s."
+msgstr "Write it as a list of dotted paths, even for one kind: %(example)s."
 
-#: checks.py:147
+#: mvp_compliance/checks.py:147
 #, python-format
 msgid "%(path)s does not name a PersonalData subclass."
-msgstr ""
+msgstr "%(path)s does not name a PersonalData subclass."
 
-#: checks.py:149
+#: mvp_compliance/checks.py:149
 #, python-format
 msgid "Name a class that subclasses %(base)s."
-msgstr ""
+msgstr "Name a class that subclasses %(base)s."
 
-#: checks.py:161
+#: mvp_compliance/checks.py:161
 #, python-format
 msgid "%(first)s and %(second)s have the same key, %(key)s."
-msgstr ""
+msgstr "%(first)s and %(second)s have the same key, %(key)s."
 
-#: checks.py:163
+#: mvp_compliance/checks.py:163
 msgid "Set a different key on one of them."
-msgstr ""
+msgstr "Set a different key on one of them."
 
-#: checks.py:177
+#: mvp_compliance/checks.py:177
 #, python-format
 msgid "%(path)s lists %(field)s, which %(model)s does not have."
-msgstr ""
+msgstr "%(path)s lists %(field)s, which %(model)s does not have."
 
-#: checks.py:179
+#: mvp_compliance/checks.py:179
 msgid "Remove it from fields, or correct its spelling."
-msgstr ""
+msgstr "Remove it from fields, or correct its spelling."
 
-#: checks.py:204
+#: mvp_compliance/checks.py:204
 #, python-format
 msgid "%(path)s sets erasure to something other than %(constants)s."
-msgstr ""
+msgstr "%(path)s sets erasure to something other than %(constants)s."
 
-#: checks.py:206
+#: mvp_compliance/checks.py:206
 #, python-format
 msgid "%(path)s does not say how its records are deleted."
-msgstr ""
+msgstr "%(path)s does not say how its records are deleted."
 
-#: checks.py:214
+#: mvp_compliance/checks.py:214
 msgid ""
 "Set erasure to PersonalData.DELETE or PersonalData.WITH_ACCOUNT, or override "
 "erase()."
 msgstr ""
+"Set erasure to PersonalData.DELETE or PersonalData.WITH_ACCOUNT, or override "
+"erase()."
 
-#: checks.py:234
-#, fuzzy
-#| msgid "The page that asks a person to agree has no address."
+#: mvp_compliance/checks.py:234
 msgid "The page that gives a person a copy of their data needs allauth."
-msgstr "The page that asks a person to agree has no address."
+msgstr "The page that gives a person a copy of their data needs allauth."
 
-#: checks.py:235
+#: mvp_compliance/checks.py:235
 #, python-format
 msgid "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
-msgstr ""
+msgstr "Install the extra %(extra)s and add %(app)s to INSTALLED_APPS."
 
-#: checks.py:247
-#, fuzzy
-#| msgid "The page that asks a person to agree has no address."
+#: mvp_compliance/checks.py:247
 msgid ""
 "The page that gives a person a copy of their data needs allauth's middleware."
-msgstr "The page that asks a person to agree has no address."
+msgstr ""
+"The page that gives a person a copy of their data needs allauth's middleware."
 
-#: checks.py:249
+#: mvp_compliance/checks.py:249
 #, python-format
 msgid "Add %(middleware)s to MIDDLEWARE."
-msgstr ""
+msgstr "Add %(middleware)s to MIDDLEWARE."
 
-#: comparison.py:349
+#: mvp_compliance/comparison.py:349
 msgid "Added:"
 msgstr "Added:"
 
-#: comparison.py:349
+#: mvp_compliance/comparison.py:349
 msgid "Removed:"
 msgstr "Removed:"
 
-#: forms.py:36
+#: mvp_compliance/forms.py:38 mvp_compliance/models.py:1209
+msgid "language"
+msgstr "language"
+
+#: mvp_compliance/forms.py:97
 msgid "Person"
 msgstr "Person"
 
-#: forms.py:38
+#: mvp_compliance/forms.py:99
 msgid ""
 "The account's login name or email address, or, for somebody whose account "
 "has since been removed, the identifier their records still carry."
@@ -217,77 +302,77 @@ msgstr ""
 "The account's login name or email address, or, for somebody whose account "
 "has since been removed, the identifier their records still carry."
 
-#: management.py:41
+#: mvp_compliance/management.py:41
 msgid "The name must not start or end with a space."
-msgstr ""
+msgstr "The name must not start or end with a space."
 
-#: management.py:44
+#: mvp_compliance/management.py:44
 #, python-format
 msgid "The name already belongs to the document “%(other)s”."
-msgstr ""
+msgstr "The name already belongs to the document “%(other)s”."
 
-#: management.py:48
+#: mvp_compliance/management.py:48
 msgid "Another declaration gives the same name."
-msgstr ""
+msgstr "Another declaration gives the same name."
 
-#: management.py:51
+#: mvp_compliance/management.py:51
 #, python-format
 msgid "Declaration “%(slug)s”: %(problems)s"
-msgstr ""
+msgstr "Declaration “%(slug)s”: %(problems)s"
 
-#: management.py:103
+#: mvp_compliance/management.py:103
 msgid "MVP_COMPLIANCE_DOCUMENTS cannot be applied:"
-msgstr ""
+msgstr "MVP_COMPLIANCE_DOCUMENTS cannot be applied:"
 
-#: menus.py:15
+#: mvp_compliance/menus.py:15
 msgid "Agreements"
 msgstr "Agreements"
 
-#: menus.py:23 views.py:551
+#: mvp_compliance/menus.py:23 mvp_compliance/views.py:551
 msgid "Your data"
-msgstr ""
+msgstr "Your data"
 
-#: menus.py:31
+#: mvp_compliance/menus.py:31
 msgid "Delete account"
-msgstr ""
+msgstr "Delete account"
 
-#: models.py:42
+#: mvp_compliance/models.py:123
 msgid "Use lowercase letters, digits and single hyphens only."
 msgstr "Use lowercase letters, digits and single hyphens only."
 
-#: models.py:59
+#: mvp_compliance/models.py:140
 msgid "This slug is reserved for another page. Choose a different one."
 msgstr "This slug is reserved for another page. Choose a different one."
 
-#: models.py:184
+#: mvp_compliance/models.py:265
 msgid "Agreed to"
 msgstr "Agreed to"
 
-#: models.py:185
+#: mvp_compliance/models.py:266
 msgid "Notice"
 msgstr "Notice"
 
-#: models.py:188
+#: mvp_compliance/models.py:269
 msgid "name"
 msgstr "name"
 
-#: models.py:191
+#: mvp_compliance/models.py:272
 msgid "The name this document is known by, such as “Privacy policy”."
 msgstr "The name this document is known by, such as “Privacy policy”."
 
-#: models.py:194
+#: mvp_compliance/models.py:275
 msgid "slug"
 msgstr "slug"
 
-#: models.py:199
+#: mvp_compliance/models.py:280
 msgid "The document's identifier in its address, such as “privacy-policy”."
 msgstr "The document's identifier in its address, such as “privacy-policy”."
 
-#: models.py:203
+#: mvp_compliance/models.py:284
 msgid "kind"
 msgstr "kind"
 
-#: models.py:208
+#: mvp_compliance/models.py:289
 msgid ""
 "Whether people agree to this document, such as a privacy policy, or only "
 "read it, such as an impressum. Nobody is ever asked to accept a notice."
@@ -295,11 +380,11 @@ msgstr ""
 "Whether people agree to this document, such as a privacy policy, or only "
 "read it, such as an impressum. Nobody is ever asked to accept a notice."
 
-#: models.py:213
+#: mvp_compliance/models.py:294
 msgid "enforced"
 msgstr "enforced"
 
-#: models.py:216
+#: mvp_compliance/models.py:297
 msgid ""
 "Whether a person who has not accepted this document is stopped until they "
 "do, on a site that has switched the check on. Turn it off for a document "
@@ -311,41 +396,45 @@ msgstr ""
 "that is published and offered but never required, such as a cookie policy. "
 "It never applies to a notice."
 
-#: models.py:230
+#: mvp_compliance/models.py:311
 msgid ""
 "A document's slug cannot be changed once a version of it has been published."
 msgstr ""
 "A document's slug cannot be changed once a version of it has been published."
 
-#: models.py:234
+#: mvp_compliance/models.py:315
 msgid "The slug of a document the project declares cannot be changed."
 msgstr "The slug of a document the project declares cannot be changed."
 
-#: models.py:240 models.py:443
+#: mvp_compliance/models.py:321 mvp_compliance/models.py:599
 msgid "document"
 msgstr "document"
 
-#: models.py:241
+#: mvp_compliance/models.py:322
 msgid "documents"
 msgstr "documents"
 
-#: models.py:245
+#: mvp_compliance/models.py:326
 msgid "Can continue without accepting enforced documents"
 msgstr "Can continue without accepting enforced documents"
 
-#: models.py:313 models.py:790
+#: mvp_compliance/models.py:403 mvp_compliance/models.py:1034
 msgid "A published version's wording and publisher cannot be changed."
 msgstr "A published version's wording and publisher cannot be changed."
 
-#: models.py:320 models.py:796
+#: mvp_compliance/models.py:407 mvp_compliance/models.py:1029
+msgid "A version locked for translation cannot have its wording changed."
+msgstr "A version locked for translation cannot have its wording changed."
+
+#: mvp_compliance/models.py:414 mvp_compliance/models.py:1042
 msgid "A published version cannot be deleted."
 msgstr "A published version cannot be deleted."
 
-#: models.py:444
+#: mvp_compliance/models.py:600
 msgid "The document this version belongs to."
 msgstr "The document this version belongs to."
 
-#: models.py:457
+#: mvp_compliance/models.py:613
 msgid ""
 "The year this version was published and its place among the document's "
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
@@ -355,29 +444,31 @@ msgstr ""
 "versions published that year, such as 2026.2. Assigned at publication. Empty "
 "for a draft."
 
-#: models.py:463
+#: mvp_compliance/models.py:619 mvp_compliance/models.py:1217
 msgid "markdown"
 msgstr "markdown"
 
-#: models.py:464
+#: mvp_compliance/models.py:620
 msgid "The wording of this version, written in Markdown."
 msgstr "The wording of this version, written in Markdown."
 
-#: models.py:467
+#: mvp_compliance/models.py:623 mvp_compliance/models.py:1221
 msgid "summary"
-msgstr ""
+msgstr "summary"
 
-#: models.py:470
+#: mvp_compliance/models.py:626
 msgid ""
 "What changed since the version before, for a person who agreed to an earlier "
 "version and is asked to agree again. Plain text. Optional."
 msgstr ""
+"What changed since the version before, for a person who agreed to an earlier "
+"version and is asked to agree again. Plain text. Optional."
 
-#: models.py:475
+#: mvp_compliance/models.py:631 mvp_compliance/models.py:1229
 msgid "html"
 msgstr "html"
 
-#: models.py:478
+#: mvp_compliance/models.py:634
 msgid ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
@@ -385,31 +476,35 @@ msgstr ""
 "The HTML a reader is served, rendered from the markdown once, at "
 "publication. Empty for a draft that has never been published."
 
-#: models.py:485
+#: mvp_compliance/models.py:641
+msgid "Pending"
+msgstr "Pending"
+
+#: mvp_compliance/models.py:642 mvp_compliance/models.py:1241
 msgid "Current"
 msgstr "Current"
 
-#: models.py:486
+#: mvp_compliance/models.py:643 mvp_compliance/models.py:1242
 msgid "Superseded"
 msgstr "Superseded"
 
-#: models.py:489
+#: mvp_compliance/models.py:649 mvp_compliance/models.py:1245
 msgid "status"
 msgstr "status"
 
-#: models.py:495
+#: mvp_compliance/models.py:655
 msgid ""
-"Whether this version is a draft, the version currently in force, or "
-"superseded by a later one."
+"Whether this version is a draft, a draft locked for translation, the version "
+"currently in force, or superseded by a later one."
 msgstr ""
-"Whether this version is a draft, the version currently in force, or "
-"superseded by a later one."
+"Whether this version is a draft, a draft locked for translation, the version "
+"currently in force, or superseded by a later one."
 
-#: models.py:500
+#: mvp_compliance/models.py:660
 msgid "published at"
 msgstr "published at"
 
-#: models.py:505
+#: mvp_compliance/models.py:665
 msgid ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
@@ -417,11 +512,11 @@ msgstr ""
 "The moment this version was published. Null for a draft that has never been "
 "published."
 
-#: models.py:514
+#: mvp_compliance/models.py:674 mvp_compliance/models.py:1268
 msgid "publisher"
 msgstr "publisher"
 
-#: models.py:516
+#: mvp_compliance/models.py:676
 msgid ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
@@ -429,11 +524,11 @@ msgstr ""
 "The account that published this version. Empty for a draft, for a version "
 "published from code with nobody named, and once that account is removed."
 
-#: models.py:527
+#: mvp_compliance/models.py:687 mvp_compliance/models.py:1281
 msgid "publisher subject"
 msgstr "publisher subject"
 
-#: models.py:534
+#: mvp_compliance/models.py:694
 msgid ""
 "The publisher's primary key as text, written once at publication. It lets "
 "the version say an account was since removed after the link to it is "
@@ -443,66 +538,222 @@ msgstr ""
 "the version say an account was since removed after the link to it is "
 "cleared. Empty when nobody was recorded."
 
-#: models.py:543 models.py:1121
-#: templates/admin/mvp_compliance/disclosure/acceptances.html:8
-#: templates/admin/mvp_compliance/disclosure/acceptances.html:10
+#: mvp_compliance/models.py:703 mvp_compliance/models.py:1203
+#: mvp_compliance/models.py:1906
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:8
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:10
 msgid "version"
 msgstr "version"
 
-#: models.py:544
+#: mvp_compliance/models.py:704
 msgid "versions"
 msgstr "versions"
 
-#: models.py:552
+#: mvp_compliance/models.py:712
 msgid "Can publish a version"
 msgstr "Can publish a version"
 
-#: models.py:590
+#: mvp_compliance/models.py:750
 msgid "draft"
 msgstr "draft"
 
-#: models.py:614
+#: mvp_compliance/models.py:777 mvp_compliance/models.py:1364
 msgid "Account removed"
 msgstr "Account removed"
 
-#: models.py:615
+#: mvp_compliance/models.py:778 mvp_compliance/models.py:1365
 msgid "Unknown publisher"
 msgstr "Unknown publisher"
 
-#: models.py:677
-msgid "This version has already been published."
-msgstr "This version has already been published."
+#: mvp_compliance/models.py:847
+msgid "Only a draft can be locked for translation."
+msgstr "Only a draft can be locked for translation."
 
-#: models.py:681
-msgid "Publishing this would produce no output."
-msgstr "Publishing this would produce no output."
+#: mvp_compliance/models.py:849
+msgid "Locking this would leave it with no output."
+msgstr "Locking this would leave it with no output."
 
-#: models.py:697
+#: mvp_compliance/models.py:855 mvp_compliance/models.py:937
 msgid "This version is no longer a draft."
 msgstr "This version is no longer a draft."
 
-#: models.py:705
+#: mvp_compliance/models.py
+msgid "This version has changed since it was read."
+msgstr "This version has changed since it was read."
+
+#: mvp_compliance/models.py
+msgid "locked for translation"
+msgstr "locked for translation"
+
+#: mvp_compliance/models.py:859 mvp_compliance/models.py:943
 msgid "This says exactly what the version in force already says."
 msgstr "This says exactly what the version in force already says."
 
-#: models.py:870 models.py:1223
+#: mvp_compliance/models.py:878
+msgid "Only a version locked for translation can return."
+msgstr "Only a version locked for translation can return."
+
+#: mvp_compliance/models.py:884
+msgid "This version is no longer locked."
+msgstr "This version is no longer locked."
+
+#: mvp_compliance/models.py:917
+msgid "This version has already been published."
+msgstr "This version has already been published."
+
+#: mvp_compliance/models.py:921
+msgid "Publishing this would produce no output."
+msgstr "Publishing this would produce no output."
+
+#: mvp_compliance/models.py:1088 mvp_compliance/models.py:1126
+#: mvp_compliance/models.py:1552
+msgid "A wording that has been live cannot be changed."
+msgstr "A wording that has been live cannot be changed."
+
+#: mvp_compliance/models.py:1096 mvp_compliance/models.py:1580
+msgid "A wording that has been live cannot be deleted."
+msgstr "A wording that has been live cannot be deleted."
+
+#: mvp_compliance/models.py:1204
+msgid "The version this is a translation of."
+msgstr "The version this is a translation of."
+
+#: mvp_compliance/models.py:1212
+msgid ""
+"The code of the language this wording is in, one of the site's languages "
+"other than its main language."
+msgstr ""
+"The code of the language this wording is in, one of the site's languages "
+"other than its main language."
+
+#: mvp_compliance/models.py:1218
+msgid "The translated wording, written in Markdown."
+msgstr "The translated wording, written in Markdown."
+
+#: mvp_compliance/models.py:1224
+msgid ""
+"The translated summary of what changed. Only when the version has a summary. "
+"Plain text. Optional."
+msgstr ""
+"The translated summary of what changed. Only when the version has a summary. "
+"Plain text. Optional."
+
+#: mvp_compliance/models.py:1232
+msgid ""
+"The HTML a reader is served, rendered from the markdown once, when this "
+"wording is put live. Empty for a draft."
+msgstr ""
+"The HTML a reader is served, rendered from the markdown once, when this "
+"wording is put live. Empty for a draft."
+
+#: mvp_compliance/models.py:1251
+msgid ""
+"Whether this wording is a draft, the wording currently in force for its "
+"language, or replaced by a later one."
+msgstr ""
+"Whether this wording is a draft, the wording currently in force for its "
+"language, or replaced by a later one."
+
+#: mvp_compliance/models.py:1256
+msgid "put live at"
+msgstr "put live at"
+
+#: mvp_compliance/models.py:1261
+msgid ""
+"The moment this wording was put live. Null for a draft. A wording put live "
+"on a pending version is not shown until the version is published."
+msgstr ""
+"The moment this wording was put live. Null for a draft. A wording put live "
+"on a pending version is not shown until the version is published."
+
+#: mvp_compliance/models.py:1270
+msgid ""
+"The account that put this wording live. Empty for a draft, for a wording put "
+"live from code with nobody named, and once that account is removed."
+msgstr ""
+"The account that put this wording live. Empty for a draft, for a wording put "
+"live from code with nobody named, and once that account is removed."
+
+#: mvp_compliance/models.py:1288
+msgid ""
+"The publisher's primary key as text, written once when the wording is put "
+"live. It lets the translation say an account was since removed after the "
+"link to it is cleared. Empty when nobody was recorded."
+msgstr ""
+"The publisher's primary key as text, written once when the wording is put "
+"live. It lets the translation say an account was since removed after the "
+"link to it is cleared. Empty when nobody was recorded."
+
+#: mvp_compliance/models.py:1297
+msgid "translation"
+msgstr "translation"
+
+#: mvp_compliance/models.py:1298
+msgid "translations"
+msgstr "translations"
+
+#: mvp_compliance/models.py:1307
+msgid "Can put a translation live"
+msgstr "Can put a translation live"
+
+#: mvp_compliance/models.py:1434
+msgid "This wording has already been put live."
+msgstr "This wording has already been put live."
+
+#: mvp_compliance/models.py:1436
+msgid "The site no longer offers this language."
+msgstr "The site no longer offers this language."
+
+#: mvp_compliance/models.py:1438 mvp_compliance/models.py:1454
+msgid "A draft version cannot have a live translation."
+msgstr "A draft version cannot have a live translation."
+
+#: mvp_compliance/models.py:1440
+msgid "The version has no summary to translate."
+msgstr "The version has no summary to translate."
+
+#: mvp_compliance/models.py:1443
+msgid "Putting this live would produce no output."
+msgstr "Putting this live would produce no output."
+
+#: mvp_compliance/models.py:1452
+msgid "This wording is no longer a draft."
+msgstr "This wording is no longer a draft."
+
+#: mvp_compliance/models.py:1464
+msgid "This says exactly what the current wording already says."
+msgstr "This says exactly what the current wording already says."
+
+#: mvp_compliance/models.py:1565
+msgid "A draft version cannot be translated. Lock it for translation first."
+msgstr "A draft version cannot be translated. Lock it for translation first."
+
+#: mvp_compliance/models.py:1570
+msgid "The version's own wording is in the main language."
+msgstr "The version's own wording is in the main language."
+
+#: mvp_compliance/models.py:1573
+msgid "The site does not offer this language."
+msgstr "The site does not offer this language."
+
+#: mvp_compliance/models.py:1655 mvp_compliance/models.py:2008
 msgid "An acceptance cannot be changed once it is recorded."
 msgstr "An acceptance cannot be changed once it is recorded."
 
-#: models.py:875 models.py:1230
+#: mvp_compliance/models.py:1660 mvp_compliance/models.py:2015
 msgid "An acceptance cannot be deleted."
 msgstr "An acceptance cannot be deleted."
 
-#: models.py:1023 models.py:1066
+#: mvp_compliance/models.py:1808 mvp_compliance/models.py:1851
 msgid "Cannot record an acceptance of a version that has never been published."
 msgstr ""
 "Cannot record an acceptance of a version that has never been published."
 
-#: models.py:1097
+#: mvp_compliance/models.py:1882
 msgid "user"
 msgstr "user"
 
-#: models.py:1099
+#: mvp_compliance/models.py:1884
 msgid ""
 "The account that accepted this version, at the time it accepted it. Null "
 "only ever means the account has since been removed — never that the acceptor "
@@ -512,11 +763,11 @@ msgstr ""
 "only ever means the account has since been removed — never that the acceptor "
 "was unknown."
 
-#: models.py:1109
+#: mvp_compliance/models.py:1894
 msgid "subject"
 msgstr "subject"
 
-#: models.py:1113
+#: mvp_compliance/models.py:1898
 msgid ""
 "The accepted user's primary key, held as text and written once, when this "
 "record is made. The `user` foreign key is cleared when that account is "
@@ -528,7 +779,7 @@ msgstr ""
 "removed, so without this field the record could no longer say whose it is or "
 "be found among that person's others."
 
-#: models.py:1123
+#: mvp_compliance/models.py:1908
 msgid ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
@@ -536,11 +787,11 @@ msgstr ""
 "The published version this acceptance names. Never a draft — recording an "
 "acceptance of one is refused."
 
-#: models.py:1130
+#: mvp_compliance/models.py:1915
 msgid "accepted at"
 msgstr "accepted at"
 
-#: models.py:1134
+#: mvp_compliance/models.py:1919
 msgid ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
@@ -548,11 +799,11 @@ msgstr ""
 "The moment this acceptance was recorded. Set once, when the record is made, "
 "and never rewritten."
 
-#: models.py:1139
+#: mvp_compliance/models.py:1924
 msgid "IP address"
 msgstr "IP address"
 
-#: models.py:1143
+#: mvp_compliance/models.py:1928
 msgid ""
 "The address the request came from when this acceptance was recorded. Held "
 "only when the host project has turned that on and supplied the request — "
@@ -564,21 +815,21 @@ msgstr ""
 "personal data about someone who did not ask for it to be kept, so it is the "
 "host project's decision."
 
-#: models.py:1153
+#: mvp_compliance/models.py:1938
 msgid "acceptance"
 msgstr "acceptance"
 
-#: models.py:1154
+#: mvp_compliance/models.py:1939
 msgid "acceptances"
 msgstr "acceptances"
 
-#: models.py:1189
+#: mvp_compliance/models.py:1974
 msgid ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 msgstr ""
 "Cannot record an acceptance or a publisher for a user with no primary key."
 
-#: models.py:1214
+#: mvp_compliance/models.py:1999
 msgid ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
@@ -586,52 +837,50 @@ msgstr ""
 "Cannot record an acceptance of a notice. A notice is published to be read, "
 "and nobody agrees to it."
 
-#: models.py:1248
+#: mvp_compliance/models.py:2033
 msgid "disclosure"
 msgstr "disclosure"
 
-#: models.py:1249
+#: mvp_compliance/models.py:2034
 msgid "everything held about a person"
 msgstr "everything held about a person"
 
-#: models.py:1251
+#: mvp_compliance/models.py:2036
 msgid "Can produce everything held about a person"
 msgstr "Can produce everything held about a person"
 
-#: personal_data.py:264 views.py:235
+#: mvp_compliance/personal_data.py:264 mvp_compliance/views.py:235
 msgid "Documents you agreed to"
 msgstr "Documents you agreed to"
 
-#: personal_data.py:266
+#: mvp_compliance/personal_data.py:266
 msgid ""
 "Each version of this site's documents you agreed to, when you agreed, and "
 "the wording you were shown."
 msgstr ""
+"Each version of this site's documents you agreed to, when you agreed, and "
+"the wording you were shown."
 
-#: personal_data.py:290
-#, fuzzy
-#| msgid "Documents"
+#: mvp_compliance/personal_data.py:290
 msgid "Document"
-msgstr "Documents"
+msgstr "Document"
 
-#: personal_data.py:291 templates/mvp_compliance/agreed_documents.html:26
-#: templates/mvp_compliance/agreed_documents.html:43
+#: mvp_compliance/personal_data.py:291
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:26
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:43
 msgid "Version"
 msgstr "Version"
 
-#: personal_data.py:292
-#, fuzzy
-#| msgid "Agreed to"
+#: mvp_compliance/personal_data.py:292
 msgid "Agreed on"
-msgstr "Agreed to"
+msgstr "Agreed on"
 
-#: personal_data.py:293 templates/mvp_compliance/copy/index.html:50
-#, fuzzy
-#| msgid "Documents you agreed to"
+#: mvp_compliance/personal_data.py:293
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:50
 msgid "The wording you agreed to"
-msgstr "Documents you agreed to"
+msgstr "The wording you agreed to"
 
-#: records.py:80
+#: mvp_compliance/records.py:80
 msgid ""
 "This covers what this package holds about this person. The project may hold "
 "further records about them elsewhere that are not included here."
@@ -639,56 +888,99 @@ msgstr ""
 "This covers what this package holds about this person. The project may hold "
 "further records about them elsewhere that are not included here."
 
-#: records.py:147
+#: mvp_compliance/records.py:147
 msgid "Acceptances"
 msgstr "Acceptances"
 
-#: templates/admin/mvp_compliance/disclosure/acceptances.html:17
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:17
 msgid "Recorded from"
 msgstr "Recorded from"
 
-#: templates/admin/mvp_compliance/disclosure/acceptances.html:21
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/acceptances.html:21
 msgid "The wording accepted"
 msgstr "The wording accepted"
 
-#: templates/admin/mvp_compliance/disclosure/produce.html:11
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:11
 msgid "Produce"
 msgstr "Produce"
 
-#: templates/admin/mvp_compliance/disclosure/produce.html:16
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:16
 msgid "Produced for"
 msgstr "Produced for"
 
-#: templates/admin/mvp_compliance/disclosure/produce.html:19
+#: mvp_compliance/templates/admin/mvp_compliance/disclosure/produce.html:19
 msgid "Nothing is held about this person."
 msgstr "Nothing is held about this person."
 
-#: templates/admin/mvp_compliance/document/change_form.html:10
-#: templates/mvp_compliance/document_detail.html:58
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:10
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:58
 msgid "View current version"
 msgstr "View current version"
 
-#: templates/admin/mvp_compliance/document/change_form.html:17
+#: mvp_compliance/templates/admin/mvp_compliance/document/change_form.html:17
 msgid "Version history"
 msgstr "Version history"
 
-#: templates/admin/mvp_compliance/version/change_form.html:22
+#: mvp_compliance/templates/admin/mvp_compliance/translation/change_form.html:20
+msgid "Back to the version"
+msgstr "Back to the version"
+
+#: mvp_compliance/templates/admin/mvp_compliance/translation/preview.html:6
+msgid "Back to this translation"
+msgstr "Back to this translation"
+
+#: mvp_compliance/templates/admin/mvp_compliance/translation/publish_confirmation.html:5
+msgid "Put this translation live?"
+msgstr "Put this translation live?"
+
+#: mvp_compliance/templates/admin/mvp_compliance/translation/publish_confirmation.html:9
+msgid ""
+"This will make it the wording readers of this language are served. Once it "
+"is live, the wording cannot be changed — a correction is put live as another "
+"wording and this one is kept."
+msgstr ""
+"This will make it the wording readers of this language are served. Once it "
+"is live, the wording cannot be changed — a correction is put live as another "
+"wording and this one is kept."
+
+#: mvp_compliance/templates/admin/mvp_compliance/translation/publish_confirmation.html:14
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:20
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:26
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:19
+msgid "Back"
+msgstr "Back"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/change_form.html:36
 msgid "Start the next version"
 msgstr "Start the next version"
 
-#: templates/admin/mvp_compliance/version/preview.html:5
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:5
+msgid "Lock this version for translation?"
+msgstr "Lock this version for translation?"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/lock_confirmation.html:11
+msgid ""
+"Its wording and summary will stop changing so that it can be translated. It "
+"stays a draft: no reader sees it, and it can still be discarded or returned "
+"to a draft."
+msgstr ""
+"Its wording and summary will stop changing so that it can be translated. It "
+"stays a draft: no reader sees it, and it can still be discarded or returned "
+"to a draft."
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/preview.html:5
 msgid "This is what a reader will be served"
 msgstr "This is what a reader will be served"
 
-#: templates/admin/mvp_compliance/version/preview.html:11
+#: mvp_compliance/templates/admin/mvp_compliance/version/preview.html:12
 msgid "Back to this version"
 msgstr "Back to this version"
 
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:5
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:5
 msgid "Publish this version?"
 msgstr "Publish this version?"
 
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:11
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:12
 msgid ""
 "This will make it the version in force. Once published, the wording cannot "
 "be changed — a correction is published as another version."
@@ -696,78 +988,84 @@ msgstr ""
 "This will make it the version in force. Once published, the wording cannot "
 "be changed — a correction is published as another version."
 
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:14
+#: mvp_compliance/templates/admin/mvp_compliance/version/publish_confirmation.html:16
 msgid "Summary"
+msgstr "Summary"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:5
+msgid "Return this version to a draft?"
+msgstr "Return this version to a draft?"
+
+#: mvp_compliance/templates/admin/mvp_compliance/version/return_to_draft_confirmation.html:11
+msgid ""
+"Its wording can be changed again. Every translation of it that was put live "
+"goes back to a draft with its wording kept, and has to be put live again."
 msgstr ""
+"Its wording can be changed again. Every translation of it that was put live "
+"goes back to a draft with its wording kept, and has to be put live again."
 
-#: templates/admin/mvp_compliance/version/publish_confirmation.html:23
-msgid "Back"
-msgstr "Back"
-
-#: templates/cotton/compliance/copy_value.html:5
+#: mvp_compliance/templates/cotton/compliance/copy_value.html:5
 msgid "No value"
-msgstr ""
+msgstr "No value"
 
-#: templates/cotton/compliance/outstanding.html:17
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:17
 msgid "Optional"
-msgstr ""
+msgstr "Optional"
 
-#: templates/cotton/compliance/outstanding.html:19
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:19
 msgid "Required"
-msgstr ""
+msgstr "Required"
 
-#: templates/cotton/compliance/outstanding.html:27
-#, fuzzy
-#| msgid "View current version"
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:27
 msgid "View document in full"
-msgstr "View current version"
+msgstr "View document in full"
 
-#: templates/cotton/compliance/outstanding.html:27
-#: templates/cotton/compliance/outstanding.html:33
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:27
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:33
 msgid "(opens in a new tab)"
-msgstr ""
+msgstr "(opens in a new tab)"
 
-#: templates/cotton/compliance/outstanding.html:33
-#: templates/mvp_compliance/agreed_documents.html:15
-#: templates/mvp_compliance/document_detail.html:34
-#: templates/mvp_compliance/document_detail.html:57
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:33
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:15
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:34
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:57
 msgid "See what's changed"
-msgstr ""
+msgstr "See what's changed"
 
-#: templates/cotton/compliance/outstanding.html:37
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:37
 msgid "What changed since you last agreed"
-msgstr ""
+msgstr "What changed since you last agreed"
 
-#: templates/cotton/compliance/outstanding.html:49
-#, fuzzy
-#| msgid "You agreed on"
+#: mvp_compliance/templates/cotton/compliance/outstanding.html:49
 msgid "I agree"
-msgstr "You agreed on"
+msgstr "I agree"
 
-#: templates/mvp_compliance/_agreed_version_rows.html:6
+#: mvp_compliance/templates/mvp_compliance/_agreed_version_rows.html:6
 #, python-format
 msgid "v%(number)s"
 msgstr "v%(number)s"
 
-#: templates/mvp_compliance/_agreed_version_rows.html:8
+#: mvp_compliance/templates/mvp_compliance/_agreed_version_rows.html:8
 msgid "In force"
 msgstr "In force"
 
-#: templates/mvp_compliance/_agreed_version_rows.html:10
+#: mvp_compliance/templates/mvp_compliance/_agreed_version_rows.html:10
 msgid "Replaced"
 msgstr "Replaced"
 
-#: templates/mvp_compliance/account_deleted.html:9
+#: mvp_compliance/templates/mvp_compliance/account_deleted.html:9
 msgid ""
 "Your account and the records listed before you confirmed have been deleted, "
 "and you have been signed out."
 msgstr ""
+"Your account and the records listed before you confirmed have been deleted, "
+"and you have been signed out."
 
-#: templates/mvp_compliance/account_deleted.html:12
+#: mvp_compliance/templates/mvp_compliance/account_deleted.html:12
 msgid "Go to the home page"
-msgstr ""
+msgstr "Go to the home page"
 
-#: templates/mvp_compliance/agreed_documents.html:13
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:13
 #, python-format
 msgid ""
 "A newer version, v%(number)s, has been in force since %(date)s. You have not "
@@ -776,40 +1074,40 @@ msgstr ""
 "A newer version, v%(number)s, has been in force since %(date)s. You have not "
 "agreed to it."
 
-#: templates/mvp_compliance/agreed_documents.html:16
-#: templates/mvp_compliance/comparison.html:68
-#: templates/mvp_compliance/comparison.html:81
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:16
+#: mvp_compliance/templates/mvp_compliance/comparison.html:68
+#: mvp_compliance/templates/mvp_compliance/comparison.html:81
 #, python-format
 msgid "Read v%(number)s"
 msgstr "Read v%(number)s"
 
-#: templates/mvp_compliance/agreed_documents.html:23
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:23
 #, python-format
 msgid "Versions of %(name)s you agreed to"
 msgstr "Versions of %(name)s you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:27
-#: templates/mvp_compliance/agreed_documents.html:44
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:27
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:44
 msgid "You agreed on"
 msgstr "You agreed on"
 
-#: templates/mvp_compliance/agreed_documents.html:37
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:37
 #, python-format
 msgid "%(counter)s earlier version you agreed to"
 msgid_plural "%(counter)s earlier versions you agreed to"
 msgstr[0] "%(counter)s earlier version you agreed to"
 msgstr[1] "%(counter)s earlier versions you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:40
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:40
 #, python-format
 msgid "Earlier versions of %(name)s you agreed to"
 msgstr "Earlier versions of %(name)s you agreed to"
 
-#: templates/mvp_compliance/agreed_documents.html:57
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:57
 msgid "Nothing to show yet"
 msgstr "Nothing to show yet"
 
-#: templates/mvp_compliance/agreed_documents.html:58
+#: mvp_compliance/templates/mvp_compliance/agreed_documents.html:58
 msgid ""
 "When you agree to a document on this site, it appears here with the version "
 "and the date."
@@ -817,233 +1115,220 @@ msgstr ""
 "When you agree to a document on this site, it appears here with the version "
 "and the date."
 
-#: templates/mvp_compliance/agreement.html:12
+#: mvp_compliance/templates/mvp_compliance/agreement.html:12
 msgid "Your agreement was not recorded. Submit the page again."
-msgstr ""
+msgstr "Your agreement was not recorded. Submit the page again."
 
-#: templates/mvp_compliance/agreement.html:17
+#: mvp_compliance/templates/mvp_compliance/agreement.html:17
 msgid "All documents marked as required need your agreement."
-msgstr ""
+msgstr "All documents marked as required need your agreement."
 
-#: templates/mvp_compliance/agreement.html:22
+#: mvp_compliance/templates/mvp_compliance/agreement.html:22
 msgid ""
 "A document changed while you were reading. Check the list and submit again."
 msgstr ""
+"A document changed while you were reading. Check the list and submit again."
 
-#: templates/mvp_compliance/agreement.html:47
+#: mvp_compliance/templates/mvp_compliance/agreement.html:47
 msgid "Agree and continue"
-msgstr ""
+msgstr "Agree and continue"
 
-#: templates/mvp_compliance/agreement.html:49
+#: mvp_compliance/templates/mvp_compliance/agreement.html:49
 msgid "Continue"
-msgstr ""
+msgstr "Continue"
 
-#: templates/mvp_compliance/comparison.html:8
-#: templates/mvp_compliance/comparison.html:51
-#: templates/mvp_compliance/document_detail.html:4
-#: templates/mvp_compliance/document_detail.html:50
+#: mvp_compliance/templates/mvp_compliance/comparison.html:8
+#: mvp_compliance/templates/mvp_compliance/comparison.html:51
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:4
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:50
 msgid "Documents"
 msgstr "Documents"
 
-#: templates/mvp_compliance/comparison.html:9
-#: templates/mvp_compliance/document_detail.html:5
+#: mvp_compliance/templates/mvp_compliance/comparison.html:9
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:5
 msgid "Legal documents"
 msgstr "Legal documents"
 
-#: templates/mvp_compliance/comparison.html:24
-#, fuzzy, python-format
-#| msgid "v%(number)s"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:24
+#, python-format
 msgid "From v%(number)s"
-msgstr "v%(number)s"
+msgstr "From v%(number)s"
 
-#: templates/mvp_compliance/comparison.html:31
-#: templates/mvp_compliance/comparison.html:45
-#: templates/mvp_compliance/document_detail.html:26
-#: templates/mvp_compliance/document_detail.html:43 views.py:72
+#: mvp_compliance/templates/mvp_compliance/comparison.html:31
+#: mvp_compliance/templates/mvp_compliance/comparison.html:45
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:26
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:43
+#: mvp_compliance/views.py:72
 #, python-format
 msgid "v%(number)s - %(date)s"
 msgstr "v%(number)s - %(date)s"
 
-#: templates/mvp_compliance/comparison.html:38
-#, fuzzy, python-format
-#| msgid "v%(number)s"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:38
+#, python-format
 msgid "To v%(number)s"
-msgstr "v%(number)s"
+msgstr "To v%(number)s"
 
-#: templates/mvp_compliance/comparison.html:59
-#, fuzzy, python-format
-#| msgid "Read v%(number)s"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:59
+#, python-format
 msgid "Older: v%(number)s"
-msgstr "Read v%(number)s"
+msgstr "Older: v%(number)s"
 
-#: templates/mvp_compliance/comparison.html:62
-#: templates/mvp_compliance/comparison.html:75
-#, fuzzy, python-format
-#| msgid ""
-#| "This version has been replaced. It was in force from %(published)s to "
-#| "%(replaced)s."
+#: mvp_compliance/templates/mvp_compliance/comparison.html:62
+#: mvp_compliance/templates/mvp_compliance/comparison.html:75
+#, python-format
 msgid "In force from %(published)s to %(replaced)s"
-msgstr ""
-"This version has been replaced. It was in force from %(published)s to "
-"%(replaced)s."
+msgstr "In force from %(published)s to %(replaced)s"
 
-#: templates/mvp_compliance/comparison.html:64
-#: templates/mvp_compliance/comparison.html:77
-#, fuzzy, python-format
-#| msgid "In force since"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:64
+#: mvp_compliance/templates/mvp_compliance/comparison.html:77
+#, python-format
 msgid "In force since %(published)s"
-msgstr "In force since"
+msgstr "In force since %(published)s"
 
-#: templates/mvp_compliance/comparison.html:72
-#, fuzzy, python-format
-#| msgid "Read v%(number)s"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:72
+#, python-format
 msgid "Newer: v%(number)s"
-msgstr "Read v%(number)s"
+msgstr "Newer: v%(number)s"
 
-#: templates/mvp_compliance/comparison.html:87
+#: mvp_compliance/templates/mvp_compliance/comparison.html:87
 msgid "You are comparing a version with itself, so there is nothing to mark."
-msgstr ""
+msgstr "You are comparing a version with itself, so there is nothing to mark."
 
-#: templates/mvp_compliance/comparison.html:87
+#: mvp_compliance/templates/mvp_compliance/comparison.html:87
 #, python-format
 msgid "v%(older)s and v%(newer)s have the same wording."
-msgstr ""
+msgstr "v%(older)s and v%(newer)s have the same wording."
 
-#: templates/mvp_compliance/comparison.html:92
-#, fuzzy
-#| msgid "Added:"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:92
 msgid "Added text"
-msgstr "Added:"
+msgstr "Added text"
 
-#: templates/mvp_compliance/comparison.html:92
-#, fuzzy, python-format
-#| msgid "Version %(number)s"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:92
+#, python-format
 msgid "is in v%(number)s only."
-msgstr "Version %(number)s"
+msgstr "is in v%(number)s only."
 
-#: templates/mvp_compliance/comparison.html:93
-#, fuzzy
-#| msgid "Removed:"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:93
 msgid "Removed text"
-msgstr "Removed:"
+msgstr "Removed text"
 
-#: templates/mvp_compliance/comparison.html:93
-#, fuzzy, python-format
-#| msgid "Version %(number)s"
+#: mvp_compliance/templates/mvp_compliance/comparison.html:93
+#, python-format
 msgid "was in v%(number)s only."
-msgstr "Version %(number)s"
+msgstr "was in v%(number)s only."
 
-#: templates/mvp_compliance/copy/index.html:7
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:7
 #, python-format
 msgid "A copy of your data from %(site_name)s"
-msgstr ""
+msgstr "A copy of your data from %(site_name)s"
 
-#: templates/mvp_compliance/copy/index.html:14
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:14
 msgid "A copy of your data"
-msgstr ""
+msgstr "A copy of your data"
 
-#: templates/mvp_compliance/copy/index.html:16
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:16
 #, python-format
 msgid "Made on %(when)s for %(person)s."
-msgstr ""
+msgstr "Made on %(when)s for %(person)s."
 
-#: templates/mvp_compliance/copy/index.html:19
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:19
 msgid ""
 "It holds the kinds of record listed below. The same records are in "
 "data.json, for use in other software, and the files you uploaded are in the "
 "files folder beside this page."
 msgstr ""
+"It holds the kinds of record listed below. The same records are in "
+"data.json, for use in other software, and the files you uploaded are in the "
+"files folder beside this page."
 
-#: templates/mvp_compliance/copy/index.html:24
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:24
 msgid "Contents"
-msgstr ""
+msgstr "Contents"
 
-#: templates/mvp_compliance/copy/index.html:38
-#, fuzzy
-#| msgid "Nothing is held about this person."
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:38
 msgid "Nothing of this kind is held about you."
-msgstr "Nothing is held about this person."
+msgstr "Nothing of this kind is held about you."
 
-#: templates/mvp_compliance/copy/index.html:46
-#, fuzzy, python-format
-#| msgid "Read v%(number)s"
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:46
+#, python-format
 msgid "%(document)s, v%(number)s"
-msgstr "Read v%(number)s"
+msgstr "%(document)s, v%(number)s"
 
-#: templates/mvp_compliance/copy/index.html:47
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:47
 #, python-format
 msgid "Agreed on %(when)s"
-msgstr ""
+msgstr "Agreed on %(when)s"
 
-#: templates/mvp_compliance/delete_account.html:11
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:11
 msgid ""
 "Your account could not be deleted, and nothing was removed. Try again later."
 msgstr ""
+"Your account could not be deleted, and nothing was removed. Try again later."
 
-#: templates/mvp_compliance/delete_account.html:15
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:15
 msgid ""
 "Your account was not deleted. What you typed did not match. Check it below "
 "and try again."
 msgstr ""
+"Your account was not deleted. What you typed did not match. Check it below "
+"and try again."
 
-#: templates/mvp_compliance/delete_account.html:20
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:20
 msgid "What will be deleted"
-msgstr ""
+msgstr "What will be deleted"
 
-#: templates/mvp_compliance/delete_account.html:24
-#, fuzzy
-#| msgid "No account area"
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:24
 msgid "Your account"
-msgstr "No account area"
+msgstr "Your account"
 
-#: templates/mvp_compliance/delete_account.html:26
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:26
 msgid "Your sign-in details. You will be signed out and cannot sign in again."
-msgstr ""
+msgstr "Your sign-in details. You will be signed out and cannot sign in again."
 
-#: templates/mvp_compliance/delete_account.html:41
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:41
 msgid "What is kept"
-msgstr ""
+msgstr "What is kept"
 
-#: templates/mvp_compliance/delete_account.html:47
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:47
 msgid ""
 "The record of each version you agreed to, and when, is kept as evidence of "
 "what you agreed to. It no longer names your account."
 msgstr ""
+"The record of each version you agreed to, and when, is kept as evidence of "
+"what you agreed to. It no longer names your account."
 
-#: templates/mvp_compliance/delete_account.html:54 views.py:706
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:54
+#: mvp_compliance/views.py:706
 msgid "Delete your account"
-msgstr ""
+msgstr "Delete your account"
 
-#: templates/mvp_compliance/delete_account.html:59
-#: templates/mvp_compliance/delete_account.html:65
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:59
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:65
 msgid "Deleting cannot be undone."
-msgstr ""
+msgstr "Deleting cannot be undone."
 
-#: templates/mvp_compliance/delete_account.html:60
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:60
 msgid "Download a copy of your data"
-msgstr ""
+msgstr "Download a copy of your data"
 
-#: templates/mvp_compliance/delete_account.html:61
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:61
 msgid "first if you want to keep it."
-msgstr ""
+msgstr "first if you want to keep it."
 
-#: templates/mvp_compliance/delete_account.html:69
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:69
 msgid "Delete my account"
-msgstr ""
+msgstr "Delete my account"
 
-#: templates/mvp_compliance/delete_account.html:70
-#, fuzzy
-#| msgid "Compliance"
+#: mvp_compliance/templates/mvp_compliance/delete_account.html:70
 msgid "Cancel"
-msgstr "Compliance"
+msgstr "Cancel"
 
-#: templates/mvp_compliance/document_detail.html:39
-#, fuzzy, python-format
-#| msgid "Read v%(number)s"
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:39
+#, python-format
 msgid "Compare v%(number)s with"
-msgstr "Read v%(number)s"
+msgstr "Compare v%(number)s with"
 
-#: templates/mvp_compliance/document_detail.html:55
+#: mvp_compliance/templates/mvp_compliance/document_detail.html:55
 #, python-format
 msgid ""
 "This version has been replaced. It was in force from %(published)s to "
@@ -1052,117 +1337,120 @@ msgstr ""
 "This version has been replaced. It was in force from %(published)s to "
 "%(replaced)s."
 
-#: templates/mvp_compliance/email/new_version_message.html:3
-#: templates/mvp_compliance/email/new_version_subject.txt:1
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:3
+#: mvp_compliance/templates/mvp_compliance/email/new_version_subject.txt:1
 #, python-format
 msgid "%(name)s has changed"
 msgstr "%(name)s has changed"
 
-#: templates/mvp_compliance/email/new_version_message.html:3
-#: templates/mvp_compliance/email/new_version_subject.txt:1
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:3
+#: mvp_compliance/templates/mvp_compliance/email/new_version_subject.txt:1
 #, python-format
 msgid "%(name)s is published"
 msgstr "%(name)s is published"
 
-#: templates/mvp_compliance/email/new_version_message.html:4
-#: templates/mvp_compliance/email/new_version_message.html:8
-#: templates/mvp_compliance/email/new_version_message.txt:1
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:4
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:8
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.txt:1
 #, python-format
 msgid "A new version of %(name)s applies from %(date)s."
 msgstr "A new version of %(name)s applies from %(date)s."
 
-#: templates/mvp_compliance/email/new_version_message.html:4
-#: templates/mvp_compliance/email/new_version_message.html:8
-#: templates/mvp_compliance/email/new_version_message.txt:1
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:4
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:8
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.txt:1
 #, python-format
 msgid "%(name)s is published and applies from %(date)s."
 msgstr "%(name)s is published and applies from %(date)s."
 
-#: templates/mvp_compliance/email/new_version_message.html:10
-#: templates/mvp_compliance/email/new_version_message.txt:3
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:10
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.txt:3
 msgid "What changed"
 msgstr "What changed"
 
-#: templates/mvp_compliance/email/new_version_message.html:13
-#: templates/mvp_compliance/email/new_version_message.txt:7
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:13
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.txt:7
 msgid "Read it"
 msgstr "Read it"
 
-#: templates/mvp_compliance/email/new_version_message.html:16
-#: templates/mvp_compliance/email/new_version_message.txt:8
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.html:16
+#: mvp_compliance/templates/mvp_compliance/email/new_version_message.txt:8
 #, python-format
 msgid "Compare it with version %(number)s"
 msgstr "Compare it with version %(number)s"
 
-#: templates/mvp_compliance/email/version_published_body.txt:1
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:1
 #, python-format
 msgid "Version %(number)s of \"%(name)s\" is now in force."
 msgstr "Version %(number)s of \"%(name)s\" is now in force."
 
-#: templates/mvp_compliance/email/version_published_body.txt:4
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:4
 msgid "Published at"
 msgstr "Published at"
 
-#: templates/mvp_compliance/email/version_published_body.txt:5
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:5
 #, python-format
 msgid "It replaces version %(number)s."
 msgstr "It replaces version %(number)s."
 
-#: templates/mvp_compliance/email/version_published_body.txt:5
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:5
 msgid "This is the first version of the document in force."
 msgstr "This is the first version of the document in force."
 
-#: templates/mvp_compliance/email/version_published_body.txt:7
+#: mvp_compliance/templates/mvp_compliance/email/version_published_body.txt:7
 msgid "See it in the admin"
 msgstr "See it in the admin"
 
-#: templates/mvp_compliance/email/version_published_subject.txt:1
+#: mvp_compliance/templates/mvp_compliance/email/version_published_subject.txt:1
 #, python-format
 msgid "%(name)s: version %(number)s is now in force"
 msgstr "%(name)s: version %(number)s is now in force"
 
-#: templates/mvp_compliance/personal_data.html:7
+#: mvp_compliance/templates/mvp_compliance/personal_data.html:7
 msgid ""
 "Your copy could not be made, and nothing was downloaded. Try again later."
 msgstr ""
+"Your copy could not be made, and nothing was downloaded. Try again later."
 
-#: templates/mvp_compliance/personal_data.html:12
+#: mvp_compliance/templates/mvp_compliance/personal_data.html:12
 msgid "What the copy holds"
-msgstr ""
+msgstr "What the copy holds"
 
-#: templates/mvp_compliance/personal_data.html:24
-#: templates/mvp_compliance/personal_data.html:31
+#: mvp_compliance/templates/mvp_compliance/personal_data.html:24
+#: mvp_compliance/templates/mvp_compliance/personal_data.html:31
 msgid "Download a copy"
-msgstr ""
+msgstr "Download a copy"
 
-#: templates/mvp_compliance/personal_data.html:26
+#: mvp_compliance/templates/mvp_compliance/personal_data.html:26
 msgid ""
 "The copy is a single .zip file. Inside it is a page you can open in any web "
 "browser, the same records in a JSON file for use in other software, and the "
 "files you uploaded."
 msgstr ""
+"The copy is a single .zip file. Inside it is a page you can open in any web "
+"browser, the same records in a JSON file for use in other software, and the "
+"files you uploaded."
 
-#: views.py:87
+#: mvp_compliance/views.py:87
 #, python-format
 msgid "%(published)s · Agreed on %(date)s"
 msgstr "%(published)s · Agreed on %(date)s"
 
-#: views.py:132 views.py:172 views.py:192
+#: mvp_compliance/views.py:132 mvp_compliance/views.py:172
+#: mvp_compliance/views.py:192
 msgid "No version found"
 msgstr "No version found"
 
-#: views.py:198
+#: mvp_compliance/views.py:198
 #, python-format
 msgid "Changes from v%(older)s to v%(newer)s"
-msgstr ""
+msgstr "Changes from v%(older)s to v%(newer)s"
 
-#: views.py:209
-#, fuzzy
-#| msgid "Current version"
+#: mvp_compliance/views.py:209
 msgid "Compare versions"
-msgstr "Current version"
+msgstr "Compare versions"
 
-#: views.py:237
+#: mvp_compliance/views.py:237
 msgid ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
@@ -1170,96 +1458,98 @@ msgstr ""
 "Each version you accepted on this site, and the date you accepted it. Open a "
 "version to read it exactly as it was."
 
-#: views.py:253 views.py:572 views.py:722
+#: mvp_compliance/views.py:253 mvp_compliance/views.py:572
+#: mvp_compliance/views.py:722
 msgid "No account area"
 msgstr "No account area"
 
-#: views.py:258 views.py:579 views.py:729
+#: mvp_compliance/views.py:258 mvp_compliance/views.py:579
+#: mvp_compliance/views.py:729
 msgid "Account Center"
 msgstr "Account Center"
 
-#: views.py:323
-#, fuzzy
-#| msgid "Documents you agreed to"
+#: mvp_compliance/views.py:323
 msgid "Documents to agree to"
-msgstr "Documents you agreed to"
+msgstr "Documents to agree to"
 
-#: views.py:335
+#: mvp_compliance/views.py:335
 msgid ""
 "You will not be able to use the app without agreeing to all required "
 "documents."
 msgstr ""
+"You will not be able to use the app without agreeing to all required "
+"documents."
 
-#: views.py:338
+#: mvp_compliance/views.py:338
 msgid "Agreeing is optional."
-msgstr ""
+msgstr "Agreeing is optional."
 
-#: views.py:553
+#: mvp_compliance/views.py:553
 msgid "Download a copy of what this site holds about you, as a single file."
-msgstr ""
+msgstr "Download a copy of what this site holds about you, as a single file."
 
-#: views.py:574 views.py:724
+#: mvp_compliance/views.py:574 mvp_compliance/views.py:724
 msgid "No confirmation page"
-msgstr ""
+msgstr "No confirmation page"
 
-#: views.py:654
+#: mvp_compliance/views.py:654
 msgid "Type your email address to confirm."
-msgstr ""
+msgstr "Type your email address to confirm."
 
-#: views.py:663
+#: mvp_compliance/views.py:663
 #, python-format
 msgid "To confirm, type your username, %(expected)s"
-msgstr ""
+msgstr "To confirm, type your username, %(expected)s"
 
-#: views.py:665
+#: mvp_compliance/views.py:665
 #, python-format
 msgid "To confirm, type your email address, %(expected)s"
-msgstr ""
+msgstr "To confirm, type your email address, %(expected)s"
 
-#: views.py:672
+#: mvp_compliance/views.py:672
 msgid "Type your username to confirm."
-msgstr ""
+msgstr "Type your username to confirm."
 
-#: views.py:684
+#: mvp_compliance/views.py:684
 msgid "That is not your username. Type it exactly as shown."
-msgstr ""
+msgstr "That is not your username. Type it exactly as shown."
 
-#: views.py:686
+#: mvp_compliance/views.py:686
 msgid "That is not your email address. Type it exactly as shown."
-msgstr ""
+msgstr "That is not your email address. Type it exactly as shown."
 
-#: views.py:707
+#: mvp_compliance/views.py:707
 msgid "Remove your account and what this site holds about you."
-msgstr ""
+msgstr "Remove your account and what this site holds about you."
 
-#: views.py:815
+#: mvp_compliance/views.py:815
 msgid "Your account has been deleted"
-msgstr ""
+msgstr "Your account has been deleted"
 
-#: widgets.py:21
+#: mvp_compliance/widgets.py:21
 msgid "Heading"
 msgstr "Heading"
 
-#: widgets.py:22
+#: mvp_compliance/widgets.py:22
 msgid "Bold"
 msgstr "Bold"
 
-#: widgets.py:23
+#: mvp_compliance/widgets.py:23
 msgid "Italic"
 msgstr "Italic"
 
-#: widgets.py:24
+#: mvp_compliance/widgets.py:24
 msgid "Bulleted list"
 msgstr "Bulleted list"
 
-#: widgets.py:25
+#: mvp_compliance/widgets.py:25
 msgid "Numbered list"
 msgstr "Numbered list"
 
-#: widgets.py:26
+#: mvp_compliance/widgets.py:26
 msgid "Link"
 msgstr "Link"
 
-#: widgets.py:27
+#: mvp_compliance/widgets.py:27
 msgid "Quote"
 msgstr "Quote"

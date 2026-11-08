@@ -32,7 +32,8 @@ This package is not usable on its own. It renders on the django-mvp app shell
 > behind a permission of its own that nobody holds by default. Documents
 > are served as pages, a person sees what they agreed to in the account
 > area, and a site can ask a signed-in person to agree and stop them until
-> they do.
+> they do. A version can be locked for translation and translated into each
+> language the site offers, and the version's own wording still governs.
 
 ## Why
 
@@ -274,11 +275,18 @@ The version in force:
 privacy.current  # the current Version, or None if nothing has been published
 ```
 
-The published history, in order, drafts absent:
+The published history, in order, drafts and pending versions absent:
 
 ```python
 privacy.versions.published()
 ```
+
+A draft can be locked for translation with `version.lock_for_translation()`, which makes it
+**pending**: its wording stops changing, and it can be translated into each language the site's
+`LANGUAGES` offers other than its main language. A `Translation` is a wording of a pending or
+published version in one language. The version's own wording governs, and a translation is never
+what an acceptance points at. See
+[docs/models.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/models.md#translation).
 
 Rendering is `mvp_compliance.rendering.MarkdownRenderer`, configured by one
 setting:
@@ -440,6 +448,12 @@ but coherent alternative — somebody holding only `view_version` and
 nothing themselves. Without `publish_version` the publish address is
 refused by both the page that confirms and the action that publishes it,
 and no link to it is offered.
+
+Locking a version for translation and returning it to a draft need `publish_version` too.
+Putting a translation live needs `publish_translation`, held separately again, so someone can
+write translations without being able to put them live. Writing them needs the permissions
+Django creates for `Translation`, and `view_version`, which grants nothing beyond reading versions. See
+[docs/authoring.md](https://github.com/django-mvp/django-mvp-compliance/blob/main/docs/authoring.md#translating-a-version).
 
 `mvp_compliance.skip_agreement` is a permission of a different kind: it is for
 accounts that should never be stopped by the [agreement check](#installation),

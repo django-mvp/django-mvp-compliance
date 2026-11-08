@@ -34,6 +34,10 @@ class PersonalDataError(Exception):
         self.kind = kind
 
 
+class PublishedTranslationError(Exception):
+    """Raised for an attempt to change or delete a wording that has been live."""
+
+
 class PublishedVersionError(Exception):
     """Raised for an attempt to change or delete a published version."""
 
@@ -48,3 +52,11 @@ class RecordedAcceptanceError(Exception):
 
 class RecordError(Exception):
     """Raised when recording an acceptance is refused."""
+
+
+class TranslationError(Exception):
+    """Raised when a translation cannot be created.
+
+    The version is a draft, the language is not offered, or it is the main
+    language.
+    """

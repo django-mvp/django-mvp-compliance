@@ -1,0 +1,8 @@
+{% extends "admin/mvp_compliance/version/preview.html" %}
+{% load i18n %}
+
+{% block back_link %}
+<a href="{% url 'admin:mvp_compliance_translation_change' original.pk %}">
+  {% translate "Back to this translation" %}
+</a>
+{% endblock %}

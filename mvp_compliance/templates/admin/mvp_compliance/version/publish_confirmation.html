@@ -8,7 +8,9 @@
 {% block content %}
 <p>{{ original }}</p>
 <p>
+  {% block explanation %}
   {% translate "This will make it the version in force. Once published, the wording cannot be changed — a correction is published as another version." %}
+  {% endblock %}
 </p>
 {% if original.summary %}
 <p><strong>{% translate "Summary" %}:</strong> {{ original.summary|linebreaksbr }}</p>
@@ -16,11 +18,13 @@
 <div id="mvp-compliance-publish-preview">{{ html|safe }}</div>
 <form method="post">
   {% csrf_token %}
-  <input type="submit" value="{% translate 'Publish' %}">
+  <input type="submit" value="{% block submit_label %}{% translate 'Publish' %}{% endblock %}">
 </form>
 <p>
+  {% block back_link %}
   <a href="{% url 'admin:mvp_compliance_version_change' original.pk %}">
     {% translate "Back" %}
   </a>
+  {% endblock %}
 </p>
 {% endblock %}

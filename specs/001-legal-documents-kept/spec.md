@@ -254,8 +254,10 @@ intact and in order.
   privacy policy, a set of terms or a cookie policy. Holds no wording. Has a sequence of versions,
   of which at most one is in force.
 - **Version**: One revision of a document, holding the markup its author wrote and, once published,
-  the output a reader is served. Is a draft until published. Once published it is either the
-  current one or superseded, and its wording never changes again.
+  the output a reader is served. Is a draft until published, and may be locked for translation
+  first (FS-015), which makes it pending: its wording is frozen, and it has no number and no
+  standing, like a draft. Once published it is either the current one or superseded, and its
+  wording never changes again.
 
 ## Success Criteria *(mandatory)*
 

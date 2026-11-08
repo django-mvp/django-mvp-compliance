@@ -23,6 +23,9 @@ and the record of an agreement points at the exact version a person saw.
   code, and what it can produce about one person.
 - The how-to guides cover a person's own data: declaring what the project holds about them, and
   letting them delete their account.
+- [Why translations are not built on a translation package](explanation/why-translations-are-not-built-on-a-translation-package.md)
+  explains why the package has its own translation model rather than django-parler or
+  django-modeltranslation.
 
 ```{toctree}
 :hidden:
@@ -54,4 +57,11 @@ enforcement
 disclosure
 how-to/declare-what-the-project-holds-about-a-person
 how-to/delete-an-account
+```
+
+```{toctree}
+:caption: Background
+:hidden:
+
+explanation/why-translations-are-not-built-on-a-translation-package
 ```

@@ -330,7 +330,7 @@ held for that one and still absent from the first.
   withdrawable and are R8.
 - What a person was shown is the stored output FS-001 fixes at publication. This feature points at
   the version and holds no copy of the wording.
-- Translations do not change what an acceptance points at. R7 adds readings of a version, and the
+- Translations do not change what an acceptance points at. R7 adds translations of a version, and the
   canonical text is what was accepted.
 - Additional evidence beyond the three facts means something like where a request came from.
   Deciding exactly which are offered is a design decision, bounded by the constitution's rule that
