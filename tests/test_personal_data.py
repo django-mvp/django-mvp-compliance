@@ -562,9 +562,7 @@ class TestPersonalDataCopy:
         assert set(archive.namelist()) == {"index.html", "data.json"}
         assert "Not yours" not in archive.read("index.html").decode()
         assert "Not yours" not in archive.read("data.json").decode()
-        assert [section["key"] for section in data_of(archive)["sections"]] == [
-            "notes"
-        ]
+        assert [section["key"] for section in data_of(archive)["sections"]] == ["notes"]
 
     def test_a_kind_with_its_own_template_is_drawn_with_it_and_keeps_the_standard_data(
         self, user
