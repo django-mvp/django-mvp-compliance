@@ -19,24 +19,26 @@
           {% translate "It holds the kinds of record listed below. The same records are in data.json, for use in other software, and the files you uploaded are in the files folder beside this page." %}
         </p>
       </header>
-      <nav aria-labelledby="contents-heading" class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 id="contents-heading" class="card-title">{% translate "Contents" %}</h2>
-          <ol class="list-decimal ps-6">
-            {% for section in sections %}
-              <li><a class="link" href="#{{ section.slug }}">{{ section.heading }}</a></li>
-            {% endfor %}
-          </ol>
-        </div>
-      </nav>
+      {% if sections %}
+        <nav aria-labelledby="contents-heading" class="card bg-base-100 shadow-sm">
+          <div class="card-body">
+            <h2 id="contents-heading" class="card-title">{% translate "Contents" %}</h2>
+            <ol class="list-decimal ps-6">
+              {% for section in sections %}
+                <li><a class="link" href="#{{ section.slug }}">{{ section.heading }}</a></li>
+              {% endfor %}
+            </ol>
+          </div>
+        </nav>
+      {% else %}
+        <p>{% translate "This copy holds no records about you." %}</p>
+      {% endif %}
       {% for section in sections %}
         <section id="{{ section.slug }}" data-section="{{ section.slug }}" aria-labelledby="{{ section.slug }}-heading" class="card bg-base-100 shadow-sm">
           <div class="card-body">
             <h2 id="{{ section.slug }}-heading" class="card-title">{{ section.heading }}</h2>
             <p class="text-sm text-base-content/70">{{ section.description }}</p>
-            {% if not section.records %}
-              <p class="py-2">{% translate "Nothing of this kind is held about you." %}</p>
-            {% elif section.rendered %}
+            {% if section.rendered %}
               {{ section.rendered }}
             {% elif section.acceptances %}
               <ul class="flex flex-col">

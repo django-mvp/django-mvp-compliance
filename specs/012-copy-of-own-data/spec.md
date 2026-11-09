@@ -18,16 +18,16 @@ person, and the package turns that into the copy the person downloads.
 
 ## Scope
 
-The package adds one page to the account area. It tells the signed-in person what a copy of their
-data will contain, asks them to confirm it is them, and then gives them the copy as a single
-download. The copy has a part a person can open and read with no special software, a part a program
+The package adds one page to the account area. It tells the signed-in person what the download
+is, asks them to confirm it is them, and then gives them the copy as a single download. The copy has a part a person can open and read with no special software, a part a program
 can read, and the files they uploaded.
 
 What goes into the copy is the host project's to say. A developer declares, in the project's
 settings, each kind of thing the project holds about a person, and how to find it for one person.
-The package presents every declared kind the same way, in the page and in the copy, so a site's
-copy looks like the site and reads the same from one kind of record to the next. The package's own
-section, what the person has agreed to and the wording they were shown, is always part of the copy.
+The package presents every declared kind the same way in the copy, so a site's copy looks like the
+site and reads the same from one kind of record to the next. The package adds its own section, what
+the person has agreed to and the wording they were shown. A copy holds only the kinds the person
+has records of: a kind they have none of, the package's own section included, is left out.
 
 The page exists only on a site that has declared what it holds. A project that has said nothing
 gets no page and no menu entry. Without a declaration, a copy holding only the package's own
@@ -50,12 +50,11 @@ Some things stay out of this feature:
 ### User Story 1 - Downloading a copy of my data (Priority: P1)
 
 A person has used a site for two years. They open the account area and find an entry for their
-data beside the ones for their profile and what they have agreed to. The page lists what a copy
-will contain, one line for each kind of record the site holds about them, without claiming that is
-everything the site could hold. They ask for the copy, confirm it is them, and their browser
+data beside the ones for their profile and what they have agreed to. The page says what the
+download is. They ask for the copy, confirm it is them, and their browser
 downloads one file. Inside it they find a page they can open and read, a file a program can read,
 and the files they uploaded to the site. Among the kinds of record is what they have agreed to on
-the site, with the wording they were shown.
+the site, with the wording they were shown. Kinds of record they have nothing of are not in it.
 
 The copy is always about the person asking, and only once they have confirmed it is them, so
 somebody who has found a signed-in browser cannot take it. And it is complete or it is not given:
@@ -67,16 +66,16 @@ than handed one with a part missing.
 **Independent Test**: In a project that declares two kinds of record, one with uploaded files, give
 a person records of both kinds and some acceptances. Ask for a copy as that person and confirm they
 are asked to confirm their identity first, and that the download then holds a readable part, a
-machine-readable part and their files, with every declared kind and their acceptances and nothing
+machine-readable part and their files, with both declared kinds and their acceptances and nothing
 of anybody else's. Make one kind fail and confirm no download is produced.
 
 **Acceptance Scenarios**:
 
 1. **Given** a site that declares what it holds and a signed-in person, **When** they open the
    account area, **Then** its menu has an entry for their data, and following it opens the page.
-2. **Given** the page, **When** the person opens it, **Then** it names every kind of record the
-   copy will contain, in the order the project declared them, and opening it has gathered nothing.
-   Neither the page nor the copy claims to be everything the site holds or names any regulation.
+2. **Given** the page, **When** the person opens it, **Then** it says what the download is, and
+   opening it has gathered nothing. Neither the page nor the copy claims to be everything the site
+   holds or names any regulation.
 3. **Given** somebody not signed in, **When** they open the page or ask for a copy, **Then** they
    are sent to sign in and nothing is made.
 4. **Given** a signed-in person who has not confirmed their identity recently, **When** they ask for
@@ -90,10 +89,12 @@ of anybody else's. Make one kind fail and confirm no download is produced.
 6. **Given** that download, **When** its two parts are compared, **Then** they carry the same
    records under the same kinds in the same order, each kind named, and the copy says when it was
    made.
-7. **Given** any copy, **When** it is read, **Then** it holds the person's acceptances, each naming
-   the document, the version and when it was accepted, with the wording served for that version.
+7. **Given** a person who has accepted documents, **When** their copy is read, **Then** it holds
+   their acceptances, each naming the document, the version and when it was accepted, with the
+   wording served for that version.
 8. **Given** a kind of record the person has none of, acceptances included, **When** the copy is
-   made, **Then** the kind still appears, stating that nothing of that kind is held about them.
+   made, **Then** neither part of the copy holds that kind. Deleting the account still erases every
+   declared kind.
 9. **Given** two people with records of the same kinds, **When** one of them makes a copy, **Then**
    it holds nothing belonging to the other, and no route the feature adds accepts a person, an
    account or an identifier.
@@ -111,7 +112,7 @@ of anybody else's. Make one kind fail and confirm no download is produced.
 A developer's project keeps a profile for each person and lets them upload datasets. They want the
 copy to include both, looking like the rest of the copy, without writing a template or styling
 anything. They add each one to a list in the project's settings, saying for each how to find that
-person's records and which of their details to include. The page and the copy pick both up, in the
+person's records and which of their details to include. The copy picks both up, in the
 order they listed them, with each detail labelled by the name the project already gives it.
 
 Some of what the project holds is not a list of records of one kind, such as a summary built from
@@ -144,7 +145,7 @@ project for it.
    in the same shape as every other kind.
 6. **Given** a project that has declared nothing, **When** it runs, **Then** there is no page and no
    menu entry for it, and nothing fails. A project that declares an empty list gets the page, and
-   the copy holds only the package's own section.
+   the copy holds at most the package's own section.
 7. **Given** a declaration that names something that cannot be found or used, **When** the project
    starts, **Then** it is reported as an error at start-up rather than on the first request.
 
@@ -199,8 +200,8 @@ confirm the code is not told.
 
 - **FR-001**: The package MUST add a page to the account area from which a signed-in person
   downloads a copy of their data, with an entry in the account area's menu. *(US-1)*
-- **FR-002**: The page MUST list, before anything is gathered, every kind of record the copy will
-  contain, in the declared order. *(US-1, US-2)*
+- **FR-002**: The page MUST say what the download is, before anything is gathered. It does not
+  list the kinds of record. *(US-1)*
 - **FR-003**: Opening the page MUST gather nothing. A copy MUST be made only by an action the
   person takes that cannot be triggered by following a link. *(US-1)*
 - **FR-004**: The copy MUST be a single download holding a part readable in a web browser with
@@ -208,8 +209,8 @@ confirm the code is not told.
   for that person. *(US-1, US-2)*
 - **FR-005**: Both parts of the copy MUST carry the same records under the same kinds in the same
   order. *(US-1, US-2)*
-- **FR-006**: A declared kind with no records for the person MUST appear in the copy, stating that
-  nothing of that kind is held. *(US-1)*
+- **FR-006**: A kind with no records for the person, the package's own section included, MUST be
+  left out of both parts of the copy. *(US-1)*
 - **FR-007**: The copy MUST say when it was made. *(US-1)*
 - **FR-008**: The package MUST keep nothing of a copy once it has been handed over. *(US-1)*
 - **FR-009**: Somebody not signed in MUST be sent to sign in and MUST receive nothing. *(US-1)*
@@ -236,11 +237,10 @@ confirm the code is not told.
   the project's internals. *(US-1)*
 - **FR-019**: Such a failure MUST be reported through the project's error reporting, naming the kind
   that failed and carrying the original error. *(US-1)*
-- **FR-020**: The page and both parts of the copy MUST name every kind of record the copy holds.
-  *(US-1)*
-- **FR-021**: The copy MUST always hold the package's own section: the person's acceptances, each
-  naming the document, the version and when it was accepted, with the wording served for that
-  version taken from what was stored at publication. *(US-1)*
+- **FR-020**: Both parts of the copy MUST name every kind of record the copy holds. *(US-1)*
+- **FR-021**: The copy of a person who has accepted documents MUST hold the package's own section:
+  their acceptances, each naming the document, the version and when it was accepted, with the
+  wording served for that version taken from what was stored at publication. *(US-1)*
 - **FR-022**: Neither the page, the copy nor the documentation MAY claim the copy is everything the
   site holds, or name any regulation. *(US-1)*
 - **FR-023**: A developer MUST be able to declare a kind whose records the project's own code
@@ -259,7 +259,7 @@ confirm the code is not told.
   readable part, a machine-readable part and the person's files.
 - **Declared kind**: one kind of record the host project holds about a person, named in the
   project's settings, with a heading and a way to find one person's records. The package's own
-  section is one too, always present and not declared.
+  section is one too, added by the package and not declared.
 
 *Document*, *Version* and *Acceptance* are unchanged. This feature adds no stored data.
 

@@ -540,8 +540,8 @@ class AgreementView(LoginRequiredMixin, MVPTemplateView):
 class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
     """The signed-in person's own page for downloading a copy of their data.
 
-    Lists the kinds the project declares and the package's own, gathering
-    nothing, and takes the person's identity through django-allauth's own
+    Says what the download is and gathers nothing until the person asks for
+    it. Takes the person's identity through django-allauth's own
     confirmation page before it shows anything. Takes nothing from the address
     that could name another person. Not found in a project that mounts no
     account area or does not install ``allauth.account``.
@@ -587,11 +587,6 @@ class PersonalDataView(LoginRequiredMixin, MVPTemplateView):
             The declared kinds in order, ending with the agreements.
         """
         return [*(get_personal_data() or []), AgreementsPersonalData()]
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["sections"] = self.get_kinds()
-        return context
 
     def post(self, request, *args, **kwargs):
         """Make the person's copy and hand it over as a download.

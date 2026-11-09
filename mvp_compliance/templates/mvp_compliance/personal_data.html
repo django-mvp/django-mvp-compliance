@@ -9,18 +9,6 @@
     {% endif %}
     <c-mvp.page.title :title="page.title_args.title" :lead="page.title_args.lead" />
     <div id="personal-data" class="flex flex-col gap-4 max-w-3xl">
-      <c-mvp.card title="{% translate "What the copy holds" %}">
-        <ul class="list">
-          {% for section in sections %}
-            <li class="list-row px-0" data-section="{{ section.key }}">
-              <div>
-                <div class="font-medium">{{ section.heading }}</div>
-                <div class="text-sm text-base-content/70">{{ section.description }}</div>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      </c-mvp.card>
       <c-mvp.card title="{% translate "Download a copy" %}">
         <p class="max-w-prose">
           {% translate "The copy is a single .zip file. Inside it is a page you can open in any web browser, the same records in a JSON file for use in other software, and the files you uploaded." %}

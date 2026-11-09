@@ -32,8 +32,9 @@ translation_returned_to_draft = Signal()
 
 #: Sent each time a person's copy of their data is handed over as a download.
 #: Sender: the ``PersonalDataView`` class. Arguments: ``user`` (the person the copy is
-#: about) and ``kinds`` (the key of each kind of record the copy holds, in order,
-#: ending with ``"agreements"``). Not sent when the copy could not be made.
+#: about) and ``kinds`` (the key of each kind of record the copy holds, in order:
+#: only the kinds the person has records of, with ``"agreements"`` last when they
+#: have agreed to something). Not sent when the copy could not be made.
 personal_data_copied = Signal()
 
 #: Sent once a person has deleted their own account and the deletion has committed.

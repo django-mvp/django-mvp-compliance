@@ -374,12 +374,15 @@ class PersonalDataCopy:
     ) -> list[PersonalDataSection]:
         """Read every kind's records about ``user``, before anything is written.
 
+        A kind the person has no records of is left out, so the copy holds only
+        what is held about them.
+
         Args:
             user: The person whose records are wanted.
             kinds: The kinds to read, in the order they are to appear.
 
         Returns:
-            One section per kind, in the same order.
+            One section per kind holding at least one record, in the same order.
 
         Raises:
             PersonalDataError: When a kind cannot read its records.
@@ -388,7 +391,9 @@ class PersonalDataCopy:
         for kind in kinds:
             path = kind_path(kind)
             with PersonalDataCopy.guard(path):
-                sections.append(replace(kind.collect(user), kind=path))
+                section = kind.collect(user)
+            if section.rows:
+                sections.append(replace(section, kind=path))
         return sections
 
     @staticmethod
@@ -446,7 +451,7 @@ class PersonalDataCopy:
         return json.dumps(data, cls=DjangoJSONEncoder, indent=2, ensure_ascii=False)
 
     def get_data(self) -> dict[str, Any]:
-        """Return the copy as data: every kind, each record keyed by field name.
+        """Return the copy as data: each kind it holds, each record keyed by field name.
 
         Returns:
             The structure written to ``data.json``. A file is its path in the copy.
@@ -517,7 +522,7 @@ class PersonalDataCopy:
         acceptances = section.key == AGREEMENTS
         names = [name for name, _label in section.columns]
         rendered = ""
-        if section.template_name and section.rows and not acceptances:
+        if section.template_name and not acceptances:
             with self.guard(section.kind):
                 rendered = render_to_string(
                     section.template_name, {"section": section, "user": self.user}

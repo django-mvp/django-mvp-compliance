@@ -50,6 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `pending()` lists the pending ones.
 - `Version.same_wording` is now the function `mvp_compliance.models.same_wording`. The method is
   removed, with no alias.
+- **Your data** no longer lists the kinds of record a copy can hold. It says what the download
+  is and offers the button.
+- A person's copy, both `index.html` and `data.json`, holds only the kinds of record the person
+  has at least one record of. A kind they have none of is left out, and so are the documents they
+  agreed to when they have agreed to none. Deleting an account still erases every declared kind.
 
 ## [v0.5.1] - 2026-10-28
 

@@ -109,25 +109,26 @@ A signed-in person opens **Your data** and is first sent to allauth's own confir
 to confirm who they are, then returned to the page. A person whose account has no password
 and no second factor is not asked, because allauth treats that account as already confirmed.
 
-The page lists the kinds the copy holds, by heading and description, and a **Download a copy**
-button. Opening it reads none of your data. Pressing the button builds one `.zip` file, named
-`copy-of-your-data-<date>.zip`, holding:
+The page says what the download is and has a **Download a copy** button. It does not list the
+kinds you declared. Opening it reads none of your data. Pressing the button builds one `.zip` file, named
+`copy-of-your-data-<date>.zip`, holding only the kinds the person has at least one record of. A kind they have none of is left
+out of both the page and the data, and so are the documents they agreed to when they have agreed
+to none. The copy holds:
 
 - `index.html`, a page that opens in any browser with no network. It has a contents list, a
-  section for each kind in the order you declared them (a kind with `single = True` as pairs of
+  section for each kind the person has records of, in the order you declared them (a kind with `single = True` as pairs of
   label and value, any other as a table), and the package's own section, the documents the
-  person agreed to, always last. Each acceptance shows the document, version and time, with the
+  person agreed to, last. Each acceptance shows the document, version and time, with the
   wording as it stood at publication folded away. A missing value shows as a dash.
 - `data.json`, the same records for use in other software: `made_at`, `person` and a list of
   sections, each with its `key`, `heading`, `fields` (name to label) and `records`. Every record
-  is keyed by field name, and a file's value is its path inside the zip. A kind with no rows is
-  present with an empty list of records.
+  is keyed by field name, and a file's value is its path inside the zip.
 - `files/<key>/<pk>/<field>/<name>`, each file your kinds put into the copy, with its bytes.
 
 The page is `mvp_compliance.views.PersonalDataView`, and `PersonalDataCopy` in
 `mvp_compliance.personal_data` builds the zip from the sections the kinds return. The
 package's own section is `AgreementsPersonalData`, a kind with the key `agreements` that the
-package adds after yours. You never declare it.
+package adds after yours whenever the person has agreed to something. You never declare it.
 
 Nothing is stored. The copy is built for the request, sent, and gone. There is no limit on how
 often a person asks.
@@ -266,7 +267,8 @@ def note_copy(sender, user, kinds, **kwargs):
 ```
 
 `user` is the person the copy is about. `kinds` is the key of each kind of record in the copy,
-in order, ending with `"agreements"`. A receiver that raises is logged and does not stop the
+in order: only the kinds the person has records of, with `"agreements"` last when they have
+agreed to something. A receiver that raises is logged and does not stop the
 person getting their copy. Whatever your receiver keeps about the person is your project's own
 record, kept under your project's rules.
 
