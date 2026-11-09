@@ -427,6 +427,10 @@ class TestPersonalDataCopy:
     def test_the_data_holds_every_kind_in_declared_order_then_the_agreements(
         self, user
     ):
+        NoteFactory(owner=user)
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=user, version=version)
         archive = open_copy(user, "tests.kinds.Custom", "tests.kinds.Notes")
 
         keys = [section["key"] for section in data_of(archive)["sections"]]
@@ -522,14 +526,26 @@ class TestPersonalDataCopy:
         assert new.html in page
         assert len(CopyReader(page).sections["agreements"]) == 2
 
-    def test_a_kind_with_no_rows_and_no_agreements_are_present_and_empty(self, user):
-        archive = open_copy(user, "tests.kinds.Notes")
+    def test_a_kind_the_person_has_none_of_is_left_out_of_both_parts(self, user):
+        archive = open_copy(user, "tests.kinds.Notes", "tests.kinds.Custom")
 
         read = CopyReader(archive.read("index.html").decode())
 
-        for key in ("notes", "agreements"):
-            assert section_of(archive, key)["records"] == []
-            assert read.sections[key] == []
+        assert [section["key"] for section in data_of(archive)["sections"]] == [
+            "custom"
+        ]
+        assert list(read.sections) == ["custom"]
+
+    def test_a_person_who_has_agreed_to_something_gets_the_agreements(self, user):
+        version = VersionFactory()
+        version.publish()
+        AcceptanceFactory(user=user, version=version)
+
+        archive = open_copy(user, "tests.kinds.Notes")
+
+        assert [section["key"] for section in data_of(archive)["sections"]] == [
+            "agreements"
+        ]
 
     def test_a_copy_holds_nothing_of_another_person(self, user, stored_files):
         other = UserFactory()
@@ -546,7 +562,9 @@ class TestPersonalDataCopy:
         assert set(archive.namelist()) == {"index.html", "data.json"}
         assert "Not yours" not in archive.read("index.html").decode()
         assert "Not yours" not in archive.read("data.json").decode()
-        assert section_of(archive, "agreements")["records"] == []
+        assert [section["key"] for section in data_of(archive)["sections"]] == [
+            "notes"
+        ]
 
     def test_a_kind_with_its_own_template_is_drawn_with_it_and_keeps_the_standard_data(
         self, user

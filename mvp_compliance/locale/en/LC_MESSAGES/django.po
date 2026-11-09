@@ -1245,9 +1245,9 @@ msgstr ""
 msgid "Contents"
 msgstr "Contents"
 
-#: mvp_compliance/templates/mvp_compliance/copy/index.html:38
-msgid "Nothing of this kind is held about you."
-msgstr "Nothing of this kind is held about you."
+#: mvp_compliance/templates/mvp_compliance/copy/index.html:34
+msgid "This copy holds no records about you."
+msgstr "This copy holds no records about you."
 
 #: mvp_compliance/templates/mvp_compliance/copy/index.html:46
 #, python-format
@@ -1411,10 +1411,6 @@ msgid ""
 "Your copy could not be made, and nothing was downloaded. Try again later."
 msgstr ""
 "Your copy could not be made, and nothing was downloaded. Try again later."
-
-#: mvp_compliance/templates/mvp_compliance/personal_data.html:12
-msgid "What the copy holds"
-msgstr "What the copy holds"
 
 #: mvp_compliance/templates/mvp_compliance/personal_data.html:24
 #: mvp_compliance/templates/mvp_compliance/personal_data.html:31

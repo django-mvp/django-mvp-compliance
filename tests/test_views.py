@@ -3498,7 +3498,7 @@ class TestPersonalDataPage:
         assert response["Location"].startswith(reverse("account_reauthenticate"))
         assert not any(mock.called for mock in collects)
 
-    def test_after_confirming_it_lists_every_kind_in_order_then_the_agreements(
+    def test_after_confirming_it_opens_and_collects_nothing(
         self, declare, client, user, collects
     ):
         declare("tests.kinds.Custom", "tests.kinds.Notes")
@@ -3508,12 +3508,9 @@ class TestPersonalDataPage:
         response = client.get(personal_data_address())
 
         assert response.status_code == 200
-        assert listed_kinds(response) == ["custom", "notes", "agreements"]
         assert not any(mock.called for mock in collects)
 
-    def test_an_empty_declaration_lists_only_the_agreements(
-        self, declare, client, user
-    ):
+    def test_an_empty_declaration_still_has_the_page(self, declare, client, user):
         declare()
         client.force_login(user)
         confirm(client)
@@ -3521,7 +3518,6 @@ class TestPersonalDataPage:
         response = client.get(personal_data_address())
 
         assert response.status_code == 200
-        assert listed_kinds(response) == ["agreements"]
 
     def test_an_account_with_no_password_reaches_the_page_without_confirming(
         self, declare, client, user
@@ -3742,10 +3738,10 @@ class TestPersonalDataCopiedSignal:
         yield calls
         personal_data_copied.disconnect(receiver)
 
-    def test_it_is_sent_once_naming_the_person_and_the_kinds(
+    def test_it_is_sent_once_naming_the_person_and_the_kinds_the_copy_held(
         self, declare, client, user, received
     ):
-        declare("tests.kinds.Notes")
+        declare("tests.kinds.Custom", "tests.kinds.Notes")
         client.force_login(user)
         confirm(client)
 
@@ -3754,7 +3750,7 @@ class TestPersonalDataCopiedSignal:
         assert response.status_code == 200
         assert len(received) == 1
         assert received[0]["user"] == user
-        assert received[0]["kinds"] == ["notes", "agreements"]
+        assert received[0]["kinds"] == ["custom"]
 
     def test_it_is_not_sent_when_the_copy_cannot_be_made(
         self, declare, client, user, received
